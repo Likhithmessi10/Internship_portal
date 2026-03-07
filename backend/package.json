@@ -1,0 +1,26 @@
+{
+  "name": "aptransco-backend",
+  "version": "1.0.0",
+  "description": "APTRANSCO Internship Portal Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.22.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.20.0",
+    "prisma": "^6.4.1"
+  }
+}

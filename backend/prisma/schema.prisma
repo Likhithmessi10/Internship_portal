@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum ApplicationStatus {
+  PENDING
+  SHORTLISTED
+  REJECTED
+  HIRED
+}
+
+enum CollegeCategory {
+  IIT
+  NIT
+  IIIT
+  OTHER
+}
+
+enum DocumentType {
+  RESUME
+  PRINCIPAL_LETTER
+  HOD_LETTER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(ADMIN) // Default to ADMIN now since students are passwordless
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StudentProfile {
+  id              String          @id @default(uuid())
+  rollNumber      String          @unique // Unique identifier for students
+  
+  // Personal Details
+  fullName        String
+  phone           String
+  dob             DateTime
+  address         String
+  aadhar          String          @unique
+
+  // Educational Details
+  collegeName     String
+  university      String
+  degree          String
+  branch          String
+  yearOfStudy     Int
+  cgpa            Float
+  collegeCategory CollegeCategory
+  nirfRanking     Int?
+
+  // Optional Details
+  hasExperience   Boolean         @default(false)
+  hasProjects     Boolean         @default(false)
+  hasCertifications Boolean       @default(false)
+  experienceDesc   String?
+  projectsDesc     String?
+  skills           String?
+
+  applications    Application[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Internship {
+  id            String   @id @default(uuid())
+  title         String
+  department    String
+  description   String
+  location      String
+  duration      String   // e.g., "6 Months", "10 Weeks"
+  openingsCount Int
+  isActive      Boolean  @default(true)
+  
+  applications  Application[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Application {
+  id           String            @id @default(uuid())
+  trackingId   String            @unique // Human readable tracking code
+  studentId    String
+  internshipId String
+  status       ApplicationStatus @default(PENDING)
+  score        Float             @default(0.0) // Automated System Score
+
+  student      StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internship   Internship        @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  documents    Document[]
+
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@unique([studentId, internshipId])
+}
+
+model Document {
+  id            String       @id @default(uuid())
+  applicationId String
+  type          DocumentType
+  url           String       // S3 or local path
+
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+}
+
+model AutomationRule {
+  id               String   @id @default(uuid())
+  collegeWeight    Float    @default(40.0)
+  cgpaWeight       Float    @default(30.0)
+  experienceWeight Float    @default(20.0)
+  nirfWeight       Float    @default(10.0)
+  updatedAt        DateTime @updatedAt
+}

@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APTRANSCO – Internship Application Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --aptblue:   #003087;
+    --aptred:    #C8102E;
+    --aptgold:   #D4A017;
+    --aptlight:  #EAF0FB;
+    --aptteal:   #005F73;
+    --border:    #b0bec5;
+    --text:      #1a1a2e;
+    --muted:     #546e7a;
+    --white:     #ffffff;
+    --bg:        #f4f6f9;
+    --success:   #1b5e20;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── TOP STRIP ── */
+  .top-strip {
+    background: var(--aptblue);
+    color: #cdd8f6;
+    font-size: 11.5px;
+    letter-spacing: .4px;
+    padding: 5px 0;
+    text-align: center;
+    border-bottom: 3px solid var(--aptgold);
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--white);
+    border-bottom: 4px solid var(--aptred);
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .logo-emblem {
+    width: 78px; height: 78px;
+    background: var(--aptblue);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    border: 3px solid var(--aptgold);
+    box-shadow: 0 2px 8px rgba(0,48,135,.3);
+  }
+  .logo-emblem svg { width: 48px; height: 48px; }
+  .header-text { flex: 1; }
+  .header-text .dept {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.8px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+  }
+  .header-text h1 {
+    font-family: 'Noto Serif', serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--aptblue); line-height: 1.2;
+  }
+  .header-text .sub {
+    font-size: 12.5px; color: var(--muted); margin-top: 3px;
+    letter-spacing: .3px;
+  }
+  .header-right {
+    text-align: right; font-size: 11.5px; color: var(--muted);
+    line-height: 1.7; flex-shrink: 0;
+  }
+  .header-right strong { color: var(--aptblue); font-size: 13px; display: block; }
+  .flag-bar {
+    height: 6px;
+    background: linear-gradient(to right,
+      #FF9933 33.3%, var(--white) 33.3%, var(--white) 66.6%, #138808 66.6%);
+    border-top: 1px solid #ddd;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--aptblue);
+    border-bottom: 3px solid var(--aptgold);
+  }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center;
+  }
+  nav a {
+    color: #cdd8f6; text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    padding: 13px 22px; display: block;
+    letter-spacing: .3px;
+    transition: background .2s, color .2s;
+    border-right: 1px solid rgba(255,255,255,.1);
+  }
+  nav a:hover, nav a.active {
+    background: var(--aptred); color: var(--white);
+  }
+
+  /* ── BREADCRUMB ── */
+  .breadcrumb {
+    max-width: 1200px; margin: 0 auto;
+    padding: 8px 28px; font-size: 12px; color: var(--muted);
+  }
+  .breadcrumb span { color: var(--aptblue); font-weight: 500; }
+
+  /* ── MAIN LAYOUT ── */
+  .main-wrap {
+    max-width: 1200px; margin: 0 auto;
+    padding: 0 28px 50px;
+    display: grid; grid-template-columns: 1fr 300px; gap: 24px;
+  }
+
+  /* ── PAGE TITLE BANNER ── */
+  .page-title-bar {
+    background: linear-gradient(135deg, var(--aptblue) 0%, #0a4a8c 100%);
+    color: var(--white); padding: 20px 28px;
+    margin: 0 -0px 24px; grid-column: 1/-1;
+    border-radius: 0 0 8px 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .page-title-bar h2 {
+    font-family: 'Noto Serif', serif;
+    font-size: 20px; font-weight: 600;
+  }
+  .page-title-bar p { font-size: 13px; color: #aac4e8; margin-top: 4px; }
+  .page-title-bar .badge {
+    background: var(--aptgold); color: var(--aptblue);
+    font-size: 11px; font-weight: 700; padding: 4px 12px;
+    border-radius: 3px; letter-spacing: .5px; text-transform: uppercase;
+  }
+
+  /* ── FORM CARD ── */
+  .form-card {
+    background: var(--white);
+    border: 1px solid #d6dde8;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    overflow: hidden;
+  }
+  .form-card + .form-card { margin-top: 20px; }
+
+  .section-header {
+    background: linear-gradient(to right, var(--aptblue), #1a4fa0);
+    color: var(--white);
+    padding: 11px 20px;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: .5px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header .num {
+    background: var(--aptgold); color: var(--aptblue);
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+
+  .form-body { padding: 20px 24px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .form-row.three { grid-template-columns: repeat(3, 1fr); }
+  .form-row.full { grid-template-columns: 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-size: 12.5px; font-weight: 600; color: var(--aptblue);
+    letter-spacing: .2px;
+  }
+  .field label .req { color: var(--aptred); margin-left: 2px; }
+  .field input, .field select, .field textarea {
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13.5px;
+    color: var(--text);
+    background: #fafbfd;
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+    width: 100%;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--aptblue);
+    box-shadow: 0 0 0 3px rgba(0,48,135,.1);
+    background: var(--white);
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .field select { cursor: pointer; }
+  .field .hint { font-size: 11px; color: var(--muted); }
+
+  /* ── DECLARATION ── */
+  .declaration-box {
+    background: #fffbf0;
+    border: 1.5px solid var(--aptgold);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-top: 4px;
+  }
+  .declaration-box p { font-size: 12.5px; color: #555; line-height: 1.65; }
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px; margin-top: 12px;
+  }
+  .check-row input[type="checkbox"] {
+    width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px;
+    accent-color: var(--aptblue);
+  }
+  .check-row label { font-size: 12.5px; color: var(--text); font-weight: 500; }
+
+  /* ── SUBMIT BUTTON ── */
+  .btn-row { display: flex; gap: 12px; margin-top: 24px; }
+  .btn-submit {
+    background: var(--aptblue);
+    color: var(--white); border: none;
+    padding: 13px 36px; border-radius: 4px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14px; font-weight: 600;
+    letter-spacing: .5px; cursor: pointer;
+    transition: background .2s, transform .1s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .btn-submit:hover { background: #002070; }
+  .btn-submit:active { transform: scale(.98); }
+  .btn-reset {
+    background: var(--white); color: var(--aptblue);
+    border: 1.5px solid var(--aptblue);
+    padding: 13px 28px; border-radius: 4px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14px; font-weight: 600;
+    letter-spacing: .5px; cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-reset:hover { background: var(--aptlight); }
+
+  /* ── SIDEBAR ── */
+  .sidebar { display: flex; flex-direction: column; gap: 18px; }
+  .info-box {
+    background: var(--white);
+    border: 1px solid #d6dde8;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .info-box-head {
+    background: var(--aptteal); color: var(--white);
+    padding: 10px 16px; font-size: 12.5px; font-weight: 600;
+    letter-spacing: .4px; text-transform: uppercase;
+  }
+  .info-box-body { padding: 14px 16px; }
+  .info-box-body p {
+    font-size: 12.5px; color: #555; line-height: 1.65; margin-bottom: 8px;
+  }
+  .info-box-body p:last-child { margin-bottom: 0; }
+  .info-box-body ul { list-style: none; padding: 0; }
+  .info-box-body li {
+    font-size: 12.5px; color: #444; padding: 5px 0;
+    border-bottom: 1px dashed #e0e0e0; display: flex; gap: 6px;
+  }
+  .info-box-body li:last-child { border-bottom: none; }
+  .info-box-body li::before { content: "▸"; color: var(--aptblue); font-size: 10px; margin-top: 1px; flex-shrink: 0; }
+  .important-notice {
+    background: #fff3cd; border: 1.5px solid #ffc107;
+    border-radius: 4px; padding: 10px 12px; margin-top: 10px;
+  }
+  .important-notice p { font-size: 12px; color: #856404; margin: 0; }
+  .important-notice strong { color: #6d4c00; }
+
+  /* ── SUCCESS MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.55); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 8px;
+    max-width: 520px; width: 90%; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .modal-header {
+    background: var(--success); color: var(--white);
+    padding: 20px 24px; text-align: center;
+  }
+  .modal-header .check-icon {
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,.2); border-radius: 50%;
+    margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .modal-header h3 { font-family: 'Noto Serif', serif; font-size: 20px; }
+  .modal-header p { font-size: 13px; opacity: .85; margin-top: 4px; }
+  .modal-body { padding: 24px; }
+  .app-id-box {
+    background: var(--aptlight);
+    border: 2px solid var(--aptblue);
+    border-radius: 5px; padding: 14px;
+    text-align: center; margin-bottom: 18px;
+  }
+  .app-id-box .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .app-id-box .id { font-family: 'Noto Serif', serif; font-size: 18px; font-weight: 700; color: var(--aptblue); margin-top: 4px; }
+  .app-id-box .date { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .modal-body .note { font-size: 12.5px; color: #555; line-height: 1.65; margin-bottom: 12px; }
+  .modal-footer { padding: 0 24px 24px; display: flex; gap: 10px; }
+  .btn-print {
+    flex: 1; background: var(--aptblue); color: var(--white);
+    border: none; padding: 11px; border-radius: 4px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13.5px; font-weight: 600; cursor: pointer;
+  }
+  .btn-close-modal {
+    flex: 1; background: var(--white); color: var(--aptblue);
+    border: 1.5px solid var(--aptblue); padding: 11px; border-radius: 4px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13.5px; font-weight: 600; cursor: pointer;
+  }
+
+  /* ── STATUS CHECK TAB ── */
+  .tab-section {
+    background: var(--white);
+    border: 1px solid #d6dde8;
+    border-radius: 6px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    grid-column: 1/-1;
+    display: none;
+  }
+  .tab-section.show { display: block; }
+
+  /* ── STATUS RESULT ── */
+  .status-result {
+    display: none;
+    padding: 20px 24px;
+  }
+  .status-result.show { display: block; }
+  .status-grid {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    gap: 14px; margin-top: 16px;
+  }
+  .status-item { }
+  .status-item .s-label { font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  .status-item .s-val { font-size: 14px; color: var(--text); font-weight: 500; margin-top: 2px; }
+  .status-badge {
+    display: inline-block; padding: 3px 12px; border-radius: 3px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .badge-submitted { background: #e3f2fd; color: #1565c0; }
+  .badge-approved  { background: #e8f5e9; color: #2e7d32; }
+  .badge-pending   { background: #fff8e1; color: #f57f17; }
+  .badge-rejected  { background: #ffebee; color: #c62828; }
+
+  /* ── ADMIN TABLE ── */
+  .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .admin-table th {
+    background: #e8edf5; color: var(--aptblue);
+    padding: 10px 14px; text-align: left;
+    font-weight: 600; font-size: 12px; letter-spacing: .3px;
+    border-bottom: 2px solid var(--aptblue);
+    white-space: nowrap;
+  }
+  .admin-table td {
+    padding: 10px 14px; border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+  .admin-table tr:hover td { background: var(--aptlight); }
+  .admin-table tr:last-child td { border-bottom: none; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--aptblue); color: #aac4e8;
+    text-align: center; padding: 22px 28px;
+    font-size: 12px; line-height: 1.8;
+    border-top: 4px solid var(--aptred);
+    margin-top: 40px;
+  }
+  footer strong { color: var(--white); }
+  footer a { color: var(--aptgold); text-decoration: none; }
+
+  /* LOADING */
+  .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ERROR */
+  .field-error { border-color: var(--aptred) !important; }
+  .err-msg { font-size: 11px; color: var(--aptred); margin-top: 2px; }
+
+  @media print {
+    nav, .sidebar, .btn-row, footer, .top-strip { display: none; }
+    .main-wrap { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP STRIP -->
+<div class="top-strip">
+  Government of Andhra Pradesh &nbsp;|&nbsp; APTRANSCO – Andhra Pradesh Transmission Corporation Limited
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo-emblem">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="30" fill="none" stroke="#D4A017" stroke-width="2"/>
+        <path d="M32 8 L20 34 H30 L22 56 L44 28 H34 L42 8 Z" fill="#FFD700" stroke="#D4A017" stroke-width="1"/>
+        <text x="32" y="62" text-anchor="middle" fill="#D4A017" font-size="5" font-family="serif">AP</text>
+      </svg>
+    </div>
+    <div class="header-text">
+      <div class="dept">Government of Andhra Pradesh</div>
+      <h1>Andhra Pradesh Transmission Corporation Limited</h1>
+      <div class="sub">APTRANSCO &nbsp;·&nbsp; Energy Department &nbsp;·&nbsp; Internship Management Portal</div>
+    </div>
+    <div class="header-right">
+      <strong>Helpdesk</strong>
+      internship@aptransco.in<br>
+      040-23435272<br>
+      Mon – Fri: 10:00 AM – 5:00 PM
+    </div>
+  </div>
+  <div class="flag-bar"></div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="active" onclick="showTab('apply')">🏠 Home</a>
+    <a href="#" onclick="showTab('apply')">Apply for Internship</a>
+    <a href="#" onclick="showTab('status')">Check Status</a>
+    <a href="#" onclick="alert('Guidelines document will open in a new window.')">Guidelines</a>
+    <a href="#" onclick="alert('Contact: internship@aptransco.in | 040-23435272')">Contact Us</a>
+  </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb">
+  Home &rsaquo; Internship &rsaquo; <span id="bc-current">Online Application Form</span>
+</div>
+
+<!-- MAIN WRAP -->
+<div class="main-wrap">
+
+  <div class="page-title-bar">
+    <div>
+      <h2 id="page-title">Online Internship Application Form</h2>
+      <p id="page-sub">APTRANSCO Internship Programme — Application Year 2024–25</p>
+    </div>
+    <div class="badge" id="page-badge">New Application</div>
+  </div>
+
+  <div id="tab-apply" style="grid-column:1; display:block;">
+    <!-- Personal Details -->
+    <div class="form-card">
+      <div class="section-header"><span class="num">1</span> Personal Details</div>
+      <div class="form-body">
+        <div class="form-row">
+          <div class="field">
+            <label>College Roll Number <span class="req">*</span></label>
+            <input type="text" id="roll_number" placeholder="Enter your official roll number">
+          </div>
+          <div class="field">
+            <label>Full Name (as in Aadhaar) <span class="req">*</span></label>
+            <input type="text" id="full_name" placeholder="Enter your full name">
+          </div>
+        </div>
+        <div class="form-row three">
+          <div class="field">
+            <label>Date of Birth <span class="req">*</span></label>
+            <input type="date" id="date_of_birth">
+          </div>
+          <div class="field">
+            <label>Gender <span class="req">*</span></label>
+            <select id="gender">
+              <option value="">-- Select --</option>
+              <option>Male</option><option>Female</option><option>Transgender</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Category <span class="req">*</span></label>
+            <select id="category">
+              <option value="">-- Select --</option>
+              <option>OC</option><option>BC</option><option>SC</option><option>ST</option><option>EWS</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Aadhaar Number <span class="req">*</span></label>
+            <input type="text" id="aadhar_number" placeholder="XXXX XXXX XXXX" maxlength="12">
+          </div>
+          <div class="field">
+            <label>Mobile Number <span class="req">*</span></label>
+            <input type="tel" id="mobile" placeholder="10-digit mobile number" maxlength="10">
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="field">
+            <label>Email ID <span class="req">*</span></label>
+            <input type="email" id="email" placeholder="example@domain.com">
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="field">
+            <label>Permanent Address <span class="req">*</span></label>
+            <textarea id="permanent_address" placeholder="Door No., Street, Village, Mandal"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Educational Details -->
+    <div class="form-card">
+      <div class="section-header"><span class="num">2</span> Educational Qualification</div>
+      <div class="form-body">
+        <div class="form-row">
+            <div class="field">
+                <label>College Category <span class="req">*</span></label>
+                <select id="college_category">
+                  <option value="OTHER">Other Professional College</option>
+                  <option value="IIT">IIT</option>
+                  <option value="NIT">NIT</option>
+                  <option value="IIIT">IIIT</option>
+                </select>
+            </div>
+          <div class="field">
+            <label>Institution / University <span class="req">*</span></label>
+            <input type="text" id="institution" placeholder="Name of College / University">
+          </div>
+        </div>
+        <div class="form-row three">
+          <div class="field">
+            <label>Degree <span class="req">*</span></label>
+            <input type="text" id="degree" placeholder="e.g. B.Tech">
+          </div>
+          <div class="field">
+            <label>Branch <span class="req">*</span></label>
+            <input type="text" id="branch" placeholder="e.g. EEE">
+          </div>
+          <div class="field">
+            <label>Year of Study <span class="req">*</span></label>
+            <input type="number" id="year_of_study" placeholder="e.g. 3">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Aggregate CGPA <span class="req">*</span></label>
+            <input type="number" step="0.01" id="percentage" placeholder="e.g. 8.5">
+          </div>
+          <div class="field">
+            <label>NIRF Ranking (if known)</label>
+            <input type="number" id="nirf_ranking" placeholder="e.g. 50">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Internship Choice -->
+    <div class="form-card">
+      <div class="section-header"><span class="num">3</span> Internship Choice</div>
+      <div class="form-body">
+        <div class="form-row full">
+          <div class="field">
+            <label>Select Internship Opening <span class="req">*</span></label>
+            <select id="internship_id">
+              <option value="">-- Loading Active Internships... --</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row full">
+            <div class="field">
+              <label>Resume (PDF only) <span class="req">*</span></label>
+              <input type="file" id="resume" accept=".pdf">
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="section-header"><span class="num">4</span> Declaration</div>
+      <div class="form-body">
+        <div class="declaration-box">
+          <p>I hereby declare that the information provided is true to the best of my knowledge.</p>
+          <div class="check-row">
+            <input type="checkbox" id="decl1">
+            <label for="decl1">I accept the terms and conditions.</label>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-submit" id="submitBtn" onclick="submitForm()">Submit Application</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-status" class="tab-section" style="grid-column:1/-1;">
+    <div class="section-header">🔍 Track Application</div>
+    <div class="form-body">
+      <div class="form-row">
+        <div class="field">
+          <label>Enter Tracking ID <span class="req">*</span></label>
+          <input type="text" id="status_id" placeholder="APT-XXXXXXXXXX">
+        </div>
+        <button class="btn-submit" style="margin-top:20px" onclick="checkStatus()">Search</button>
+      </div>
+      <div id="status-result" class="status-result">
+          <div id="status-content" style="margin-top:20px; padding:15px; border:1px solid #ddd; border-radius:4px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="info-box">
+      <div class="info-box-head">📋 Application Instructions</div>
+      <div class="info-box-body">
+        <ul>
+          <li>Fill all fields marked with <strong>*</strong></li>
+          <li>Aadhaar card is mandatory for verification</li>
+          <li>Apply at least 30 days before desired start date</li>
+          <li>One application per academic year is allowed</li>
+          <li>Attach No Objection Certificate from institution (if required)</li>
+          <li>Stipend is not provided; internship is honorary</li>
+        </ul>
+        <div class="important-notice">
+          <p><strong>⚠ Important:</strong> APTRANSCO does not charge any fee for internship applications. Beware of fraudulent agents.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-head">📅 Important Dates</div>
+      <div class="info-box-body">
+        <ul>
+          <li>Applications Open: 01 Jan 2025</li>
+          <li>Last Date: 30 Nov 2025</li>
+          <li>Processing Time: 15–20 working days</li>
+          <li>Joining: As per approval letter</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-head">📞 Contact & Support</div>
+      <div class="info-box-body">
+        <p><strong>Email:</strong> internship@aptransco.in</p>
+        <p><strong>Phone:</strong> 040-23435272</p>
+        <p><strong>Helpdesk:</strong> Mon–Fri, 10 AM–5 PM</p>
+        <p><strong>Address:</strong> APTRANSCO Corporate Office, Vidyut Soudha, Hyderabad – 500082</p>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-head">🔗 Quick Links</div>
+      <div class="info-box-body">
+        <ul>
+          <li><a href="#" onclick="showTab('status')">Check Application Status</a></li>
+          <li><a href="#">Download NOC Format</a></li>
+          <li><a href="#">Internship Guidelines PDF</a></li>
+          <li><a href="#">APTRANSCO Official Website</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-wrap -->
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="check-icon">✓</div>
+      <h3>Application Submitted Successfully!</h3>
+      <p>Your internship application has been received by APTRANSCO.</p>
+    </div>
+    <div class="modal-body">
+      <div class="app-id-box">
+        <div class="label">Your Application ID</div>
+        <div class="id" id="modal-app-id">—</div>
+        <div class="date" id="modal-date">—</div>
+      </div>
+      <p class="note">📌 Please note down your Application ID for future reference. You can use it to track the status of your application.</p>
+      <p class="note">📧 A confirmation will be sent to your registered email address within 24 hours.</p>
+      <p class="note">⏳ Processing typically takes 15–20 working days. You will be notified via email/SMS upon approval.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-print" onclick="window.print()">🖨 Print Receipt</button>
+      <button class="btn-close-modal" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Andhra Pradesh Transmission Corporation Limited (APTRANSCO)</strong><br>
+  Vidyut Soudha, Hyderabad – 500082 &nbsp;|&nbsp; <a href="#">www.aptransco.co.in</a> &nbsp;|&nbsp; CIN: U40109AP1999SGC031533<br>
+  © 2025 APTRANSCO. All rights reserved. &nbsp;|&nbsp;
+  <a href="#">Disclaimer</a> &nbsp;|&nbsp; <a href="#">Privacy Policy</a> &nbsp;|&nbsp; <a href="#">Accessibility</a> &nbsp;|&nbsp;
+  Best viewed in Chrome / Firefox at 1280×800 resolution
+</footer>
+
+<script>
+  const API = 'http://localhost:5050/api';
+
+  // ── TAB SWITCHING ──
+  function showTab(tab) {
+    const tabs = ['apply', 'status', 'admin'];
+    tabs.forEach(t => {
+      const el = document.getElementById('tab-' + t);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('sidebar').style.display = tab === 'apply' ? 'flex' : 'none';
+
+    const el = document.getElementById('tab-' + tab);
+    if (el) {
+      el.style.display = 'block';
+      if (tab === 'status') {
+        el.style.gridColumn = '1/-1';
+      }
+    }
+
+    const titles = {
+      apply: ['Online Internship Application Form', 'APTRANSCO Internship Programme — Application Year 2024–25', 'New Application', 'Online Application Form'],
+      status: ['Check Application Status', 'Track your internship application using Application ID', 'Status Enquiry', 'Check Status'],
+      admin: ['Applications — Admin View', 'All submitted internship applications', 'Admin Panel', 'Admin View']
+    };
+    document.getElementById('page-title').textContent = titles[tab][0];
+    document.getElementById('page-sub').textContent = titles[tab][1];
+    document.getElementById('page-badge').textContent = titles[tab][2];
+    document.getElementById('bc-current').textContent = titles[tab][3];
+
+    document.querySelectorAll('nav a').forEach((a, i) => {
+      a.classList.remove('active');
+      if ((tab === 'apply' && (i === 0 || i === 1)) || (tab === 'status' && i === 2) || (tab === 'admin' && i === 3)) {
+        a.classList.add('active');
+      }
+    });
+
+    if (tab === 'admin') loadAdminData();
+  }
+
+  // ── FORMAT AADHAAR ──
+  document.getElementById('aadhar_number').addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g,'').substring(0,12);
+    e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+  });
+
+  // ── VALIDATION ──
+  function validate() {
+    const required = [
+      'full_name','father_name','date_of_birth','gender','category',
+      'aadhar_number','mobile','email','permanent_address','district','pincode',
+      'qualification','specialization','institution','year_of_passing','percentage',
+      'internship_type','preferred_circle','duration','start_date','purpose'
+    ];
+    let ok = true;
+    required.forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('field-error');
+      if (!el.value.trim()) { el.classList.add('field-error'); ok = false; }
+    });
+
+    const mob = document.getElementById('mobile').value;
+    if (mob && !/^\d{10}$/.test(mob)) {
+      document.getElementById('mobile').classList.add('field-error'); ok = false;
+      alert('Please enter a valid 10-digit mobile number.');
+    }
+
+    if (!document.getElementById('decl1').checked || !document.getElementById('decl2').checked) {
+      alert('Please accept both Declaration and Terms & Conditions to proceed.');
+      ok = false;
+    }
+    return ok;
+  }
+
+  // ── SUBMIT ──
+  async function submitForm() {
+    if (!validate()) { document.querySelector('.field-error').scrollIntoView({behavior:'smooth', block:'center'}); return; }
+
+    document.getElementById('btn-text').textContent = 'Submitting...';
+    document.getElementById('btn-spin').style.display = 'inline-block';
+    document.getElementById('submitBtn').disabled = true;
+
+    const payload = {
+      full_name: document.getElementById('full_name').value.trim(),
+      father_name: document.getElementById('father_name').value.trim(),
+      date_of_birth: document.getElementById('date_of_birth').value,
+      gender: document.getElementById('gender').value,
+      category: document.getElementById('category').value,
+      aadhar_number: document.getElementById('aadhar_number').value.trim(),
+      mobile: document.getElementById('mobile').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      permanent_address: document.getElementById('permanent_address').value.trim(),
+      district: document.getElementById('district').value,
+      state: 'Andhra Pradesh',
+      pincode: document.getElementById('pincode').value.trim(),
+      qualification: document.getElementById('qualification').value,
+      specialization: document.getElementById('specialization').value,
+      institution: document.getElementById('institution').value.trim(),
+      year_of_passing: document.getElementById('year_of_passing').value,
+      percentage: document.getElementById('percentage').value.trim(),
+      internship_type: document.getElementById('internship_type').value,
+      preferred_circle: document.getElementById('preferred_circle').value,
+      duration: document.getElementById('duration').value,
+      start_date: document.getElementById('start_date').value,
+      purpose: document.getElementById('purpose').value.trim()
+    };
+
+    try {
+      const res = await fetch(API + '/submit', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('modal-app-id').textContent = data.application_id;
+        document.getElementById('modal-date').textContent = 'Submitted on: ' + data.submitted_at;
+        document.getElementById('modal').classList.add('show');
+      } else {
+        alert('Submission failed: ' + data.error);
+      }
+    } catch(e) {
+      alert('Unable to connect to server. Please ensure the backend is running on port 5050.\n\nError: ' + e.message);
+    }
+
+    document.getElementById('btn-text').textContent = 'Submit Application';
+    document.getElementById('btn-spin').style.display = 'none';
+    document.getElementById('submitBtn').disabled = false;
+  }
+
+  // ── RESET ──
+  function resetForm() {
+    if (!confirm('Are you sure you want to clear all entered data?')) return;
+    ['full_name','father_name','aadhar_number','mobile','email','permanent_address','pincode',
+     'institution','percentage','purpose'].forEach(id => document.getElementById(id).value = '');
+    ['date_of_birth','start_date'].forEach(id => document.getElementById(id).value = '');
+    ['gender','category','district','qualification','specialization','year_of_passing',
+     'internship_type','preferred_circle','duration'].forEach(id => document.getElementById(id).selectedIndex = 0);
+    document.getElementById('decl1').checked = false;
+    document.getElementById('decl2').checked = false;
+    document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+  }
+
+  // ── MODAL ──
+  function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+    resetForm();
+  }
+
+  // ── STATUS CHECK ──
+  async function checkStatus() {
+    const id = document.getElementById('status_id').value.trim();
+    if (!id) { alert('Please enter your Application ID.'); return; }
+
+    try {
+      const res = await fetch(API + '/status/' + encodeURIComponent(id));
+      const data = await res.json();
+      const result = document.getElementById('status-result');
+      result.classList.add('show');
+
+      if (data.success) {
+        const d = data.data;
+        const statusMap = {
+          'Submitted': 'badge-submitted',
+          'Approved': 'badge-approved',
+          'Pending': 'badge-pending',
+          'Rejected': 'badge-rejected'
+        };
+        document.getElementById('status-badge-el').innerHTML =
+          `<span class="status-badge ${statusMap[d.status] || 'badge-submitted'}">${d.status}</span>`;
+
+        const grid = document.getElementById('status-grid-data');
+        const items = [
+          ['Application ID', d.application_id],
+          ['Applicant Name', d.full_name],
+          ['Mobile', d.mobile],
+          ['Email', d.email],
+          ['Internship Type', d.internship_type],
+          ['Preferred Circle', d.preferred_circle],
+          ['Duration', d.duration],
+          ['Start Date', d.start_date],
+          ['Submitted On', d.submitted_at]
+        ];
+        grid.innerHTML = items.map(([l,v]) =>
+          `<div class="status-item"><div class="s-label">${l}</div><div class="s-val">${v || '—'}</div></div>`
+        ).join('');
+      } else {
+        document.getElementById('status-badge-el').innerHTML = '';
+        document.getElementById('status-grid-data').innerHTML =
+          '<p style="color:var(--aptred);font-weight:600">❌ No application found with this ID. Please verify and try again.</p>';
+      }
+    } catch(e) {
+      alert('Unable to connect to server. Ensure backend is running.\n' + e.message);
+    }
+  }
+
+  // ── ADMIN DATA ──
+  async function loadAdminData() {
+    const tbody = document.getElementById('admin-tbody');
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Loading...</td></tr>';
+    try {
+      const res = await fetch(API + '/applications');
+      const data = await res.json();
+      if (data.success && data.data.length > 0) {
+        document.getElementById('total-count').textContent = data.total;
+        const statusMap = {
+          'Submitted': 'badge-submitted',
+          'Approved': 'badge-approved',
+          'Pending': 'badge-pending',
+          'Rejected': 'badge-rejected'
+        };
+        tbody.innerHTML = data.data.map((r, i) => `
+          <tr>
+            <td>${i+1}</td>
+            <td style="font-weight:600;color:var(--aptblue);font-size:12px">${r.application_id}</td>
+            <td>${r.full_name}</td>
+            <td>${r.mobile}</td>
+            <td style="font-size:12px">${r.email}</td>
+            <td>${r.internship_type}</td>
+            <td style="font-size:12px">${r.preferred_circle}</td>
+            <td><span class="status-badge ${statusMap[r.status]||'badge-submitted'}">${r.status}</span></td>
+            <td style="font-size:12px">${r.submitted_at}</td>
+          </tr>
+        `).join('');
+      } else {
+        document.getElementById('total-count').textContent = '0';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">No applications submitted yet.</td></tr>';
+      }
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--aptred)">Error connecting to server. Ensure backend is running on port 5050.</td></tr>`;
+    }
+  }
+</script>
+</body>
+</html>
