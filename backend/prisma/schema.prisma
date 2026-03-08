@@ -84,6 +84,7 @@ model Internship {
   duration      String   // e.g., "6 Months", "10 Weeks"
   openingsCount Int
   isActive      Boolean  @default(true)
+  quotaPercentages Json? // Stores { IIT: 30, NIT: 30, IIIT: 20, OTHER: 20 }
   
   applications  Application[]
   createdAt     DateTime @default(now())

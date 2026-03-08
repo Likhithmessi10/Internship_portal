@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 import api from '../utils/api';
+import { collegesData } from '../data/colleges';
 
 const StudentProfileForm = () => {
     const navigate = useNavigate();
@@ -39,6 +41,17 @@ const StudentProfileForm = () => {
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
         setFormData({ ...formData, [e.target.name]: value });
+    };
+
+    const handleCollegeChange = (selectedOption) => {
+        if (selectedOption) {
+            setFormData({
+                ...formData,
+                collegeName: selectedOption.label,
+                collegeCategory: selectedOption.category,
+                nirfRanking: selectedOption.nirf || ''
+            });
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -97,28 +110,31 @@ const StudentProfileForm = () => {
                     <div>
                         <h2 className="text-xl font-semibold mb-4 text-primary border-b pb-2">Educational Details</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Search & Select College (Auto-fills category & NIRF)</label>
+                                <Select
+                                    options={collegesData}
+                                    value={collegesData.find(c => c.label === formData.collegeName)}
+                                    onChange={handleCollegeChange}
+                                    placeholder="Type to search your college..."
+                                    isSearchable
+                                    className="react-select-container"
+                                    classNamePrefix="react-select"
+                                />
+                                {!formData.collegeName && <p className="text-xs text-red-500 mt-1">Please select a valid college from the list.</p>}
+                            </div>
+
                             <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-gray-50 p-4 border rounded-md">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-800">College Category (Important)</label>
-                                    <p className="text-xs text-muted mb-2">Used for shortlisting algorithms</p>
-                                    <select name="collegeCategory" required className="input-field font-semibold bg-white" value={formData.collegeCategory} onChange={handleChange}>
-                                        <option value="IIT">IIT</option>
-                                        <option value="NIT">NIT</option>
-                                        <option value="IIIT">IIIT</option>
-                                        <option value="OTHER">Other</option>
-                                    </select>
+                                    <label className="block text-sm font-semibold text-gray-800">College Category (Read-only)</label>
+                                    <input type="text" readOnly className="input-field bg-gray-200 cursor-not-allowed font-semibold" value={formData.collegeCategory} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-800">NIRF Ranking</label>
-                                    <p className="text-xs text-muted mb-2">Leave blank if not applicable</p>
-                                    <input type="number" name="nirfRanking" className="input-field" placeholder="e.g. 24" value={formData.nirfRanking} onChange={handleChange} />
+                                    <label className="block text-sm font-semibold text-gray-800">NIRF Ranking (Read-only)</label>
+                                    <input type="text" readOnly className="input-field bg-gray-200 cursor-not-allowed" value={formData.nirfRanking || 'N/A'} />
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">College Name</label>
-                                <input type="text" name="collegeName" required className="input-field" value={formData.collegeName} onChange={handleChange} />
-                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">University</label>
                                 <input type="text" name="university" required className="input-field" value={formData.university} onChange={handleChange} />

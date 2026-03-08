@@ -720,7 +720,24 @@
 </footer>
 
 <script>
-  const API = 'http://localhost:5050/api';
+  const API = 'http://localhost:5000/api/v1/public';
+
+  // Load internships on load
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch(API + '/internships');
+      const data = await res.json();
+      const select = document.getElementById('internship_id');
+      if (data.success && data.data.length > 0) {
+        select.innerHTML = '<option value="">-- Select Internship --</option>' + 
+          data.data.map(i => `<option value="${i.id}">${i.title} - ${i.department} (${i.openingsCount} Openings)</option>`).join('');
+      } else {
+        select.innerHTML = '<option value="">-- No Active Internships --</option>';
+      }
+    } catch(e) {
+      console.error('Failed to load internships:', e);
+    }
+  });
 
   // ── TAB SWITCHING ──
   function showTab(tab) {
@@ -768,10 +785,10 @@
   // ── VALIDATION ──
   function validate() {
     const required = [
-      'full_name','father_name','date_of_birth','gender','category',
-      'aadhar_number','mobile','email','permanent_address','district','pincode',
-      'qualification','specialization','institution','year_of_passing','percentage',
-      'internship_type','preferred_circle','duration','start_date','purpose'
+      'full_name','date_of_birth','gender','category',
+      'aadhar_number','mobile','email','permanent_address',
+      'degree','branch','institution','year_of_study','percentage',
+      'internship_id', 'roll_number'
     ];
     let ok = true;
     required.forEach(id => {
@@ -801,47 +818,43 @@
     document.getElementById('btn-spin').style.display = 'inline-block';
     document.getElementById('submitBtn').disabled = true;
 
-    const payload = {
-      full_name: document.getElementById('full_name').value.trim(),
-      father_name: document.getElementById('father_name').value.trim(),
-      date_of_birth: document.getElementById('date_of_birth').value,
-      gender: document.getElementById('gender').value,
-      category: document.getElementById('category').value,
-      aadhar_number: document.getElementById('aadhar_number').value.trim(),
-      mobile: document.getElementById('mobile').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      permanent_address: document.getElementById('permanent_address').value.trim(),
-      district: document.getElementById('district').value,
-      state: 'Andhra Pradesh',
-      pincode: document.getElementById('pincode').value.trim(),
-      qualification: document.getElementById('qualification').value,
-      specialization: document.getElementById('specialization').value,
-      institution: document.getElementById('institution').value.trim(),
-      year_of_passing: document.getElementById('year_of_passing').value,
-      percentage: document.getElementById('percentage').value.trim(),
-      internship_type: document.getElementById('internship_type').value,
-      preferred_circle: document.getElementById('preferred_circle').value,
-      duration: document.getElementById('duration').value,
-      start_date: document.getElementById('start_date').value,
-      purpose: document.getElementById('purpose').value.trim()
-    };
+    const fd = new FormData();
+    fd.append('rollNumber', document.getElementById('roll_number').value.trim());
+    fd.append('fullName', document.getElementById('full_name').value.trim());
+    fd.append('phone', document.getElementById('mobile').value.trim());
+    fd.append('dob', document.getElementById('date_of_birth').value);
+    fd.append('address', document.getElementById('permanent_address').value.trim());
+    fd.append('aadhar', document.getElementById('aadhar_number').value.trim());
+    fd.append('collegeName', document.getElementById('institution').value.trim());
+    fd.append('degree', document.getElementById('degree').value.trim());
+    fd.append('branch', document.getElementById('branch').value.trim());
+    fd.append('yearOfStudy', document.getElementById('year_of_study').value.trim());
+    fd.append('cgpa', document.getElementById('percentage').value.trim());
+    fd.append('collegeCategory', document.getElementById('college_category').value);
+    fd.append('nirfRanking', document.getElementById('nirf_ranking').value.trim() || '');
+    fd.append('internshipId', document.getElementById('internship_id').value);
+
+    // Optional resume
+    const resumeEl = document.getElementById('resume');
+    if (resumeEl && resumeEl.files[0]) {
+      fd.append('resume', resumeEl.files[0]);
+    }
 
     try {
-      const res = await fetch(API + '/submit', {
+      const res = await fetch(API + '/apply', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
+        body: fd
       });
       const data = await res.json();
       if (data.success) {
-        document.getElementById('modal-app-id').textContent = data.application_id;
-        document.getElementById('modal-date').textContent = 'Submitted on: ' + data.submitted_at;
+        document.getElementById('modal-app-id').textContent = data.trackingId;
+        document.getElementById('modal-date').textContent = 'Tracking ID to check status';
         document.getElementById('modal').classList.add('show');
       } else {
-        alert('Submission failed: ' + data.error);
+        alert('Submission failed: ' + data.message);
       }
     } catch(e) {
-      alert('Unable to connect to server. Please ensure the backend is running on port 5050.\n\nError: ' + e.message);
+      alert('Unable to connect to server. Please ensure the backend is running on port 5000.\n\nError: ' + e.message);
     }
 
     document.getElementById('btn-text').textContent = 'Submit Application';
@@ -852,11 +865,10 @@
   // ── RESET ──
   function resetForm() {
     if (!confirm('Are you sure you want to clear all entered data?')) return;
-    ['full_name','father_name','aadhar_number','mobile','email','permanent_address','pincode',
-     'institution','percentage','purpose'].forEach(id => document.getElementById(id).value = '');
-    ['date_of_birth','start_date'].forEach(id => document.getElementById(id).value = '');
-    ['gender','category','district','qualification','specialization','year_of_passing',
-     'internship_type','preferred_circle','duration'].forEach(id => document.getElementById(id).selectedIndex = 0);
+    ['full_name','aadhar_number','mobile','email','permanent_address',
+     'institution','percentage','roll_number','degree','branch','year_of_study'].forEach(id => document.getElementById(id).value = '');
+    ['date_of_birth'].forEach(id => document.getElementById(id).value = '');
+    ['gender','category','internship_id', 'college_category'].forEach(id => document.getElementById(id).selectedIndex = 0);
     document.getElementById('decl1').checked = false;
     document.getElementById('decl2').checked = false;
     document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
@@ -892,15 +904,12 @@
 
         const grid = document.getElementById('status-grid-data');
         const items = [
-          ['Application ID', d.application_id],
-          ['Applicant Name', d.full_name],
-          ['Mobile', d.mobile],
-          ['Email', d.email],
-          ['Internship Type', d.internship_type],
-          ['Preferred Circle', d.preferred_circle],
-          ['Duration', d.duration],
-          ['Start Date', d.start_date],
-          ['Submitted On', d.submitted_at]
+          ['Tracking ID', d.trackingId],
+          ['Applicant Name', d.student?.fullName],
+          ['Mobile', d.student?.phone],
+          ['Internship', d.internship?.title],
+          ['Department', d.internship?.department],
+          ['Submitted On', new Date(d.createdAt).toLocaleDateString()]
         ];
         grid.innerHTML = items.map(([l,v]) =>
           `<div class="status-item"><div class="s-label">${l}</div><div class="s-val">${v || '—'}</div></div>`
@@ -908,7 +917,7 @@
       } else {
         document.getElementById('status-badge-el').innerHTML = '';
         document.getElementById('status-grid-data').innerHTML =
-          '<p style="color:var(--aptred);font-weight:600">❌ No application found with this ID. Please verify and try again.</p>';
+          '<p style="color:var(--aptred);font-weight:600">❌ ' + data.message + '</p>';
       }
     } catch(e) {
       alert('Unable to connect to server. Ensure backend is running.\n' + e.message);

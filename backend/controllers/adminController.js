@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { autoShortlist } = require('../utils/shortlistingEngine');
 const xl = require('exceljs');
 
 /**
@@ -34,8 +33,7 @@ const getApplications = async (req, res) => {
     try {
         const applications = await prisma.application.findMany({
             where: { internshipId: req.params.id },
-            include: { student: true, documents: true },
-            orderBy: { score: 'desc' }
+            include: { student: true, documents: true }
         });
         res.status(200).json({ success: true, data: applications });
     } catch (error) {
@@ -44,117 +42,7 @@ const getApplications = async (req, res) => {
     }
 };
 
-/**
- * @desc    Update Scoring Weights
- * @route   PUT /api/v1/admin/config/weights
- * @access  Private (Admin)
- */
-const updateWeights = async (req, res) => {
-    try {
-        const { collegeWeight, cgpaWeight, experienceWeight, nirfWeight } = req.body;
 
-        // Ensure weights add up to 100
-        const total = parseFloat(collegeWeight) + parseFloat(cgpaWeight) + parseFloat(experienceWeight) + parseFloat(nirfWeight);
-        if (total !== 100) {
-            return res.status(400).json({ success: false, message: 'Weights must add up to 100' });
-        }
-
-        // Upsert the single global rule record
-        let rule = await prisma.automationRule.findFirst();
-
-        if (rule) {
-            rule = await prisma.automationRule.update({
-                where: { id: rule.id },
-                data: { collegeWeight, cgpaWeight, experienceWeight, nirfWeight }
-            });
-        } else {
-            rule = await prisma.automationRule.create({
-                data: { collegeWeight, cgpaWeight, experienceWeight, nirfWeight }
-            });
-        }
-
-        res.status(200).json({ success: true, data: rule, message: 'Weights updated successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
-/**
- * @desc    Get Scoring Weights
- * @route   GET /api/v1/admin/config/weights
- * @access  Private (Admin)
- */
-const getWeights = async (req, res) => {
-    try {
-        const rule = await prisma.automationRule.findFirst();
-        res.status(200).json({ success: true, data: rule });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
-/**
- * @desc    Trigger Auto-Shortlist for an Internship
- * @route   POST /api/v1/admin/internships/:id/shortlist
- * @access  Private (Admin)
- */
-const triggerShortlisting = async (req, res) => {
-    try {
-        const internshipId = req.params.id;
-
-        const internship = await prisma.internship.findUnique({
-            where: { id: internshipId }
-        });
-
-        if (!internship) return res.status(404).json({ success: false, message: 'Internship not found' });
-
-        // Get all PENDING applications
-        const applications = await prisma.application.findMany({
-            where: { internshipId, status: 'PENDING' },
-            include: { student: true, documents: true }
-        });
-
-        if (applications.length === 0) {
-            return res.status(400).json({ success: false, message: 'No pending applications to shortlist' });
-        }
-
-        // Execute shortlisting engine (which internally expects .score property already populated at application time)
-        const sortedDocs = applications.sort((a, b) => b.score - a.score); // Simple rank step
-
-        const result = autoShortlist(sortedDocs, internship.openingsCount);
-
-        // Update database: Top candidates stay PENDING for admin review, bottom candidates are REJECTED
-        const rejectedIds = result.automaticallyRejected.map(app => app.id);
-        const reviewIds = result.candidatesToReview.map(app => app.id);
-
-        // This acts as the "70% automated shortlisting" gate
-        await prisma.application.updateMany({
-            where: { id: { in: rejectedIds } },
-            data: { status: 'REJECTED' }
-        });
-
-        // The candidatesToReview are now SHORTLISTED (which meant manual review phase per prompt logic) 
-        // Or we could leave them PENDING and let Admin SHORTLIST/HIRE them.
-        await prisma.application.updateMany({
-            where: { id: { in: reviewIds } },
-            data: { status: 'SHORTLISTED' }
-        });
-
-        res.status(200).json({
-            success: true,
-            summary: {
-                totalApplicationsProcessed: applications.length,
-                automaticallyRejected: rejectedIds.length,
-                shortlistedForReview: reviewIds.length
-            }
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
 
 /**
  * @desc    Manually Update Application Status (Hire / Reject)
@@ -186,8 +74,7 @@ const exportApplications = async (req, res) => {
 
         const applications = await prisma.application.findMany({
             where: { internshipId },
-            include: { student: true, documents: true },
-            orderBy: { score: 'desc' }
+            include: { student: true, documents: true }
         });
 
         const workbook = new xl.Workbook();
@@ -200,7 +87,6 @@ const exportApplications = async (req, res) => {
             { header: 'College', key: 'college', width: 30 },
             { header: 'CGPA', key: 'cgpa', width: 10 },
             { header: 'NIRF Rank', key: 'nirf', width: 10 },
-            { header: 'Score', key: 'score', width: 10 },
             { header: 'Status', key: 'status', width: 15 },
             { header: 'Resume URL', key: 'resume', width: 40 },
             { header: 'Principal Ltr URL', key: 'p_letter', width: 40 },
@@ -223,7 +109,6 @@ const exportApplications = async (req, res) => {
                 college: `${app.student.collegeName} (${app.student.collegeCategory})`,
                 cgpa: app.student.cgpa,
                 nirf: app.student.nirfRanking || 'N/A',
-                score: app.score,
                 status: app.status,
                 resume: resumeDoc ? resumeDoc.url : 'Missing',
                 p_letter: principalDoc ? principalDoc.url : 'Missing',
@@ -245,9 +130,6 @@ const exportApplications = async (req, res) => {
 
 module.exports = {
     createInternship,
-    updateWeights,
-    getWeights,
-    triggerShortlisting,
     updateApplicationStatus,
     exportApplications,
     getApplications

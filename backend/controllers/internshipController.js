@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { calculateScore } = require('../utils/shortlistingEngine');
 
 /**
  * @desc    Apply to an internship
@@ -35,49 +34,32 @@ const applyForInternship = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please complete your student profile before applying' });
         }
 
-        // 4. Ensure documents are uploaded
-        if (!req.files || Object.keys(req.files).length < 3) {
-            return res.status(400).json({ success: false, message: 'Please upload Resume, Principal Letter, and HOD Letter' });
-        }
+        // 4. Ensure documents are uploaded (Optional for testing)
+        // Map uploaded files to variables if they exist
+        const resumeFile = req.files && req.files['resume'] ? req.files['resume'][0] : null;
+        const principalLetterFile = req.files && req.files['principalLetter'] ? req.files['principalLetter'][0] : null;
+        const hodLetterFile = req.files && req.files['hodLetter'] ? req.files['hodLetter'][0] : null;
 
-        // Map uploaded files to variables
-        const resumeFile = req.files['resume'] ? req.files['resume'][0] : null;
-        const principalLetterFile = req.files['principalLetter'] ? req.files['principalLetter'][0] : null;
-        const hodLetterFile = req.files['hodLetter'] ? req.files['hodLetter'][0] : null;
-
-        if (!resumeFile || !principalLetterFile || !hodLetterFile) {
-            return res.status(400).json({ success: false, message: 'Missing one or more required documents' });
-        }
-
-        // 5. Fetch Automation Weights
-        // Assuming there's only one global rule record, we grab the first one
-        let weights = await prisma.automationRule.findFirst();
-        if (!weights) {
-            // Provide default fallback if admin hasn't configured it
-            weights = { collegeWeight: 40, cgpaWeight: 30, experienceWeight: 20, nirfWeight: 10 };
-        }
-
-        // 6. Calculate initial score from engine
-        const score = calculateScore(profile, weights);
-
-        // 7. Create Application
+        // 5. Create Application
         const application = await prisma.application.create({
             data: {
                 studentId: profile.id, // Linking to StudentProfile ID, not User ID
                 internshipId: internship.id,
-                score: score,
                 status: 'PENDING'
             }
         });
 
-        // 8. Create Document records
-        await prisma.document.createMany({
-            data: [
-                { applicationId: application.id, type: 'RESUME', url: resumeFile.path },
-                { applicationId: application.id, type: 'PRINCIPAL_LETTER', url: principalLetterFile.path },
-                { applicationId: application.id, type: 'HOD_LETTER', url: hodLetterFile.path }
-            ]
-        });
+        // 8. Create Document records ONLY if provided
+        const docPromises = [];
+        if (resumeFile) docPromises.push({ applicationId: application.id, type: 'RESUME', url: resumeFile.path });
+        if (principalLetterFile) docPromises.push({ applicationId: application.id, type: 'PRINCIPAL_LETTER', url: principalLetterFile.path });
+        if (hodLetterFile) docPromises.push({ applicationId: application.id, type: 'HOD_LETTER', url: hodLetterFile.path });
+
+        if (docPromises.length > 0) {
+            await prisma.document.createMany({
+                data: docPromises
+            });
+        }
 
         res.status(201).json({
             success: true,

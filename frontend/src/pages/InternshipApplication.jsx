@@ -74,14 +74,10 @@ const InternshipApplication = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!resume || !principalLetter || !hodLetter) {
-            return setError('Please attach all mandatory documents (Resume, Principal Letter, HOD Letter).');
-        }
-
         const formData = new FormData();
-        formData.append('resume', resume);
-        formData.append('principalLetter', principalLetter);
-        formData.append('hodLetter', hodLetter);
+        if (resume) formData.append('resume', resume);
+        if (principalLetter) formData.append('principalLetter', principalLetter);
+        if (hodLetter) formData.append('hodLetter', hodLetter);
 
         setSubmitting(true);
         setError('');
@@ -141,11 +137,10 @@ const InternshipApplication = () => {
                                 <label className="block text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
                                     <FileType size={16} className="text-primary" /> Resume / CV
                                 </label>
-                                <p className="text-xs text-muted mb-2">Submit your current professional resume highlighting skills and projects.</p>
+                                <p className="text-xs text-muted mb-2">Submit your current professional resume highlighting skills and projects. (Optional for Testing)</p>
                                 <input
                                     type="file"
                                     accept="application/pdf"
-                                    required
                                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-blue-800"
                                     onChange={(e) => handleFileChange(e, setResume)}
                                 />
@@ -156,11 +151,10 @@ const InternshipApplication = () => {
                                 <label className="block text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
                                     <FileType size={16} className="text-primary" /> Principal Recommendation Letter
                                 </label>
-                                <p className="text-xs text-muted mb-2">Official letter signed by your college Principal.</p>
+                                <p className="text-xs text-muted mb-2">Official letter signed by your college Principal. (Optional for Testing)</p>
                                 <input
                                     type="file"
                                     accept="application/pdf"
-                                    required
                                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-blue-800"
                                     onChange={(e) => handleFileChange(e, setPrincipalLetter)}
                                 />
@@ -171,11 +165,10 @@ const InternshipApplication = () => {
                                 <label className="block text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
                                     <FileType size={16} className="text-primary" /> HOD Acknowledgement Letter
                                 </label>
-                                <p className="text-xs text-muted mb-2">Acknowledge letter from your Head of Department.</p>
+                                <p className="text-xs text-muted mb-2">Acknowledge letter from your Head of Department. (Optional for Testing)</p>
                                 <input
                                     type="file"
                                     accept="application/pdf"
-                                    required
                                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-blue-800"
                                     onChange={(e) => handleFileChange(e, setHodLetter)}
                                 />

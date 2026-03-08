@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
-import { Play, Check, X, Eye, FileText, User } from 'lucide-react';
+import { Check, X, FileText, User } from 'lucide-react';
 
 const AdminApplicationReview = () => {
     const { id } = useParams();
@@ -10,7 +10,6 @@ const AdminApplicationReview = () => {
     const [internship, setInternship] = useState(null);
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [runningAutomation, setRunningAutomation] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -37,21 +36,6 @@ const AdminApplicationReview = () => {
             setError("Could not load applications. Ensure API endpoint exists.");
         } finally {
             setLoading(false);
-        }
-    };
-
-    const triggerAutomation = async () => {
-        if (!window.confirm("Run Automated Scoring Engine? This will automatically reject candidates based on your weight config.")) return;
-
-        setRunningAutomation(true);
-        try {
-            const res = await api.post(`/admin/internships/${id}/shortlist`);
-            alert(`Automation Complete! Processed ${res.data.summary.totalApplicationsProcessed} | Shortlisted for review: ${res.data.summary.shortlistedForReview} | Automatically Rejected: ${res.data.summary.automaticallyRejected}`);
-            fetchData(); // Refresh list
-        } catch (err) {
-            alert(err.response?.data?.message || 'Automation Failed');
-        } finally {
-            setRunningAutomation(false);
         }
     };
 
@@ -85,22 +69,16 @@ const AdminApplicationReview = () => {
                     <p className="text-muted ml-9 mt-1">Total Openings Available: <strong>{internship?.openingsCount}</strong></p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
                     <a href={`http://localhost:5000/api/v1/admin/internships/${id}/export`} target="_blank" rel="noreferrer" className="btn-secondary">
                         Export Report (Excel)
                     </a>
-                    <button
-                        onClick={triggerAutomation}
-                        disabled={runningAutomation || stats.pending === 0}
-                        className={`font-semibold py-2 px-4 rounded transition-colors shadow-sm flex items-center gap-2 ${stats.pending > 0 ? 'bg-accent hover:bg-yellow-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
-                    >
-                        <Play size={18} fill="currentColor" />
-                        {runningAutomation ? 'Running Engine...' : `Auto Shortlist Pending (${stats.pending})`}
-                    </button>
                 </div>
             </div>
 
             {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-6">{error}</div>}
+
+
 
             <div className="grid grid-cols-5 gap-4 mb-6 text-center">
                 <div className="bg-white p-3 rounded shadow-sm border border-gray-100">
@@ -120,7 +98,7 @@ const AdminApplicationReview = () => {
                     <p className="text-xl font-bold text-green-700">{stats.hired}</p>
                 </div>
                 <div className="bg-red-50 p-3 rounded shadow-sm border border-red-100">
-                    <p className="text-xs font-bold text-red-600 uppercase">Auto-Rejected</p>
+                    <p className="text-xs font-bold text-red-600 uppercase">Rejected</p>
                     <p className="text-xl font-bold text-red-700">{stats.rejected}</p>
                 </div>
             </div>
@@ -135,14 +113,13 @@ const AdminApplicationReview = () => {
                                 <th className="p-3 text-sm font-bold text-gray-700">Student Name</th>
                                 <th className="p-3 text-sm font-bold text-gray-700">College / NIRF</th>
                                 <th className="p-3 text-sm font-bold text-gray-700">CGPA</th>
-                                <th className="p-3 text-sm font-bold text-gray-700">Auto Score</th>
                                 <th className="p-3 text-sm font-bold text-gray-700">Status</th>
                                 <th className="p-3 text-sm font-bold text-gray-700">Docs</th>
                                 <th className="p-3 text-sm font-bold text-gray-700 text-center">Manual Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {applications.map(app => (
+                            {applications.map((app, idx) => (
                                 <tr key={app.id} className="border-b hover:bg-gray-50">
                                     <td className="p-3">
                                         <div className="font-semibold text-secondary flex items-center gap-2">
@@ -152,15 +129,12 @@ const AdminApplicationReview = () => {
                                     </td>
                                     <td className="p-3">
                                         <div className="text-sm font-medium">{app.student.collegeName}</div>
-                                        <div className="text-xs text-muted flex items-center gap-2">
-                                            <span className="font-bold">Tier:</span> {app.student.collegeCategory}
+                                        <div className="text-xs text-muted flex items-center gap-2 mt-1">
+                                            <span className="font-bold">Tier:</span> <span className="px-2 bg-gray-200 rounded">{app.student.collegeCategory}</span>
                                             {app.student.nirfRanking && <><span className="font-bold ml-1">NIRF:</span> {app.student.nirfRanking}</>}
                                         </div>
                                     </td>
                                     <td className="p-3 font-semibold text-center">{app.student.cgpa}</td>
-                                    <td className="p-3">
-                                        <div className="font-bold text-lg text-primary">{Math.round(app.score)}</div>
-                                    </td>
                                     <td className="p-3">
                                         <span className={`text-xs px-2 py-1 rounded-full font-bold
                                             ${app.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :

@@ -80,6 +80,5 @@ npm run dev
 1. Open `http://localhost:5173/` in your browser.
 2. Log in with the default admin credentials.
 3. **Manage Internships**: Create new internship openings. These will automatically appear in the student portal dropdown.
-4. **View Applications**: See all student submissions, their automated scores, and documents.
-5. **Shortlist**: Approve or Reject candidates. Students will see these updates on the tracking page.
-6. **Automation**: Configure scoring weights for automated shortlisting based on CGPA and college category.
+4. **View Applications**: See all student submissions and documents.
+5. **Shortlist**: Manually Approve or Reject candidates. Students will see these updates on the tracking page.

@@ -5,9 +5,7 @@ import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
     const [internships, setInternships] = useState([]);
-    const [weights, setWeights] = useState({ collegeWeight: 40, cgpaWeight: 30, experienceWeight: 20, nirfWeight: 10 });
     const [loading, setLoading] = useState(true);
-    const [savingWeights, setSavingWeights] = useState(false);
 
     // Stats
     const [stats, setStats] = useState({ totalOpenings: 0, activeInternships: 0 });
@@ -19,17 +17,10 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [intRes, weightRes] = await Promise.all([
-                api.get('/internships'),
-                api.get('/admin/config/weights')
-            ]);
+            const intRes = await api.get('/internships');
 
             const ints = intRes.data.data;
             setInternships(ints);
-
-            if (weightRes.data.data) {
-                setWeights(weightRes.data.data);
-            }
 
             // Calc Stats
             const totalOpenings = ints.reduce((sum, current) => sum + current.openingsCount, 0);
@@ -39,23 +30,6 @@ const AdminDashboard = () => {
             console.error(error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleWeightChange = (e) => {
-        setWeights({ ...weights, [e.target.name]: parseFloat(e.target.value) || 0 });
-    };
-
-    const saveWeights = async (e) => {
-        e.preventDefault();
-        setSavingWeights(true);
-        try {
-            await api.put('/admin/config/weights', weights);
-            alert('Scoring weights updated successfully!');
-        } catch (error) {
-            alert(error.response?.data?.message || 'Failed to update weights.');
-        } finally {
-            setSavingWeights(false);
         }
     };
 
@@ -84,7 +58,7 @@ const AdminDashboard = () => {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* Main Content: Internships Management */}
-                <div className="xl:col-span-2">
+                <div className="xl:col-span-3">
                     <div className="card h-full">
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                             <Briefcase className="text-primary" /> Manage Internships
@@ -131,52 +105,6 @@ const AdminDashboard = () => {
                                 </table>
                             </div>
                         )}
-                    </div>
-                </div>
-
-                {/* Sidebar: Engine Configuration */}
-                <div className="xl:col-span-1">
-                    <div className="card h-full bg-slate-50 border-slate-200">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
-                            <Settings className="text-slate-600" /> Automation Rules
-                        </h2>
-                        <p className="text-sm text-slate-600 mb-6">
-                            Configure the AI Scoring Engine weights determining how 70% of candidates are automatically evaluated. **Total must equal 100%.**
-                        </p>
-
-                        <form onSubmit={saveWeights} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700">College Category Weight (%)</label>
-                                <input type="number" name="collegeWeight" className="input-field mt-1" value={weights.collegeWeight} onChange={handleWeightChange} required />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700">CGPA Weight (%)</label>
-                                <input type="number" name="cgpaWeight" className="input-field mt-1" value={weights.cgpaWeight} onChange={handleWeightChange} required />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700">Internship/Projects Exp. Weight (%)</label>
-                                <input type="number" name="experienceWeight" className="input-field mt-1" value={weights.experienceWeight} onChange={handleWeightChange} required />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700">NIRF Ranking Weight (%)</label>
-                                <input type="number" name="nirfWeight" className="input-field mt-1" value={weights.nirfWeight} onChange={handleWeightChange} required />
-                            </div>
-
-                            <div className="pt-4 border-t border-slate-200">
-                                <div className="flex justify-between items-center mb-4">
-                                    <span className="text-sm font-bold text-slate-700">Total Check:</span>
-                                    <span className={`font-bold ${weights.collegeWeight + weights.cgpaWeight + weights.experienceWeight + weights.nirfWeight === 100 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {weights.collegeWeight + weights.cgpaWeight + weights.experienceWeight + weights.nirfWeight}%
-                                    </span>
-                                </div>
-                                <button type="submit" className="w-full btn-primary" disabled={savingWeights || (weights.collegeWeight + weights.cgpaWeight + weights.experienceWeight + weights.nirfWeight !== 100)}>
-                                    {savingWeights ? 'Saving...' : 'Update Weights'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             </div>
