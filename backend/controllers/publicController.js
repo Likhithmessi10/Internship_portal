@@ -11,9 +11,9 @@ const submitApplication = async (req, res) => {
     try {
         const {
             rollNumber, fullName, phone, dob, address, aadhar,
-            collegeName, university, degree, branch,
+            collegeName, collegeCode, university, degree, branch,
             yearOfStudy, cgpa, collegeCategory, nirfRanking,
-            internshipId,
+            internshipId, preferredCircle, duration, startDate,
             hasExperience, hasProjects, hasCertifications,
             experienceDesc, projectsDesc, skills
         } = req.body;
@@ -34,7 +34,8 @@ const submitApplication = async (req, res) => {
             address,
             aadhar,
             collegeName,
-            university,
+            collegeCode: collegeCode || null,
+            university: university || 'Other',
             degree,
             branch,
             yearOfStudy: parseInt(yearOfStudy),
@@ -91,7 +92,10 @@ const submitApplication = async (req, res) => {
                 trackingId,
                 studentId: student.id,
                 internshipId,
-                status: 'PENDING'
+                status: 'PENDING',
+                preferredCircle: preferredCircle || null,
+                duration: duration || null,
+                startDate: startDate || null
             }
         });
 
@@ -101,6 +105,8 @@ const submitApplication = async (req, res) => {
                 let type = 'RESUME';
                 if (file.fieldname === 'principalLetter') type = 'PRINCIPAL_LETTER';
                 if (file.fieldname === 'hodLetter') type = 'HOD_LETTER';
+                if (file.fieldname === 'nocLetter') type = 'NOC_LETTER';
+                if (file.fieldname === 'marksheet') type = 'MARKSHEET';
 
                 return {
                     applicationId: application.id,

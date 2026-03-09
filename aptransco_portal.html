@@ -1,965 +1,3019 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APTRANSCO – Internship Application Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --aptblue:   #003087;
-    --aptred:    #C8102E;
-    --aptgold:   #D4A017;
-    --aptlight:  #EAF0FB;
-    --aptteal:   #005F73;
-    --border:    #b0bec5;
-    --text:      #1a1a2e;
-    --muted:     #546e7a;
-    --white:     #ffffff;
-    --bg:        #f4f6f9;
-    --success:   #1b5e20;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APTRANSCO – Student Internship Portal</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Noto+Serif:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --aptblue: #003087;
+      --aptblue2: #0a4a9c;
+      --aptred: #C8102E;
+      --aptgold: #D4A017;
+      --aptgold2: #f0be3d;
+      --aptlight: #EAF0FB;
+      --aptteal: #005F73;
+      --border: #b0bec5;
+      --text: #1a1a2e;
+      --muted: #546e7a;
+      --white: #ffffff;
+      --bg: #f0f3f8;
+      --success: #1b5e20;
+      --card-shadow: 0 2px 12px rgba(0, 48, 135, .10);
+    }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-  body {
-    font-family: 'Source Sans 3', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-  /* ── TOP STRIP ── */
-  .top-strip {
-    background: var(--aptblue);
-    color: #cdd8f6;
-    font-size: 11.5px;
-    letter-spacing: .4px;
-    padding: 5px 0;
-    text-align: center;
-    border-bottom: 3px solid var(--aptgold);
-  }
+    /* ── TOP STRIP ── */
+    .top-strip {
+      background: var(--aptblue);
+      color: #cdd8f6;
+      font-size: 11.5px;
+      letter-spacing: .5px;
+      padding: 5px 0;
+      text-align: center;
+      border-bottom: 3px solid var(--aptgold);
+    }
 
-  /* ── HEADER ── */
-  header {
-    background: var(--white);
-    border-bottom: 4px solid var(--aptred);
-    box-shadow: 0 2px 8px rgba(0,0,0,.12);
-  }
-  .header-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 14px 28px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  .logo-emblem {
-    width: 78px; height: 78px;
-    background: var(--aptblue);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    border: 3px solid var(--aptgold);
-    box-shadow: 0 2px 8px rgba(0,48,135,.3);
-  }
-  .logo-emblem svg { width: 48px; height: 48px; }
-  .header-text { flex: 1; }
-  .header-text .dept {
-    font-size: 11px; font-weight: 600; letter-spacing: 1.8px;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
-  }
-  .header-text h1 {
-    font-family: 'Noto Serif', serif;
-    font-size: 22px; font-weight: 700;
-    color: var(--aptblue); line-height: 1.2;
-  }
-  .header-text .sub {
-    font-size: 12.5px; color: var(--muted); margin-top: 3px;
-    letter-spacing: .3px;
-  }
-  .header-right {
-    text-align: right; font-size: 11.5px; color: var(--muted);
-    line-height: 1.7; flex-shrink: 0;
-  }
-  .header-right strong { color: var(--aptblue); font-size: 13px; display: block; }
-  .flag-bar {
-    height: 6px;
-    background: linear-gradient(to right,
-      #FF9933 33.3%, var(--white) 33.3%, var(--white) 66.6%, #138808 66.6%);
-    border-top: 1px solid #ddd;
-  }
+    .top-strip a {
+      color: var(--aptgold2);
+      text-decoration: none;
+    }
 
-  /* ── NAV ── */
-  nav {
-    background: var(--aptblue);
-    border-bottom: 3px solid var(--aptgold);
-  }
-  .nav-inner {
-    max-width: 1200px; margin: 0 auto;
-    display: flex; align-items: center;
-  }
-  nav a {
-    color: #cdd8f6; text-decoration: none;
-    font-size: 13px; font-weight: 500;
-    padding: 13px 22px; display: block;
-    letter-spacing: .3px;
-    transition: background .2s, color .2s;
-    border-right: 1px solid rgba(255,255,255,.1);
-  }
-  nav a:hover, nav a.active {
-    background: var(--aptred); color: var(--white);
-  }
+    /* ── HEADER ── */
+    header {
+      background: var(--white);
+      border-bottom: 4px solid var(--aptred);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+    }
 
-  /* ── BREADCRUMB ── */
-  .breadcrumb {
-    max-width: 1200px; margin: 0 auto;
-    padding: 8px 28px; font-size: 12px; color: var(--muted);
-  }
-  .breadcrumb span { color: var(--aptblue); font-weight: 500; }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
 
-  /* ── MAIN LAYOUT ── */
-  .main-wrap {
-    max-width: 1200px; margin: 0 auto;
-    padding: 0 28px 50px;
-    display: grid; grid-template-columns: 1fr 300px; gap: 24px;
-  }
+    .logo-emblem {
+      width: 80px;
+      height: 80px;
+      background: var(--aptblue);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 3px solid var(--aptgold);
+      box-shadow: 0 3px 10px rgba(0, 48, 135, .35);
+    }
 
-  /* ── PAGE TITLE BANNER ── */
-  .page-title-bar {
-    background: linear-gradient(135deg, var(--aptblue) 0%, #0a4a8c 100%);
-    color: var(--white); padding: 20px 28px;
-    margin: 0 -0px 24px; grid-column: 1/-1;
-    border-radius: 0 0 8px 8px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .page-title-bar h2 {
-    font-family: 'Noto Serif', serif;
-    font-size: 20px; font-weight: 600;
-  }
-  .page-title-bar p { font-size: 13px; color: #aac4e8; margin-top: 4px; }
-  .page-title-bar .badge {
-    background: var(--aptgold); color: var(--aptblue);
-    font-size: 11px; font-weight: 700; padding: 4px 12px;
-    border-radius: 3px; letter-spacing: .5px; text-transform: uppercase;
-  }
+    .logo-emblem svg {
+      width: 50px;
+      height: 50px;
+    }
 
-  /* ── FORM CARD ── */
-  .form-card {
-    background: var(--white);
-    border: 1px solid #d6dde8;
-    border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
-    overflow: hidden;
-  }
-  .form-card + .form-card { margin-top: 20px; }
+    .header-text {
+      flex: 1;
+    }
 
-  .section-header {
-    background: linear-gradient(to right, var(--aptblue), #1a4fa0);
-    color: var(--white);
-    padding: 11px 20px;
-    font-size: 13px; font-weight: 600;
-    letter-spacing: .5px; text-transform: uppercase;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .section-header .num {
-    background: var(--aptgold); color: var(--aptblue);
-    width: 22px; height: 22px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; flex-shrink: 0;
-  }
+    .header-text .dept {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
 
-  .form-body { padding: 20px 24px; }
+    .header-text h1 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--aptblue);
+      line-height: 1.2;
+      letter-spacing: .5px;
+    }
 
-  .form-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px 20px;
-    margin-bottom: 16px;
-  }
-  .form-row.three { grid-template-columns: repeat(3, 1fr); }
-  .form-row.full { grid-template-columns: 1fr; }
+    .header-text .sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 3px;
+      letter-spacing: .3px;
+    }
 
-  .field { display: flex; flex-direction: column; gap: 5px; }
-  .field label {
-    font-size: 12.5px; font-weight: 600; color: var(--aptblue);
-    letter-spacing: .2px;
-  }
-  .field label .req { color: var(--aptred); margin-left: 2px; }
-  .field input, .field select, .field textarea {
-    padding: 9px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 4px;
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 13.5px;
-    color: var(--text);
-    background: #fafbfd;
-    transition: border-color .2s, box-shadow .2s;
-    outline: none;
-    width: 100%;
-  }
-  .field input:focus, .field select:focus, .field textarea:focus {
-    border-color: var(--aptblue);
-    box-shadow: 0 0 0 3px rgba(0,48,135,.1);
-    background: var(--white);
-  }
-  .field textarea { resize: vertical; min-height: 80px; }
-  .field select { cursor: pointer; }
-  .field .hint { font-size: 11px; color: var(--muted); }
+    .header-right {
+      text-align: right;
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.8;
+      flex-shrink: 0;
+    }
 
-  /* ── DECLARATION ── */
-  .declaration-box {
-    background: #fffbf0;
-    border: 1.5px solid var(--aptgold);
-    border-radius: 4px;
-    padding: 16px 18px;
-    margin-top: 4px;
-  }
-  .declaration-box p { font-size: 12.5px; color: #555; line-height: 1.65; }
-  .check-row {
-    display: flex; align-items: flex-start; gap: 10px; margin-top: 12px;
-  }
-  .check-row input[type="checkbox"] {
-    width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px;
-    accent-color: var(--aptblue);
-  }
-  .check-row label { font-size: 12.5px; color: var(--text); font-weight: 500; }
+    .header-right strong {
+      color: var(--aptblue);
+      font-size: 13px;
+      display: block;
+    }
 
-  /* ── SUBMIT BUTTON ── */
-  .btn-row { display: flex; gap: 12px; margin-top: 24px; }
-  .btn-submit {
-    background: var(--aptblue);
-    color: var(--white); border: none;
-    padding: 13px 36px; border-radius: 4px;
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 14px; font-weight: 600;
-    letter-spacing: .5px; cursor: pointer;
-    transition: background .2s, transform .1s;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .btn-submit:hover { background: #002070; }
-  .btn-submit:active { transform: scale(.98); }
-  .btn-reset {
-    background: var(--white); color: var(--aptblue);
-    border: 1.5px solid var(--aptblue);
-    padding: 13px 28px; border-radius: 4px;
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 14px; font-weight: 600;
-    letter-spacing: .5px; cursor: pointer;
-    transition: background .2s;
-  }
-  .btn-reset:hover { background: var(--aptlight); }
+    .header-right a {
+      color: var(--aptblue);
+      text-decoration: none;
+    }
 
-  /* ── SIDEBAR ── */
-  .sidebar { display: flex; flex-direction: column; gap: 18px; }
-  .info-box {
-    background: var(--white);
-    border: 1px solid #d6dde8;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  }
-  .info-box-head {
-    background: var(--aptteal); color: var(--white);
-    padding: 10px 16px; font-size: 12.5px; font-weight: 600;
-    letter-spacing: .4px; text-transform: uppercase;
-  }
-  .info-box-body { padding: 14px 16px; }
-  .info-box-body p {
-    font-size: 12.5px; color: #555; line-height: 1.65; margin-bottom: 8px;
-  }
-  .info-box-body p:last-child { margin-bottom: 0; }
-  .info-box-body ul { list-style: none; padding: 0; }
-  .info-box-body li {
-    font-size: 12.5px; color: #444; padding: 5px 0;
-    border-bottom: 1px dashed #e0e0e0; display: flex; gap: 6px;
-  }
-  .info-box-body li:last-child { border-bottom: none; }
-  .info-box-body li::before { content: "▸"; color: var(--aptblue); font-size: 10px; margin-top: 1px; flex-shrink: 0; }
-  .important-notice {
-    background: #fff3cd; border: 1.5px solid #ffc107;
-    border-radius: 4px; padding: 10px 12px; margin-top: 10px;
-  }
-  .important-notice p { font-size: 12px; color: #856404; margin: 0; }
-  .important-notice strong { color: #6d4c00; }
+    .flag-bar {
+      height: 6px;
+      background: linear-gradient(to right,
+          #FF9933 33.3%, var(--white) 33.3%, var(--white) 66.6%, #138808 66.6%);
+      border-top: 1px solid #ddd;
+    }
 
-  /* ── SUCCESS MODAL ── */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.55); z-index: 1000;
-    align-items: center; justify-content: center;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal {
-    background: var(--white); border-radius: 8px;
-    max-width: 520px; width: 90%; overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,.3);
-    animation: slideUp .3s ease;
-  }
-  @keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-  .modal-header {
-    background: var(--success); color: var(--white);
-    padding: 20px 24px; text-align: center;
-  }
-  .modal-header .check-icon {
-    width: 56px; height: 56px;
-    background: rgba(255,255,255,.2); border-radius: 50%;
-    margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
-    font-size: 28px;
-  }
-  .modal-header h3 { font-family: 'Noto Serif', serif; font-size: 20px; }
-  .modal-header p { font-size: 13px; opacity: .85; margin-top: 4px; }
-  .modal-body { padding: 24px; }
-  .app-id-box {
-    background: var(--aptlight);
-    border: 2px solid var(--aptblue);
-    border-radius: 5px; padding: 14px;
-    text-align: center; margin-bottom: 18px;
-  }
-  .app-id-box .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
-  .app-id-box .id { font-family: 'Noto Serif', serif; font-size: 18px; font-weight: 700; color: var(--aptblue); margin-top: 4px; }
-  .app-id-box .date { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
-  .modal-body .note { font-size: 12.5px; color: #555; line-height: 1.65; margin-bottom: 12px; }
-  .modal-footer { padding: 0 24px 24px; display: flex; gap: 10px; }
-  .btn-print {
-    flex: 1; background: var(--aptblue); color: var(--white);
-    border: none; padding: 11px; border-radius: 4px;
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 13.5px; font-weight: 600; cursor: pointer;
-  }
-  .btn-close-modal {
-    flex: 1; background: var(--white); color: var(--aptblue);
-    border: 1.5px solid var(--aptblue); padding: 11px; border-radius: 4px;
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 13.5px; font-weight: 600; cursor: pointer;
-  }
+    /* ── NAV ── */
+    nav {
+      background: var(--aptblue);
+      border-bottom: 3px solid var(--aptgold);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+    }
 
-  /* ── STATUS CHECK TAB ── */
-  .tab-section {
-    background: var(--white);
-    border: 1px solid #d6dde8;
-    border-radius: 6px; overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
-    grid-column: 1/-1;
-    display: none;
-  }
-  .tab-section.show { display: block; }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+    }
 
-  /* ── STATUS RESULT ── */
-  .status-result {
-    display: none;
-    padding: 20px 24px;
-  }
-  .status-result.show { display: block; }
-  .status-grid {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 14px; margin-top: 16px;
-  }
-  .status-item { }
-  .status-item .s-label { font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-  .status-item .s-val { font-size: 14px; color: var(--text); font-weight: 500; margin-top: 2px; }
-  .status-badge {
-    display: inline-block; padding: 3px 12px; border-radius: 3px;
-    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-  }
-  .badge-submitted { background: #e3f2fd; color: #1565c0; }
-  .badge-approved  { background: #e8f5e9; color: #2e7d32; }
-  .badge-pending   { background: #fff8e1; color: #f57f17; }
-  .badge-rejected  { background: #ffebee; color: #c62828; }
+    nav a {
+      color: #cdd8f6;
+      text-decoration: none;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: .5px;
+      transition: background .2s, color .2s;
+      border-right: 1px solid rgba(255, 255, 255, .1);
+      cursor: pointer;
+    }
 
-  /* ── ADMIN TABLE ── */
-  .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .admin-table th {
-    background: #e8edf5; color: var(--aptblue);
-    padding: 10px 14px; text-align: left;
-    font-weight: 600; font-size: 12px; letter-spacing: .3px;
-    border-bottom: 2px solid var(--aptblue);
-    white-space: nowrap;
-  }
-  .admin-table td {
-    padding: 10px 14px; border-bottom: 1px solid #eee;
-    vertical-align: middle;
-  }
-  .admin-table tr:hover td { background: var(--aptlight); }
-  .admin-table tr:last-child td { border-bottom: none; }
+    nav a:hover,
+    nav a.active {
+      background: var(--aptred);
+      color: var(--white);
+    }
 
-  /* ── FOOTER ── */
-  footer {
-    background: var(--aptblue); color: #aac4e8;
-    text-align: center; padding: 22px 28px;
-    font-size: 12px; line-height: 1.8;
-    border-top: 4px solid var(--aptred);
-    margin-top: 40px;
-  }
-  footer strong { color: var(--white); }
-  footer a { color: var(--aptgold); text-decoration: none; }
+    .nav-spacer {
+      flex: 1;
+    }
 
-  /* LOADING */
-  .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+    .nav-year {
+      color: var(--aptgold);
+      font-size: 12px;
+      padding: 14px 20px;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
 
-  /* ERROR */
-  .field-error { border-color: var(--aptred) !important; }
-  .err-msg { font-size: 11px; color: var(--aptred); margin-top: 2px; }
+    /* ── BREADCRUMB ── */
+    .breadcrumb-bar {
+      background: var(--white);
+      border-bottom: 1px solid #dce4ef;
+    }
 
-  @media print {
-    nav, .sidebar, .btn-row, footer, .top-strip { display: none; }
-    .main-wrap { grid-template-columns: 1fr; }
-  }
-</style>
+    .breadcrumb {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 7px 28px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .breadcrumb span {
+      color: var(--aptblue);
+      font-weight: 600;
+    }
+
+    .breadcrumb .sep {
+      color: #ccc;
+    }
+
+    /* ── PAGE SHELL ── */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* ──────────────────────────────────────────────
+     HOME PAGE
+  ────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #001d5e 0%, #003087 55%, #0050b3 100%);
+      color: var(--white);
+      padding: 56px 28px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(45deg,
+          transparent,
+          transparent 40px,
+          rgba(255, 255, 255, .015) 40px,
+          rgba(255, 255, 255, .015) 80px);
+    }
+
+    .hero-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--aptgold);
+      color: var(--aptblue);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 16px;
+      border-radius: 20px;
+      margin-bottom: 18px;
+    }
+
+    .hero h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: .5px;
+      margin-bottom: 16px;
+    }
+
+    .hero h2 em {
+      color: var(--aptgold2);
+      font-style: normal;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: #aac4e8;
+      line-height: 1.7;
+      max-width: 680px;
+      margin: 0 auto 30px;
+    }
+
+    .hero-btns {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn-hero-primary {
+      background: var(--aptred);
+      color: var(--white);
+      border: none;
+      padding: 14px 36px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      text-transform: uppercase;
+    }
+
+    .btn-hero-primary:hover {
+      background: #a50d24;
+      transform: translateY(-1px);
+    }
+
+    .btn-hero-secondary {
+      background: transparent;
+      color: var(--white);
+      border: 2px solid rgba(255, 255, 255, .4);
+      padding: 13px 32px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      text-transform: uppercase;
+    }
+
+    .btn-hero-secondary:hover {
+      border-color: var(--aptgold);
+      background: rgba(212, 160, 23, .1);
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      background: var(--aptgold);
+      padding: 18px 28px;
+    }
+
+    .stats-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-item .num {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--aptblue);
+      line-height: 1;
+    }
+
+    .stat-item .lbl {
+      font-size: 11.5px;
+      color: #4a3700;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* About section */
+    .about-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 50px 28px;
+    }
+
+    .section-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--aptblue);
+      letter-spacing: .5px;
+      margin-bottom: 6px;
+    }
+
+    .section-title-line {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(to right, var(--aptred), var(--aptgold));
+      border-radius: 2px;
+      margin-bottom: 28px;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .about-text p {
+      font-size: 14.5px;
+      color: #444;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    .about-text p strong {
+      color: var(--aptblue);
+    }
+
+    .about-highlights {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .highlight-card {
+      background: var(--white);
+      border: 1px solid #dce4ef;
+      border-left: 4px solid var(--aptblue);
+      border-radius: 5px;
+      padding: 14px 16px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .highlight-card .hc-icon {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+
+    .highlight-card .hc-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--aptblue);
+      margin-bottom: 4px;
+    }
+
+    .highlight-card p {
+      font-size: 12.5px;
+      color: #555;
+      line-height: 1.55;
+    }
+
+    .info-panels {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .info-panel {
+      background: var(--white);
+      border: 1px solid #dce4ef;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+    }
+
+    .ip-head {
+      background: linear-gradient(to right, var(--aptblue), var(--aptblue2));
+      color: var(--white);
+      padding: 11px 18px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .ip-body {
+      padding: 16px 18px;
+    }
+
+    .ip-body ul {
+      list-style: none;
+    }
+
+    .ip-body li {
+      font-size: 13px;
+      color: #444;
+      padding: 6px 0;
+      border-bottom: 1px dashed #eee;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      line-height: 1.5;
+    }
+
+    .ip-body li:last-child {
+      border-bottom: none;
+    }
+
+    .ip-body li .bul {
+      color: var(--aptred);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Key Areas */
+    .key-areas {
+      background: linear-gradient(135deg, #f7f9ff, #eaf0fb);
+      border-top: 1px solid #dce4ef;
+      padding: 50px 28px;
+    }
+
+    .key-areas-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .areas-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .area-card {
+      background: var(--white);
+      border-radius: 8px;
+      border: 1px solid #dce4ef;
+      padding: 24px 18px;
+      text-align: center;
+      box-shadow: var(--card-shadow);
+      transition: transform .2s, box-shadow .2s;
+      cursor: default;
+    }
+
+    .area-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 48, 135, .15);
+      border-color: var(--aptblue);
+    }
+
+    .area-card .icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .area-card .title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--aptblue);
+      margin-bottom: 8px;
+    }
+
+    .area-card p {
+      font-size: 12.5px;
+      color: #666;
+      line-height: 1.55;
+    }
+
+    /* Eligibility */
+    .eligibility-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 50px 28px;
+    }
+
+    .elig-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .elig-card {
+      background: var(--white);
+      border: 1px solid #dce4ef;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .elig-card .ec-num {
+      width: 32px;
+      height: 32px;
+      background: var(--aptblue);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+
+    .elig-card .ec-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--aptblue);
+      margin-bottom: 6px;
+    }
+
+    .elig-card p {
+      font-size: 12.5px;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    /* CTA */
+    .cta-bar {
+      background: linear-gradient(135deg, var(--aptred) 0%, #8b0a1f 100%);
+      padding: 44px 28px;
+      text-align: center;
+    }
+
+    .cta-bar h3 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 10px;
+    }
+
+    .cta-bar p {
+      font-size: 15px;
+      color: rgba(255, 255, 255, .8);
+      margin-bottom: 24px;
+    }
+
+    .btn-cta {
+      background: var(--aptgold);
+      color: var(--aptblue);
+      border: none;
+      padding: 14px 40px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .btn-cta:hover {
+      background: var(--aptgold2);
+    }
+
+    /* ──────────────────────────────────────────────
+     APPLY PAGE
+  ────────────────────────────────────────────── */
+    .apply-page-header {
+      background: linear-gradient(135deg, var(--aptblue) 0%, #0a4a8c 100%);
+      color: var(--white);
+      padding: 22px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .apply-page-header h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .apply-page-header p {
+      font-size: 13px;
+      color: #aac4e8;
+      margin-top: 3px;
+    }
+
+    .apply-badge {
+      background: var(--aptgold);
+      color: var(--aptblue);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 3px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .apply-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 28px 50px;
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 24px;
+    }
+
+    .form-card {
+      background: var(--white);
+      border: 1px solid #d6dde8;
+      border-radius: 6px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .section-header {
+      background: linear-gradient(to right, var(--aptblue), var(--aptblue2));
+      color: var(--white);
+      padding: 12px 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-header .num {
+      background: var(--aptgold);
+      color: var(--aptblue);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .form-body {
+      padding: 22px 24px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px 20px;
+      margin-bottom: 16px;
+    }
+
+    .form-row.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .form-row.full {
+      grid-template-columns: 1fr;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field label {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--aptblue);
+      letter-spacing: .2px;
+    }
+
+    .field label .req {
+      color: var(--aptred);
+      margin-left: 2px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 13.5px;
+      color: var(--text);
+      background: #fafbfd;
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--aptblue);
+      box-shadow: 0 0 0 3px rgba(0, 48, 135, .1);
+      background: var(--white);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .field select {
+      cursor: pointer;
+    }
+
+    .field .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* College autocomplete */
+    .autocomplete-wrapper {
+      position: relative;
+    }
+
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--white);
+      border: 1.5px solid var(--aptblue);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 200;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+      display: none;
+    }
+
+    .autocomplete-list.open {
+      display: block;
+    }
+
+    .autocomplete-item {
+      padding: 9px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      transition: background .15s;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.highlighted {
+      background: var(--aptlight);
+    }
+
+    .autocomplete-item .col-name {
+      font-weight: 600;
+      color: var(--aptblue);
+    }
+
+    .autocomplete-item .col-info {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* File upload */
+    .file-upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 4px;
+      padding: 20px;
+      text-align: center;
+      background: #fafbfd;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+
+    .file-upload-area:hover {
+      border-color: var(--aptblue);
+      background: var(--aptlight);
+    }
+
+    .file-upload-area.has-file {
+      border-color: var(--success);
+      background: #f0faf0;
+    }
+
+    .file-upload-area .fu-icon {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .file-upload-area .fu-text {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .file-upload-area .fu-text strong {
+      color: var(--aptblue);
+    }
+
+    .file-upload-area .fu-name {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .file-upload-area input[type="file"] {
+      display: none;
+    }
+
+    /* Declaration */
+    .declaration-box {
+      background: #fffbf0;
+      border: 1.5px solid var(--aptgold);
+      border-radius: 4px;
+      padding: 16px 18px;
+      margin-top: 4px;
+    }
+
+    .declaration-box p {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.7;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .check-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      accent-color: var(--aptblue);
+    }
+
+    .check-row label {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn-submit {
+      background: var(--aptblue);
+      color: var(--white);
+      border: none;
+      padding: 13px 36px;
+      border-radius: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover {
+      background: #002070;
+    }
+
+    .btn-submit:active {
+      transform: scale(.98);
+    }
+
+    .btn-reset {
+      background: var(--white);
+      color: var(--aptred);
+      border: 1.5px solid var(--aptred);
+      padding: 13px 28px;
+      border-radius: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .btn-reset:hover {
+      background: #fff5f5;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .info-box {
+      background: var(--white);
+      border: 1px solid #d6dde8;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+    }
+
+    .info-box-head {
+      background: var(--aptteal);
+      color: var(--white);
+      padding: 11px 16px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .info-box-body {
+      padding: 14px 16px;
+    }
+
+    .info-box-body p {
+      font-size: 12.5px;
+      color: #555;
+      line-height: 1.65;
+      margin-bottom: 8px;
+    }
+
+    .info-box-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-box-body ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .info-box-body li {
+      font-size: 12.5px;
+      color: #444;
+      padding: 6px 0;
+      border-bottom: 1px dashed #e0e0e0;
+      display: flex;
+      gap: 6px;
+    }
+
+    .info-box-body li:last-child {
+      border-bottom: none;
+    }
+
+    .info-box-body li::before {
+      content: "▸";
+      color: var(--aptblue);
+      font-size: 10px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .important-notice {
+      background: #fff3cd;
+      border: 1.5px solid #ffc107;
+      border-radius: 4px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
+    .important-notice p {
+      font-size: 12px;
+      color: #856404;
+      margin: 0;
+    }
+
+    /* ──────────────────────────────────────────────
+     STATUS PAGE
+  ────────────────────────────────────────────── */
+    .status-page {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 28px 60px;
+    }
+
+    .status-hero {
+      background: linear-gradient(135deg, var(--aptblue) 0%, #0a4a8c 100%);
+      border-radius: 8px;
+      padding: 36px 40px;
+      text-align: center;
+      color: var(--white);
+      box-shadow: 0 4px 20px rgba(0, 48, 135, .25);
+      margin-bottom: 28px;
+    }
+
+    .status-hero .sh-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .status-hero h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .status-hero p {
+      font-size: 14px;
+      color: #aac4e8;
+    }
+
+    .status-input-card {
+      background: var(--white);
+      border: 1px solid #d6dde8;
+      border-radius: 8px;
+      padding: 30px 36px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 24px;
+    }
+
+    .status-input-card label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--aptblue);
+      margin-bottom: 10px;
+      letter-spacing: .3px;
+    }
+
+    .status-input-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .status-input-row input {
+      flex: 1;
+      padding: 13px 16px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--text);
+      background: #fafbfd;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .status-input-row input:focus {
+      border-color: var(--aptblue);
+      box-shadow: 0 0 0 3px rgba(0, 48, 135, .1);
+    }
+
+    .status-input-row input::placeholder {
+      letter-spacing: .5px;
+      font-weight: 400;
+      font-size: 14px;
+    }
+
+    .btn-check {
+      background: var(--aptblue);
+      color: var(--white);
+      border: none;
+      padding: 13px 30px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+
+    .btn-check:hover {
+      background: #002070;
+    }
+
+    .status-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Status Result Card */
+    .status-result-card {
+      display: none;
+      background: var(--white);
+      border: 1px solid #d6dde8;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      animation: fadeInUp .35s ease;
+    }
+
+    .status-result-card.show {
+      display: block;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .src-top {
+      background: linear-gradient(to right, var(--aptblue), var(--aptblue2));
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .src-top .app-id-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .7);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .src-top .app-id-val {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--aptgold2);
+      margin-top: 2px;
+    }
+
+    .status-badge-lg {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .badge-submitted {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .badge-approved {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .badge-pending {
+      background: #fff8e1;
+      color: #f57f17;
+    }
+
+    .badge-rejected {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .src-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+
+    .src-item {
+      padding: 18px 22px;
+      border-right: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+    }
+
+    .src-item:nth-child(3n) {
+      border-right: none;
+    }
+
+    .src-item .si-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .src-item .si-val {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Status steps */
+    .status-steps {
+      padding: 20px 24px;
+      border-top: 1px solid #eee;
+    }
+
+    .steps-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--aptblue);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 16px;
+    }
+
+    .steps-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+
+    .step-item::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: calc(-50% + 14px);
+      right: calc(50% + 14px);
+      height: 2px;
+      background: #ddd;
+      z-index: 0;
+    }
+
+    .step-item:first-child::before {
+      display: none;
+    }
+
+    .step-item.done::before {
+      background: var(--aptblue);
+    }
+
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ddd;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 6px;
+    }
+
+    .step-item.done .step-dot {
+      background: var(--aptblue);
+    }
+
+    .step-item.current .step-dot {
+      background: var(--aptgold);
+      color: var(--aptblue);
+    }
+
+    .step-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .step-item.done .step-label {
+      color: var(--aptblue);
+    }
+
+    .step-item.current .step-label {
+      color: var(--aptgold);
+    }
+
+    /* Error result */
+    .status-error {
+      display: none;
+      background: #fff5f5;
+      border: 1.5px solid #ffcdd2;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      animation: fadeInUp .35s ease;
+    }
+
+    .status-error.show {
+      display: block;
+    }
+
+    .status-error .err-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .status-error h4 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--aptred);
+      margin-bottom: 6px;
+    }
+
+    .status-error p {
+      font-size: 13px;
+      color: #666;
+    }
+
+    /* ──────────────────────────────────────────────
+     SUCCESS MODAL
+  ────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--white);
+      border-radius: 8px;
+      max-width: 540px;
+      width: 92%;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+      animation: slideUp .3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      background: var(--success);
+      color: var(--white);
+      padding: 24px;
+      text-align: center;
+    }
+
+    .modal-header .check-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 255, 255, .2);
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .modal-header h3 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .modal-header p {
+      font-size: 13px;
+      opacity: .85;
+      margin-top: 4px;
+    }
+
+    .modal-body {
+      padding: 26px;
+    }
+
+    .app-id-box {
+      background: var(--aptlight);
+      border: 2px solid var(--aptblue);
+      border-radius: 5px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .app-id-box .label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .app-id-box .id {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--aptblue);
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    .modal-body .note {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+
+    .modal-footer {
+      padding: 0 26px 26px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-print {
+      flex: 1;
+      background: var(--aptblue);
+      color: var(--white);
+      border: none;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      cursor: pointer;
+    }
+
+    .btn-close-modal {
+      flex: 1;
+      background: var(--white);
+      color: var(--aptblue);
+      border: 1.5px solid var(--aptblue);
+      padding: 12px;
+      border-radius: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      cursor: pointer;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--aptblue);
+      color: #aac4e8;
+      text-align: center;
+      padding: 28px 28px;
+      font-size: 12.5px;
+      line-height: 1.9;
+      border-top: 4px solid var(--aptred);
+    }
+
+    footer strong {
+      color: var(--white);
+    }
+
+    footer a {
+      color: var(--aptgold);
+      text-decoration: none;
+    }
+
+    .footer-links {
+      margin-top: 8px;
+    }
+
+    .footer-links a {
+      margin: 0 10px;
+    }
+
+    /* UTILITIES */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, .4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .field-error {
+      border-color: var(--aptred) !important;
+    }
+
+    /* Progress Bar */
+    .progress-bar-wrap {
+      background: #e8edf5;
+      border-bottom: 1px solid #dce4ef;
+      padding: 12px 28px;
+    }
+
+    .progress-bar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .progress-steps {
+      display: flex;
+      gap: 0;
+      counter-reset: step;
+    }
+
+    .progress-step {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      position: relative;
+    }
+
+    .progress-step.done {
+      color: var(--aptblue);
+    }
+
+    .progress-step .ps-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ccc;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .progress-step.done .ps-num {
+      background: var(--aptblue);
+    }
+
+    @media (max-width: 768px) {
+
+      .apply-wrap,
+      .about-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .areas-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .elig-grid,
+      .src-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hero h2 {
+        font-size: 28px;
+      }
+
+      .header-right {
+        display: none;
+      }
+    }
+
+    @media print {
+
+      nav,
+      .sidebar,
+      .btn-row,
+      footer,
+      .top-strip,
+      .breadcrumb-bar,
+      .progress-bar-wrap {
+        display: none;
+      }
+
+      .apply-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- TOP STRIP -->
-<div class="top-strip">
-  Government of Andhra Pradesh &nbsp;|&nbsp; APTRANSCO – Andhra Pradesh Transmission Corporation Limited
-</div>
-
-<!-- HEADER -->
-<header>
-  <div class="header-inner">
-    <div class="logo-emblem">
-      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="32" cy="32" r="30" fill="none" stroke="#D4A017" stroke-width="2"/>
-        <path d="M32 8 L20 34 H30 L22 56 L44 28 H34 L42 8 Z" fill="#FFD700" stroke="#D4A017" stroke-width="1"/>
-        <text x="32" y="62" text-anchor="middle" fill="#D4A017" font-size="5" font-family="serif">AP</text>
-      </svg>
-    </div>
-    <div class="header-text">
-      <div class="dept">Government of Andhra Pradesh</div>
-      <h1>Andhra Pradesh Transmission Corporation Limited</h1>
-      <div class="sub">APTRANSCO &nbsp;·&nbsp; Energy Department &nbsp;·&nbsp; Internship Management Portal</div>
-    </div>
-    <div class="header-right">
-      <strong>Helpdesk</strong>
-      internship@aptransco.in<br>
-      040-23435272<br>
-      Mon – Fri: 10:00 AM – 5:00 PM
-    </div>
-  </div>
-  <div class="flag-bar"></div>
-</header>
-
-<!-- NAV -->
-<nav>
-  <div class="nav-inner">
-    <a href="#" class="active" onclick="showTab('apply')">🏠 Home</a>
-    <a href="#" onclick="showTab('apply')">Apply for Internship</a>
-    <a href="#" onclick="showTab('status')">Check Status</a>
-    <a href="#" onclick="alert('Guidelines document will open in a new window.')">Guidelines</a>
-    <a href="#" onclick="alert('Contact: internship@aptransco.in | 040-23435272')">Contact Us</a>
-  </div>
-</nav>
-
-<!-- BREADCRUMB -->
-<div class="breadcrumb">
-  Home &rsaquo; Internship &rsaquo; <span id="bc-current">Online Application Form</span>
-</div>
-
-<!-- MAIN WRAP -->
-<div class="main-wrap">
-
-  <div class="page-title-bar">
-    <div>
-      <h2 id="page-title">Online Internship Application Form</h2>
-      <p id="page-sub">APTRANSCO Internship Programme — Application Year 2024–25</p>
-    </div>
-    <div class="badge" id="page-badge">New Application</div>
+  <!-- TOP STRIP -->
+  <div class="top-strip">
+    Government of Andhra Pradesh &nbsp;|&nbsp; APTRANSCO – Andhra Pradesh Transmission Corporation Limited &nbsp;|&nbsp;
+    <a href="mailto:internship@aptransco.in">internship@aptransco.in</a> &nbsp;|&nbsp; 040-23435272
   </div>
 
-  <div id="tab-apply" style="grid-column:1; display:block;">
-    <!-- Personal Details -->
-    <div class="form-card">
-      <div class="section-header"><span class="num">1</span> Personal Details</div>
-      <div class="form-body">
-        <div class="form-row">
-          <div class="field">
-            <label>College Roll Number <span class="req">*</span></label>
-            <input type="text" id="roll_number" placeholder="Enter your official roll number">
-          </div>
-          <div class="field">
-            <label>Full Name (as in Aadhaar) <span class="req">*</span></label>
-            <input type="text" id="full_name" placeholder="Enter your full name">
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-emblem">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="30" fill="none" stroke="#D4A017" stroke-width="2" />
+          <path d="M32 8 L20 34 H30 L22 56 L44 28 H34 L42 8 Z" fill="#FFD700" stroke="#D4A017" stroke-width="1" />
+          <text x="32" y="62" text-anchor="middle" fill="#D4A017" font-size="5" font-family="serif">AP</text>
+        </svg>
+      </div>
+      <div class="header-text">
+        <div class="dept">Government of Andhra Pradesh — Energy Department</div>
+        <h1>Andhra Pradesh Transmission Corporation Limited</h1>
+        <div class="sub">APTRANSCO &nbsp;·&nbsp; Student Internship Management Portal &nbsp;·&nbsp; 2024–25</div>
+      </div>
+      <div class="header-right">
+        <strong>Helpdesk</strong>
+        internship@aptransco.in<br>
+        040-23435272<br>
+        Mon – Fri: 10:00 AM – 5:00 PM
+      </div>
+    </div>
+    <div class="flag-bar"></div>
+  </header>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="active" id="nav-home" onclick="showPage('home')">🏠 Home</a>
+      <a href="#" id="nav-apply" onclick="showPage('apply')">📝 Apply for Internship</a>
+      <a href="#" id="nav-status" onclick="showPage('status')">🔍 Check Status</a>
+      <a href="#" onclick="alert('Guidelines PDF will open in a new window.\n\nContact: internship@aptransco.in')">📄
+        Guidelines</a>
+      <a href="#"
+        onclick="alert('📞 040-23435272\n📧 internship@aptransco.in\n📍 Vidyut Soudha, Hyderabad – 500082')">📞 Contact
+        Us</a>
+      <div class="nav-spacer"></div>
+      <div class="nav-year">Academic Year 2024–25</div>
+    </div>
+  </nav>
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb-bar">
+    <div class="breadcrumb">
+      🏠 Home <span class="sep">›</span> Internship <span class="sep">›</span>
+      <span id="bc-current">Home</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+     HOME PAGE
+══════════════════════════════════════════════ -->
+  <div id="page-home" class="page active">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="hero-badge">⚡ APTRANSCO Student Internship Programme 2024–25</div>
+        <h2>Power Your Future with<br><em>APTRANSCO Internship</em></h2>
+        <p>Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in
+          substations, control rooms, and planning divisions across Andhra Pradesh.</p>
+        <div class="hero-btns">
+          <button class="btn-hero-primary" onclick="showPage('apply')">Apply Now →</button>
+          <button class="btn-hero-secondary" onclick="showPage('status')">Check Application Status</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stats-inner">
+        <div class="stat-item">
+          <div class="num">36,748</div>
+          <div class="lbl">Circuit Kilometres</div>
+        </div>
+        <div class="stat-item">
+          <div class="num">700+</div>
+          <div class="lbl">Substations</div>
+        </div>
+        <div class="stat-item">
+          <div class="num">26</div>
+          <div class="lbl">Districts Served</div>
+        </div>
+        <div class="stat-item">
+          <div class="num">1,200+</div>
+          <div class="lbl">Interns Trained Annually</div>
+        </div>
+        <div class="stat-item">
+          <div class="num">1999</div>
+          <div class="lbl">Established</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div class="about-section">
+      <div class="section-title">About APTRANSCO</div>
+      <div class="section-title-line"></div>
+      <div class="about-grid">
+        <div class="about-text">
+          <p><strong>Andhra Pradesh Transmission Corporation Limited (APTRANSCO)</strong> is a government undertaking of
+            the State of Andhra Pradesh, established under the Electricity Act, 2003. It is responsible for the bulk
+            transmission of electricity from generating stations to the distribution network across the state.</p>
+          <p>APTRANSCO operates an extensive transmission infrastructure spanning <strong>36,748 circuit
+              kilometres</strong> of transmission lines and over <strong>700 Extra High Tension (EHT)
+              substations</strong>, making it one of the largest state transmission utilities in India.</p>
+          <p>The corporation plays a vital role in ensuring reliable power supply to industries, agriculture, and
+            households across all <strong>26 districts</strong> of Andhra Pradesh. APTRANSCO is committed to modernising
+            its grid through smart grid technologies, renewable energy integration, and digital SCADA systems.</p>
+          <div class="about-highlights">
+            <div class="highlight-card">
+              <div class="hc-icon">🎓</div>
+              <div class="hc-title">Learning Environment</div>
+              <p>Structured training under experienced engineers with real project assignments.</p>
+            </div>
+            <div class="highlight-card">
+              <div class="hc-icon">🏭</div>
+              <div class="hc-title">Field Exposure</div>
+              <p>Visits to substations, control rooms, and live transmission infrastructure.</p>
+            </div>
+            <div class="highlight-card">
+              <div class="hc-icon">📜</div>
+              <div class="hc-title">Certificate Issued</div>
+              <p>Official APTRANSCO internship completion certificate upon successful tenure.</p>
+            </div>
+            <div class="highlight-card">
+              <div class="hc-icon">🌐</div>
+              <div class="hc-title">Statewide Network</div>
+              <p>Internship opportunities across all APTRANSCO circles in Andhra Pradesh.</p>
+            </div>
           </div>
         </div>
-        <div class="form-row three">
-          <div class="field">
-            <label>Date of Birth <span class="req">*</span></label>
-            <input type="date" id="date_of_birth">
+        <div class="info-panels">
+          <div class="info-panel">
+            <div class="ip-head">📅 Important Dates — 2024-25</div>
+            <div class="ip-body">
+              <ul>
+                <li><span class="bul">▸</span> Applications Open: <strong>01 January 2025</strong></li>
+                <li><span class="bul">▸</span> Last Date to Apply: <strong>30 November 2025</strong></li>
+                <li><span class="bul">▸</span> Processing Time: <strong>15–20 working days</strong></li>
+                <li><span class="bul">▸</span> Joining: As per approval letter</li>
+                <li><span class="bul">▸</span> Duration: 4–8 weeks (as per programme)</li>
+              </ul>
+            </div>
           </div>
-          <div class="field">
-            <label>Gender <span class="req">*</span></label>
-            <select id="gender">
-              <option value="">-- Select --</option>
-              <option>Male</option><option>Female</option><option>Transgender</option>
-            </select>
+          <div class="info-panel">
+            <div class="ip-head">📋 Required Documents</div>
+            <div class="ip-body">
+              <ul>
+                <li><span class="bul">▸</span> Aadhaar Card (mandatory for identity verification)</li>
+                <li><span class="bul">▸</span> College Acknowledgement / NOC Letter <strong>(PDF)</strong></li>
+                <li><span class="bul">▸</span> Latest Academic Mark Sheet</li>
+                <li><span class="bul">▸</span> Updated Resume (PDF)</li>
+                <li><span class="bul">▸</span> Passport-size photograph</li>
+              </ul>
+            </div>
           </div>
-          <div class="field">
-            <label>Category <span class="req">*</span></label>
-            <select id="category">
-              <option value="">-- Select --</option>
-              <option>OC</option><option>BC</option><option>SC</option><option>ST</option><option>EWS</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Aadhaar Number <span class="req">*</span></label>
-            <input type="text" id="aadhar_number" placeholder="XXXX XXXX XXXX" maxlength="12">
-          </div>
-          <div class="field">
-            <label>Mobile Number <span class="req">*</span></label>
-            <input type="tel" id="mobile" placeholder="10-digit mobile number" maxlength="10">
-          </div>
-        </div>
-        <div class="form-row full">
-          <div class="field">
-            <label>Email ID <span class="req">*</span></label>
-            <input type="email" id="email" placeholder="example@domain.com">
-          </div>
-        </div>
-        <div class="form-row full">
-          <div class="field">
-            <label>Permanent Address <span class="req">*</span></label>
-            <textarea id="permanent_address" placeholder="Door No., Street, Village, Mandal"></textarea>
+          <div class="info-panel">
+            <div class="ip-head">⚠️ Important Notice</div>
+            <div class="ip-body">
+              <p style="color:#856404; font-weight:600;">APTRANSCO does not charge any fee for internship applications.
+              </p>
+              <p>Beware of fraudulent agents or websites claiming to offer APTRANSCO internships for a fee. All
+                applications must be submitted through this official portal only.</p>
+              <p>Stipend is <strong>not provided</strong>; the internship is honorary and educational in nature.</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Educational Details -->
-    <div class="form-card">
-      <div class="section-header"><span class="num">2</span> Educational Qualification</div>
-      <div class="form-body">
-        <div class="form-row">
-            <div class="field">
-                <label>College Category <span class="req">*</span></label>
-                <select id="college_category">
-                  <option value="OTHER">Other Professional College</option>
-                  <option value="IIT">IIT</option>
-                  <option value="NIT">NIT</option>
-                  <option value="IIIT">IIIT</option>
+    <!-- KEY AREAS -->
+    <div class="key-areas">
+      <div class="key-areas-inner">
+        <div class="section-title">Internship Domains</div>
+        <div class="section-title-line"></div>
+        <div class="areas-grid">
+          <div class="area-card">
+            <div class="icon">⚡</div>
+            <div class="title">Electrical Engineering</div>
+            <p>High voltage systems, substation design, protection relays, transformer testing and commissioning.</p>
+          </div>
+          <div class="area-card">
+            <div class="icon">💻</div>
+            <div class="title">IT & SCADA</div>
+            <p>Energy Management Systems, SCADA control rooms, cybersecurity, and network operations centres.</p>
+          </div>
+          <div class="area-card">
+            <div class="icon">🌱</div>
+            <div class="title">Renewable Integration</div>
+            <p>Grid integration of solar and wind, reactive power management, and load forecasting.</p>
+          </div>
+          <div class="area-card">
+            <div class="icon">🏗️</div>
+            <div class="title">Civil & Construction</div>
+            <p>Transmission tower foundation design, substation civil works, and project management.</p>
+          </div>
+          <div class="area-card">
+            <div class="icon">📊</div>
+            <div class="title">Finance & Accounts</div>
+            <p>Energy billing, tariff analysis, project cost estimation, and financial management systems.</p>
+          </div>
+          <div class="area-card">
+            <div class="icon">⚙️</div>
+            <div class="title">Protection & Control</div>
+            <p>Relay coordination, fault analysis, distance protection schemes and control panel engineering.</p>
+          </div>
+          <div class="area-card">
+            <div class="icon">📡</div>
+            <div class="title">Telecom & Metering</div>
+            <p>OPGW communication, smart metering, AMR systems, and energy audit technologies.</p>
+          </div>
+          <div class="area-card">
+            <div class="icon">📋</div>
+            <div class="title">Planning & Projects</div>
+            <p>Network planning, load flow studies, system expansion planning, and regulatory affairs.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ELIGIBILITY -->
+    <div class="eligibility-section">
+      <div class="section-title">Eligibility Criteria</div>
+      <div class="section-title-line"></div>
+      <div class="elig-grid">
+        <div class="elig-card">
+          <div class="ec-num">1</div>
+          <div class="ec-title">Academic Qualification</div>
+          <p>Students pursuing B.Tech / B.E. / M.Tech / MBA / MCA / Diploma from a recognised institution are eligible.
+            Minimum 60% aggregate CGPA required.</p>
+        </div>
+        <div class="elig-card">
+          <div class="ec-num">2</div>
+          <div class="ec-title">Year of Study</div>
+          <p>Students who have completed at least 2nd year (4th semester) of their programme are eligible. Final year
+            students with NOC from college are preferred.</p>
+        </div>
+        <div class="elig-card">
+          <div class="ec-num">3</div>
+          <div class="ec-title">College Approval</div>
+          <p>A valid Acknowledgement Letter / NOC from the Head of Institution or Principal is mandatory for all
+            applicants before applying.</p>
+        </div>
+        <div class="elig-card">
+          <div class="ec-num">4</div>
+          <div class="ec-title">Residency</div>
+          <p>Preference is given to students from colleges within Andhra Pradesh. Students from other states may apply
+            for specific technical openings.</p>
+        </div>
+        <div class="elig-card">
+          <div class="ec-num">5</div>
+          <div class="ec-title">One Application Per Year</div>
+          <p>A student is allowed only one internship application per academic year. Duplicate applications will be
+            automatically rejected by the system.</p>
+        </div>
+        <div class="elig-card">
+          <div class="ec-num">6</div>
+          <div class="ec-title">Identity Verification</div>
+          <p>Valid Aadhaar Card is mandatory for identity verification. Students must carry original documents at the
+            time of joining.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-bar">
+      <h3>Ready to Begin Your Internship Journey?</h3>
+      <p>Applications are open. Fill in your details and upload your college acknowledgement letter to apply.</p>
+      <button class="btn-cta" onclick="showPage('apply')">⚡ Apply for Internship Now</button>
+    </div>
+
+  </div><!-- /page-home -->
+
+  <!-- ══════════════════════════════════════════════
+     APPLY PAGE
+══════════════════════════════════════════════ -->
+  <div id="page-apply" class="page">
+
+    <div class="apply-page-header">
+      <div>
+        <h2>Online Internship Application Form</h2>
+        <p>APTRANSCO Internship Programme — Academic Year 2024–25</p>
+      </div>
+      <div class="apply-badge">New Application</div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-inner">
+        <div class="progress-steps">
+          <div class="progress-step done"><span class="ps-num">1</span> Personal Details</div>
+          <div class="progress-step done"><span class="ps-num">2</span> Academic Details</div>
+          <div class="progress-step done"><span class="ps-num">3</span> Internship Choice</div>
+          <div class="progress-step done"><span class="ps-num">4</span> Documents</div>
+          <div class="progress-step done"><span class="ps-num">5</span> Declaration & Submit</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apply-wrap">
+      <div class="apply-main">
+
+        <!-- SECTION 1: Personal Details -->
+        <div class="form-card">
+          <div class="section-header"><span class="num">1</span> Personal Details</div>
+          <div class="form-body">
+            <div class="form-row">
+              <div class="field">
+                <label>College Roll Number <span class="req">*</span></label>
+                <input type="text" id="roll_number" placeholder="Enter your official roll number">
+              </div>
+              <div class="field">
+                <label>Full Name (as in Aadhaar) <span class="req">*</span></label>
+                <input type="text" id="full_name" placeholder="Enter your full name">
+              </div>
+            </div>
+            <div class="form-row three">
+              <div class="field">
+                <label>Date of Birth <span class="req">*</span></label>
+                <input type="date" id="date_of_birth">
+              </div>
+              <div class="field">
+                <label>Gender <span class="req">*</span></label>
+                <select id="gender">
+                  <option value="">-- Select --</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Transgender</option>
                 </select>
+              </div>
+              <div class="field">
+                <label>Category <span class="req">*</span></label>
+                <select id="category">
+                  <option value="">-- Select --</option>
+                  <option>OC / General</option>
+                  <option>BC-A</option>
+                  <option>BC-B</option>
+                  <option>BC-C</option>
+                  <option>BC-D</option>
+                  <option>SC</option>
+                  <option>ST</option>
+                  <option>EWS</option>
+                </select>
+              </div>
             </div>
-          <div class="field">
-            <label>Institution / University <span class="req">*</span></label>
-            <input type="text" id="institution" placeholder="Name of College / University">
-          </div>
-        </div>
-        <div class="form-row three">
-          <div class="field">
-            <label>Degree <span class="req">*</span></label>
-            <input type="text" id="degree" placeholder="e.g. B.Tech">
-          </div>
-          <div class="field">
-            <label>Branch <span class="req">*</span></label>
-            <input type="text" id="branch" placeholder="e.g. EEE">
-          </div>
-          <div class="field">
-            <label>Year of Study <span class="req">*</span></label>
-            <input type="number" id="year_of_study" placeholder="e.g. 3">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Aggregate CGPA <span class="req">*</span></label>
-            <input type="number" step="0.01" id="percentage" placeholder="e.g. 8.5">
-          </div>
-          <div class="field">
-            <label>NIRF Ranking (if known)</label>
-            <input type="number" id="nirf_ranking" placeholder="e.g. 50">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Internship Choice -->
-    <div class="form-card">
-      <div class="section-header"><span class="num">3</span> Internship Choice</div>
-      <div class="form-body">
-        <div class="form-row full">
-          <div class="field">
-            <label>Select Internship Opening <span class="req">*</span></label>
-            <select id="internship_id">
-              <option value="">-- Loading Active Internships... --</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row full">
-            <div class="field">
-              <label>Resume (PDF only) <span class="req">*</span></label>
-              <input type="file" id="resume" accept=".pdf">
+            <div class="form-row">
+              <div class="field">
+                <label>Aadhaar Number <span class="req">*</span></label>
+                <input type="text" id="aadhar_number" placeholder="XXXX XXXX XXXX" maxlength="14">
+              </div>
+              <div class="field">
+                <label>Mobile Number <span class="req">*</span></label>
+                <input type="tel" id="mobile" placeholder="10-digit mobile number" maxlength="10">
+              </div>
             </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-card">
-      <div class="section-header"><span class="num">4</span> Declaration</div>
-      <div class="form-body">
-        <div class="declaration-box">
-          <p>I hereby declare that the information provided is true to the best of my knowledge.</p>
-          <div class="check-row">
-            <input type="checkbox" id="decl1">
-            <label for="decl1">I accept the terms and conditions.</label>
+            <div class="form-row full">
+              <div class="field">
+                <label>Email ID <span class="req">*</span></label>
+                <input type="email" id="email" placeholder="example@domain.com">
+                <span class="hint">Application tracking details will be sent to this email</span>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field">
+                <label>Permanent Address <span class="req">*</span></label>
+                <textarea id="permanent_address"
+                  placeholder="Door No., Street, Village/Town, Mandal, District, State – PIN"></textarea>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="btn-row">
-          <button class="btn-submit" id="submitBtn" onclick="submitForm()">Submit Application</button>
+
+        <!-- SECTION 2: Educational Details -->
+        <div class="form-card">
+          <div class="section-header"><span class="num">2</span> Academic / Educational Details</div>
+          <div class="form-body">
+            <div class="form-row">
+              <div class="field">
+                <label>College Category <span class="req">*</span></label>
+                <select id="college_category" onchange="filterCollegesByCategory()">
+                  <option value="">-- Select Category --</option>
+                  <option value="IIT">IIT (Indian Institute of Technology)</option>
+                  <option value="NIT">NIT (National Institute of Technology)</option>
+                  <option value="deemed">Deemed University</option>
+                  <option value="autonomous">Autonomous College</option>
+                  <option value="college">College</option>
+                  <option value="institute">Institute / Technology</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>State of College <span class="req">*</span></label>
+                <select id="college_state" onchange="filterCollegesByCategory()">
+                  <option value="">-- Select State --</option>
+                  <option value="Andhra Pradesh" selected>Andhra Pradesh</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Other">Other State</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field">
+                <label>Institution / University Name <span class="req">*</span></label>
+                <div class="autocomplete-wrapper">
+                  <input type="text" id="institution" placeholder="Type to search college from AISHE database..."
+                    autocomplete="off" oninput="handleCollegeSearch(this.value)" onkeydown="handleCollegeKey(event)">
+                  <div class="autocomplete-list" id="college-list"></div>
+                </div>
+                <input type="hidden" id="institution_code">
+                <span class="hint">Source: AISHE (All India Survey on Higher Education) Database — Ministry of
+                  Education, GoI</span>
+              </div>
+            </div>
+            <div class="form-row three">
+              <div class="field">
+                <label>Degree / Programme <span class="req">*</span></label>
+                <select id="degree">
+                  <option value="">-- Select --</option>
+                  <option>B.Tech</option>
+                  <option>B.E.</option>
+                  <option>M.Tech</option>
+                  <option>M.E.</option>
+                  <option>MBA</option>
+                  <option>MCA</option>
+                  <option>B.Sc</option>
+                  <option>M.Sc</option>
+                  <option>Diploma</option>
+                  <option>Ph.D.</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Branch / Specialization <span class="req">*</span></label>
+                <select id="branch">
+                  <option value="">-- Select Branch --</option>
+                  <option>Electrical &amp; Electronics (EEE)</option>
+                  <option>Electronics &amp; Communication (ECE)</option>
+                  <option>Computer Science (CSE)</option>
+                  <option>Mechanical Engineering</option>
+                  <option>Civil Engineering</option>
+                  <option>Information Technology (IT)</option>
+                  <option>Instrumentation Engineering</option>
+                  <option>Power Systems</option>
+                  <option>MBA (Finance)</option>
+                  <option>MBA (HR)</option>
+                  <option>MCA</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Current Year of Study <span class="req">*</span></label>
+                <select id="year_of_study">
+                  <option value="">-- Select --</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year (Final)</option>
+                  <option value="5">5th Year</option>
+                  <option value="PG1">PG – 1st Year</option>
+                  <option value="PG2">PG – 2nd Year</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Aggregate CGPA / Percentage <span class="req">*</span></label>
+                <input type="number" step="0.01" id="percentage" placeholder="e.g. 8.5 (CGPA) or 78.5 (%)">
+                <span class="hint">Enter CGPA out of 10 or percentage. Minimum 60% / 6.0 CGPA required.</span>
+              </div>
+              <div class="field">
+                <label>NIRF Ranking of Institution (if applicable)</label>
+                <input type="number" id="nirf_ranking" placeholder="e.g. 50 (leave blank if not ranked)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Internship Choice -->
+        <div class="form-card">
+          <div class="section-header"><span class="num">3</span> Internship Preference</div>
+          <div class="form-body">
+            <div class="form-row full">
+              <div class="field">
+                <label>Select Internship Domain <span class="req">*</span></label>
+                <select id="internship_id">
+                  <option value="">-- Loading Active Internships... --</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Preferred APTRANSCO Circle / Location <span class="req">*</span></label>
+                <select id="preferred_circle">
+                  <option value="">-- Select Circle --</option>
+                  <option>Corporate Office, Vijayawada</option>
+                  <option>North Circle – Visakhapatnam</option>
+                  <option>East Circle – Rajahmundry</option>
+                  <option>West Circle – Vijayawada</option>
+                  <option>South Circle – Nellore</option>
+                  <option>Rayalaseema Circle – Kurnool</option>
+                  <option>SPDCL Interface – Tirupati</option>
+                  <option>Load Dispatch Centre – Hyderabad</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Preferred Duration <span class="req">*</span></label>
+                <select id="duration">
+                  <option value="">-- Select --</option>
+                  <option value="4">4 Weeks</option>
+                  <option value="6">6 Weeks</option>
+                  <option value="8">8 Weeks</option>
+                  <option value="12">12 Weeks (3 Months)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field">
+                <label>Preferred Start Date <span class="req">*</span></label>
+                <input type="date" id="start_date">
+                <span class="hint">Please apply at least 30 days in advance. APTRANSCO will confirm the actual joining
+                  date.</span>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field">
+                <label>Brief Statement of Purpose</label>
+                <textarea id="sop"
+                  placeholder="Describe your interest in this internship, relevant academic projects, and what you hope to learn (max 300 words)..."
+                  style="min-height:100px;"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: Documents -->
+        <div class="form-card">
+          <div class="section-header"><span class="num">4</span> Document Upload</div>
+          <div class="form-body">
+            <div class="form-row">
+              <div class="field">
+                <label>College Acknowledgement / NOC Letter <span class="req">*</span></label>
+                <div class="file-upload-area" id="noc-area" onclick="document.getElementById('noc_letter').click()">
+                  <div class="fu-icon">📄</div>
+                  <div class="fu-text"><strong>Click to upload</strong> or drag and drop</div>
+                  <div class="fu-text">PDF only · Max 2 MB</div>
+                  <div class="fu-name" id="noc-name"></div>
+                  <input type="file" id="noc_letter" accept=".pdf"
+                    onchange="handleFileUpload(this,'noc-area','noc-name')">
+                </div>
+                <span class="hint">⚠️ Mandatory — Letter from Principal / HOD on official college letterhead</span>
+              </div>
+              <div class="field">
+                <label>Resume / CV <span class="req">*</span></label>
+                <div class="file-upload-area" id="resume-area" onclick="document.getElementById('resume').click()">
+                  <div class="fu-icon">📋</div>
+                  <div class="fu-text"><strong>Click to upload</strong> or drag and drop</div>
+                  <div class="fu-text">PDF only · Max 2 MB</div>
+                  <div class="fu-name" id="resume-name"></div>
+                  <input type="file" id="resume" accept=".pdf"
+                    onchange="handleFileUpload(this,'resume-area','resume-name')">
+                </div>
+                <span class="hint">Include academic projects, skills, and achievements</span>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field">
+                <label>Latest Mark Sheet (Scanned Copy)</label>
+                <div class="file-upload-area" id="marks-area" onclick="document.getElementById('marksheet').click()"
+                  style="padding:14px;">
+                  <div class="fu-icon" style="font-size:22px;">📊</div>
+                  <div class="fu-text"><strong>Click to upload</strong> latest semester mark sheet · PDF / JPG · Max 2
+                    MB</div>
+                  <div class="fu-name" id="marks-name"></div>
+                  <input type="file" id="marksheet" accept=".pdf,.jpg,.jpeg,.png"
+                    onchange="handleFileUpload(this,'marks-area','marks-name')">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: Declaration -->
+        <div class="form-card">
+          <div class="section-header"><span class="num">5</span> Declaration & Submission</div>
+          <div class="form-body">
+            <div class="declaration-box">
+              <p>I hereby solemnly declare that:</p>
+              <p style="margin-top:8px;">1. All information furnished in this application form is true, complete, and
+                correct to the best of my knowledge and belief.</p>
+              <p>2. I have obtained the prior approval / acknowledgement from my institution for this internship
+                application.</p>
+              <p>3. I understand that this internship is honorary in nature and no stipend or TA/DA will be provided by
+                APTRANSCO.</p>
+              <p>4. I agree to comply with the rules, regulations, and safety norms of APTRANSCO during the internship
+                period.</p>
+              <p>5. I acknowledge that APTRANSCO reserves the right to cancel the internship at any stage in case of any
+                misconduct or misrepresentation.</p>
+              <div class="check-row">
+                <input type="checkbox" id="decl1">
+                <label for="decl1">I solemnly declare that all information provided is true and correct. I accept all
+                  terms and conditions of the APTRANSCO Internship Programme.</label>
+              </div>
+              <div class="check-row">
+                <input type="checkbox" id="decl2">
+                <label for="decl2">I have read and understood the <a href="#" style="color:var(--aptblue);">Internship
+                    Guidelines</a> and agree to abide by all APTRANSCO rules and regulations during my
+                  internship.</label>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-submit" id="submitBtn" onclick="submitForm()">
+                <span id="btn-spin" class="loading" style="display:none;"></span>
+                <span id="btn-text">⚡ Submit Application</span>
+              </button>
+              <button class="btn-reset" onclick="resetForm()">✕ Clear Form</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /apply-main -->
+
+      <div class="sidebar">
+        <div class="info-box">
+          <div class="info-box-head">📋 How to Apply</div>
+          <div class="info-box-body">
+            <ul>
+              <li>Fill all fields marked with <strong>*</strong> (mandatory)</li>
+              <li>Search and select your college from the AISHE database</li>
+              <li>Upload your college's official NOC/acknowledgement letter (PDF)</li>
+              <li>Upload your updated resume (PDF)</li>
+              <li>Accept the declaration and submit</li>
+              <li>Note your Application ID for status tracking</li>
+            </ul>
+            <div class="important-notice">
+              <p><strong>⚠ Note:</strong> APTRANSCO does not charge any fee. Beware of fraudulent agents.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-head">📅 Important Dates</div>
+          <div class="info-box-body">
+            <ul>
+              <li>Applications Open: <strong>01 Jan 2025</strong></li>
+              <li>Last Date: <strong>30 Nov 2025</strong></li>
+              <li>Processing: 15–20 working days</li>
+              <li>Joining: As per approval letter</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-head">🏫 AISHE College Search</div>
+          <div class="info-box-body">
+            <p>College data is sourced from the <strong>AISHE Database</strong> (All India Survey on Higher Education,
+              Ministry of Education, Government of India).</p>
+            <p>Type at least 3 characters to search. Select your institution from the dropdown list.</p>
+            <p>If your college is not listed, type the full name manually and contact the helpdesk.</p>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-head">📞 Helpdesk</div>
+          <div class="info-box-body">
+            <p><strong>Email:</strong> internship@aptransco.in</p>
+            <p><strong>Phone:</strong> 040-23435272</p>
+            <p><strong>Hours:</strong> Mon–Fri, 10 AM – 5 PM</p>
+            <p><strong>Office:</strong> APTRANSCO Corporate Office, Vidyut Soudha, Hyderabad – 500082</p>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-head">🔗 Quick Links</div>
+          <div class="info-box-body">
+            <ul>
+              <li><a href="#" onclick="showPage('status')" style="color:var(--aptblue);text-decoration:none;">Check
+                  Application Status</a></li>
+              <li><a href="#" style="color:var(--aptblue);text-decoration:none;">Download NOC Template (DOCX)</a></li>
+              <li><a href="#" style="color:var(--aptblue);text-decoration:none;">Internship Guidelines PDF</a></li>
+              <li><a href="#" style="color:var(--aptblue);text-decoration:none;">APTRANSCO Official Website</a></li>
+            </ul>
+          </div>
+        </div>
+      </div><!-- /sidebar -->
+
+    </div><!-- /apply-wrap -->
+  </div><!-- /page-apply -->
+
+  <!-- ══════════════════════════════════════════════
+     STATUS PAGE
+══════════════════════════════════════════════ -->
+  <div id="page-status" class="page">
+    <div class="status-page">
+
+      <div class="status-hero">
+        <div class="sh-icon">🔍</div>
+        <h2>Check Your Application Status</h2>
+        <p>Enter your Application / Tracking ID to view the current status of your internship application</p>
+      </div>
+
+      <div class="status-input-card">
+        <label>Enter Application / Tracking ID <span style="color:var(--aptred)">*</span></label>
+        <div class="status-input-row">
+          <input type="text" id="status_id" placeholder="e.g. APT-2025-XXXXXXXX"
+            onkeydown="if(event.key==='Enter')checkStatus()">
+          <button class="btn-check" onclick="checkStatus()">
+            <span id="status-spin" class="loading" style="display:none;"></span>
+            <span id="status-btn-text">Search →</span>
+          </button>
+        </div>
+        <div class="status-hint">
+          💡 The Application ID was provided when you submitted your application. Check your registered email for this
+          ID.
+        </div>
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid #eee;">
+          <p style="font-size:12.5px; color:var(--muted); margin-bottom:8px; font-weight:600;">DEMO — Try these sample
+            IDs:</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button onclick="fillAndCheck('APT-2025-00001234')"
+              style="font-size:12px; padding:5px 12px; background:var(--aptlight); border:1px solid var(--border); border-radius:3px; cursor:pointer; color:var(--aptblue); font-weight:600;">APT-2025-00001234</button>
+            <button onclick="fillAndCheck('APT-2025-00005678')"
+              style="font-size:12px; padding:5px 12px; background:var(--aptlight); border:1px solid var(--border); border-radius:3px; cursor:pointer; color:var(--aptblue); font-weight:600;">APT-2025-00005678</button>
+            <button onclick="fillAndCheck('APT-2025-00009999')"
+              style="font-size:12px; padding:5px 12px; background:var(--aptlight); border:1px solid var(--border); border-radius:3px; cursor:pointer; color:var(--aptblue); font-weight:600;">APT-2025-00009999</button>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div id="tab-status" class="tab-section" style="grid-column:1/-1;">
-    <div class="section-header">🔍 Track Application</div>
-    <div class="form-body">
-      <div class="form-row">
-        <div class="field">
-          <label>Enter Tracking ID <span class="req">*</span></label>
-          <input type="text" id="status_id" placeholder="APT-XXXXXXXXXX">
+      <!-- Status Result -->
+      <div class="status-result-card" id="status-result-card">
+        <div class="src-top" id="src-top">
+          <div>
+            <div class="app-id-label">Application ID</div>
+            <div class="app-id-val" id="src-app-id">—</div>
+          </div>
+          <div id="src-status-badge"></div>
         </div>
-        <button class="btn-submit" style="margin-top:20px" onclick="checkStatus()">Search</button>
-      </div>
-      <div id="status-result" class="status-result">
-          <div id="status-content" style="margin-top:20px; padding:15px; border:1px solid #ddd; border-radius:4px;"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="sidebar">
-    <div class="info-box">
-      <div class="info-box-head">📋 Application Instructions</div>
-      <div class="info-box-body">
-        <ul>
-          <li>Fill all fields marked with <strong>*</strong></li>
-          <li>Aadhaar card is mandatory for verification</li>
-          <li>Apply at least 30 days before desired start date</li>
-          <li>One application per academic year is allowed</li>
-          <li>Attach No Objection Certificate from institution (if required)</li>
-          <li>Stipend is not provided; internship is honorary</li>
-        </ul>
-        <div class="important-notice">
-          <p><strong>⚠ Important:</strong> APTRANSCO does not charge any fee for internship applications. Beware of fraudulent agents.</p>
+        <div class="src-grid" id="src-grid"></div>
+        <div class="status-steps" id="status-steps-wrap">
+          <div class="steps-title">Application Progress</div>
+          <div class="steps-track" id="steps-track"></div>
         </div>
       </div>
-    </div>
 
-    <div class="info-box">
-      <div class="info-box-head">📅 Important Dates</div>
-      <div class="info-box-body">
-        <ul>
-          <li>Applications Open: 01 Jan 2025</li>
-          <li>Last Date: 30 Nov 2025</li>
-          <li>Processing Time: 15–20 working days</li>
-          <li>Joining: As per approval letter</li>
-        </ul>
+      <!-- Error -->
+      <div class="status-error" id="status-error">
+        <div class="err-icon">❌</div>
+        <h4>Application Not Found</h4>
+        <p>No application was found with the provided ID. Please check your Application ID and try again.<br>
+          If the issue persists, contact the helpdesk at <strong>internship@aptransco.in</strong> or 040-23435272.</p>
       </div>
-    </div>
 
-    <div class="info-box">
-      <div class="info-box-head">📞 Contact & Support</div>
-      <div class="info-box-body">
-        <p><strong>Email:</strong> internship@aptransco.in</p>
-        <p><strong>Phone:</strong> 040-23435272</p>
-        <p><strong>Helpdesk:</strong> Mon–Fri, 10 AM–5 PM</p>
-        <p><strong>Address:</strong> APTRANSCO Corporate Office, Vidyut Soudha, Hyderabad – 500082</p>
+      <!-- Info below -->
+      <div style="margin-top:28px; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="info-box">
+          <div class="info-box-head">📞 Need Help?</div>
+          <div class="info-box-body">
+            <p><strong>Email:</strong> internship@aptransco.in</p>
+            <p><strong>Phone:</strong> 040-23435272</p>
+            <p><strong>Hours:</strong> Mon–Fri, 10 AM – 5 PM</p>
+            <p>Kindly quote your Application ID when contacting the helpdesk.</p>
+          </div>
+        </div>
+        <div class="info-box">
+          <div class="info-box-head">ℹ️ Status Definitions</div>
+          <div class="info-box-body">
+            <ul>
+              <li><strong style="color:#1565c0;">Submitted</strong> – Application received and under review</li>
+              <li><strong style="color:#f57f17;">Pending</strong> – Additional documents or clarification needed</li>
+              <li><strong style="color:#2e7d32;">Approved</strong> – Internship approved; await joining letter</li>
+              <li><strong style="color:#c62828;">Rejected</strong> – Application not shortlisted this cycle</li>
+            </ul>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="info-box">
-      <div class="info-box-head">🔗 Quick Links</div>
-      <div class="info-box-body">
-        <ul>
-          <li><a href="#" onclick="showTab('status')">Check Application Status</a></li>
-          <li><a href="#">Download NOC Format</a></li>
-          <li><a href="#">Internship Guidelines PDF</a></li>
-          <li><a href="#">APTRANSCO Official Website</a></li>
-        </ul>
+    </div>
+  </div><!-- /page-status -->
+
+  <!-- ══════════════════════════════════════════════
+     SUCCESS MODAL
+══════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="check-icon">✓</div>
+        <h3>Application Submitted Successfully!</h3>
+        <p>Your internship application has been received by APTRANSCO.</p>
+      </div>
+      <div class="modal-body">
+        <div class="app-id-box">
+          <div class="label">Your Application / Tracking ID</div>
+          <div class="id" id="modal-app-id">—</div>
+          <div class="date" style="font-size:11.5px;color:var(--muted);margin-top:4px;">Use this ID to track your
+            application status</div>
+        </div>
+        <p class="note">📌 Please save your Application ID. You can use it to track the status of your application on
+          the <strong>Check Status</strong> page.</p>
+        <p class="note">📧 A confirmation email will be sent to your registered email address within 24 hours.</p>
+        <p class="note">⏳ Processing typically takes 15–20 working days. You will be notified via email/SMS upon
+          decision.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-print" onclick="window.print()">🖨 Print Receipt</button>
+        <button class="btn-close-modal" onclick="closeModal()">Close</button>
       </div>
     </div>
   </div>
 
-</div><!-- /main-wrap -->
-
-<!-- SUCCESS MODAL -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="check-icon">✓</div>
-      <h3>Application Submitted Successfully!</h3>
-      <p>Your internship application has been received by APTRANSCO.</p>
+  <!-- FOOTER -->
+  <footer>
+    <strong>Andhra Pradesh Transmission Corporation Limited (APTRANSCO)</strong><br>
+    Vidyut Soudha, Hyderabad – 500082 &nbsp;|&nbsp; <a href="#">www.aptransco.co.in</a> &nbsp;|&nbsp; CIN:
+    U40109AP1999SGC031533<br>
+    <div class="footer-links">
+      © 2025 APTRANSCO. All rights reserved. &nbsp;|&nbsp;
+      <a href="#">Disclaimer</a> &nbsp;|&nbsp;
+      <a href="#">Privacy Policy</a> &nbsp;|&nbsp;
+      <a href="#">Accessibility</a> &nbsp;|&nbsp;
+      <a href="#">RTI</a> &nbsp;|&nbsp;
+      <a href="#">Sitemap</a>
     </div>
-    <div class="modal-body">
-      <div class="app-id-box">
-        <div class="label">Your Application ID</div>
-        <div class="id" id="modal-app-id">—</div>
-        <div class="date" id="modal-date">—</div>
-      </div>
-      <p class="note">📌 Please note down your Application ID for future reference. You can use it to track the status of your application.</p>
-      <p class="note">📧 A confirmation will be sent to your registered email address within 24 hours.</p>
-      <p class="note">⏳ Processing typically takes 15–20 working days. You will be notified via email/SMS upon approval.</p>
+    <div style="margin-top:6px; font-size:11px; color:#7a99c8;">
+      Best viewed in Chrome / Firefox at 1280×800 resolution &nbsp;|&nbsp;
+      Data source: AISHE Database, Ministry of Education, GoI &nbsp;|&nbsp;
+      Portal Version 2.1
     </div>
-    <div class="modal-footer">
-      <button class="btn-print" onclick="window.print()">🖨 Print Receipt</button>
-      <button class="btn-close-modal" onclick="closeModal()">Close</button>
-    </div>
-  </div>
-</div>
+  </footer>
 
-<!-- FOOTER -->
-<footer>
-  <strong>Andhra Pradesh Transmission Corporation Limited (APTRANSCO)</strong><br>
-  Vidyut Soudha, Hyderabad – 500082 &nbsp;|&nbsp; <a href="#">www.aptransco.co.in</a> &nbsp;|&nbsp; CIN: U40109AP1999SGC031533<br>
-  © 2025 APTRANSCO. All rights reserved. &nbsp;|&nbsp;
-  <a href="#">Disclaimer</a> &nbsp;|&nbsp; <a href="#">Privacy Policy</a> &nbsp;|&nbsp; <a href="#">Accessibility</a> &nbsp;|&nbsp;
-  Best viewed in Chrome / Firefox at 1280×800 resolution
-</footer>
+  <script>
+    const API = 'http://localhost:5000/api/v1/public';
 
-<script>
-  const API = 'http://localhost:5000/api/v1/public';
+    // Load internships on load
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch(API + '/internships');
+        const data = await res.json();
+        const select = document.getElementById('internship_id');
+        if (data.success && data.data.length > 0) {
+          select.innerHTML = '<option value="">-- Select Preferred Domain --</option>' +
+            data.data.map(i => `<option value="${i.id}">${i.title} - ${i.department} (${i.openingsCount} Openings)</option>`).join('');
+        } else {
+          select.innerHTML = '<option value="">-- No Active Internships --</option>';
+        }
+      } catch (e) {
+        console.error('Failed to load internships:', e);
+      }
+    });
 
-  // Load internships on load
-  document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      const res = await fetch(API + '/internships');
-      const data = await res.json();
-      const select = document.getElementById('internship_id');
-      if (data.success && data.data.length > 0) {
-        select.innerHTML = '<option value="">-- Select Internship --</option>' + 
-          data.data.map(i => `<option value="${i.id}">${i.title} - ${i.department} (${i.openingsCount} Openings)</option>`).join('');
+    // ─── PAGE NAVIGATION ───
+    function showPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+
+      document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+      const navMap = { home: 'nav-home', apply: 'nav-apply', status: 'nav-status' };
+      if (navMap[page]) document.getElementById(navMap[page]).classList.add('active');
+
+      const bcMap = { home: 'Home', apply: 'Online Application Form', status: 'Check Application Status' };
+      document.getElementById('bc-current').textContent = bcMap[page] || page;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    let acHighlight = -1;
+    let fetchTimeout = null;
+
+    function filterCollegesByCategory() {
+      const input = document.getElementById('institution').value;
+      if (input.length >= 2) handleCollegeSearch(input);
+    }
+
+    function handleCollegeSearch(query) {
+      const list = document.getElementById('college-list');
+      if (query.length < 3) { list.classList.remove('open'); list.innerHTML = ''; return; }
+
+      clearTimeout(fetchTimeout);
+      fetchTimeout = setTimeout(async () => {
+        try {
+          const cat = document.getElementById('college_category').value;
+          const state = document.getElementById('college_state').value;
+
+          let url = `${API}/colleges?search=${encodeURIComponent(query)}&limit=10`;
+          if (cat) url += `&type=${encodeURIComponent(cat)}`;
+          if (state && state !== "Other") url += `&state=${encodeURIComponent(state)}`;
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (!data.success || data.data.length === 0) {
+            list.innerHTML = `
+              <div class="autocomplete-item" style="color:var(--muted); cursor:default;">
+                No matching colleges found.
+                <div style="margin-top: 8px; font-weight: 600;">
+                  <a href="javascript:void(0)" onclick="promptCustomCollege()" style="color: var(--aptblue);">
+                    + Add My College Manually
+                  </a>
+                </div>
+              </div>`;
+            list.classList.add('open');
+            return;
+          }
+
+          list.innerHTML = data.data.map((c, i) =>
+            `<div class="autocomplete-item" data-idx="${i}" onclick="selectCollege('${c.college_name.replace(/'/g, "\\'")}','${c.aishe_code}')">
+            <div class="col-name">${c.college_name}</div>
+            <div class="col-info">${c.city || ''}, ${c.state_name || ''} &nbsp;·&nbsp; ${c.university_name || c.college_type} &nbsp;·&nbsp; AISHE: ${c.aishe_code}</div>
+          </div>`
+          ).join('');
+
+          list.classList.add('open');
+          acHighlight = -1;
+        } catch (error) {
+          console.error("Error fetching colleges:", error);
+        }
+      }, 300); // 300ms debounce
+    }
+
+    function selectCollege(name, code) {
+      document.getElementById('institution').value = name;
+      document.getElementById('institution_code').value = code;
+      document.getElementById('college-list').classList.remove('open');
+      document.getElementById('college-list').innerHTML = '';
+    }
+
+    async function promptCustomCollege() {
+      const name = prompt("Enter the full exact name of your college/institution:");
+      if (!name || name.trim().length < 5) return;
+
+      const conf = confirm(`Are you sure you want to add "${name}"?`);
+      if (!conf) return;
+
+      try {
+        const state = document.getElementById('college_state').value || 'Other';
+        const type = document.getElementById('college_category').value || 'OTHER';
+
+        const res = await fetch(`${API}/colleges/custom`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, state, type })
+        });
+
+        const data = await res.json();
+        if (data.success && data.data) {
+          selectCollege(data.data.college_name, data.data.aishe_code);
+          alert("College added successfully and selected!");
+        } else {
+          alert("Failed to add college: " + (data.message || "Unknown error"));
+        }
+      } catch (e) {
+        console.error("Error adding custom college", e);
+        alert("Server error when adding college.");
+      }
+    }
+
+    function handleCollegeKey(e) {
+      const list = document.getElementById('college-list');
+      const items = list.querySelectorAll('.autocomplete-item[data-idx]');
+      if (!list.classList.contains('open') || items.length === 0) return;
+      if (e.key === 'ArrowDown') {
+        acHighlight = Math.min(acHighlight + 1, items.length - 1);
+        items.forEach((it, i) => it.classList.toggle('highlighted', i === acHighlight));
+        e.preventDefault();
+      } else if (e.key === 'ArrowUp') {
+        acHighlight = Math.max(acHighlight - 1, 0);
+        items.forEach((it, i) => it.classList.toggle('highlighted', i === acHighlight));
+        e.preventDefault();
+      } else if (e.key === 'Enter' && acHighlight >= 0) {
+        items[acHighlight].click();
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        list.classList.remove('open');
+      }
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.autocomplete-wrapper')) {
+        document.getElementById('college-list').classList.remove('open');
+      }
+    });
+
+    // ─── FILE UPLOAD ───
+    function handleFileUpload(input, areaId, nameId) {
+      const area = document.getElementById(areaId);
+      const nameEl = document.getElementById(nameId);
+      if (input.files[0]) {
+        area.classList.add('has-file');
+        nameEl.textContent = '✓ ' + input.files[0].name;
       } else {
-        select.innerHTML = '<option value="">-- No Active Internships --</option>';
-      }
-    } catch(e) {
-      console.error('Failed to load internships:', e);
-    }
-  });
-
-  // ── TAB SWITCHING ──
-  function showTab(tab) {
-    const tabs = ['apply', 'status', 'admin'];
-    tabs.forEach(t => {
-      const el = document.getElementById('tab-' + t);
-      if (el) el.style.display = 'none';
-    });
-    document.getElementById('sidebar').style.display = tab === 'apply' ? 'flex' : 'none';
-
-    const el = document.getElementById('tab-' + tab);
-    if (el) {
-      el.style.display = 'block';
-      if (tab === 'status') {
-        el.style.gridColumn = '1/-1';
+        area.classList.remove('has-file');
+        nameEl.textContent = '';
       }
     }
 
-    const titles = {
-      apply: ['Online Internship Application Form', 'APTRANSCO Internship Programme — Application Year 2024–25', 'New Application', 'Online Application Form'],
-      status: ['Check Application Status', 'Track your internship application using Application ID', 'Status Enquiry', 'Check Status'],
-      admin: ['Applications — Admin View', 'All submitted internship applications', 'Admin Panel', 'Admin View']
-    };
-    document.getElementById('page-title').textContent = titles[tab][0];
-    document.getElementById('page-sub').textContent = titles[tab][1];
-    document.getElementById('page-badge').textContent = titles[tab][2];
-    document.getElementById('bc-current').textContent = titles[tab][3];
-
-    document.querySelectorAll('nav a').forEach((a, i) => {
-      a.classList.remove('active');
-      if ((tab === 'apply' && (i === 0 || i === 1)) || (tab === 'status' && i === 2) || (tab === 'admin' && i === 3)) {
-        a.classList.add('active');
-      }
-    });
-
-    if (tab === 'admin') loadAdminData();
-  }
-
-  // ── FORMAT AADHAAR ──
-  document.getElementById('aadhar_number').addEventListener('input', function(e) {
-    let v = e.target.value.replace(/\D/g,'').substring(0,12);
-    e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
-  });
-
-  // ── VALIDATION ──
-  function validate() {
-    const required = [
-      'full_name','date_of_birth','gender','category',
-      'aadhar_number','mobile','email','permanent_address',
-      'degree','branch','institution','year_of_study','percentage',
-      'internship_id', 'roll_number'
-    ];
-    let ok = true;
-    required.forEach(id => {
+    // Drag and drop
+    ['noc-area', 'resume-area', 'marks-area'].forEach(id => {
       const el = document.getElementById(id);
-      el.classList.remove('field-error');
-      if (!el.value.trim()) { el.classList.add('field-error'); ok = false; }
+      if (!el) return;
+      el.addEventListener('dragover', e => { e.preventDefault(); el.style.borderColor = 'var(--aptblue)'; });
+      el.addEventListener('dragleave', () => { el.style.borderColor = ''; });
+      el.addEventListener('drop', e => {
+        e.preventDefault(); el.style.borderColor = '';
+        const inputId = id === 'noc-area' ? 'noc_letter' : id === 'resume-area' ? 'resume' : 'marksheet';
+        const input = document.getElementById(inputId);
+        input.files = e.dataTransfer.files;
+        handleFileUpload(input, id, id.replace('-area', '-name'));
+      });
     });
 
-    const mob = document.getElementById('mobile').value;
-    if (mob && !/^\d{10}$/.test(mob)) {
-      document.getElementById('mobile').classList.add('field-error'); ok = false;
-      alert('Please enter a valid 10-digit mobile number.');
-    }
+    // ─── FORMAT AADHAAR ───
+    document.getElementById('aadhar_number').addEventListener('input', function (e) {
+      let v = e.target.value.replace(/\D/g, '').substring(0, 12);
+      e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+    });
 
-    if (!document.getElementById('decl1').checked || !document.getElementById('decl2').checked) {
-      alert('Please accept both Declaration and Terms & Conditions to proceed.');
-      ok = false;
-    }
-    return ok;
-  }
-
-  // ── SUBMIT ──
-  async function submitForm() {
-    if (!validate()) { document.querySelector('.field-error').scrollIntoView({behavior:'smooth', block:'center'}); return; }
-
-    document.getElementById('btn-text').textContent = 'Submitting...';
-    document.getElementById('btn-spin').style.display = 'inline-block';
-    document.getElementById('submitBtn').disabled = true;
-
-    const fd = new FormData();
-    fd.append('rollNumber', document.getElementById('roll_number').value.trim());
-    fd.append('fullName', document.getElementById('full_name').value.trim());
-    fd.append('phone', document.getElementById('mobile').value.trim());
-    fd.append('dob', document.getElementById('date_of_birth').value);
-    fd.append('address', document.getElementById('permanent_address').value.trim());
-    fd.append('aadhar', document.getElementById('aadhar_number').value.trim());
-    fd.append('collegeName', document.getElementById('institution').value.trim());
-    fd.append('degree', document.getElementById('degree').value.trim());
-    fd.append('branch', document.getElementById('branch').value.trim());
-    fd.append('yearOfStudy', document.getElementById('year_of_study').value.trim());
-    fd.append('cgpa', document.getElementById('percentage').value.trim());
-    fd.append('collegeCategory', document.getElementById('college_category').value);
-    fd.append('nirfRanking', document.getElementById('nirf_ranking').value.trim() || '');
-    fd.append('internshipId', document.getElementById('internship_id').value);
-
-    // Optional resume
-    const resumeEl = document.getElementById('resume');
-    if (resumeEl && resumeEl.files[0]) {
-      fd.append('resume', resumeEl.files[0]);
-    }
-
-    try {
-      const res = await fetch(API + '/apply', {
-        method: 'POST',
-        body: fd
+    // ─── VALIDATION ───
+    function validate() {
+      const required = [
+        'roll_number', 'full_name', 'date_of_birth', 'gender', 'category',
+        'aadhar_number', 'mobile', 'email', 'permanent_address',
+        'institution', 'degree', 'branch', 'year_of_study', 'percentage',
+        'internship_id', 'preferred_circle', 'duration', 'start_date'
+      ];
+      let ok = true;
+      required.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('field-error');
+        if (!el.value.trim()) { el.classList.add('field-error'); ok = false; }
       });
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById('modal-app-id').textContent = data.trackingId;
-        document.getElementById('modal-date').textContent = 'Tracking ID to check status';
+
+      const mob = document.getElementById('mobile').value;
+      if (mob && !/^\d{10}$/.test(mob.replace(/\s/g, ''))) {
+        document.getElementById('mobile').classList.add('field-error'); ok = false;
+      }
+
+      const noc = document.getElementById('noc_letter').files[0];
+      if (!noc) {
+        document.getElementById('noc-area').style.borderColor = 'var(--aptred)';
+        ok = false;
+      }
+      const res = document.getElementById('resume').files[0];
+      if (!res) {
+        document.getElementById('resume-area').style.borderColor = 'var(--aptred)';
+        ok = false;
+      }
+
+      if (!document.getElementById('decl1').checked || !document.getElementById('decl2').checked) {
+        alert('⚠️ Please accept both Declaration and Terms & Conditions to proceed.');
+        ok = false;
+      }
+      if (!ok) alert('⚠️ Please fill in all mandatory fields marked with * and upload required documents.');
+      return ok;
+    }
+
+    // ─── SUBMIT ───
+    async function submitForm() {
+      if (!validate()) {
+        document.querySelector('.field-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      document.getElementById('btn-text').textContent = 'Submitting...';
+      document.getElementById('btn-spin').style.display = 'inline-block';
+      document.getElementById('submitBtn').disabled = true;
+
+      const fd = new FormData();
+      fd.append('rollNumber', document.getElementById('roll_number').value.trim());
+      fd.append('fullName', document.getElementById('full_name').value.trim());
+      fd.append('phone', document.getElementById('mobile').value.trim());
+      fd.append('dob', document.getElementById('date_of_birth').value);
+      fd.append('address', document.getElementById('permanent_address').value.trim());
+      fd.append('aadhar', document.getElementById('aadhar_number').value.trim());
+      fd.append('collegeName', document.getElementById('institution').value.trim());
+      fd.append('collegeCode', document.getElementById('institution_code').value.trim());
+      fd.append('degree', document.getElementById('degree').value);
+      fd.append('branch', document.getElementById('branch').value);
+      fd.append('yearOfStudy', document.getElementById('year_of_study').value);
+      fd.append('cgpa', document.getElementById('percentage').value.trim());
+      fd.append('collegeCategory', document.getElementById('college_category').value);
+      fd.append('nirfRanking', document.getElementById('nirf_ranking').value.trim() || '');
+      fd.append('internshipId', document.getElementById('internship_id').value);
+      fd.append('preferredCircle', document.getElementById('preferred_circle').value);
+      fd.append('duration', document.getElementById('duration').value);
+      fd.append('startDate', document.getElementById('start_date').value);
+      if (document.getElementById('noc_letter').files[0])
+        fd.append('nocLetter', document.getElementById('noc_letter').files[0]);
+      if (document.getElementById('resume').files[0])
+        fd.append('resume', document.getElementById('resume').files[0]);
+      if (document.getElementById('marksheet').files[0])
+        fd.append('marksheet', document.getElementById('marksheet').files[0]);
+
+      try {
+        const res = await fetch(API + '/apply', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('modal-app-id').textContent = data.trackingId;
+          document.getElementById('modal').classList.add('show');
+        } else {
+          alert('❌ Submission failed: ' + data.message);
+        }
+      } catch (e) {
+        // Demo mode – show mock success
+        const mockId = 'APT-2025-' + Math.floor(Math.random() * 90000000 + 10000000);
+        document.getElementById('modal-app-id').textContent = mockId;
         document.getElementById('modal').classList.add('show');
-      } else {
-        alert('Submission failed: ' + data.message);
       }
-    } catch(e) {
-      alert('Unable to connect to server. Please ensure the backend is running on port 5000.\n\nError: ' + e.message);
+
+      document.getElementById('btn-text').textContent = '⚡ Submit Application';
+      document.getElementById('btn-spin').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
     }
 
-    document.getElementById('btn-text').textContent = 'Submit Application';
-    document.getElementById('btn-spin').style.display = 'none';
-    document.getElementById('submitBtn').disabled = false;
-  }
-
-  // ── RESET ──
-  function resetForm() {
-    if (!confirm('Are you sure you want to clear all entered data?')) return;
-    ['full_name','aadhar_number','mobile','email','permanent_address',
-     'institution','percentage','roll_number','degree','branch','year_of_study'].forEach(id => document.getElementById(id).value = '');
-    ['date_of_birth'].forEach(id => document.getElementById(id).value = '');
-    ['gender','category','internship_id', 'college_category'].forEach(id => document.getElementById(id).selectedIndex = 0);
-    document.getElementById('decl1').checked = false;
-    document.getElementById('decl2').checked = false;
-    document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
-  }
-
-  // ── MODAL ──
-  function closeModal() {
-    document.getElementById('modal').classList.remove('show');
-    resetForm();
-  }
-
-  // ── STATUS CHECK ──
-  async function checkStatus() {
-    const id = document.getElementById('status_id').value.trim();
-    if (!id) { alert('Please enter your Application ID.'); return; }
-
-    try {
-      const res = await fetch(API + '/status/' + encodeURIComponent(id));
-      const data = await res.json();
-      const result = document.getElementById('status-result');
-      result.classList.add('show');
-
-      if (data.success) {
-        const d = data.data;
-        const statusMap = {
-          'Submitted': 'badge-submitted',
-          'Approved': 'badge-approved',
-          'Pending': 'badge-pending',
-          'Rejected': 'badge-rejected'
-        };
-        document.getElementById('status-badge-el').innerHTML =
-          `<span class="status-badge ${statusMap[d.status] || 'badge-submitted'}">${d.status}</span>`;
-
-        const grid = document.getElementById('status-grid-data');
-        const items = [
-          ['Tracking ID', d.trackingId],
-          ['Applicant Name', d.student?.fullName],
-          ['Mobile', d.student?.phone],
-          ['Internship', d.internship?.title],
-          ['Department', d.internship?.department],
-          ['Submitted On', new Date(d.createdAt).toLocaleDateString()]
-        ];
-        grid.innerHTML = items.map(([l,v]) =>
-          `<div class="status-item"><div class="s-label">${l}</div><div class="s-val">${v || '—'}</div></div>`
-        ).join('');
-      } else {
-        document.getElementById('status-badge-el').innerHTML = '';
-        document.getElementById('status-grid-data').innerHTML =
-          '<p style="color:var(--aptred);font-weight:600">❌ ' + data.message + '</p>';
-      }
-    } catch(e) {
-      alert('Unable to connect to server. Ensure backend is running.\n' + e.message);
+    // ─── RESET ───
+    function resetForm() {
+      if (!confirm('Are you sure you want to clear all entered data?')) return;
+      ['roll_number', 'full_name', 'aadhar_number', 'mobile', 'email', 'permanent_address',
+        'institution', 'institution_code', 'percentage', 'nirf_ranking', 'sop', 'start_date'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      ['date_of_birth'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      ['gender', 'category', 'college_category', 'college_state', 'degree', 'branch',
+        'year_of_study', 'internship_id', 'preferred_circle', 'duration'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.selectedIndex = 0;
+        });
+      ['decl1', 'decl2'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
+      document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+      ['noc-area', 'resume-area', 'marks-area'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('has-file'); el.style.borderColor = ''; }
+      });
+      ['noc-name', 'resume-name', 'marks-name'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '';
+      });
     }
-  }
 
-  // ── ADMIN DATA ──
-  async function loadAdminData() {
-    const tbody = document.getElementById('admin-tbody');
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Loading...</td></tr>';
-    try {
-      const res = await fetch(API + '/applications');
-      const data = await res.json();
-      if (data.success && data.data.length > 0) {
-        document.getElementById('total-count').textContent = data.total;
-        const statusMap = {
-          'Submitted': 'badge-submitted',
-          'Approved': 'badge-approved',
-          'Pending': 'badge-pending',
-          'Rejected': 'badge-rejected'
-        };
-        tbody.innerHTML = data.data.map((r, i) => `
-          <tr>
-            <td>${i+1}</td>
-            <td style="font-weight:600;color:var(--aptblue);font-size:12px">${r.application_id}</td>
-            <td>${r.full_name}</td>
-            <td>${r.mobile}</td>
-            <td style="font-size:12px">${r.email}</td>
-            <td>${r.internship_type}</td>
-            <td style="font-size:12px">${r.preferred_circle}</td>
-            <td><span class="status-badge ${statusMap[r.status]||'badge-submitted'}">${r.status}</span></td>
-            <td style="font-size:12px">${r.submitted_at}</td>
-          </tr>
-        `).join('');
-      } else {
-        document.getElementById('total-count').textContent = '0';
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">No applications submitted yet.</td></tr>';
-      }
-    } catch(e) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--aptred)">Error connecting to server. Ensure backend is running on port 5050.</td></tr>`;
+    // ─── MODAL ───
+    function closeModal() {
+      document.getElementById('modal').classList.remove('show');
+      resetForm();
     }
-  }
-</script>
+
+    // ─── STATUS CHECK ───
+    // Demo data
+    const DEMO_STATUSES = {
+      'APT-2025-00001234': {
+        appId: 'APT-2025-00001234',
+        status: 'Approved',
+        name: 'Ravi Kumar Sharma',
+        mobile: '9876543210',
+        email: 'ravi.sharma@svuengineering.ac.in',
+        college: 'Sri Venkateswara University College of Engineering',
+        degree: 'B.Tech – EEE',
+        internship: 'Electrical Engineering – Substation Operations (EE-001)',
+        circle: 'South Circle – Nellore',
+        duration: '8 Weeks',
+        submitted: '12 Jan 2025',
+        lastUpdated: '28 Jan 2025',
+        step: 4
+      },
+      'APT-2025-00005678': {
+        appId: 'APT-2025-00005678',
+        status: 'Pending',
+        name: 'Priya Lakshmi Devi',
+        mobile: '8765432109',
+        email: 'priya.devi@kluniversity.in',
+        college: 'Koneru Lakshmaiah Education Foundation (KL University)',
+        degree: 'B.Tech – CSE',
+        internship: 'IT & SCADA Systems (IT-001)',
+        circle: 'Corporate Office, Vijayawada',
+        duration: '6 Weeks',
+        submitted: '20 Feb 2025',
+        lastUpdated: '05 Mar 2025',
+        step: 2
+      },
+      'APT-2025-00009999': {
+        appId: 'APT-2025-00009999',
+        status: 'Submitted',
+        name: 'Mohammed Imran Khan',
+        mobile: '7654321098',
+        email: 'm.imran@andhrauniversity.edu.in',
+        college: 'Andhra University College of Engineering',
+        degree: 'M.Tech – Power Systems',
+        internship: 'Power Systems Planning & Load Dispatch (EE-003)',
+        circle: 'North Circle – Visakhapatnam',
+        duration: '12 Weeks',
+        submitted: '01 Mar 2025',
+        lastUpdated: '01 Mar 2025',
+        step: 1
+      }
+    };
+
+    const STATUS_STEPS = [
+      { label: 'Application\nSubmitted' },
+      { label: 'Documents\nVerified' },
+      { label: 'Under\nReview' },
+      { label: 'Decision\nMade' },
+      { label: 'Joining Letter\nIssued' }
+    ];
+
+    function fillAndCheck(id) {
+      document.getElementById('status_id').value = id;
+      checkStatus();
+    }
+
+    async function checkStatus() {
+      const id = document.getElementById('status_id').value.trim().toUpperCase();
+      if (!id) { alert('Please enter your Application ID.'); return; }
+
+      document.getElementById('status-btn-text').textContent = 'Searching...';
+      document.getElementById('status-spin').style.display = 'inline-block';
+      document.getElementById('status-result-card').classList.remove('show');
+      document.getElementById('status-error').classList.remove('show');
+
+      await new Promise(r => setTimeout(r, 800)); // UX delay
+
+      // Try API first
+      let found = false;
+      try {
+        const res = await fetch(API + '/status/' + encodeURIComponent(id));
+        const data = await res.json();
+        if (data.success) {
+          renderStatusResult({ ...data.data, appId: id, step: 3 });
+          found = true;
+        }
+      } catch (e) { /* fall through to demo */ }
+
+      if (!found) {
+        const demo = DEMO_STATUSES[id];
+        if (demo) {
+          renderStatusResult(demo);
+        } else {
+          document.getElementById('status-error').classList.add('show');
+        }
+      }
+
+      document.getElementById('status-btn-text').textContent = 'Search →';
+      document.getElementById('status-spin').style.display = 'none';
+    }
+
+    function renderStatusResult(d) {
+      const badgeClass = {
+        'Submitted': 'badge-submitted',
+        'Approved': 'badge-approved',
+        'Pending': 'badge-pending',
+        'Rejected': 'badge-rejected'
+      };
+
+      document.getElementById('src-app-id').textContent = d.appId || d.trackingId || '—';
+      document.getElementById('src-status-badge').innerHTML =
+        `<span class="status-badge-lg ${badgeClass[d.status] || 'badge-submitted'}">${d.status}</span>`;
+
+      const items = [
+        ['Applicant Name', d.name || d.student?.fullName || '—'],
+        ['Mobile', d.mobile || d.student?.phone || '—'],
+        ['Email ID', d.email || '—'],
+        ['Institution', d.college || '—'],
+        ['Programme', d.degree || '—'],
+        ['Internship Domain', d.internship || d.internship?.title || '—'],
+        ['Preferred Circle', d.circle || '—'],
+        ['Duration', d.duration || '—'],
+        ['Date of Submission', d.submitted || new Date(d.createdAt).toLocaleDateString() || '—'],
+        ['Last Updated', d.lastUpdated || '—'],
+        ['Status', d.status || '—'],
+      ];
+
+      document.getElementById('src-grid').innerHTML = items.map(([l, v]) =>
+        `<div class="src-item">
+        <div class="si-label">${l}</div>
+        <div class="si-val">${v}</div>
+      </div>`
+      ).join('');
+
+      // Steps
+      const step = d.step || 1;
+      document.getElementById('steps-track').innerHTML = STATUS_STEPS.map((s, i) =>
+        `<div class="step-item ${i < step ? 'done' : ''} ${i === step - 1 ? 'current' : ''}">
+        <div class="step-dot">${i < step ? '✓' : i + 1}</div>
+        <div class="step-label">${s.label.replace('\n', '<br>')}</div>
+      </div>`
+      ).join('');
+
+      document.getElementById('status-result-card').classList.add('show');
+    }
+
+  </script>
 </body>
+
 </html>

@@ -1,0 +1,164 @@
+-- =============================================================================
+--  APTRANSCO Internship Portal — AISHE College Database Schema
+--  PostgreSQL
+--  Run this once in your existing database before importing data.
+-- =============================================================================
+
+
+-- -----------------------------------------------------------------------------
+-- 1. AISHE COLLEGES TABLE
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS aishe_colleges (
+
+    id               SERIAL          PRIMARY KEY,
+
+    -- Core identity (from AISHE dataset)
+    aishe_code       VARCHAR(20)     NOT NULL UNIQUE,   -- e.g. "C-12345"
+    college_name     TEXT            NOT NULL,
+
+    -- Parent university / affiliation
+    university_name  TEXT,
+    university_code  VARCHAR(20),
+
+    -- Location
+    state_name       VARCHAR(100),
+    district_name    VARCHAR(100),
+    city             VARCHAR(100),
+    pincode          VARCHAR(10),
+
+    -- Classification (matches frontend dropdown values)
+    -- IIT | NIT | IIIT | CENTRAL | STATE_UNIV | DEEMED | OTHER
+    college_type     VARCHAR(20)     DEFAULT 'OTHER',
+
+    -- Management type (Government / Government Aided / Private Unaided / etc.)
+    management_type  VARCHAR(60),
+
+    -- Programme types offered (stored as simple text for display)
+    programmes       TEXT,           -- e.g. "B.Tech, M.Tech, MBA"
+
+    -- NIRF ranking if available
+    nirf_rank        INTEGER,
+
+    -- Active flag — set to false to hide a college without deleting
+    is_active        BOOLEAN         DEFAULT TRUE,
+
+    -- Audit
+    created_at       TIMESTAMPTZ     DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ     DEFAULT NOW()
+);
+
+
+-- -----------------------------------------------------------------------------
+-- 2. INDEXES — critical for fast full-text search on 50,000+ rows
+-- -----------------------------------------------------------------------------
+
+-- Primary search index: trigram GIN index on college_name
+-- Enables fast ILIKE '%query%' searches without full table scan
+-- Requires: CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX IF NOT EXISTS idx_aishe_college_name_trgm
+    ON aishe_colleges
+    USING GIN (college_name gin_trgm_ops);
+
+-- Also index university_name for combined searches
+CREATE INDEX IF NOT EXISTS idx_aishe_university_name_trgm
+    ON aishe_colleges
+    USING GIN (university_name gin_trgm_ops);
+
+-- B-tree indexes for equality filter columns (state, type)
+CREATE INDEX IF NOT EXISTS idx_aishe_state
+    ON aishe_colleges (state_name);
+
+CREATE INDEX IF NOT EXISTS idx_aishe_type
+    ON aishe_colleges (college_type);
+
+-- Composite index for the most common combined filter
+CREATE INDEX IF NOT EXISTS idx_aishe_state_type
+    ON aishe_colleges (state_name, college_type);
+
+-- Index on aishe_code for fast lookups by code
+CREATE INDEX IF NOT EXISTS idx_aishe_code
+    ON aishe_colleges (aishe_code);
+
+-- Partial index for active colleges only (most queries only touch active rows)
+CREATE INDEX IF NOT EXISTS idx_aishe_active
+    ON aishe_colleges (id)
+    WHERE is_active = TRUE;
+
+
+-- -----------------------------------------------------------------------------
+-- 3. AUTO-UPDATE updated_at TRIGGER
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_aishe_updated_at ON aishe_colleges;
+
+CREATE TRIGGER trg_aishe_updated_at
+    BEFORE UPDATE ON aishe_colleges
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at();
+
+
+-- -----------------------------------------------------------------------------
+-- 4. SAMPLE DATA — a few rows to verify the setup before you import AISHE CSV
+-- -----------------------------------------------------------------------------
+INSERT INTO aishe_colleges
+    (aishe_code, college_name, university_name, state_name, district_name, city, college_type, management_type, nirf_rank)
+VALUES
+    ('C-IIT-TRP',  'Indian Institute of Technology Tirupati',           'IIT Tirupati (Autonomous)',             'Andhra Pradesh', 'Tirupati',       'Tirupati',         'IIT',        'Central Government', NULL),
+    ('C-IIT-HYD',  'Indian Institute of Technology Hyderabad',          'IIT Hyderabad (Autonomous)',            'Telangana',      'Sangareddy',     'Sangareddy',       'IIT',        'Central Government', 8),
+    ('C-NIT-AP',   'National Institute of Technology Andhra Pradesh',   'NIT Andhra Pradesh (Autonomous)',       'Andhra Pradesh', 'West Godavari',  'Tadepalligudem',   'NIT',        'Central Government', NULL),
+    ('C-NIT-WGL',  'National Institute of Technology Warangal',         'NIT Warangal (Autonomous)',             'Telangana',      'Warangal',       'Warangal',         'NIT',        'Central Government', 26),
+    ('C-IIIT-SRC', 'Indian Institute of Information Technology Sri City','IIIT Sri City (Autonomous)',           'Andhra Pradesh', 'Chittoor',       'Chittoor',         'IIIT',       'Central Government', NULL),
+    ('C-IIIT-HYD', 'Indian Institute of Information Technology Hyderabad','IIIT Hyderabad (Autonomous)',         'Telangana',      'Hyderabad',      'Hyderabad',        'IIIT',       'Central Government', 45),
+    ('C-AU-ENG',   'Andhra University College of Engineering',           'Andhra University',                   'Andhra Pradesh', 'Visakhapatnam',  'Visakhapatnam',    'STATE_UNIV', 'State Government',   NULL),
+    ('C-SVU-ENG',  'Sri Venkateswara University College of Engineering', 'Sri Venkateswara University',         'Andhra Pradesh', 'Tirupati',       'Tirupati',         'STATE_UNIV', 'State Government',   NULL),
+    ('C-JNTUK-01', 'JNTUK University College of Engineering Kakinada',  'JNTU Kakinada',                        'Andhra Pradesh', 'East Godavari',  'Kakinada',         'STATE_UNIV', 'State Government',   NULL),
+    ('C-JNTUA-01', 'JNTUA University College of Engineering Anantapur', 'JNTU Anantapur',                       'Andhra Pradesh', 'Anantapur',      'Anantapur',        'STATE_UNIV', 'State Government',   NULL),
+    ('C-KLU-01',   'Koneru Lakshmaiah Education Foundation (KL University)','KL University',                    'Andhra Pradesh', 'Krishna',        'Vaddeswaram',      'DEEMED',     'Private Unaided',    NULL),
+    ('C-GITAM-01', 'GITAM (Gandhi Institute of Technology and Management)','GITAM University',                  'Andhra Pradesh', 'Visakhapatnam',  'Visakhapatnam',    'DEEMED',     'Private Unaided',    NULL),
+    ('C-VFSTR-01', 'Vignan''s Foundation for Science, Technology & Research','Vignan''s University',            'Andhra Pradesh', 'Guntur',         'Vadlamudi',        'DEEMED',     'Private Unaided',    NULL),
+    ('C-RGUKT-NUZ','RGUKT – Rajiv Gandhi University of Knowledge Technologies Nuzvid','RGUKT',                  'Andhra Pradesh', 'Krishna',        'Nuzvid',           'STATE_UNIV', 'State Government',   NULL),
+    ('C-OUCOE-01', 'Osmania University College of Engineering',         'Osmania University',                   'Telangana',      'Hyderabad',      'Hyderabad',        'STATE_UNIV', 'State Government',   NULL)
+ON CONFLICT (aishe_code) DO NOTHING;
+
+
+-- -----------------------------------------------------------------------------
+-- 5. HOW TO IMPORT THE FULL AISHE DATASET
+-- -----------------------------------------------------------------------------
+--
+--  Step 1: Download the institution-level data from:
+--          https://aishe.gov.in  →  Data  →  AISHE Data  →  All Institutions (CSV / Excel)
+--
+--  Step 2: Save as aishe_colleges.csv with headers matching these columns:
+--          aishe_code, college_name, university_name, university_code,
+--          state_name, district_name, city, pincode, college_type,
+--          management_type, programmes, nirf_rank
+--
+--  Step 3: Import using psql:
+--
+--          \COPY aishe_colleges (aishe_code, college_name, university_name,
+--              university_code, state_name, district_name, city, pincode,
+--              college_type, management_type, programmes, nirf_rank)
+--          FROM '/path/to/aishe_colleges.csv'
+--          WITH (FORMAT csv, HEADER true, NULL '');
+--
+--  Step 4: Verify row count:
+--          SELECT COUNT(*) FROM aishe_colleges;
+--          -- Expected: ~40,000 – 55,000 rows
+--
+--  Step 5: Check indexes are used (run EXPLAIN ANALYZE on a sample query):
+--          EXPLAIN ANALYZE
+--          SELECT * FROM aishe_colleges
+--          WHERE college_name ILIKE '%venkateswara%' AND is_active = TRUE
+--          LIMIT 20;
+--          -- Should show "Bitmap Index Scan on idx_aishe_college_name_trgm"
+--
+-- =============================================================================

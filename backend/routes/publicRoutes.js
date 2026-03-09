@@ -22,11 +22,11 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
-        const filetypes = /pdf/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype);
-        if (mextname && mimetype) return cb(null, true);
-        cb(new Error('Only PDF files are allowed!'));
+        const filetypes = /pdf|jpg|jpeg|png/;
+        const extnameMatch = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetypeMatch = filetypes.test(file.mimetype);
+        if (extnameMatch && mimetypeMatch) return cb(null, true);
+        cb(new Error('Only PDF and image files are allowed!'));
     }
 });
 

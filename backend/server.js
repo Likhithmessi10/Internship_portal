@@ -28,12 +28,14 @@ const studentRoutes = require('./routes/studentRoutes');
 const internshipRoutes = require('./routes/internshipRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const publicRoutes = require('./routes/publicRoutes');
+const collegeRoutes = require('./routes/colleges');
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/students', studentRoutes); // Still here for backward compat/admin use
 app.use('/api/v1/internships', internshipRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/public', publicRoutes);
+app.use('/api/v1/public', collegeRoutes);
 
 const startServer = async () => {
     try {
