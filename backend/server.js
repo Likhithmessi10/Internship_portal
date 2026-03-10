@@ -8,7 +8,7 @@ dotenv.config();
 const { PrismaClient } = require('@prisma/client');
 const app = express();
 const prisma = new PrismaClient();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
@@ -29,6 +29,7 @@ const internshipRoutes = require('./routes/internshipRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const collegeRoutes = require('./routes/colleges');
+const errorHandler = require('./middleware/errorHandler');
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/students', studentRoutes); // Still here for backward compat/admin use
@@ -36,6 +37,9 @@ app.use('/api/v1/internships', internshipRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/public', collegeRoutes);
+
+// Global Error Handler Middleware
+app.use(errorHandler);
 
 const startServer = async () => {
     try {

@@ -1,35 +1,44 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LayoutDashboard, Plus, XCircle, LogOut } from 'lucide-react';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
+    const location = useLocation();
+
+    const navLink = (to, icon, label) => (
+        <Link to={to}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors
+                ${location.pathname === to
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'}`}>
+            {icon}{label}
+        </Link>
+    );
 
     return (
-        <header className="bg-primary text-white p-4 shadow-md flex justify-between items-center">
-            <Link to="/" className="text-xl font-bold tracking-tight">APTRANSCO Portal</Link>
-            <nav className="flex gap-4 items-center">
-                <Link to="/" className="hover:text-blue-200">Home</Link>
+        <header className="bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+            {/* Brand */}
+            <Link to="/admin/dashboard" className="flex items-center gap-2 font-black text-base text-indigo-700 tracking-tight">
+                <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-black">AP</span>
+                APTRANSCO
+                <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full font-bold">Admin</span>
+            </Link>
 
-                {user ? (
-                    <>
-                        <span className="text-sm bg-blue-800 px-2 py-1 rounded">Role: {user.role}</span>
-                        {user.role === 'ADMIN' ? (
-                            <Link to="/admin/dashboard" className="hover:text-blue-200">Dashboard</Link>
-                        ) : (
-                            <Link to="/student/dashboard" className="hover:text-blue-200">Dashboard</Link>
-                        )}
-                        <button onClick={logout} className="ml-4 bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition-colors">
-                            Logout
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <Link to="/login" className="hover:text-blue-200">Login</Link>
-                        <Link to="/register" className="bg-white text-primary px-3 py-1 rounded font-semibold hover:bg-gray-100 transition-colors">Register</Link>
-                    </>
-                )}
-            </nav>
+            {/* Links */}
+            {user?.role === 'ADMIN' && (
+                <nav className="flex items-center gap-1">
+                    {navLink('/admin/dashboard', <LayoutDashboard size={14} />, 'Dashboard')}
+                    {navLink('/admin/internships/new', <Plus size={14} />, 'New Internship')}
+                    {navLink('/admin/rejected', <XCircle size={14} />, 'Rejected')}
+                    <button
+                        onClick={logout}
+                        className="flex items-center gap-1.5 ml-3 px-3 py-1.5 rounded-lg text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
+                        <LogOut size={14} /> Logout
+                    </button>
+                </nav>
+            )}
         </header>
     );
 };

@@ -25,6 +25,10 @@ const applyForInternship = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Internship not found or inactive' });
         }
 
+        if (internship.applicationDeadline && new Date(internship.applicationDeadline) < new Date()) {
+            return res.status(400).json({ success: false, message: 'Application deadline has passed for this internship.' });
+        }
+
         // 3. Get student profile & ensure it exists
         const profile = await prisma.studentProfile.findUnique({
             where: { userId: studentId }
@@ -41,8 +45,10 @@ const applyForInternship = async (req, res) => {
         const hodLetterFile = req.files && req.files['hodLetter'] ? req.files['hodLetter'][0] : null;
 
         // 5. Create Application
+        const trackingId = `APT-${Date.now()}-${profile.rollNumber.slice(-4)}`.toUpperCase();
         const application = await prisma.application.create({
             data: {
+                trackingId,
                 studentId: profile.id, // Linking to StudentProfile ID, not User ID
                 internshipId: internship.id,
                 status: 'PENDING'
@@ -84,7 +90,13 @@ const applyForInternship = async (req, res) => {
 const getInternships = async (req, res) => {
     try {
         const internships = await prisma.internship.findMany({
-            where: { isActive: true },
+            where: {
+                isActive: true,
+                OR: [
+                    { applicationDeadline: null },
+                    { applicationDeadline: { gte: new Date() } }
+                ]
+            },
             orderBy: { createdAt: 'desc' }
         });
         res.status(200).json({ success: true, count: internships.length, data: internships });

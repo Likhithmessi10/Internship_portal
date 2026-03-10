@@ -1,39 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import Login from './pages/Login';
-import Register from './pages/Register';
-import StudentDashboard from './pages/StudentDashboard';
-import StudentProfileForm from './pages/StudentProfileForm';
-import InternshipList from './pages/InternshipList';
-import InternshipApplication from './pages/InternshipApplication';
-
+import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CreateInternshipForm from './pages/admin/CreateInternship';
 import AdminApplicationReview from './pages/admin/AdminApplicationReview';
+import AdminRejected from './pages/admin/AdminRejected';
 
-const Layout = ({ children }) => (
-  <div className="min-h-screen flex flex-col">
+const AdminLayout = ({ children }) => (
+  <div className="min-h-screen flex flex-col bg-slate-50">
     <Navbar />
-    <main className="flex-grow bg-background p-6">
+    <main className="flex-grow p-6 lg:p-8">
       {children}
     </main>
-    <footer className="bg-secondary text-gray-400 p-4 text-center text-sm">
-      &copy; {new Date().getFullYear()} APTRANSCO. All rights reserved.
+    <footer className="bg-white border-t border-gray-100 text-gray-400 py-4 text-center text-xs">
+      © {new Date().getFullYear()} APTRANSCO · Admin Portal · Confidential
     </footer>
-  </div>
-);
-
-const Home = () => (
-  <div className="max-w-4xl mx-auto text-center mt-12 mb-12">
-    <h2 className="text-4xl font-extrabold text-secondary mb-4">Launch Your Career with APTRANSCO</h2>
-    <p className="text-lg text-muted mb-8">Apply for prestigious internships, get automatically evaluated, and track your application status in real-time.</p>
-    <div className="flex gap-4 justify-center">
-      <a href="/register" className="btn-primary text-lg px-8 py-3">Register Now</a>
-      <a href="/login" className="btn-secondary text-lg px-8 py-3">Login to Dashboard</a>
-    </div>
   </div>
 );
 
@@ -41,57 +25,36 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+        <Routes>
+          {/* Root — redirect to login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<AdminLogin />} />
 
-            {/* Student Routes */}
-            <Route path="/student/dashboard" element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
-                <StudentDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/student/profile/edit" element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
-                <StudentProfileForm />
-              </ProtectedRoute>
-            } />
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout><AdminDashboard /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/internships/new" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout><CreateInternshipForm /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/internships/:id/applications" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout><AdminApplicationReview /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/rejected" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout><AdminRejected /></AdminLayout>
+            </ProtectedRoute>
+          } />
 
-
-            {/* Shared Protected Routes */}
-            <Route path="/internships" element={
-              <ProtectedRoute>
-                <InternshipList />
-              </ProtectedRoute>
-            } />
-            <Route path="/internships/:id/apply" element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
-                <InternshipApplication />
-              </ProtectedRoute>
-            } />
-
-            {/* Admin Routes */}
-            <Route path="/admin/dashboard" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/internships/new" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <CreateInternshipForm />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/internships/:id/applications" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminApplicationReview />
-              </ProtectedRoute>
-            } />
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
+          {/* All other paths → login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

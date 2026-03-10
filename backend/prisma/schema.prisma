@@ -17,6 +17,8 @@ enum ApplicationStatus {
   SHORTLISTED
   REJECTED
   HIRED
+  COMPLETED
+  CERTIFIED
 }
 
 enum CollegeCategory {
@@ -26,15 +28,18 @@ enum CollegeCategory {
   CENTRAL
   STATE_UNIV
   DEEMED
+  AUTONOMOUS
+  COLLEGE
+  INSTITUTE
   OTHER
 }
 
 enum DocumentType {
   RESUME
   PRINCIPAL_LETTER
-  HOD_LETTER
   NOC_LETTER
   MARKSHEET
+  PASSPORT_PHOTO
 }
 
 model User {
@@ -82,16 +87,21 @@ model StudentProfile {
 }
 
 model Internship {
-  id            String   @id @default(uuid())
-  title         String
-  department    String
-  description   String
-  location      String
-  duration      String   // e.g., "6 Months", "10 Weeks"
-  openingsCount Int
-  isActive      Boolean  @default(true)
-  quotaPercentages Json? // Stores { IIT: 30, NIT: 30, IIIT: 20, OTHER: 20 }
-  
+  id                   String    @id @default(uuid())
+  title                String
+  department           String
+  description          String
+  roles                String?   // Legacy string field (kept to not break existing)
+  rolesData            Json?     @db.JsonB // New structured array [{name, openings, hired}]
+  requirements         String?   // Candidate requirements
+  expectations         String?   // What interns will learn/do
+  location             String
+  duration             String    // e.g., "6 Months", "10 Weeks"
+  openingsCount        Int
+  isActive             Boolean   @default(true)
+  applicationDeadline  DateTime?
+  quotaPercentages     Json?     @db.JsonB
+
   applications  Application[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -104,6 +114,7 @@ model Application {
   internshipId    String
   status          ApplicationStatus @default(PENDING)
   score           Float             @default(0.0) // Automated System Score
+  assignedRole    String?           // The role they were hired for
   
   preferredCircle String?
   duration        String?
@@ -136,4 +147,33 @@ model AutomationRule {
   experienceWeight Float    @default(20.0)
   nirfWeight       Float    @default(10.0)
   updatedAt        DateTime @updatedAt
+}
+
+model OtpVerification {
+  id         String   @id @default(uuid())
+  rollNumber String   @unique
+  otp        String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+}
+
+model AisheCollege {
+  id              Int       @id @default(autoincrement())
+  aishe_code      String    @unique @db.VarChar(20)
+  college_name    String
+  university_name String?
+  university_code String?   @db.VarChar(20)
+  state_name      String?   @db.VarChar(100)
+  district_name   String?   @db.VarChar(100)
+  city            String?   @db.VarChar(100)
+  pincode         String?   @db.VarChar(10)
+  college_type    String?   @default("OTHER") @db.VarChar(20)
+  management_type String?   @db.VarChar(60)
+  programmes      String?
+  nirf_rank       Int?
+  is_active       Boolean?  @default(true)
+  created_at      DateTime? @default(now()) @db.Timestamptz
+  updated_at      DateTime? @default(now()) @db.Timestamptz
+
+  @@map("aishe_colleges")
 }

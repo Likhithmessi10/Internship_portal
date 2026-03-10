@@ -656,6 +656,131 @@
       background: var(--aptgold2);
     }
 
+    /* Internship Cards on Home Page */
+    .internships-section {
+      background: #f0f3f8;
+      padding: 50px 28px;
+    }
+
+    .internships-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .internships-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-top: 28px;
+    }
+
+    .internship-card {
+      background: var(--white);
+      border: 1px solid #dce4ef;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: var(--card-shadow);
+      transition: transform .2s, box-shadow .2s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .internship-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0, 48, 135, .15);
+      border-color: var(--aptblue);
+    }
+
+    .internship-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .internship-card-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--aptblue);
+      line-height: 1.2;
+    }
+
+    .internship-badge {
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap;
+    }
+
+    .internship-card-meta {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .internship-card-desc {
+      font-size: 13.5px;
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      flex-grow: 1;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      overflow: hidden;
+    }
+
+    .internship-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    .internship-openings {
+      font-size: 12.5px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .internship-openings strong {
+      color: var(--aptblue);
+      font-size: 15px;
+    }
+
+    .btn-apply-card {
+      background: var(--aptblue);
+      color: var(--white);
+      border: none;
+      padding: 10px 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      text-transform: uppercase;
+    }
+
+    .btn-apply-card:hover {
+      background: #002070;
+      transform: translateY(-1px);
+    }
+
     /* ──────────────────────────────────────────────
      APPLY PAGE
   ────────────────────────────────────────────── */
@@ -1726,13 +1851,7 @@
   <!-- HEADER -->
   <header>
     <div class="header-inner">
-      <div class="logo-emblem">
-        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="32" cy="32" r="30" fill="none" stroke="#D4A017" stroke-width="2" />
-          <path d="M32 8 L20 34 H30 L22 56 L44 28 H34 L42 8 Z" fill="#FFD700" stroke="#D4A017" stroke-width="1" />
-          <text x="32" y="62" text-anchor="middle" fill="#D4A017" font-size="5" font-family="serif">AP</text>
-        </svg>
-      </div>
+      <img src="logo.png" alt="APTRANSCO Logo" style="height: 80px; object-fit: contain; margin-right: 15px;" />
       <div class="header-text">
         <div class="dept">Government of Andhra Pradesh — Energy Department</div>
         <h1>Andhra Pradesh Transmission Corporation Limited</h1>
@@ -1889,6 +2008,23 @@
                 applications must be submitted through this official portal only.</p>
               <p>Stipend is <strong>not provided</strong>; the internship is honorary and educational in nature.</p>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AVAILABLE INTERNSHIPS -->
+    <div class="internships-section" id="internships-section">
+      <div class="internships-inner">
+        <div class="section-title">Available Internships</div>
+        <div class="section-title-line"></div>
+        <div class="internships-grid" id="available-internships-grid">
+          <!-- Will be populated by JS -->
+          <div style="text-align: center; grid-column: 1 / -1; padding: 40px; color: var(--muted);">
+            <div class="loading"
+              style="border-color: rgba(0,48,135,.2); border-top-color: var(--aptblue); width: 24px; height: 24px;">
+            </div>
+            <p style="margin-top: 10px;">Loading available internships...</p>
           </div>
         </div>
       </div>
@@ -2291,7 +2427,7 @@
                 <span class="hint">Include academic projects, skills, and achievements</span>
               </div>
             </div>
-            <div class="form-row full">
+            <div class="form-row">
               <div class="field">
                 <label>Latest Mark Sheet (Scanned Copy)</label>
                 <div class="file-upload-area" id="marks-area" onclick="document.getElementById('marksheet').click()"
@@ -2303,6 +2439,20 @@
                   <input type="file" id="marksheet" accept=".pdf,.jpg,.jpeg,.png"
                     onchange="handleFileUpload(this,'marks-area','marks-name')">
                 </div>
+              </div>
+              <div class="field">
+                <label>Passport-Size Photograph <span class="req">*</span></label>
+                <div class="file-upload-area" id="photo-area"
+                  onclick="document.getElementById('passport_photo').click()" style="padding:14px;">
+                  <div class="fu-icon" style="font-size:22px;">🖼️</div>
+                  <div class="fu-text"><strong>Click to upload</strong> recent passport size photo · JPG / PNG · Max 1
+                    MB</div>
+                  <div class="fu-name" id="photo-name"></div>
+                  <input type="file" id="passport_photo" accept=".jpg,.jpeg,.png"
+                    onchange="handleFileUpload(this,'photo-area','photo-name')">
+                </div>
+                <span class="hint">⚠️ Mandatory — White background, plain attire. Photo must be recent (within 6
+                  months).</span>
               </div>
             </div>
           </div>
@@ -2530,6 +2680,7 @@
           decision.</p>
       </div>
       <div class="modal-footer">
+        <button class="btn-print" id="copy-btn" onclick="copyTrackingId()">📋 Copy ID</button>
         <button class="btn-print" onclick="window.print()">🖨 Print Receipt</button>
         <button class="btn-close-modal" onclick="closeModal()">Close</button>
       </div>
@@ -2557,7 +2708,15 @@
   </footer>
 
   <script>
-    const API = 'http://localhost:5000/api/v1/public';
+    const API = 'http://localhost:5001/api/v1/public';
+
+    function applyForInternshipId(id) {
+      const select = document.getElementById('internship_id');
+      if (select) {
+        select.value = id;
+      }
+      showPage('apply');
+    }
 
     // Load internships on load
     document.addEventListener('DOMContentLoaded', async () => {
@@ -2565,14 +2724,51 @@
         const res = await fetch(API + '/internships');
         const data = await res.json();
         const select = document.getElementById('internship_id');
+        const grid = document.getElementById('available-internships-grid');
+
         if (data.success && data.data.length > 0) {
+          // Populate select dropdown
           select.innerHTML = '<option value="">-- Select Preferred Domain --</option>' +
             data.data.map(i => `<option value="${i.id}">${i.title} - ${i.department} (${i.openingsCount} Openings)</option>`).join('');
+
+          // Populate homepage cards
+          if (grid) {
+            grid.innerHTML = data.data.map(i => `
+              <div class="internship-card">
+                <div class="internship-card-header">
+                  <div class="internship-card-title">${i.title}</div>
+                  <div class="internship-badge">Active</div>
+                </div>
+                <div class="internship-card-meta">
+                  <span>🏢 ${i.department}</span>
+                  <span>&bull;</span>
+                  <span>📍 ${i.location}</span>
+                </div>
+                ${i.applicationDeadline ? `<div class="internship-card-meta" style="color: #c62828;">⏱️ Deadline: ${new Date(i.applicationDeadline).toLocaleDateString()}</div>` : ''}
+                <div class="internship-card-desc">
+                  ${i.expectations || i.requirements || 'Join APTRANSCO to gain valuable hands-on experience in the power transmission sector.'}
+                </div>
+                <div class="internship-card-footer">
+                  <div class="internship-openings">
+                    <strong>${i.openingsCount}</strong> Openings
+                  </div>
+                  <button class="btn-apply-card" onclick="applyForInternshipId('${i.id}')">Apply Now</button>
+                </div>
+              </div>
+            `).join('');
+          }
         } else {
           select.innerHTML = '<option value="">-- No Active Internships --</option>';
+          if (grid) {
+            grid.innerHTML = '<div style="text-align: center; grid-column: 1 / -1; padding: 40px; color: var(--muted); background: white; border-radius: 8px; border: 1px dashed #ccc;">No internships are currently open for applications. Check back later.</div>';
+          }
         }
       } catch (e) {
         console.error('Failed to load internships:', e);
+        const grid = document.getElementById('available-internships-grid');
+        if (grid) {
+          grid.innerHTML = '<div style="text-align: center; grid-column: 1 / -1; padding: 40px; color: var(--aptred); background: #fff5f5; border-radius: 8px;">Failed to load internships. Please ensure the backend server is running.</div>';
+        }
       }
     });
 
@@ -2722,17 +2918,21 @@
     }
 
     // Drag and drop
-    ['noc-area', 'resume-area', 'marks-area'].forEach(id => {
-      const el = document.getElementById(id);
+    [
+      { area: 'noc-area', input: 'noc_letter' },
+      { area: 'resume-area', input: 'resume' },
+      { area: 'marks-area', input: 'marksheet' },
+      { area: 'photo-area', input: 'passport_photo' }
+    ].forEach(({ area, input }) => {
+      const el = document.getElementById(area);
       if (!el) return;
       el.addEventListener('dragover', e => { e.preventDefault(); el.style.borderColor = 'var(--aptblue)'; });
       el.addEventListener('dragleave', () => { el.style.borderColor = ''; });
       el.addEventListener('drop', e => {
         e.preventDefault(); el.style.borderColor = '';
-        const inputId = id === 'noc-area' ? 'noc_letter' : id === 'resume-area' ? 'resume' : 'marksheet';
-        const input = document.getElementById(inputId);
-        input.files = e.dataTransfer.files;
-        handleFileUpload(input, id, id.replace('-area', '-name'));
+        const inp = document.getElementById(input);
+        inp.files = e.dataTransfer.files;
+        handleFileUpload(inp, area, area.replace('-area', '-name'));
       });
     });
 
@@ -2771,6 +2971,11 @@
       const res = document.getElementById('resume').files[0];
       if (!res) {
         document.getElementById('resume-area').style.borderColor = 'var(--aptred)';
+        ok = false;
+      }
+      const photo = document.getElementById('passport_photo').files[0];
+      if (!photo) {
+        document.getElementById('photo-area').style.borderColor = 'var(--aptred)';
         ok = false;
       }
 
@@ -2818,6 +3023,8 @@
         fd.append('resume', document.getElementById('resume').files[0]);
       if (document.getElementById('marksheet').files[0])
         fd.append('marksheet', document.getElementById('marksheet').files[0]);
+      if (document.getElementById('passport_photo').files[0])
+        fd.append('passportPhoto', document.getElementById('passport_photo').files[0]);
 
       try {
         const res = await fetch(API + '/apply', { method: 'POST', body: fd });
@@ -2855,11 +3062,11 @@
         });
       ['decl1', 'decl2'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
       document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
-      ['noc-area', 'resume-area', 'marks-area'].forEach(id => {
+      ['noc-area', 'resume-area', 'marks-area', 'photo-area'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.remove('has-file'); el.style.borderColor = ''; }
       });
-      ['noc-name', 'resume-name', 'marks-name'].forEach(id => {
+      ['noc-name', 'resume-name', 'marks-name', 'photo-name'].forEach(id => {
         const el = document.getElementById(id); if (el) el.textContent = '';
       });
     }
@@ -2867,7 +3074,21 @@
     // ─── MODAL ───
     function closeModal() {
       document.getElementById('modal').classList.remove('show');
-      resetForm();
+      // Removed resetForm() so users can still see their data if they want
+    }
+
+    function copyTrackingId() {
+      const id = document.getElementById('modal-app-id').textContent;
+      navigator.clipboard.writeText(id).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.background = '#1b5e20';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+        }, 2000);
+      });
     }
 
     // ─── STATUS CHECK ───
@@ -2947,13 +3168,34 @@
       // Try API first
       let found = false;
       try {
-        const res = await fetch(API + '/status/' + encodeURIComponent(id));
+        const res = await fetch(API + '/track/' + encodeURIComponent(id));
         const data = await res.json();
-        if (data.success) {
-          renderStatusResult({ ...data.data, appId: id, step: 3 });
+        if (data.success && data.data) {
+          const apiData = data.data;
+          // Determine step based on status
+          let stepVal = 1;
+          if (apiData.status === 'SHORTLISTED') stepVal = 4;
+          else if (['HIRED', 'COMPLETED', 'CERTIFIED'].includes(apiData.status)) stepVal = 5;
+          else if (apiData.status === 'REJECTED') stepVal = 4;
+          else if (apiData.status === 'PENDING') stepVal = 2;
+
+          renderStatusResult({
+            appId: id,
+            status: apiData.status,
+            name: apiData.student?.fullName,
+            mobile: apiData.student?.phone,
+            college: apiData.student?.collegeName,
+            degree: apiData.student?.degree,
+            internship: apiData.internship?.title,
+            circle: apiData.preferredCircle,
+            duration: apiData.duration,
+            createdAt: apiData.createdAt,
+            lastUpdated: new Date(apiData.updatedAt).toLocaleDateString(),
+            step: stepVal
+          });
           found = true;
         }
-      } catch (e) { /* fall through to demo */ }
+      } catch (e) { console.error('API Error:', e); }
 
       if (!found) {
         const demo = DEMO_STATUSES[id];
@@ -2971,9 +3213,12 @@
     function renderStatusResult(d) {
       const badgeClass = {
         'Submitted': 'badge-submitted',
-        'Approved': 'badge-approved',
-        'Pending': 'badge-pending',
-        'Rejected': 'badge-rejected'
+        'PENDING': 'badge-pending',
+        'SHORTLISTED': 'badge-approved',
+        'REJECTED': 'badge-rejected',
+        'HIRED': 'badge-approved',
+        'COMPLETED': 'badge-approved',
+        'CERTIFIED': 'badge-approved'
       };
 
       document.getElementById('src-app-id').textContent = d.appId || d.trackingId || '—';

@@ -1,10 +1,13 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const fileValidator = require('../middleware/fileValidator');
 const {
     submitApplication,
     trackStatus,
-    getPublicInternships
+    getPublicInternships,
+    generateOtp,
+    verifyOtp
 } = require('../controllers/publicController');
 
 const router = express.Router();
@@ -30,8 +33,10 @@ const upload = multer({
     }
 });
 
+router.post('/otp/generate', generateOtp);
+router.post('/otp/verify', verifyOtp);
 router.get('/internships', getPublicInternships);
 router.get('/track/:trackingId', trackStatus);
-router.post('/apply', upload.any(), submitApplication);
+router.post('/apply', upload.any(), fileValidator, submitApplication);
 
 module.exports = router;
