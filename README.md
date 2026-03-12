@@ -1,122 +1,96 @@
 # APTRANSCO Internship Management Portal
 
-A full-stack application for managing student internship applications with an independent, passwordless student portal and a secure admin dashboard.
+The APTRANSCO Internship Management Portal is a comprehensive, full-stack enterprise solution designed to streamline the student internship application lifecycle. It features a unified React-based frontend for both students and administrators, backed by a robust Node.js/Express API and PostgreSQL database.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **Public Student Portal**: Students can apply for internships directly without an account.
-- **Application Tracking**: Applications can be tracked via a unique Tracking ID and College Roll Number.
-- **Admin Dashboard**: Manage internship listings, view incoming applications, and shortlist or reject candidates.
-- **Dynamic Database integration**: Centralized robust schema with PostgreSQL and Prisma.
+### 🎓 For Students
+- **Full Account Lifecycle**: Secure registration and login (JWT-based).
+- **Premium Profile Builder**: A multi-step animated onboarding process to save personal, academic, and experience details.
+- **Single-Click Applications**: Once a profile is complete, students can apply to any internship by simply uploading their Resume and NOC letter.
+- **Application Tracking**: Real-time status updates (Pending -> Shortlisted -> Hired) visible directly on the student dashboard.
+
+### 💼 For Administrators
+- **Modern Management Dashboard**: Track recruitment metrics, fill rates, and seat availability.
+- **Application Review System**: Deep-dive into student profiles with a built-in fullscreen document viewer for PDF/Image uploads.
+- **Seamless Hiring Workflow**: One-click status updates and role assignment.
+- **Excel Integration**: Export full application datasets to formatted Excel spreadsheets for offline processing.
 
 ---
 
 ## 🛠 Prerequisites
 
-Before you start, ensure you have the following installed on your machine:
-- **[Node.js](https://nodejs.org/)** (v16.0.0 or higher)
-- **[PostgreSQL](https://www.postgresql.org/)** (Running locally or via Docker, version 14+ recommended)
-- **git** (to clone the repository)
+Ensure you have the following installed:
+- **[Node.js](https://nodejs.org/)** (v18.0.0 or higher)
+- **[PostgreSQL](https://www.postgresql.org/)** (Running locally or via Docker)
+- **vpm/npm** (Node Package Manager)
 
 ---
 
 ## 📋 Step-by-Step Installation Guide
 
-Follow these instructions exactly to install and run the application on your local machine.
-
-### 1. Database Configuration (PostgreSQL)
-
-You will need an active PostgreSQL database.
-1. Make sure your local PostgreSQL service is running.
-2. Create a new database for the application. You can use a tool like pgAdmin, DBeaver, or the CLI:
+### 1. Database Configuration
+1. Ensure PostgreSQL is running.
+2. Create a new database named `aptransco`.
    ```bash
    createdb aptransco
    ```
 
 ### 2. Backend Setup
-
-The backend hosts the API endpoints, interacts with the database via Prisma ORM, and serves the static HTML student portal.
-
 1. **Navigate to the `backend` folder**:
    ```bash
    cd backend
    ```
-
 2. **Install dependencies**:
    ```bash
    npm install
    ```
-
 3. **Configure Environment Variables**:
-   Open `backend/.env` (or create it if missing) and configure your variables to match your database:
+   Create a `.env` file in the `backend/` directory:
    ```env
    PORT=5001
-   JWT_SECRET=your_super_secret_jwt_key
-   # Replace postgres:password with your actual PostgreSQL username and password
-   DATABASE_URL="postgresql://postgres:password@localhost:5432/aptransco?schema=public"
+   JWT_SECRET=your_secure_secret_key
+   DATABASE_URL="postgresql://postgres:user_password@localhost:5432/aptransco?schema=public"
    ```
-
-4. **Initialize Database Schema via Prisma**:
-   This will synchronize the database tables based on the Prisma schema and generate the client library.
+4. **Push Schema & Generate Client**:
    ```bash
    npx prisma generate
    npx prisma db push
    ```
-
-5. **Seed the Initial Admin Account**:
-   This sets up the default administrator account.
+5. **Seed Default Admin**:
    ```bash
    node seed.js
    ```
-
-6. **Start the Backend Server**:
+6. **Start Server**:
    ```bash
    npm run dev
-   # The server should start on http://localhost:5001
    ```
 
-### 3. Frontend (Admin) Setup
-
-The frontend is a React admin dashboard powered by Vite.
-
-1. **Navigate to the `frontend` folder** (in a new terminal window):
+### 3. Frontend Setup
+1. **Navigate to the `frontend` folder**:
    ```bash
    cd frontend
    ```
-
 2. **Install dependencies**:
    ```bash
    npm install
    ```
-   
-   *(Note: The frontend is configured to communicate with the backend running on `http://localhost:5001` automatically).*
-
-3. **Start the Admin Dashboard**:
+3. **Start React Application**:
    ```bash
    npm run dev
-   # The application will be available at http://localhost:5173
    ```
 
 ---
 
-## 💻 How to Use the Application
+## 💻 Accessing the Portals
 
-### 🎓 For Students (Public Portal)
-1. Ensure the Backend Server is running.
-2. Open **[http://localhost:5001/](http://localhost:5001/)** in your browser.
-3. Fill out the application form (no login is required). You will need an active internship listing to apply for.
-4. After submission, you will receive a **Tracking ID** (e.g., `APT-1710XXX`). Save this safely.
-5. Use the "Check Status" tab and enter your College Roll Number and Tracking ID to follow up on your application.
-
-### 💼 For Administrators (Admin Portal)
-1. Ensure both Backend and Frontend Servers are running.
-2. Open **[http://localhost:5173/](http://localhost:5173/)** in your browser.
-3. Log in with the seeded default admin credentials:
-   - **Email**: `admin@aptransco.gov.in`
-   - **Password**: `admin123`
-4. Use the dashboard to manually Approve or Reject incoming candidates, post new internship listings, or view uploaded documentation.
+| Portal | URL | Default Credentials |
+| :--- | :--- | :--- |
+| **Landing Page** | `http://localhost:5001/` | Static gateway to React apps |
+| **Student Portal** | `http://localhost:5173/` | Register as a new user |
+| **Admin Portal** | `http://localhost:5173/admin/login` | Email: `admin@aptransco.gov.in` / Pass: `admin123` |
 
 ---
 
@@ -124,15 +98,15 @@ The frontend is a React admin dashboard powered by Vite.
 
 ```text
 📂 internship portal
- ├── 📄 README.md                 # Project documentation
- ├── 📄 aptransco_portal.html     # Public front-end code (served by Express backend)
+ ├── 📄 aptransco_portal.html     # Static Landing Page (Redirector)
  ├── 📂 backend
- │   ├── 📄 package.json          # Backend dependencies
- │   ├── 📄 server.js             # Express.js entry point
- │   ├── 📄 seed.js               # Database seeder logic
- │   └── 📂 prisma                # Database schemas & migrations
+ │   ├── 📂 controllers           # API Logic (Admin & Student)
+ │   ├── 📂 routes                # Express Routes
+ │   └── 📂 prisma                # Database Schema (studentProfile, Application, etc.)
  └── 📂 frontend
-     ├── 📄 package.json          # Admin dashboard dependencies
-     ├── 📄 vite.config.js        # Vite bundler configuration
-     └── 📂 src                   # React source code components & pages
+     └── 📂 src
+         ├── 📂 context           # AuthState Management
+         └── 📂 pages
+             ├── 📂 admin         # Admin-specific React Pages
+             └── 📂 student       # Student-specific React Pages
 ```

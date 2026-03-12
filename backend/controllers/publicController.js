@@ -111,7 +111,9 @@ const submitApplication = async (req, res, next) => {
         if (req.files && req.files.length > 0) {
             const documents = req.files.map(file => {
                 let type = 'RESUME';
-                if (file.fieldname === 'principalLetter' || file.fieldname === 'nocLetter') type = 'NOC_LETTER';
+                if (file.fieldname === 'principalLetter') type = 'PRINCIPAL_LETTER';
+                if (file.fieldname === 'hodLetter') type = 'HOD_LETTER';
+                if (file.fieldname === 'nocLetter') type = 'NOC_LETTER';
                 if (file.fieldname === 'marksheet') type = 'MARKSHEET';
                 if (file.fieldname === 'passportPhoto') type = 'PASSPORT_PHOTO';
 

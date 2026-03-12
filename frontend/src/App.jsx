@@ -1,13 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import StudentLayout from './components/StudentLayout';
+import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import AdminLogin from './pages/AdminLogin';
+// Admin Pages
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CreateInternshipForm from './pages/admin/CreateInternship';
 import AdminApplicationReview from './pages/admin/AdminApplicationReview';
 import AdminRejected from './pages/admin/AdminRejected';
+
+// Student Pages
+import Login from './pages/student/Login';
+import Register from './pages/student/Register';
+import StudentDashboard from './pages/student/StudentDashboard';
+import StudentProfileForm from './pages/student/StudentProfileForm';
+import InternshipList from './pages/student/InternshipList'; // Reuse or revamp for students
+import InternshipApplication from './pages/student/InternshipApplication';
 
 const AdminLayout = ({ children }) => (
   <div className="min-h-screen flex flex-col bg-slate-50">
@@ -21,16 +31,27 @@ const AdminLayout = ({ children }) => (
   </div>
 );
 
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex justify-center items-center h-screen bg-slate-50">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+  </div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard'} replace />;
+};
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Root — redirect to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<AdminLogin />} />
+          {/* Public Authentication Routes */}
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Admin Routes */}
+          {/* Protected Admin Routes */}
           <Route path="/admin/dashboard" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminLayout><AdminDashboard /></AdminLayout>
@@ -52,7 +73,29 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* All other paths → login */}
+          {/* Protected Student Routes */}
+          <Route path="/student/dashboard" element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentLayout><StudentDashboard /></StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/student/profile/edit" element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentLayout><StudentProfileForm /></StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/student/internships" element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentLayout><InternshipList /></StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/student/internships/:id/apply" element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentLayout><InternshipApplication /></StudentLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

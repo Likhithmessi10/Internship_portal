@@ -37,30 +37,36 @@ enum CollegeCategory {
 enum DocumentType {
   RESUME
   PRINCIPAL_LETTER
+  HOD_LETTER
   NOC_LETTER
   MARKSHEET
   PASSPORT_PHOTO
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      Role     @default(ADMIN) // Default to ADMIN now since students are passwordless
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  role     Role   @default(ADMIN) // Default to ADMIN now since students are passwordless
+
+  studentProfile StudentProfile?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model StudentProfile {
-  id              String          @id @default(uuid())
-  rollNumber      String          @unique // Unique identifier for students
-  
+  id         String @id @default(uuid())
+  userId     String @unique
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rollNumber String @unique // Unique identifier for students
+
   // Personal Details
-  fullName        String
-  phone           String
-  dob             DateTime
-  address         String
-  aadhar          String          @unique
+  fullName String
+  phone    String
+  dob      DateTime
+  address  String
+  aadhar   String   @unique
 
   // Educational Details
   collegeName     String
@@ -74,58 +80,60 @@ model StudentProfile {
   nirfRanking     Int?
 
   // Optional Details
-  hasExperience   Boolean         @default(false)
-  hasProjects     Boolean         @default(false)
-  hasCertifications Boolean       @default(false)
-  experienceDesc   String?
-  projectsDesc     String?
-  skills           String?
+  hasExperience     Boolean @default(false)
+  hasProjects       Boolean @default(false)
+  hasCertifications Boolean @default(false)
+  experienceDesc    String?
+  projectsDesc      String?
+  skills            String?
+  photoUrl          String? // NEW PROFILE PHOTO URL
 
-  applications    Application[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  applications Application[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Internship {
-  id                   String    @id @default(uuid())
-  title                String
-  department           String
-  description          String
-  roles                String?   // Legacy string field (kept to not break existing)
-  rolesData            Json?     @db.JsonB // New structured array [{name, openings, hired}]
-  requirements         String?   // Candidate requirements
-  expectations         String?   // What interns will learn/do
-  location             String
-  duration             String    // e.g., "6 Months", "10 Weeks"
-  openingsCount        Int
-  isActive             Boolean   @default(true)
-  applicationDeadline  DateTime?
-  quotaPercentages     Json?     @db.JsonB
+  id                  String    @id @default(uuid())
+  title               String
+  department          String
+  description         String
+  roles               String? // Legacy string field (kept to not break existing)
+  rolesData           Json?     @db.JsonB // New structured array [{name, openings, hired}]
+  requirements        String? // Candidate requirements
+  expectations        String? // What interns will learn/do
+  location            String
+  duration            String // e.g., "6 Months", "10 Weeks"
+  openingsCount       Int
+  isActive            Boolean   @default(true)
+  applicationDeadline DateTime?
+  quotaPercentages    Json?     @db.JsonB
+  requiredDocuments   Json?     @db.JsonB // Array of required document types
 
-  applications  Application[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  applications Application[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Application {
-  id              String            @id @default(uuid())
-  trackingId      String            @unique // Human readable tracking code
-  studentId       String
-  internshipId    String
-  status          ApplicationStatus @default(PENDING)
-  score           Float             @default(0.0) // Automated System Score
-  assignedRole    String?           // The role they were hired for
-  
+  id           String            @id @default(uuid())
+  trackingId   String            @unique // Human readable tracking code
+  studentId    String
+  internshipId String
+  status       ApplicationStatus @default(PENDING)
+  score        Float             @default(0.0) // Automated System Score
+  assignedRole String? // The role they were hired for
+
   preferredCircle String?
   duration        String?
   startDate       String?
 
-  student         StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  internship      Internship        @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  documents       Document[]
+  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internship Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  documents  Document[]
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([studentId, internshipId])
 }
@@ -134,10 +142,10 @@ model Document {
   id            String       @id @default(uuid())
   applicationId String
   type          DocumentType
-  url           String       // S3 or local path
+  url           String // S3 or local path
 
-  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  createdAt     DateTime     @default(now())
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
 }
 
 model AutomationRule {

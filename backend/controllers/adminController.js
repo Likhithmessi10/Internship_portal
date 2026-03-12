@@ -11,7 +11,8 @@ const createInternship = async (req, res) => {
     try {
         const {
             title, department, description, roles, rolesData, requirements,
-            expectations, location, duration, openingsCount, applicationDeadline
+            expectations, location, duration, openingsCount, applicationDeadline,
+            requiredDocuments
         } = req.body;
 
         const internship = await prisma.internship.create({
@@ -27,6 +28,7 @@ const createInternship = async (req, res) => {
                 duration,
                 openingsCount: parseInt(openingsCount),
                 applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
+                requiredDocuments: requiredDocuments || null,
             }
         });
 

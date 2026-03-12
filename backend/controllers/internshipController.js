@@ -42,7 +42,10 @@ const applyForInternship = async (req, res) => {
         // Map uploaded files to variables if they exist
         const resumeFile = req.files && req.files['resume'] ? req.files['resume'][0] : null;
         const principalLetterFile = req.files && req.files['principalLetter'] ? req.files['principalLetter'][0] : null;
+        const nocLetterFile = req.files && req.files['nocLetter'] ? req.files['nocLetter'][0] : null;
         const hodLetterFile = req.files && req.files['hodLetter'] ? req.files['hodLetter'][0] : null;
+        const marksheetFile = req.files && req.files['marksheet'] ? req.files['marksheet'][0] : null;
+        const passportPhotoFile = req.files && req.files['passportPhoto'] ? req.files['passportPhoto'][0] : null;
 
         // 5. Create Application
         const trackingId = `APT-${Date.now()}-${profile.rollNumber.slice(-4)}`.toUpperCase();
@@ -57,15 +60,32 @@ const applyForInternship = async (req, res) => {
 
         // 8. Create Document records ONLY if provided
         const docPromises = [];
-        if (resumeFile) docPromises.push({ applicationId: application.id, type: 'RESUME', url: resumeFile.path });
-        if (principalLetterFile) docPromises.push({ applicationId: application.id, type: 'PRINCIPAL_LETTER', url: principalLetterFile.path });
-        if (hodLetterFile) docPromises.push({ applicationId: application.id, type: 'HOD_LETTER', url: hodLetterFile.path });
+        if (resumeFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'RESUME', url: resumeFile.path } }));
+        if (principalLetterFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'PRINCIPAL_LETTER', url: principalLetterFile.path } }));
+        if (nocLetterFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'NOC_LETTER', url: nocLetterFile.path } }));
+        if (hodLetterFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'HOD_LETTER', url: hodLetterFile.path } }));
 
-        if (docPromises.length > 0) {
-            await prisma.document.createMany({
-                data: docPromises
+        // Passport Photo
+        if (req.files.passportPhoto) {
+            const path = req.files.passportPhoto[0].path;
+            docPromises.push(prisma.document.create({
+                data: { type: 'PASSPORT_PHOTO', url: path, applicationId: application.id }
+            }));
+            // Also update student profile photoUrl if not set
+            await prisma.studentProfile.update({
+                where: { id: profile.id },
+                data: { photoUrl: path }
             });
         }
+
+        // Marksheet
+        if (req.files.marksheet) {
+            docPromises.push(prisma.document.create({
+                data: { type: 'MARKSHEET', url: req.files.marksheet[0].path, applicationId: application.id }
+            }));
+        }
+
+        await Promise.all(docPromises);
 
         res.status(201).json({
             success: true,
