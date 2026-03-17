@@ -48,7 +48,8 @@ const applyForInternship = async (req, res) => {
         const passportPhotoFile = req.files && req.files['passportPhoto'] ? req.files['passportPhoto'][0] : null;
 
         // 5. Create Application
-        const trackingId = `APT-${Date.now()}-${profile.rollNumber.slice(-4)}`.toUpperCase();
+        const identifier = profile.rollNumber || profile.aadhar || 'UNKNOWN';
+        const trackingId = `APT-${Date.now()}-${identifier.slice(-4)}`.toUpperCase();
         const application = await prisma.application.create({
             data: {
                 trackingId,

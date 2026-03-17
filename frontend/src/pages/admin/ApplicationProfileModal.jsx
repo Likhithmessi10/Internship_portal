@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Calendar, Star, RefreshCw } from 'lucide-react';
 
+// Base URL for uploaded files (reads from .env, falls back to localhost for dev)
+const FILE_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+
 // Fullscreen PDF/image viewer panel overlay
 const DocViewer = ({ url, label, onClose }) => {
-    const fullUrl = url ? `http://localhost:5001/${url.replace(/\\/g, '/')}` : null;
+    const fullUrl = url ? `${FILE_BASE}/${url.replace(/\\/g, '/')}` : null;
     const isImage = fullUrl && /\.(jpg|jpeg|png|webp|gif)$/i.test(fullUrl);
 
     return (
@@ -128,7 +131,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
                             {photoDoc ? (
                                 <div className="relative group">
                                     <img
-                                        src={`http://localhost:5001/${photoDoc.url.replace(/\\/g, '/')}`}
+                                        src={`${FILE_BASE}/${photoDoc.url.replace(/\\/g, '/')}`}
                                         alt="Passport"
                                         className="w-16 h-16 rounded-[1.25rem] object-cover cursor-pointer border-2 border-indigo-100 dark:border-indigo-500/30 shadow-lg group-hover:scale-105 transition-all"
                                         onClick={() => openViewer(photoDoc.url, 'Passport Photo')}

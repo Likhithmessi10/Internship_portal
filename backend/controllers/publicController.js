@@ -23,9 +23,9 @@ const submitApplication = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
-        // 1. Find or Create Student Profile based on Roll Number
+        // 1. Find or Create Student Profile based on Aadhar (Unique ID)
         let student = await prisma.studentProfile.findUnique({
-            where: { rollNumber }
+            where: { aadhar }
         });
 
         const profileData = {
@@ -56,7 +56,7 @@ const submitApplication = async (req, res, next) => {
         if (student) {
             // Update existing profile
             student = await prisma.studentProfile.update({
-                where: { rollNumber },
+                where: { aadhar },
                 data: profileData
             });
         } else {
@@ -94,7 +94,8 @@ const submitApplication = async (req, res, next) => {
         }
 
         // 3. Create Application with Unique Tracking ID
-        const trackingId = `APT-${Date.now()}-${rollNumber.slice(-4)}`.toUpperCase();
+        const identifier = rollNumber || aadhar || 'GUEST';
+        const trackingId = `APT-${Date.now()}-${identifier.slice(-4)}`.toUpperCase();
 
         const application = await prisma.application.create({
             data: {

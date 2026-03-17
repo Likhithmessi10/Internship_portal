@@ -10,7 +10,32 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5001;
 
-app.use(cors());
+// CORS: Restrict to allowed origins from env (comma-separated list)
+// In .env set: CORS_ORIGINS=http://YOUR_SERVER_IP:5173,http://YOUR_SERVER_IP:5174
+const DEV_ORIGINS = [
+    'http://localhost:5173', // Student frontend
+    'http://localhost:5174', // Admin portal
+    'http://localhost:3000', // Generic dev
+];
+
+const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    : DEV_ORIGINS;
+
+console.log('[CORS] Allowed origins:', allowedOrigins);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (curl, Postman, server-to-server)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Blocked origin: ${origin}`);
+            callback(new Error(`CORS: Origin ${origin} not allowed`));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 

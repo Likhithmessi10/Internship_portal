@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Change this to production URL later
-const API_URL = 'http://localhost:5001/api/v1';
+// Reads from VITE_API_URL in .env file (set to your server's IP/domain for production)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
 
 const apiClient = axios.create({
     baseURL: API_URL,

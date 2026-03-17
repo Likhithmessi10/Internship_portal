@@ -45,23 +45,16 @@ const AdminLogin = () => {
                 style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #6366f1 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
             <div className="relative w-full max-w-md">
-                {/* Logo / Brand */}
-                <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center mb-6">
-                        <img src="/logo.png" alt="APTRANSCO Logo" className="h-24 object-contain drop-shadow-md" />
-                    </div>
-                    <h1 className="text-gray-900 dark:text-white font-extrabold text-3xl tracking-tight mb-2">APTRANSCO</h1>
-                    <p className="text-gray-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-widest">Administrator Portal</p>
-                </div>
-
                 {/* Card */}
-                <div className="glass-card bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-[2.5rem] p-10 shadow-2xl relative">
+                <div className="glass-card bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-[2.5rem] pt-16 px-10 pb-10 shadow-2xl relative mt-14">
                     <div className="absolute -top-12 left-1/2 -translate-x-1/2 p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-gray-100 dark:border-white/5">
                         <img src="/logo.png" alt="APTRANSCO" className="h-16 w-16 object-contain" />
                     </div>
                     
-                    <div className="text-center mt-6 mb-8">
-                        <h2 className="text-gray-900 dark:text-white font-black text-2xl tracking-tighter uppercase font-rajdhani">Admin <span className="text-indigo-600 dark:text-indigo-400">Login</span></h2>
+                    <div className="text-center mb-8">
+                        <h1 className="text-gray-900 dark:text-white font-extrabold text-2xl tracking-tight mb-1">APTRANSCO</h1>
+                        <p className="text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.25em] mb-3">Administrator Portal</p>
+                        <h2 className="text-gray-900 dark:text-white font-black text-xl tracking-tighter uppercase font-rajdhani">Admin <span className="text-indigo-600 dark:text-indigo-400">Login</span></h2>
                         <p className="text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Authorized Access Only</p>
                     </div>
 

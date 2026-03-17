@@ -22,6 +22,7 @@ async function main() {
     });
 
     console.log(`Admin account created with email: ${admin.email}`);
+    console.log(`Password : ${admin.password}`);
 }
 
 main()

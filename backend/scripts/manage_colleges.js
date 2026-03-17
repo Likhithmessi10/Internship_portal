@@ -3,7 +3,7 @@ const path = require('path');
 const { Pool } = require('pg');
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:2912@localhost:5432/aptransco?schema=public'
+    connectionString: process.env.DATABASE_URL
 });
 
 // A list of some prominent engineering colleges and universities in India

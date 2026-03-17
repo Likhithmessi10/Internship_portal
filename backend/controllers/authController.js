@@ -6,7 +6,10 @@ const prisma = new PrismaClient();
 
 // Generate Token
 const getSignedJwtToken = (id, role) => {
-    return jwt.sign({ id, role }, process.env.JWT_SECRET || 'your_super_secret_jwt_key', {
+    if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: '30d'
     });
 };

@@ -1,8 +1,9 @@
 const fs = require('fs');
 const { Pool } = require('pg');
+require('dotenv').config();
 
 const pool = new Pool({
-    connectionString: 'postgresql://postgres:2912@localhost:5432/aptransco?schema=public'
+    connectionString: process.env.DATABASE_URL
 });
 
 async function main() {

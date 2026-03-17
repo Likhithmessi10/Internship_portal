@@ -12,7 +12,7 @@ const upsertProfile = async (req, res) => {
     try {
         console.log('>>> UPSERT PROFILE REQUEST:', req.body);
         let {
-            fullName, rollNumber, collegeRollNumber, phone, dob, address, aadhar,
+            fullName, collegeRollNumber, phone, dob, address, aadhar,
             collegeName, university, degree, branch,
             yearOfStudy, cgpa, collegeCategory, nirfRanking,
             hasExperience, hasProjects, hasCertifications,
@@ -31,7 +31,6 @@ const upsertProfile = async (req, res) => {
 
         const profileData = {
             fullName,
-            rollNumber,
             collegeRollNumber,
             phone,
             dob: new Date(dob),

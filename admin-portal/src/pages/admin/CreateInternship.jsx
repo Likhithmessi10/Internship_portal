@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
-import { Plus, X, ArrowLeft, Briefcase, Users, FileText, MapPin, Clock, Star } from 'lucide-react';
+import { Plus, X, ArrowLeft, Briefcase, Users, FileText, MapPin, Clock, Star, Trash2 } from 'lucide-react';
 import { collegesData } from '../../data/colleges';
 
 const PRESET_LOCATIONS = [

@@ -15,7 +15,10 @@ const protect = (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key');
+        if (!process.env.JWT_SECRET) {
+            throw new Error('JWT_SECRET is mission in .env');
+        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded; // { id, role }
         next();
     } catch (err) {

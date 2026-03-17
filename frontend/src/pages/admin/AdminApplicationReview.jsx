@@ -473,8 +473,9 @@ const AdminApplicationReview = () => {
 };
 
 const ApplicationRow = ({ app, updateStatus, setSelected }) => {
+    const FILE_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
     const studentPhoto = app.student?.photoUrl;
-    const fullPhotoUrl = studentPhoto ? (studentPhoto.startsWith('data:') ? studentPhoto : `http://localhost:5001/${studentPhoto.replace(/\\/g, '/')}`) : null;
+    const fullPhotoUrl = studentPhoto ? (studentPhoto.startsWith('data:') ? studentPhoto : `${FILE_BASE}/${studentPhoto.replace(/\\/g, '/')}`) : null;
 
     return (
         <tr className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all group font-medium">

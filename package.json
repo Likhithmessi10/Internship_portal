@@ -2,9 +2,9 @@
   "name": "aptransco-internship-portal",
   "version": "1.0.0",
   "scripts": {
-    "install-all": "npm install && cd backend && npm install && cd ../student-portal && npm install && cd ../admin-portal && npm install",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../admin-portal && npm install",
     "dev:backend": "cd backend && npm run dev",
-    "dev:student": "cd student-portal && npm run dev",
+    "dev:student": "cd frontend && npm run dev",
     "dev:admin": "cd admin-portal && npm run dev",
     "dev": "npm-run-all --parallel dev:backend dev:student dev:admin"
   },

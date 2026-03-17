@@ -49,11 +49,6 @@ const LandingPage = () => {
 
       <nav className="landing-nav">
         <div className="nav-inner">
-          <a onClick={() => navigate('/')} className="nav-link">🏠 Home</a>
-          <a onClick={() => navigate('/login')} className="nav-link">📝 Apply for Internship</a>
-          <a onClick={() => navigate('/login')} className="nav-link">🔍 Check Status</a>
-          <a className="nav-link">📄 Guidelines</a>
-          <a className="nav-link">📞 Contact Us</a>
           <div style={{ flex: 1 }}></div>
           <div style={{ color: '#D4A017', fontSize: '12px', padding: '14px 20px', fontWeight: 600 }}>Academic Year 2024–25</div>
         </div>
@@ -66,7 +61,6 @@ const LandingPage = () => {
           <p style={{ color: '#aac4e8', fontSize: '16px', margin: '20px auto 30px', maxWidth: '680px' }}>Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in substations, control rooms, and planning divisions across Andhra Pradesh.</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '14px' }}>
             <button className="btn-hero-primary" onClick={() => navigate('/login')}>Apply Now →</button>
-            <button className="btn-hero-primary" style={{ background: 'transparent', border: '2px solid rgba(255,255,255,0.4)' }} onClick={() => navigate('/login')}>Check Status</button>
           </div>
         </div>
       </div>
@@ -180,7 +174,7 @@ const LandingPage = () => {
       <div className="cta-bar">
         <h3>Ready to Begin Your Internship Journey?</h3>
         <p style={{ marginBottom: '24px' }}>Applications are open for the Academic Year 2024–25.</p>
-        <button className="btn-cta" onClick={() => navigate('/register')}>⚡ Apply for Internship Now</button>
+        <button className="btn-cta" onClick={() => navigate('/login')}>⚡ Apply for Internship Now</button>
       </div>
 
       <footer className="landing-footer">

@@ -282,6 +282,14 @@ const updateApplicationStatus = async (req, res) => {
                     }
                 }
             }
+
+            // --- MOVE UPDATE HERE ---
+            if (rollNumber) {
+                await prisma.studentProfile.update({
+                    where: { id: application.studentId },
+                    data: { rollNumber }
+                });
+            }
         }
 
         const updateData = { status };
@@ -295,13 +303,6 @@ const updateApplicationStatus = async (req, res) => {
             updateData.endDate = new Date(endDate);
         }
 
-        // If HIRED, also update the student's profile with the manual roll number
-        if (status === 'HIRED' && rollNumber) {
-            await prisma.studentProfile.update({
-                where: { id: application.studentId },
-                data: { rollNumber }
-            });
-        }
 
         const app = await prisma.application.update({
             where: { id: req.params.id },
