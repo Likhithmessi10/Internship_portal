@@ -10,15 +10,16 @@ import CreateInternshipForm from './pages/admin/CreateInternship';
 import AdminApplicationReview from './pages/admin/AdminApplicationReview';
 import AdminRejected from './pages/admin/AdminRejected';
 import AdminRegister from './pages/admin/AdminRegister';
+import AdminPastInternships from './pages/admin/AdminPastInternships';
 
 const AdminLayout = ({ children }) => (
-  <div className="min-h-screen flex flex-col bg-slate-50">
+  <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-500 selection:bg-indigo-100 dark:selection:bg-indigo-500/30">
     <Navbar />
-    <main className="flex-grow p-6 lg:p-8">
+    <main className="pt-8 pb-16 px-4 md:px-8 max-w-7xl mx-auto">
       {children}
     </main>
-    <footer className="bg-white border-t border-gray-100 text-gray-400 py-4 text-center text-xs">
-      © {new Date().getFullYear()} APTRANSCO · Admin Portal · Confidential
+    <footer className="border-t border-black/5 dark:border-white/5 py-12 text-center text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 dark:text-slate-600">
+      © {new Date().getFullYear()} APTRANSCO · Admin Portal · System Integrated
     </footer>
   </div>
 );
@@ -68,6 +69,11 @@ function App() {
           <Route path="/rejected" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminLayout><AdminRejected /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/internships/past" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout><AdminPastInternships /></AdminLayout>
             </ProtectedRoute>
           } />
 

@@ -59,7 +59,8 @@ model StudentProfile {
   id         String @id @default(uuid())
   userId     String @unique
   user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rollNumber String @unique // Unique identifier for students
+  rollNumber        String? @unique // Assigned manually by Admin during hiring
+  collegeRollNumber String? // Actual roll number from candidate's institution
 
   // Personal Details
   fullName String
@@ -108,6 +109,8 @@ model Internship {
   isActive            Boolean   @default(true)
   applicationDeadline DateTime?
   quotaPercentages    Json?     @db.JsonB
+  priorityCollege     String?
+  priorityCollegeQuota Int?      @default(0)
   requiredDocuments   Json?     @db.JsonB // Array of required document types
 
   applications Application[]
@@ -127,6 +130,8 @@ model Application {
   preferredCircle String?
   duration        String?
   startDate       String?
+  joiningDate     DateTime?
+  endDate         DateTime?
 
   student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   internship Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
@@ -155,6 +160,12 @@ model AutomationRule {
   experienceWeight Float    @default(20.0)
   nirfWeight       Float    @default(10.0)
   updatedAt        DateTime @updatedAt
+}
+
+model PortalConfiguration {
+  id              String   @id @default("singleton")
+  authorizedTotal Int      @default(0)
+  updatedAt       DateTime @updatedAt
 }
 
 model OtpVerification {

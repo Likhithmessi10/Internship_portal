@@ -8,7 +8,10 @@ const {
     getRejectedApplications,
     updateApplicationStatus,
     exportApplications,
-    extendDeadline
+    exportAdvanced,
+    extendDeadline,
+    getPortalConfig,
+    updatePortalConfig
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
@@ -16,6 +19,10 @@ const router = express.Router();
 
 router.use(protect);
 router.use(authorize('ADMIN'));
+
+// Portal Configuration
+router.get('/config', getPortalConfig);
+router.put('/config', updatePortalConfig);
 
 // Internship Management
 router.get('/internships', getAllInternships);
@@ -27,6 +34,7 @@ router.put('/internships/:id/deadline', extendDeadline);
 // Application Management
 router.get('/internships/:id/applications', getApplications);
 router.get('/internships/:id/export', exportApplications);
+router.get('/applications/export/advanced', exportAdvanced);
 router.get('/applications/rejected', getRejectedApplications);
 router.put('/applications/:id', updateApplicationStatus);
 

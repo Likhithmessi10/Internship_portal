@@ -1,10 +1,14 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Plus, XCircle, LogOut } from 'lucide-react';
+import { LayoutDashboard, Plus, XCircle, LogOut, History, Moon, Sun, Globe } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
+    const { isDarkMode, toggleTheme } = useTheme();
+    const { lang, toggleLanguage, t } = useLanguage();
     const location = useLocation();
 
     const navLink = (to, icon, label) => (
@@ -27,15 +31,30 @@ const Navbar = () => {
             </Link>
 
             {/* Links */}
-            {user?.role === 'ADMIN' && (
+             {user?.role === 'ADMIN' && (
                 <nav className="flex items-center gap-1">
-                    {navLink('/admin/dashboard', <LayoutDashboard size={14} />, 'Dashboard')}
-                    {navLink('/admin/internships/new', <Plus size={14} />, 'New Internship')}
-                    {navLink('/admin/rejected', <XCircle size={14} />, 'Rejected')}
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors mr-1"
+                        title="Toggle Theme"
+                    >
+                        {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
+                    </button>
+                    <button
+                        onClick={toggleLanguage}
+                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors mr-2"
+                        title="Toggle Language"
+                    >
+                        <Globe size={12} /> {lang === 'en' ? 'EN' : 'TE'}
+                    </button>
+
+                    {navLink('/admin/dashboard', <LayoutDashboard size={14} />, t('nav.dashboard'))}
+                    {navLink('/admin/internships/past', <History size={14} />, t('nav.past'))}
+                    {navLink('/admin/rejected', <XCircle size={14} />, t('nav.rejected'))}
                     <button
                         onClick={logout}
                         className="flex items-center gap-1.5 ml-3 px-3 py-1.5 rounded-lg text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
-                        <LogOut size={14} /> Logout
+                        <LogOut size={14} /> {t('nav.logout')}
                     </button>
                 </nav>
             )}

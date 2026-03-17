@@ -80,6 +80,9 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
     const [viewerUrl, setViewerUrl] = useState(null);
     const [viewerLabel, setViewerLabel] = useState('');
     const [selectedRole, setSelectedRole] = useState('');
+    const [manualRollNumber, setManualRollNumber] = useState('');
+    const [joiningDate, setJoiningDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     if (!application) return null;
     const { student, documents, status, trackingId, createdAt } = application;
@@ -99,7 +102,15 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
             alert('Please assign a role to the candidate before hiring.');
             return;
         }
-        onHire(selectedRole);
+        if (!manualRollNumber) {
+            alert('Please assign an internal Roll Number to the candidate.');
+            return;
+        }
+        if (!joiningDate || !endDate) {
+            alert('Please specify both Joining and End dates before hiring.');
+            return;
+        }
+        onHire(selectedRole, { rollNumber: manualRollNumber, joiningDate, endDate });
     };
 
     const statusColor = {
@@ -171,7 +182,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
                                 <InfoRow label="CGPA" value={student?.cgpa} />
                                 <InfoRow label="Tier" value={student?.collegeCategory} />
                                 {student?.nirfRanking && <InfoRow label="NIRF Rank" value={`#${student.nirfRanking}`} />}
-                                <InfoRow label="Roll Number" value={student?.rollNumber} />
+                                <InfoRow label="Allocated Roll Number" value={student?.rollNumber} />
+                                <InfoRow label="College Roll Number" value={student?.collegeRollNumber} />
                             </div>
                         </section>
 
@@ -209,18 +221,55 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
                         {status !== 'HIRED' && status !== 'REJECTED' && (
                             <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
                                 {internship?.rolesData?.length > 0 && (
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Assign Role to Candidate</label>
-                                        <select
-                                            className="admin-input bg-indigo-50/50 border-indigo-100 font-semibold text-indigo-900 mx-auto max-w-sm"
-                                            value={selectedRole}
-                                            onChange={e => setSelectedRole(e.target.value)}
-                                        >
-                                            <option value="">-- Choose Role --</option>
-                                            {internship.rolesData.map(r => (
-                                                <option key={r.name} value={r.name}>{r.name}</option>
-                                            ))}
-                                        </select>
+                                    <div className="flex flex-col gap-4 bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Step 1: Assign Role & Roll Number</label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <select
+                                                    className="admin-input bg-white border-indigo-100 font-semibold text-indigo-900 w-full"
+                                                    value={selectedRole}
+                                                    onChange={e => setSelectedRole(e.target.value)}
+                                                >
+                                                    <option value="">-- Choose Role --</option>
+                                                    {internship.rolesData.map(r => {
+                                                        const roleHired = application.roleHiredStats?.[r.name] || 0;
+                                                        const isFull = roleHired >= (r.openings || 0);
+                                                        return (
+                                                            <option key={r.name} value={r.name} disabled={isFull}>
+                                                                {r.name} ({roleHired} / {r.openings || 0} filled) {isFull ? ' - FULL' : ''}
+                                                            </option>
+                                                        );
+                                                    })}
+                                                </select>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Internal Roll Number (e.g. APT-2026-001)"
+                                                    value={manualRollNumber}
+                                                    onChange={e => setManualRollNumber(e.target.value)}
+                                                    className="admin-input bg-white border-indigo-100 text-sm font-semibold text-indigo-900 w-full"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Joining Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={joiningDate}
+                                                    onChange={e => setJoiningDate(e.target.value)}
+                                                    className="admin-input bg-white border-indigo-100 text-sm font-semibold text-indigo-900"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">End Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={endDate}
+                                                    onChange={e => setEndDate(e.target.value)}
+                                                    className="admin-input bg-white border-indigo-100 text-sm font-semibold text-indigo-900"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                                 <div className="flex gap-4">
@@ -245,12 +294,30 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
                                     <p className="text-sm font-bold text-emerald-800">Candidate Hired</p>
                                     <p className="text-xs text-emerald-600 mt-0.5">This application was accepted successfully.</p>
                                 </div>
-                                {application.assignedRole && (
-                                    <div className="px-3 py-1.5 bg-white border border-emerald-200 rounded-lg shadow-sm">
-                                        <p className="text-[10px] uppercase font-black tracking-widest text-emerald-500 mb-0.5">Assigned Role</p>
-                                        <p className="text-sm font-bold text-emerald-900">{application.assignedRole}</p>
-                                    </div>
-                                )}
+                                <div className="flex flex-col gap-2">
+                                    {application.assignedRole && (
+                                        <div className="px-3 py-1.5 bg-white border border-emerald-200 rounded-lg shadow-sm">
+                                            <p className="text-[10px] uppercase font-black tracking-widest text-emerald-500 mb-0.5">Assigned Role</p>
+                                            <p className="text-sm font-bold text-emerald-900">{application.assignedRole}</p>
+                                        </div>
+                                    )}
+                                    {(application.joiningDate || application.endDate) && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {application.joiningDate && (
+                                                <div className="px-3 py-1 bg-white border border-emerald-200 rounded-lg shadow-sm">
+                                                    <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500">Joining</p>
+                                                    <p className="text-xs font-bold text-emerald-900">{new Date(application.joiningDate).toLocaleDateString()}</p>
+                                                </div>
+                                            )}
+                                            {application.endDate && (
+                                                <div className="px-3 py-1 bg-white border border-emerald-200 rounded-lg shadow-sm">
+                                                    <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500">End Date</p>
+                                                    <p className="text-xs font-bold text-emerald-900">{new Date(application.endDate).toLocaleDateString()}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                         {status === 'REJECTED' && (

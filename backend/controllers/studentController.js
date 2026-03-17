@@ -1,6 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const crypto = require('crypto');
+
 /**
  * @desc    Create or Update Student Profile
  * @route   POST /api/v1/students/profile
@@ -8,8 +10,9 @@ const prisma = new PrismaClient();
  */
 const upsertProfile = async (req, res) => {
     try {
-        const {
-            fullName, phone, dob, address, aadhar,
+        console.log('>>> UPSERT PROFILE REQUEST:', req.body);
+        let {
+            fullName, rollNumber, collegeRollNumber, phone, dob, address, aadhar,
             collegeName, university, degree, branch,
             yearOfStudy, cgpa, collegeCategory, nirfRanking,
             hasExperience, hasProjects, hasCertifications,
@@ -23,8 +26,13 @@ const upsertProfile = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Only students can manage student profiles' });
         }
 
+        const allowedCategories = ['IIT', 'NIT', 'IIIT', 'CENTRAL', 'STATE_UNIV', 'DEEMED', 'AUTONOMOUS', 'COLLEGE', 'INSTITUTE', 'OTHER'];
+        const validatedCategory = allowedCategories.includes(collegeCategory) ? collegeCategory : 'OTHER';
+
         const profileData = {
             fullName,
+            rollNumber,
+            collegeRollNumber,
             phone,
             dob: new Date(dob),
             address,
@@ -33,13 +41,13 @@ const upsertProfile = async (req, res) => {
             university,
             degree,
             branch,
-            yearOfStudy: parseInt(yearOfStudy),
-            cgpa: parseFloat(cgpa),
-            collegeCategory,
-            nirfRanking: nirfRanking ? parseInt(nirfRanking) : null,
-            hasExperience: hasExperience || false,
-            hasProjects: hasProjects || false,
-            hasCertifications: hasCertifications || false,
+            yearOfStudy: parseInt(yearOfStudy) || 1,
+            cgpa: parseFloat(cgpa) || 0.0,
+            collegeCategory: validatedCategory,
+            nirfRanking: (nirfRanking && !isNaN(parseInt(nirfRanking))) ? parseInt(nirfRanking) : null,
+            hasExperience: hasExperience === true || hasExperience === 'true',
+            hasProjects: hasProjects === true || hasProjects === 'true',
+            hasCertifications: hasCertifications === true || hasCertifications === 'true',
             experienceDesc: experienceDesc || null,
             projectsDesc: projectsDesc || null,
             skills: skills || null,
@@ -51,18 +59,22 @@ const upsertProfile = async (req, res) => {
             update: profileData,
             create: {
                 ...profileData,
-                userId,
-                rollNumber: `APT-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`
+                userId
             }
         });
 
+        console.log('>>> UPSERT SUCCESS! Profile Roll Number:', profile.rollNumber);
         res.status(200).json({ success: true, data: profile });
     } catch (error) {
-        console.error(error);
+        console.error('>>> UPSERT ERROR:', error);
 
-        // Handle unique constraint violations
+        // Handle unique constraint violations with specifics
         if (error.code === 'P2002') {
-            return res.status(400).json({ success: false, message: 'Profile with this Aadhar already exists or duplicate constraint violated.' });
+            const field = error.meta?.target?.[0] || 'Aadhar or Roll Number';
+            return res.status(400).json({ 
+                success: false, 
+                message: `Setup failed: A student with this ${field} already exists in the system.`
+            });
         }
 
         res.status(500).json({ success: false, message: 'Server Error' });

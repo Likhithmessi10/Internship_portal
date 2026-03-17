@@ -35,8 +35,8 @@ const AdminRegister = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 opacity-[0.03]"
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 transition-colors duration-200">
+            <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
                 style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
             <div className="relative w-full max-w-md">
@@ -44,13 +44,13 @@ const AdminRegister = () => {
                     <div className="inline-flex items-center justify-center mb-6">
                         <img src="/logo.png" alt="APTRANSCO Logo" className="h-24 object-contain drop-shadow-md" />
                     </div>
-                    <h1 className="text-gray-900 font-extrabold text-3xl tracking-tight mb-2">APTRANSCO</h1>
-                    <p className="text-gray-500 text-sm font-semibold uppercase tracking-widest">Administrator Portal</p>
+                    <h1 className="text-gray-900 dark:text-white font-extrabold text-3xl tracking-tight mb-2">APTRANSCO</h1>
+                    <p className="text-gray-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-widest">Administrator Portal</p>
                 </div>
 
-                <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                    <h2 className="text-gray-900 font-bold text-xl mb-1 text-center">Admin Registration</h2>
-                    <p className="text-gray-400 text-sm mb-7 text-center">Create a new administrative account</p>
+                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-2xl">
+                    <h2 className="text-gray-900 dark:text-white font-bold text-xl mb-1 text-center">Admin Registration</h2>
+                    <p className="text-gray-400 dark:text-slate-500 text-sm mb-7 text-center">Create a new administrative account</p>
 
                     {error && (
                         <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-medium flex items-center justify-center text-center gap-2">
@@ -69,7 +69,7 @@ const AdminRegister = () => {
                                 placeholder="admin@aptransco.gov.in"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all shadow-sm"
+                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm"
                             />
                         </div>
                         <div>
@@ -82,7 +82,7 @@ const AdminRegister = () => {
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all shadow-sm"
+                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm"
                             />
                         </div>
                         <div>
@@ -95,7 +95,7 @@ const AdminRegister = () => {
                                 placeholder="••••••••"
                                 value={confirmPassword}
                                 onChange={e => setConfirmPassword(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all shadow-sm"
+                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm"
                             />
                         </div>
 

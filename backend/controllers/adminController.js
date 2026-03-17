@@ -12,7 +12,7 @@ const createInternship = async (req, res) => {
         const {
             title, department, description, roles, rolesData, requirements,
             expectations, location, duration, openingsCount, applicationDeadline,
-            requiredDocuments
+            requiredDocuments, quotaPercentages, priorityCollege, priorityCollegeQuota
         } = req.body;
 
         const internship = await prisma.internship.create({
@@ -29,6 +29,9 @@ const createInternship = async (req, res) => {
                 openingsCount: parseInt(openingsCount),
                 applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
                 requiredDocuments: requiredDocuments || null,
+                quotaPercentages: quotaPercentages || null,
+                priorityCollege: priorityCollege || null,
+                priorityCollegeQuota: parseInt(priorityCollegeQuota) || 0,
             }
         });
 
@@ -157,12 +160,147 @@ const getRejectedApplications = async (req, res) => {
  * @access  Private (Admin)
  */
 const updateApplicationStatus = async (req, res) => {
+    console.log('>>> updateApplicationStatus Triggered for ID:', req.params.id);
+    console.log('>>> Payload:', req.body);
     try {
-        const { status, assignedRole } = req.body;
+        const { status, assignedRole, rollNumber, joiningDate, endDate } = req.body;
+        const applicationId = req.params.id;
+
+        // If status is being changed to HIRED, check quotas and mandatory fields
+        if (status === 'HIRED') {
+            if (!assignedRole || !rollNumber || !joiningDate || !endDate) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Role, Roll Number, Joining Date, and End Date are mandatory for hiring.' 
+                });
+            }
+
+            const application = await prisma.application.findUnique({
+                where: { id: applicationId },
+                include: { student: true, internship: true }
+            });
+
+            if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
+
+            const s = application.student;
+            const internship = application.internship;
+            
+            // --- Helper for category checks ---
+            const clean = (str) => (str || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const isPriority = clean(s.collegeName).includes(clean(internship.priorityCollege || 'NOT_SET'));
+            
+            const isTopUniv = (student) => {
+                const nirf = parseInt(student.nirfRanking);
+                const category = student.collegeCategory;
+                const topCats = ['IIT', 'NIT', 'IIIT', 'CENTRAL'];
+                return (nirf > 0 && nirf <= 100) || topCats.includes(category);
+            };
+
+            // 0. --- GLOBAL OPENINGS CHECK ---
+            const totalHiredCount = await prisma.application.count({
+                where: {
+                    internshipId: internship.id,
+                    status: 'HIRED'
+                }
+            });
+
+            if (totalHiredCount >= internship.openingsCount) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Internship Full: All ${internship.openingsCount} openings have been filled. You cannot hire more students.`
+                });
+            }
+
+            // 1. --- CATEGORY QUOTA CHECK ---
+            if (isPriority) {
+                const hiredPriorityCount = await prisma.application.count({
+                    where: {
+                        internshipId: internship.id,
+                        status: 'HIRED',
+                        student: {
+                            collegeName: { contains: internship.priorityCollege, mode: 'insensitive' }
+                        }
+                    }
+                });
+                const priorityLimit = internship.priorityCollegeQuota || 0;
+                if (hiredPriorityCount >= priorityLimit) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: `Priority Quota Full: Already hired ${hiredPriorityCount} students from ${internship.priorityCollege} (Limit: ${priorityLimit}).` 
+                    });
+                }
+            } else if (isTopUniv(s)) {
+                const quotaPct = internship.quotaPercentages?.topUniversity || 0;
+                const maxQuotaSeats = Math.round((internship.openingsCount * quotaPct) / 100);
+                
+                if (maxQuotaSeats > 0) {
+                    const hiredQuotaCount = await prisma.application.count({
+                        where: {
+                            internshipId: internship.id,
+                            status: 'HIRED',
+                            student: {
+                                AND: [
+                                    { NOT: { collegeName: { contains: internship.priorityCollege || '___', mode: 'insensitive' } } },
+                                    {
+                                        OR: [
+                                            { nirfRanking: { lte: 100, gt: 0 } },
+                                            { collegeCategory: { in: ['IIT', 'NIT', 'IIIT', 'CENTRAL'] } }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    });
+                    if (hiredQuotaCount >= maxQuotaSeats) {
+                        return res.status(400).json({ 
+                            success: false, 
+                            message: `Top University Quota Full: Already hired ${hiredQuotaCount} students (Limit: ${maxQuotaSeats}).` 
+                        });
+                    }
+                }
+            }
+
+            // 2. --- ROLE OPENINGS CHECK ---
+            if (assignedRole && internship.rolesData) {
+                const rolesArray = Array.isArray(internship.rolesData) ? internship.rolesData : [];
+                const roleInfo = rolesArray.find(r => r.name === assignedRole);
+                
+                if (roleInfo) {
+                    const hiredRoleCount = await prisma.application.count({
+                        where: {
+                            internshipId: internship.id,
+                            status: 'HIRED',
+                            assignedRole: assignedRole
+                        }
+                    });
+                    const roleLimit = roleInfo.openings || 0;
+                    if (hiredRoleCount >= roleLimit) {
+                        return res.status(400).json({ 
+                            success: false, 
+                            message: `Role Full: Already hired ${hiredRoleCount} students for '${assignedRole}' (Limit: ${roleLimit}).` 
+                        });
+                    }
+                }
+            }
+        }
 
         const updateData = { status };
         if (assignedRole) {
             updateData.assignedRole = assignedRole;
+        }
+        if (joiningDate) {
+            updateData.joiningDate = new Date(joiningDate);
+        }
+        if (endDate) {
+            updateData.endDate = new Date(endDate);
+        }
+
+        // If HIRED, also update the student's profile with the manual roll number
+        if (status === 'HIRED' && rollNumber) {
+            await prisma.studentProfile.update({
+                where: { id: application.studentId },
+                data: { rollNumber }
+            });
         }
 
         const app = await prisma.application.update({
@@ -316,6 +454,114 @@ const extendDeadline = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Advanced export with multi-filters
+ * @route   GET /api/v1/admin/applications/export/advanced
+ * @access  Private (Admin)
+ */
+const exportAdvanced = async (req, res) => {
+    try {
+        const { internshipId, collegeName, yearOfStudy, status, tier } = req.query;
+
+        const where = {};
+        if (internshipId) where.internshipId = internshipId;
+        if (status && status !== 'All') where.status = status;
+
+        const studentWhere = {};
+        if (collegeName) studentWhere.collegeName = { contains: collegeName, mode: 'insensitive' };
+        if (yearOfStudy) studentWhere.yearOfStudy = parseInt(yearOfStudy);
+        if (tier && tier !== 'All') studentWhere.collegeCategory = tier;
+
+        if (Object.keys(studentWhere).length > 0) {
+            where.student = studentWhere;
+        }
+
+        const applications = await prisma.application.findMany({
+            where,
+            include: { student: true, documents: true, internship: { select: { title: true } } },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const workbook = new xl.Workbook();
+        const worksheet = workbook.addWorksheet('Filtered Applications');
+
+        worksheet.columns = [
+            { header: 'Internship', key: 'internship', width: 25 },
+            { header: 'Tracking ID', key: 'trackingId', width: 20 },
+            { header: 'Student Name', key: 'name', width: 25 },
+            { header: 'College', key: 'college', width: 35 },
+            { header: 'Year', key: 'year', width: 10 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Joining Date', key: 'joining', width: 15 },
+            { header: 'End Date', key: 'end', width: 15 },
+            { header: 'Applied On', key: 'applied', width: 20 },
+        ];
+
+        applications.forEach(app => {
+            worksheet.addRow({
+                internship: app.internship?.title || 'N/A',
+                trackingId: app.trackingId,
+                name: app.student?.fullName || '',
+                college: app.student?.collegeName || '',
+                year: app.student?.yearOfStudy || '',
+                status: app.status,
+                joining: app.joiningDate ? new Date(app.joiningDate).toLocaleDateString() : '',
+                end: app.endDate ? new Date(app.endDate).toLocaleDateString() : '',
+                applied: new Date(app.createdAt).toLocaleString(),
+            });
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="advanced_export.xlsx"');
+        res.end(buffer);
+
+    } catch (error) {
+        console.error('Advanced export error:', error);
+        res.status(500).json({ success: false, message: 'Export failed' });
+    }
+};
+
+/**
+ * @desc    Get Portal Configuration
+ * @route   GET /api/v1/admin/config
+ * @access  Private (Admin)
+ */
+const getPortalConfig = async (req, res) => {
+    try {
+        let config = await prisma.portalConfiguration.findUnique({ where: { id: 'singleton' } });
+        if (!config) {
+            config = await prisma.portalConfiguration.create({ 
+                data: { id: 'singleton', authorizedTotal: 0 } 
+            });
+        }
+        res.status(200).json({ success: true, data: config });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Update Portal Configuration
+ * @route   PUT /api/v1/admin/config
+ * @access  Private (Admin)
+ */
+const updatePortalConfig = async (req, res) => {
+    try {
+        const { authorizedTotal } = req.body;
+        const config = await prisma.portalConfiguration.upsert({
+            where: { id: 'singleton' },
+            update: { authorizedTotal: parseInt(authorizedTotal) || 0 },
+            create: { id: 'singleton', authorizedTotal: parseInt(authorizedTotal) || 0 }
+        });
+        res.status(200).json({ success: true, data: config });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -325,5 +571,8 @@ module.exports = {
     getRejectedApplications,
     updateApplicationStatus,
     exportApplications,
-    extendDeadline
+    exportAdvanced,
+    extendDeadline,
+    getPortalConfig,
+    updatePortalConfig
 };

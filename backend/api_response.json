@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "data": {
+    "id": "5712daf9-8f9f-4905-a612-84a26e72d55c",
+    "title": "Hierarchy Verification Internship",
+    "department": "TECHNICAL",
+    "description": "Test internship for 3-tier hierarchy sorting.",
+    "roles": "Software Engineer",
+    "rolesData": [
+      {
+        "name": "Software Engineer",
+        "openings": 10,
+        "topUnivQuota": 60
+      }
+    ],
+    "requirements": null,
+    "expectations": null,
+    "location": "ANY",
+    "duration": "8 Weeks",
+    "openingsCount": 10,
+    "isActive": true,
+    "applicationDeadline": null,
+    "quotaPercentages": {
+      "topUniversity": 60
+    },
+    "priorityCollege": "Antigravity Institute of Technology",
+    "priorityCollegeQuota": 20,
+    "requiredDocuments": [
+      "RESUME",
+      "NOC_LETTER"
+    ],
+    "createdAt": "2026-03-17T06:05:52.890Z",
+    "updatedAt": "2026-03-17T06:05:52.890Z"
+  }
+}

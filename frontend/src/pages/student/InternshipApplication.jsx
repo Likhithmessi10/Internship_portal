@@ -14,10 +14,17 @@ const InternshipApplication = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // File States
-    const [resume, setResume] = useState(null);
-    const [principalLetter, setPrincipalLetter] = useState(null);
-    const [hodLetter, setHodLetter] = useState(null);
+    // File States (Dynamic)
+    const [files, setFiles] = useState({});
+
+    const DOC_CONFIG = {
+        RESUME: { label: 'Technical Resume / CV', hint: 'Highlight relevant projects and skills.', key: 'resume' },
+        NOC_LETTER: { label: 'No Objection Certificate', hint: 'Official NOC from your department head.', key: 'nocLetter' },
+        PRINCIPAL_LETTER: { label: 'Principal Recommendation', hint: 'Official signed document from your College Principal.', key: 'principalLetter' },
+        HOD_LETTER: { label: 'HOD Recommendation', hint: 'Departmental approval for industrial training.', key: 'hodLetter' },
+        MARKSHEET: { label: 'Educational Marksheets', hint: 'Merged PDF of your academic records.', key: 'marksheet' },
+        PASSPORT_PHOTO: { label: 'Passport Size Photo', hint: 'Clear portrait photo for ID generation.', key: 'passportPhoto' },
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -51,23 +58,26 @@ const InternshipApplication = () => {
         fetchData();
     }, [id]);
 
-    const handleFileChange = (e, setter) => {
+    const handleFileChange = (e, docId) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.type !== 'application/pdf') {
-                setError('Only PDF files are allowed.');
-                setter(null);
-                e.target.value = null; // reset
+            // Validate based on ID (Photos can be image, others PDF)
+            const isPhoto = docId === 'PASSPORT_PHOTO';
+            if (!isPhoto && file.type !== 'application/pdf') {
+                setError('Only PDF files are allowed for documents.');
                 return;
             }
+            if (isPhoto && !file.type.startsWith('image/')) {
+                setError('Only image files are allowed for passport photo.');
+                return;
+            }
+
             if (file.size > 5 * 1024 * 1024) {
                 setError('File size must be less than 5MB.');
-                setter(null);
-                e.target.value = null;
                 return;
             }
             setError('');
-            setter(file);
+            setFiles(prev => ({ ...prev, [docId]: file }));
         }
     };
 
@@ -75,9 +85,16 @@ const InternshipApplication = () => {
         e.preventDefault();
 
         const formData = new FormData();
-        if (resume) formData.append('resume', resume);
-        if (principalLetter) formData.append('principalLetter', principalLetter);
-        if (hodLetter) formData.append('hodLetter', hodLetter);
+        
+        // Append all required files that were selected
+        const reqDocs = internship.requiredDocuments || ['RESUME'];
+        reqDocs.forEach(docId => {
+            const file = files[docId];
+            if (file) {
+                const backendKey = DOC_CONFIG[docId]?.key || docId.toLowerCase();
+                formData.append(backendKey, file);
+            }
+        });
 
         setSubmitting(true);
         setError('');
@@ -117,41 +134,46 @@ const InternshipApplication = () => {
         );
     }
 
-    const FileUploadInput = ({ label, description, state, setter, id }) => (
-        <div className="relative group">
-            <input
-                type="file"
-                id={id}
-                accept="application/pdf"
-                className="hidden"
-                onChange={(e) => handleFileChange(e, setter)}
-            />
-            <label 
-                htmlFor={id} 
-                className={`block w-full p-5 sm:p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-4
-                ${state 
-                    ? 'border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50' 
-                    : 'border-gray-200 bg-gray-50/50 hover:border-indigo-300 hover:bg-indigo-50/30'}`}
-            >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0
-                    ${state ? 'bg-emerald-100' : 'bg-indigo-100 group-hover:bg-indigo-200'} transition-colors`}>
-                    {state ? <Check className="w-6 h-6 text-emerald-600" /> : <FileText className="w-6 h-6 text-indigo-600" />}
-                </div>
-                <div className="flex-grow">
-                    <h4 className={`font-bold text-sm sm:text-base ${state ? 'text-emerald-900' : 'text-gray-900'}`}>
-                        {label}
-                    </h4>
-                    <p className={`text-xs sm:text-sm font-medium mt-1 ${state ? 'text-emerald-700/70' : 'text-gray-500'}`}>
-                        {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {state.name}</span> : description}
-                    </p>
-                </div>
-                <div className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 mt-2 sm:mt-0
-                    ${state ? 'bg-emerald-200/50 text-emerald-800' : 'bg-white border border-gray-200 text-gray-600 shadow-sm group-hover:border-indigo-200 group-hover:text-indigo-600'}`}>
-                    {state ? 'Change File' : 'Browse PDF'}
-                </div>
-            </label>
-        </div>
-    );
+    const FileUploadInput = ({ docId }) => {
+        const config = DOC_CONFIG[docId] || { label: docId, hint: 'Required Document', key: docId };
+        const state = files[docId];
+
+        return (
+            <div className="relative group">
+                <input
+                    type="file"
+                    id={docId}
+                    accept={docId === 'PASSPORT_PHOTO' ? "image/*" : "application/pdf"}
+                    className="hidden"
+                    onChange={(e) => handleFileChange(e, docId)}
+                />
+                <label 
+                    htmlFor={docId} 
+                    className={`block w-full p-5 sm:p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-4
+                    ${state 
+                        ? 'border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50' 
+                        : 'border-gray-200 bg-gray-50/50 hover:border-indigo-300 hover:bg-indigo-50/30'}`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0
+                        ${state ? 'bg-emerald-100' : 'bg-indigo-100 group-hover:bg-indigo-200'} transition-colors`}>
+                        {state ? <Check className="w-6 h-6 text-emerald-600" /> : <FileText className="w-6 h-6 text-indigo-600" />}
+                    </div>
+                    <div className="flex-grow">
+                        <h4 className={`font-bold text-sm sm:text-base ${state ? 'text-emerald-900' : 'text-gray-900'}`}>
+                            {config.label}
+                        </h4>
+                        <p className={`text-xs sm:text-sm font-medium mt-1 ${state ? 'text-emerald-700/70' : 'text-gray-500'}`}>
+                            {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {state.name}</span> : config.hint}
+                        </p>
+                    </div>
+                    <div className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 mt-2 sm:mt-0
+                        ${state ? 'bg-emerald-200/50 text-emerald-800' : 'bg-white border border-gray-200 text-gray-600 shadow-sm group-hover:border-indigo-200 group-hover:text-indigo-600'}`}>
+                        {state ? 'Change File' : 'Browse'}
+                    </div>
+                </label>
+            </div>
+        );
+    };
 
     return (
         <div className="max-w-4xl mx-auto py-6 relative">
@@ -225,29 +247,9 @@ const InternshipApplication = () => {
                                 <p className="text-sm text-gray-500 font-medium mb-6">Upload required authorization letters in PDF format (Max 5MB each).</p>
 
                                 <div className="space-y-4">
-                                    <FileUploadInput 
-                                        id="resume-upload"
-                                        label="Technical Resume / CV" 
-                                        description="Highlight relevant projects and skills." 
-                                        state={resume} 
-                                        setter={setResume} 
-                                    />
-                                    
-                                    <FileUploadInput 
-                                        id="principal-upload"
-                                        label="Principal Recommendation" 
-                                        description="Official signed document from your College Principal." 
-                                        state={principalLetter} 
-                                        setter={setPrincipalLetter} 
-                                    />
-                                    
-                                    <FileUploadInput 
-                                        id="hod-upload"
-                                        label="HOD Acknowledgement" 
-                                        description="Departmental approval for industrial training." 
-                                        state={hodLetter} 
-                                        setter={setHodLetter} 
-                                    />
+                                    {(internship.requiredDocuments || ['RESUME']).map(docId => (
+                                        <FileUploadInput key={docId} docId={docId} />
+                                    ))}
                                 </div>
                             </div>
 

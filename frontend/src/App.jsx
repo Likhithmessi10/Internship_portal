@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import StudentLayout from './components/StudentLayout';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Admin Pages
@@ -10,6 +10,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import CreateInternshipForm from './pages/admin/CreateInternship';
 import AdminApplicationReview from './pages/admin/AdminApplicationReview';
 import AdminRejected from './pages/admin/AdminRejected';
+import AdminPastInternships from './pages/admin/AdminPastInternships';
 
 // Student Pages
 import Login from './pages/student/Login';
@@ -18,6 +19,7 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import StudentProfileForm from './pages/student/StudentProfileForm';
 import InternshipList from './pages/student/InternshipList'; // Reuse or revamp for students
 import InternshipApplication from './pages/student/InternshipApplication';
+import LandingPage from './pages/LandingPage';
 
 const AdminLayout = ({ children }) => (
   <div className="min-h-screen flex flex-col bg-slate-50">
@@ -31,22 +33,14 @@ const AdminLayout = ({ children }) => (
   </div>
 );
 
-const RootRedirect = () => {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="flex justify-center items-center h-screen bg-slate-50">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-  </div>;
-  if (!user) return <Navigate to="/login" replace />;
-  return <Navigate to={user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard'} replace />;
-};
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Authentication Routes */}
-          <Route path="/" element={<RootRedirect />} />
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -70,6 +64,11 @@ function App() {
           <Route path="/admin/rejected" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminLayout><AdminRejected /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/internships/past" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout><AdminPastInternships /></AdminLayout>
             </ProtectedRoute>
           } />
 
@@ -96,7 +95,7 @@ function App() {
           } />
 
           {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

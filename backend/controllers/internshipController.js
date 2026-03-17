@@ -66,7 +66,7 @@ const applyForInternship = async (req, res) => {
         if (hodLetterFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'HOD_LETTER', url: hodLetterFile.path } }));
 
         // Passport Photo
-        if (req.files.passportPhoto) {
+        if (req.files && req.files.passportPhoto) {
             const path = req.files.passportPhoto[0].path;
             docPromises.push(prisma.document.create({
                 data: { type: 'PASSPORT_PHOTO', url: path, applicationId: application.id }
@@ -79,7 +79,7 @@ const applyForInternship = async (req, res) => {
         }
 
         // Marksheet
-        if (req.files.marksheet) {
+        if (req.files && req.files.marksheet) {
             docPromises.push(prisma.document.create({
                 data: { type: 'MARKSHEET', url: req.files.marksheet[0].path, applicationId: application.id }
             }));

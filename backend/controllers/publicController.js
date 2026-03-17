@@ -11,7 +11,7 @@ const { generateOTP, sendOTP } = require('../utils/otp');
 const submitApplication = async (req, res, next) => {
     try {
         const {
-            rollNumber, fullName, phone, dob, address, aadhar,
+            rollNumber, collegeRollNumber, fullName, phone, dob, address, aadhar,
             collegeName, collegeCode, university, degree, branch,
             yearOfStudy, cgpa, collegeCategory, nirfRanking,
             internshipId, preferredCircle, duration, startDate,
@@ -30,6 +30,8 @@ const submitApplication = async (req, res, next) => {
 
         const profileData = {
             fullName,
+            rollNumber,
+            collegeRollNumber,
             phone,
             dob: new Date(dob),
             address,

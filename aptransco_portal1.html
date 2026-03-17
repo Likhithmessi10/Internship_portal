@@ -26,6 +26,23 @@
       --card-shadow: 0 2px 12px rgba(0, 48, 135, .10);
     }
 
+    body.dark-mode {
+      --aptblue: #1e3a8a;
+      --aptblue2: #3b82f6;
+      --aptred: #ef4444;
+      --aptgold: #fbbf24;
+      --aptgold2: #fcd34d;
+      --aptlight: #1e293b;
+      --aptteal: #2dd4bf;
+      --border: #475569;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --white: #0f172a;
+      --bg: #020617;
+      --success: #22c55e;
+      --card-shadow: 0 4px 20px rgba(0, 0, 0, .4);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -41,13 +58,51 @@
 
     /* ── TOP STRIP ── */
     .top-strip {
-      background: var(--aptblue);
+      background: rgba(0, 48, 135, 0.95);
+      backdrop-filter: blur(10px);
       color: #cdd8f6;
-      font-size: 11.5px;
-      letter-spacing: .5px;
-      padding: 5px 0;
-      text-align: center;
-      border-bottom: 3px solid var(--aptgold);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .8px;
+      padding: 8px 0;
+      border-bottom: 2px solid var(--aptgold);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .util-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .util-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .util-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: var(--aptgold);
+    }
+
+    .util-btn.active {
+      background: var(--aptgold);
+      color: var(--aptblue);
+      border-color: var(--aptgold);
     }
 
     .top-strip a {
@@ -1844,8 +1899,36 @@
 
   <!-- TOP STRIP -->
   <div class="top-strip">
-    Government of Andhra Pradesh &nbsp;|&nbsp; APTRANSCO – Andhra Pradesh Transmission Corporation Limited &nbsp;|&nbsp;
-    <a href="mailto:internship@aptransco.in">internship@aptransco.in</a> &nbsp;|&nbsp; 040-23435272
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 40px;">
+      <div class="top-strip-info">
+        ⚡ APTRANSCO Official Internship Portal
+      </div>
+      <div class="util-controls">
+        <button class="util-btn" onclick="toggleDarkMode()" id="theme-icon">
+          🌙 DARK MODE
+        </button>
+        <button class="util-btn" onclick="toggleLanguage()" id="lang-indicator">
+          🌐 ENGLISH
+        </button>
+      </div>
+    </div>
+  </div>
+        Government of Andhra Pradesh &nbsp;|&nbsp; APTRANSCO – Andhra Pradesh Transmission Corporation Limited
+      </div>
+      <div class="top-strip-utils" style="display: flex; gap: 15px; align-items: center;">
+        <div class="util-box" style="display: flex; align-items: center; gap: 8px;">
+           <span id="lang-label" style="opacity: 0.8;">Language:</span>
+           <button onclick="toggleLanguage()" class="util-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">ENGLISH</button>
+        </div>
+        <div class="util-box" style="display: flex; align-items: center; gap: 8px;">
+           <span id="theme-label" style="opacity: 0.8;">Theme:</span>
+           <button onclick="toggleDarkMode()" class="util-btn" id="theme-icon" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">🌙 DARK</button>
+        </div>
+        <div class="contact-strip" style="opacity: 0.8;">
+          <a href="mailto:internship@aptransco.in" style="color: inherit;">internship@aptransco.in</a> &nbsp;|&nbsp; 040-23435272
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- HEADER -->
@@ -3258,6 +3341,94 @@
       document.getElementById('status-result-card').classList.add('show');
     }
 
+  </script>
+  <script>
+    // --- THEME LOGIC ---
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateThemeUI();
+    }
+
+    function updateThemeUI() {
+        const isDark = document.body.classList.contains('dark-mode');
+        document.getElementById('theme-icon').innerHTML = isDark 
+            ? '<span style="color:#fbbf24">☀️</span> LIGHT MODE' 
+            : '🌙 DARK MODE';
+        document.getElementById('theme-icon').classList.toggle('active', isDark);
+    }
+
+    // Initialize Theme
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        updateThemeUI();
+    }
+
+    // --- LOCALIZATION LOGIC ---
+    let currentLang = localStorage.getItem('lang') || 'en';
+
+    const translations = {
+        'en': {
+            'dept': 'Government of Andhra Pradesh — Energy Department',
+            'h1': 'Andhra Pradesh Transmission Corporation Limited',
+            'sub': 'APTRANSCO · Student Internship Management Portal · 2024–25',
+            'hero_badge': '⚡ APTRANSCO Student Internship Programme 2024–25',
+            'hero_title': 'Power Your Future with<br><em>APTRANSCO Internship</em>',
+            'hero_p': "Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in substations, control rooms, and planning divisions across Andhra Pradesh.",
+            'apply_btn': 'Apply Now →',
+            'status_btn': 'Check Application Status',
+            'nav_home': '🏠 Home',
+            'nav_apply': '📝 Apply for Internship',
+            'nav_status': '🔍 Check Status'
+        },
+        'te': {
+            'dept': 'ఆంధ్రప్రదేశ్ ప్రభుత్వం — ఇంధన శాఖ',
+            'h1': 'ఆంధ్రప్రదేశ్ ట్రాన్స్‌మిషన్ కార్పొరేషన్ లిమిటెడ్',
+            'sub': 'ఏపీట్రాన్స్‌కో · విద్యార్థి ఇంటర్న్‌షిప్ మేనేజ్‌మెంట్ పోర్టల్ · 2024–25',
+            'hero_badge': '⚡ ఏపీట్రాన్స్‌కో విద్యార్థి ఇంటర్న్‌షిప్ ప్రోగ్రామ్ 2024–25',
+            'hero_title': 'మీ భవిష్యత్తును సిద్ధం చేసుకోండి<br><em>ఏపీట్రాన్స్‌కో ఇంటర్న్‌షిప్‌తో</em>',
+            'hero_p': "భారతదేశంలోని అగ్రగామి పవర్ ట్రాన్స్‌మిషన్ యుటిలిటీలో ప్రత్యక్ష అనుభవాన్ని పొందండి. ఆంధ్రప్రదేశ్ అంతటా సబ్ స్టేషన్లు, కంట్రోల్ రూములు మరియు ప్లానింగ్ విభాగాలలో నిపుణులైన ఇంజనీర్లతో కలిసి పని చేయండి.",
+            'apply_btn': 'ఇప్పుడే దరఖాస్తు చేసుకోండి →',
+            'status_btn': 'దరఖాస్తు స్థితిని తనిఖీ చేయండి',
+            'nav_home': '🏠 హోమ్',
+            'nav_apply': '📝 ఇంటర్న్ షిప్ కోసం దరఖాస్తు',
+            'nav_status': '🔍 స్థితిని తనిఖీ చేయండి'
+        }
+    };
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'en' ? 'te' : 'en';
+        localStorage.setItem('lang', currentLang);
+        applyTranslations();
+    }
+
+    function applyTranslations() {
+        const dict = translations[currentLang];
+        document.querySelector('.header-text .dept').innerText = dict.dept;
+        document.querySelector('.header-text h1').innerText = dict.h1;
+        document.querySelector('.header-text .sub').innerText = dict.sub;
+        document.querySelector('.hero-badge').innerText = dict.hero_badge;
+        document.querySelector('.hero h2').innerHTML = dict.hero_title;
+        document.querySelector('.hero p').innerText = dict.hero_p;
+        document.querySelectorAll('.btn-hero-primary').forEach(b => b.innerText = dict.apply_btn);
+        document.querySelectorAll('.btn-hero-secondary').forEach(b => b.innerText = dict.status_btn);
+        
+        const navHome = document.getElementById('nav-home');
+        const navApply = document.getElementById('nav-apply');
+        const navStatus = document.getElementById('nav-status');
+        if(navHome) navHome.innerText = dict.nav_home;
+        if(navApply) navApply.innerText = dict.nav_apply;
+        if(navStatus) navStatus.innerText = dict.nav_status;
+        
+        document.getElementById('lang-indicator').innerText = currentLang === 'en' ? '🌐 ENGLISH' : '🌐 తెలుగు';
+        document.getElementById('lang-indicator').classList.toggle('active', currentLang === 'te');
+    }
+
+    // Initialize Language
+    if (localStorage.getItem('lang') === 'te') {
+        applyTranslations();
+    }
   </script>
 </body>
 

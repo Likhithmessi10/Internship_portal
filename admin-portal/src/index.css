@@ -7,8 +7,23 @@
 @layer base {
   html,
   body {
-    @apply bg-slate-50 text-gray-900 min-h-screen antialiased;
+    @apply bg-slate-50 text-gray-900 min-h-screen antialiased transition-colors duration-200;
     font-family: 'Source Sans 3', sans-serif;
+  }
+
+  ::selection {
+    @apply bg-indigo-500/30 text-indigo-900 dark:text-indigo-100;
+  }
+
+  html.dark body {
+    @apply bg-slate-950 text-slate-100;
+    --glass-bg: rgba(15, 23, 42, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.05);
+  }
+
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -28,28 +43,53 @@
   }
 
   .input-field {
-    @apply mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium;
+    @apply mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100;
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8;
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 dark:bg-slate-900 dark:border-slate-800;
   }
 
   /* ── Admin-specific components ── */
   .admin-card {
-    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-6;
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-6 dark:bg-slate-900 dark:border-slate-800;
   }
 
   .admin-stat-card {
-    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-5;
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-5 dark:bg-slate-900 dark:border-slate-800;
   }
 
   .admin-input {
-    @apply w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all placeholder-gray-400 font-medium;
+    @apply w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all placeholder-gray-400 font-medium dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 dark:focus:bg-slate-800;
   }
 
   select.admin-input {
     @apply cursor-pointer;
+  }
+
+  /* ── Premium Utilities ── */
+  .glass-card {
+    @apply backdrop-blur-md border transition-all duration-300;
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+  }
+
+  .glass-navbar {
+    @apply backdrop-blur-lg border-b sticky top-0 z-50;
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+  }
+
+  .premium-shadow {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .premium-shadow {
+    box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-premium {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-amber-500 font-black;
   }
 }
 
