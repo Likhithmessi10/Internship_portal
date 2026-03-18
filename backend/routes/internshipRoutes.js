@@ -1,21 +1,15 @@
 const express = require('express');
 const { getInternships, getInternshipDetails, applyForInternship } = require('../controllers/internshipController');
-const { protect } = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/uploadMiddleware');
+const { protect } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 
 const router = express.Router();
 
 router.get('/', getInternships);
 router.get('/:id', getInternshipDetails);
 
-// Application route requires multipart upload mapping
-router.post('/:id/apply', protect, upload.fields([
-    { name: 'resume', maxCount: 1 },
-    { name: 'nocLetter', maxCount: 1 },
-    { name: 'principalLetter', maxCount: 1 },
-    { name: 'hodLetter', maxCount: 1 },
-    { name: 'marksheet', maxCount: 1 },
-    { name: 'passportPhoto', maxCount: 1 }
-]), applyForInternship);
+const fileValidator = require('../middleware/fileValidator');
+
+router.post('/:id/apply', protect, upload.any(), fileValidator, applyForInternship);
 
 module.exports = router;

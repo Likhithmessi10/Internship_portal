@@ -34,15 +34,12 @@ const CreateInternshipForm = () => {
     const [locationInput, setLocationInput] = useState('');
     const [locations, setLocations] = useState([]);
 
-    const [requiredDocs, setRequiredDocs] = useState(['RESUME', 'NOC_LETTER', 'PASSPORT_PHOTO']); // Default common ones
-    const availableDocs = [
-        { id: 'RESUME', label: 'Resume / CV' },
-        { id: 'NOC_LETTER', label: 'No Objection Certificate (NOC)' },
-        { id: 'PRINCIPAL_LETTER', label: 'Principal Recommendation' },
-        { id: 'HOD_LETTER', label: 'HOD Recommendation' },
-        { id: 'MARKSHEET', label: 'Educational Marksheets' },
-        { id: 'PASSPORT_PHOTO', label: 'Passport Size Photo' },
-    ];
+    const [docNameInput, setDocNameInput] = useState('');
+    const [docTypeInput, setDocTypeInput] = useState('PDF');
+    const [requiredDocs, setRequiredDocs] = useState([
+        { id: 'RESUME', label: 'Resume / CV', type: 'PDF' },
+        { id: 'PASSPORT_PHOTO', label: 'Passport Size Photo', type: 'IMAGE' }
+    ]);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -58,10 +55,15 @@ const CreateInternshipForm = () => {
         manualOpenings: ''
     });
 
-    const toggleDoc = (id) => {
-        if (requiredDocs.includes(id)) setRequiredDocs(requiredDocs.filter(x => x !== id));
-        else setRequiredDocs([...requiredDocs, id]);
+    const addDoc = () => {
+        const name = docNameInput.trim();
+        if (name) {
+            const id = name.toUpperCase().replace(/\s+/g, '_') + '_' + Date.now();
+            setRequiredDocs([...requiredDocs, { id, label: name, type: docTypeInput }]);
+            setDocNameInput('');
+        }
     };
+    const removeDoc = (id) => setRequiredDocs(requiredDocs.filter(d => d.id !== id));
 
     const totalOpenings = roles.reduce((sum, r) => sum + r.openings, 0);
 
@@ -189,6 +191,86 @@ const CreateInternshipForm = () => {
                     </div>
                 </div>
 
+                {/* Priority & Quotas */}
+                <div className="admin-card border-amber-100/50 dark:border-amber-500/10 bg-gradient-to-br from-white to-amber-50/20 dark:from-slate-900/40 dark:to-amber-500/5">
+                    <h2 className="text-base font-bold text-gray-800 dark:text-amber-100 mb-5 flex items-center gap-2">
+                        <Star size={16} className="text-amber-400" /> Priority & Quota Settings
+                    </h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InputField label="Top Priority College" hint="Nominate for absolute priority (Optional)">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Star size={16} className="text-amber-400" />
+                                </div>
+                                <input 
+                                    list="colleges-list"
+                                    name="priorityCollege"
+                                    value={formData.priorityCollege}
+                                    onChange={handleChange}
+                                    placeholder="Search college..."
+                                    className="admin-input pl-11 font-bold border-amber-200/50 bg-white/50 focus:ring-amber-400"
+                                />
+                                <datalist id="colleges-list">
+                                    {collegesData.slice(0, 500).map((c, idx) => (
+                                        <option key={idx} value={c.label} />
+                                    ))}
+                                </datalist>
+                            </div>
+                        </InputField>
+                        <InputField label="Priority College Intake (%)" hint={`Calculates to ${Math.round(((parseInt(formData.manualOpenings) || totalOpenings) * (parseInt(formData.priorityCollegeQuota) || 0)) / 100)} reserved seats`}>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="number" 
+                                    name="priorityCollegeQuota"
+                                    min="0" max="100"
+                                    value={formData.priorityCollegeQuota}
+                                    onChange={handleChange}
+                                    className="admin-input font-black text-amber-600 w-24"
+                                />
+                                <span className="text-amber-600 font-bold">% Intake</span>
+                            </div>
+                        </InputField>
+                    </div>
+
+                    <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
+                        <p className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-[0.2em] mb-1">
+                            Priority Influence:
+                        </p>
+                        <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
+                            Students from this specific college will be prioritized first, up to the <strong>Intake Capacity</strong>. Extra students will fall to the standard pool.
+                        </p>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5">
+                        <InputField label="General Top University Quota (%)" hint="Target reservation across all roles (if not specified per-role)">
+                            <div className="flex items-center gap-4">
+                                <input 
+                                    type="range" 
+                                    name="topUniversityQuota" 
+                                    min="0" 
+                                    max="100" 
+                                    step="5"
+                                    value={formData.topUniversityQuota} 
+                                    onChange={handleChange}
+                                    className="flex-1 accent-indigo-600 h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
+                                />
+                                <span className="bg-indigo-600 text-white font-black px-4 py-2 rounded-xl shadow-lg shadow-indigo-600/20 min-w-[70px] text-center">
+                                    {formData.topUniversityQuota}%
+                                </span>
+                            </div>
+                        </InputField>
+                        <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100 dark:border-indigo-500/10">
+                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-[0.2em] mb-1">
+                                Priority Mapping:
+                            </p>
+                            <p className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
+                                Students from NIRF Rank ≤ 100 institutes OR IIT, NIT, IIIT, and Central Universities will be auto-categorized into this quota.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Roles */}
                 <div className="admin-card">
                     <h2 className="text-base font-bold text-gray-800 dark:text-white mb-5 flex items-center gap-2">
@@ -265,21 +347,67 @@ const CreateInternshipForm = () => {
                         </InputField>
 
                         <div className="pt-4 border-t border-gray-100">
-                            <label className="block text-sm font-bold text-gray-700 mb-3">Required Documents for Application</label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {availableDocs.map(doc => (
-                                    <label key={doc.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${requiredDocs.includes(doc.id) ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-500/20 ring-1 ring-indigo-200 dark:ring-indigo-500/20' : 'bg-gray-50 dark:bg-slate-800/40 border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10'}`}>
-                                        <input
-                                            type="checkbox"
-                                            checked={requiredDocs.includes(doc.id)}
-                                            onChange={() => toggleDoc(doc.id)}
-                                            className="w-4 h-4 text-indigo-600 rounded border-gray-300 dark:border-slate-700 focus:ring-indigo-500"
-                                        />
-                                        <span className={`text-sm font-semibold ${requiredDocs.includes(doc.id) ? 'text-indigo-900 dark:text-indigo-200' : 'text-gray-600 dark:text-slate-400'}`}>{doc.label}</span>
-                                    </label>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-indigo-100 mb-3 uppercase tracking-tighter">Required Documents for Application</label>
+                            
+                            {/* Document Adder */}
+                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-6 p-4 bg-gray-50 dark:bg-slate-900/40 rounded-2xl border border-gray-100 dark:border-white/5">
+                                <div className="sm:col-span-6">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Document Name</label>
+                                    <input 
+                                        type="text" 
+                                        value={docNameInput} 
+                                        onChange={e => setDocNameInput(e.target.value)}
+                                        placeholder="e.g. NOC, Marksheet, ID card..." 
+                                        className="admin-input text-sm" 
+                                    />
+                                </div>
+                                <div className="sm:col-span-4">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">File Type</label>
+                                    <select 
+                                        value={docTypeInput} 
+                                        onChange={e => setDocTypeInput(e.target.value)}
+                                        className="admin-input text-sm font-bold"
+                                    >
+                                        <option value="PDF">PDF Document</option>
+                                        <option value="IMAGE">Image (JPG/PNG)</option>
+                                    </select>
+                                </div>
+                                <div className="sm:col-span-2 flex items-end">
+                                    <button 
+                                        type="button" 
+                                        onClick={addDoc}
+                                        className="w-full h-[42px] bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 shadow-md"
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Added Docs List */}
+                            <div className="space-y-3">
+                                {requiredDocs.map(doc => (
+                                    <div key={doc.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900/60 border border-gray-100 dark:border-white/5 rounded-2xl group shadow-sm">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                                <FileText size={18} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-indigo-100">{doc.label}</p>
+                                                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{doc.type}</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => removeDoc(doc.id)}
+                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
-                            <p className="text-[10px] text-gray-400 mt-3 font-medium uppercase tracking-wider">Students will only see upload fields for these selected documents</p>
+                            
+                            <p className="text-[10px] text-gray-400 mt-4 font-medium uppercase tracking-wider text-center">Students will see custom upload fields for each document added above</p>
                         </div>
                     </div>
                 </div>
@@ -330,10 +458,10 @@ const CreateInternshipForm = () => {
                     )}
                 </div>
 
-                {/* Logistics */}
+                {/* Duration & Locations */}
                 <div className="admin-card">
                     <h2 className="text-base font-bold text-gray-800 dark:text-white mb-5 flex items-center gap-2">
-                        <Clock size={16} className="text-indigo-500" /> Duration & Openings
+                        <Clock size={16} className="text-indigo-500" /> Duration
                     </h2>
                     <div className="grid grid-cols-1 gap-4">
                         <InputField label="Duration" required>
@@ -343,79 +471,6 @@ const CreateInternshipForm = () => {
                                 <option>3 Months</option><option>6 Months</option>
                             </select>
                         </InputField>
-                    </div>
-                    <div className="mt-5 pt-5 border-t border-gray-100 dark:border-white/5">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Top Priority College" hint="Nominate for absolute priority (Optional)">
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Star size={16} className="text-amber-400" />
-                                    </div>
-                                    <input 
-                                        list="colleges-list"
-                                        name="priorityCollege"
-                                        value={formData.priorityCollege}
-                                        onChange={handleChange}
-                                        placeholder="Search college..."
-                                        className="admin-input pl-11 font-bold border-amber-200/50 bg-amber-50/10 focus:ring-amber-400"
-                                    />
-                                    <datalist id="colleges-list">
-                                        {collegesData.slice(0, 500).map((c, idx) => (
-                                            <option key={idx} value={c.label} />
-                                        ))}
-                                    </datalist>
-                                </div>
-                            </InputField>
-                            <InputField label="Priority College Intake (%)" hint={`Calculates to ${Math.round(((parseInt(formData.manualOpenings) || totalOpenings) * (parseInt(formData.priorityCollegeQuota) || 0)) / 100)} reserved seats`}>
-                                <div className="flex items-center gap-3">
-                                    <input 
-                                        type="number" 
-                                        name="priorityCollegeQuota"
-                                        min="0" max="100"
-                                        value={formData.priorityCollegeQuota}
-                                        onChange={handleChange}
-                                        className="admin-input font-black text-amber-600 w-24"
-                                    />
-                                    <span className="text-amber-600 font-bold">% Intake</span>
-                                </div>
-                            </InputField>
-                        </div>
-                        <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-[0.2em] mb-1">
-                                Priority Influence:
-                            </p>
-                            <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
-                                Students from this specific college will be prioritized first, up to the <strong>Intake Capacity</strong>. Extra students will fall to the standard pool.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="mt-5 pt-5 border-t border-gray-100 dark:border-white/5">
-                        <InputField label="General Top University Quota (%)" hint="Target reservation across all roles (if not specified per-role)">
-                            <div className="flex items-center gap-4">
-                                <input 
-                                    type="range" 
-                                    name="topUniversityQuota" 
-                                    min="0" 
-                                    max="100" 
-                                    step="5"
-                                    value={formData.topUniversityQuota} 
-                                    onChange={handleChange}
-                                    className="flex-1 accent-indigo-600 h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                                />
-                                <span className="bg-indigo-600 text-white font-black px-4 py-2 rounded-xl shadow-lg shadow-indigo-600/20 min-w-[70px] text-center">
-                                    {formData.topUniversityQuota}%
-                                </span>
-                            </div>
-                        </InputField>
-                        <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100 dark:border-indigo-500/10">
-                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-[0.2em] mb-1">
-                                Priority Mapping:
-                            </p>
-                            <p className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
-                                Students from NIRF Rank ≤ 100 institutes OR IIT, NIT, IIIT, and Central Universities will be auto-categorized into this quota.
-                            </p>
-                        </div>
                     </div>
                 </div>
 

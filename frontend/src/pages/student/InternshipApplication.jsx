@@ -17,14 +17,6 @@ const InternshipApplication = () => {
     // File States (Dynamic)
     const [files, setFiles] = useState({});
 
-    const DOC_CONFIG = {
-        RESUME: { label: 'Technical Resume / CV', hint: 'Highlight relevant projects and skills.', key: 'resume' },
-        NOC_LETTER: { label: 'No Objection Certificate', hint: 'Official NOC from your department head.', key: 'nocLetter' },
-        PRINCIPAL_LETTER: { label: 'Principal Recommendation', hint: 'Official signed document from your College Principal.', key: 'principalLetter' },
-        HOD_LETTER: { label: 'HOD Recommendation', hint: 'Departmental approval for industrial training.', key: 'hodLetter' },
-        MARKSHEET: { label: 'Educational Marksheets', hint: 'Merged PDF of your academic records.', key: 'marksheet' },
-        PASSPORT_PHOTO: { label: 'Passport Size Photo', hint: 'Clear portrait photo for ID generation.', key: 'passportPhoto' },
-    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -58,26 +50,26 @@ const InternshipApplication = () => {
         fetchData();
     }, [id]);
 
-    const handleFileChange = (e, docId) => {
+    const handleFileChange = (e, doc) => {
         const file = e.target.files[0];
         if (file) {
-            // Validate based on ID (Photos can be image, others PDF)
-            const isPhoto = docId === 'PASSPORT_PHOTO';
+            // Validate based on type (IMAGE or PDF)
+            const isPhoto = doc.type === 'IMAGE';
             if (!isPhoto && file.type !== 'application/pdf') {
-                setError('Only PDF files are allowed for documents.');
+                setError(`Only PDF files are allowed for ${doc.label}.`);
                 return;
             }
             if (isPhoto && !file.type.startsWith('image/')) {
-                setError('Only image files are allowed for passport photo.');
+                setError(`Only image files are allowed for ${doc.label}.`);
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                setError('File size must be less than 5MB.');
+                setError(`File ${file.name} is too large. Max size 5MB.`);
                 return;
             }
             setError('');
-            setFiles(prev => ({ ...prev, [docId]: file }));
+            setFiles(prev => ({ ...prev, [doc.id]: file }));
         }
     };
 
@@ -87,12 +79,11 @@ const InternshipApplication = () => {
         const formData = new FormData();
         
         // Append all required files that were selected
-        const reqDocs = internship.requiredDocuments || ['RESUME'];
-        reqDocs.forEach(docId => {
-            const file = files[docId];
+        const reqDocs = internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }];
+        reqDocs.forEach(doc => {
+            const file = files[doc.id];
             if (file) {
-                const backendKey = DOC_CONFIG[docId]?.key || docId.toLowerCase();
-                formData.append(backendKey, file);
+                formData.append(doc.id, file); // Use the doc ID as the field name
             }
         });
 
@@ -134,21 +125,20 @@ const InternshipApplication = () => {
         );
     }
 
-    const FileUploadInput = ({ docId }) => {
-        const config = DOC_CONFIG[docId] || { label: docId, hint: 'Required Document', key: docId };
-        const state = files[docId];
+    const FileUploadInput = ({ doc }) => {
+        const state = files[doc.id];
 
         return (
             <div className="relative group">
                 <input
                     type="file"
-                    id={docId}
-                    accept={docId === 'PASSPORT_PHOTO' ? "image/*" : "application/pdf"}
+                    id={doc.id}
+                    accept={doc.type === 'IMAGE' ? "image/*" : "application/pdf"}
                     className="hidden"
-                    onChange={(e) => handleFileChange(e, docId)}
+                    onChange={(e) => handleFileChange(e, doc)}
                 />
                 <label 
-                    htmlFor={docId} 
+                    htmlFor={doc.id} 
                     className={`block w-full p-5 sm:p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-4
                     ${state 
                         ? 'border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50' 
@@ -160,15 +150,15 @@ const InternshipApplication = () => {
                     </div>
                     <div className="flex-grow">
                         <h4 className={`font-bold text-sm sm:text-base ${state ? 'text-emerald-900' : 'text-gray-900'}`}>
-                            {config.label}
+                            {doc.label}
                         </h4>
                         <p className={`text-xs sm:text-sm font-medium mt-1 ${state ? 'text-emerald-700/70' : 'text-gray-500'}`}>
-                            {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {state.name}</span> : config.hint}
+                            {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {state.name}</span> : `Upload ${doc.type === 'IMAGE' ? 'JPG/PNG' : 'PDF'}`}
                         </p>
                     </div>
                     <div className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 mt-2 sm:mt-0
                         ${state ? 'bg-emerald-200/50 text-emerald-800' : 'bg-white border border-gray-200 text-gray-600 shadow-sm group-hover:border-indigo-200 group-hover:text-indigo-600'}`}>
-                        {state ? 'Change File' : 'Browse'}
+                        {state ? 'Change' : 'Browse'}
                     </div>
                 </label>
             </div>
@@ -205,15 +195,6 @@ const InternshipApplication = () => {
                 </div>
 
                 <div className="p-8 sm:p-10">
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 mb-10 flex gap-4">
-                        <AlertCircle className="w-6 h-6 text-indigo-500 shrink-0 mt-0.5" />
-                        <div>
-                            <h3 className="font-bold text-indigo-900 mb-2">Automated Shortlisting Protocol</h3>
-                            <p className="text-sm font-medium text-indigo-800/80 leading-relaxed">
-                                APTRANSCO utilizes an automated evaluation engine. Your application will be assessed based on the metrics saved in your student profile (CGPA, NIRF Ranking, Experience). Please ensure your profile is fully up-to-date before proceeding with this application.
-                            </p>
-                        </div>
-                    </div>
 
                     {!profileComplete ? (
                         <div className="text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-300">
@@ -247,8 +228,8 @@ const InternshipApplication = () => {
                                 <p className="text-sm text-gray-500 font-medium mb-6">Upload required authorization letters in PDF format (Max 5MB each).</p>
 
                                 <div className="space-y-4">
-                                    {(internship.requiredDocuments || ['RESUME']).map(docId => (
-                                        <FileUploadInput key={docId} docId={docId} />
+                                    {(internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }]).map(doc => (
+                                        <FileUploadInput key={doc.id} doc={doc} />
                                     ))}
                                 </div>
                             </div>

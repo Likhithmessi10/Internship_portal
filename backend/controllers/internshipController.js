@@ -38,68 +38,63 @@ const applyForInternship = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please complete your student profile before applying' });
         }
 
-        // 4. Ensure documents are uploaded (Optional for testing)
-        // Map uploaded files to variables if they exist
-        const resumeFile = req.files && req.files['resume'] ? req.files['resume'][0] : null;
-        const principalLetterFile = req.files && req.files['principalLetter'] ? req.files['principalLetter'][0] : null;
-        const nocLetterFile = req.files && req.files['nocLetter'] ? req.files['nocLetter'][0] : null;
-        const hodLetterFile = req.files && req.files['hodLetter'] ? req.files['hodLetter'][0] : null;
-        const marksheetFile = req.files && req.files['marksheet'] ? req.files['marksheet'][0] : null;
-        const passportPhotoFile = req.files && req.files['passportPhoto'] ? req.files['passportPhoto'][0] : null;
-
-        // 5. Create Application
+        // 4. Create Application
         const identifier = profile.rollNumber || profile.aadhar || 'UNKNOWN';
         const trackingId = `APT-${Date.now()}-${identifier.slice(-4)}`.toUpperCase();
         const application = await prisma.application.create({
             data: {
                 trackingId,
-                studentId: profile.id, // Linking to StudentProfile ID, not User ID
+                studentId: profile.id, // Linking to StudentProfile ID
                 internshipId: internship.id,
                 status: 'PENDING'
             }
         });
 
-        // 8. Create Document records ONLY if provided
-        const docPromises = [];
-        if (resumeFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'RESUME', url: resumeFile.path } }));
-        if (principalLetterFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'PRINCIPAL_LETTER', url: principalLetterFile.path } }));
-        if (nocLetterFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'NOC_LETTER', url: nocLetterFile.path } }));
-        if (hodLetterFile) docPromises.push(prisma.document.create({ data: { applicationId: application.id, type: 'HOD_LETTER', url: hodLetterFile.path } }));
-
-        // Passport Photo
-        if (req.files && req.files.passportPhoto) {
-            const path = req.files.passportPhoto[0].path;
-            docPromises.push(prisma.document.create({
-                data: { type: 'PASSPORT_PHOTO', url: path, applicationId: application.id }
-            }));
-            // Also update student profile photoUrl if not set
-            await prisma.studentProfile.update({
-                where: { id: profile.id },
-                data: { photoUrl: path }
+        // 5. Handle File Uploads (Expect files from multer via any())
+        if (req.files && req.files.length > 0) {
+            const documents = req.files.map(file => {
+                // Try to find the document label from internship config
+                const docMeta = (internship.requiredDocuments || []).find(d => d.id === file.fieldname);
+                
+                return {
+                    applicationId: application.id,
+                    type: docMeta ? docMeta.label : file.fieldname.toUpperCase(), 
+                    url: file.path
+                };
             });
-        }
 
-        // Marksheet
-        if (req.files && req.files.marksheet) {
-            docPromises.push(prisma.document.create({
-                data: { type: 'MARKSHEET', url: req.files.marksheet[0].path, applicationId: application.id }
-            }));
-        }
+            if (documents.length > 0) {
+                await prisma.document.createMany({
+                    data: documents
+                });
+            }
 
-        await Promise.all(docPromises);
+            // Sync Passport Photo URL if provided
+            const passportFile = req.files.find(f => {
+                const meta = (internship.requiredDocuments || []).find(d => d.id === f.fieldname);
+                return meta?.id === 'PASSPORT_PHOTO' || meta?.label?.toLowerCase().includes('passport');
+            });
+
+            if (passportFile) {
+                await prisma.studentProfile.update({
+                    where: { id: profile.id },
+                    data: { photoUrl: passportFile.path }
+                });
+            }
+        }
 
         res.status(201).json({
             success: true,
             data: application,
-            message: 'Application submitted successfully'
+            message: 'Application submitted successfully applied!'
         });
 
     } catch (error) {
-        console.error(error);
+        console.error('>>> APPLY ERROR:', error);
         if (error.code === 'P2002') {
             return res.status(400).json({ success: false, message: 'You have already applied to this internship' });
         }
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Server error during submission' });
     }
 };
 

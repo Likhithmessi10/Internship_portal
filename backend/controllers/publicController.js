@@ -110,19 +110,14 @@ const submitApplication = async (req, res, next) => {
         });
 
         // 4. Handle File Uploads (Expect files from multer)
-        // Handle file uploads from multer (upload.any() sets req.files as an array)
         if (req.files && req.files.length > 0) {
             const documents = req.files.map(file => {
-                let type = 'RESUME';
-                if (file.fieldname === 'principalLetter') type = 'PRINCIPAL_LETTER';
-                if (file.fieldname === 'hodLetter') type = 'HOD_LETTER';
-                if (file.fieldname === 'nocLetter') type = 'NOC_LETTER';
-                if (file.fieldname === 'marksheet') type = 'MARKSHEET';
-                if (file.fieldname === 'passportPhoto') type = 'PASSPORT_PHOTO';
-
+                // Try to find the document label/metadata in the internship configuration
+                const docMeta = (internship.requiredDocuments || []).find(d => d.id === file.fieldname);
+                
                 return {
                     applicationId: application.id,
-                    type,
+                    type: docMeta ? docMeta.label : file.fieldname.toUpperCase(), // Store label or fieldname
                     url: file.path
                 };
             });

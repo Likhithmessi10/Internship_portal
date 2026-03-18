@@ -146,7 +146,7 @@ model Application {
 model Document {
   id            String       @id @default(uuid())
   applicationId String
-  type          DocumentType
+  type          String       // Support dynamic document labels
   url           String // S3 or local path
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)

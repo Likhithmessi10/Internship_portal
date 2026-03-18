@@ -151,7 +151,7 @@ router.get('/colleges', async (req, res) => {
 
 
 // ── POST /api/v1/public/colleges/custom ──────────────────────────────────────
-const { addCustomCollege } = require('../scripts/manage_colleges');
+const { addCustomCollege } = require('../scripts/tools/manage_colleges');
 
 router.post('/colleges/custom', express.json(), async (req, res) => {
   try {

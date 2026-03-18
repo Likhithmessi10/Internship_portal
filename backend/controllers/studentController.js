@@ -29,6 +29,11 @@ const upsertProfile = async (req, res) => {
         const allowedCategories = ['IIT', 'NIT', 'IIIT', 'CENTRAL', 'STATE_UNIV', 'DEEMED', 'AUTONOMOUS', 'COLLEGE', 'INSTITUTE', 'OTHER'];
         const validatedCategory = allowedCategories.includes(collegeCategory) ? collegeCategory : 'OTHER';
 
+        const parsedCgpa = parseFloat(cgpa) || 0.0;
+        if (parsedCgpa > 10) {
+            return res.status(400).json({ success: false, message: 'CGPA cannot be greater than 10.0' });
+        }
+
         const profileData = {
             fullName,
             collegeRollNumber,
@@ -41,7 +46,7 @@ const upsertProfile = async (req, res) => {
             degree,
             branch,
             yearOfStudy: parseInt(yearOfStudy) || 1,
-            cgpa: parseFloat(cgpa) || 0.0,
+            cgpa: parsedCgpa,
             collegeCategory: validatedCategory,
             nirfRanking: (nirfRanking && !isNaN(parseInt(nirfRanking))) ? parseInt(nirfRanking) : null,
             hasExperience: hasExperience === true || hasExperience === 'true',

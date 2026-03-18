@@ -155,9 +155,6 @@ const StudentDashboard = () => {
                                                 <MapPin className="w-3.5 h-3.5" /> {app.internship?.location || 'APTRANSCO'} • Applied on {new Date(app.createdAt).toLocaleDateString()}
                                             </p>
                                         </div>
-                                        <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform cursor-pointer">
-                                            {t('dashboard.viewDetails')} <span className="text-lg">→</span>
-                                        </div>
                                     </div>
                                 ))}
                             </div>

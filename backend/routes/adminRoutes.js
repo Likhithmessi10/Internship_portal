@@ -13,7 +13,7 @@ const {
     getPortalConfig,
     updatePortalConfig
 } = require('../controllers/adminController');
-const { protect, authorize } = require('../middlewares/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 

@@ -9,7 +9,22 @@ const StudentLayout = ({ children }) => {
     const { user, logout } = useAuth();
     const { isDarkMode, toggleTheme } = useTheme();
     const { lang, toggleLanguage, t } = useLanguage();
+    const [profile, setProfile] = React.useState(null);
     const location = useLocation();
+
+    React.useEffect(() => {
+        const fetchProfile = async () => {
+            if (user?.role === 'STUDENT') {
+                try {
+                    const res = await api.get('/students/profile');
+                    setProfile(res.data.data);
+                } catch (error) {
+                    console.log("No profile yet for layout", error);
+                }
+            }
+        };
+        fetchProfile();
+    }, [user]);
 
     const tabs = [
         { name: t('nav.dashboard'), path: '/student/dashboard', icon: <LayoutDashboard size={18} /> },
@@ -56,13 +71,15 @@ const StudentLayout = ({ children }) => {
 
                             <div className="hidden md:flex items-center gap-3 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl pl-4 pr-5 py-2 border border-black/5 dark:border-white/5 backdrop-blur-md">
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-inner font-bold text-xs uppercase">
-                                    {user?.email?.charAt(0)}
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-xs font-black text-indigo-900 dark:text-white leading-tight truncate max-w-[100px]">{user?.email?.split('@')[0] || t('nav.student')}</p>
-                                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-widest leading-tight">{t('nav.applicant')}</p>
-                                </div>
-                            </div>
+                                     {profile?.fullName?.charAt(0) || user?.email?.charAt(0)}
+                                 </div>
+                                 <div className="text-left">
+                                     <p className="text-xs font-black text-indigo-900 dark:text-white leading-tight truncate max-w-[150px]">
+                                         {profile?.fullName || user?.email?.split('@')[0] || t('nav.student')}
+                                     </p>
+                                     <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-widest leading-tight">{t('nav.applicant')}</p>
+                                 </div>
+                             </div>
                             
                             <button 
                                 onClick={logout}

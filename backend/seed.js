@@ -4,25 +4,30 @@ const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('Seeding Default Admin Account...');
+    const defaultEmail = 'admin@aptransco.gov.in';
+    const defaultPassword = 'admin@aptransco@123';
+
+    console.log('--- Seeding Default Admin Account ---');
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('admin123', salt);
+    const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
     const admin = await prisma.user.upsert({
-        where: { email: 'admin@aptransco.gov.in' },
+        where: { email: defaultEmail },
         update: {
             password: hashedPassword,
             role: 'ADMIN'
         },
         create: {
-            email: 'admin@aptransco.gov.in',
+            email: defaultEmail,
             password: hashedPassword,
             role: 'ADMIN',
         },
     });
 
-    console.log(`Admin account created with email: ${admin.email}`);
-    console.log(`Password : ${admin.password}`);
+    console.log(`\nSUCCESS! Admin account seeded.`);
+    console.log(`Email    : ${admin.email}`);
+    console.log(`Password : ${defaultPassword}`); // Cleartext for quick reference
+    console.log('-------------------------------------\n');
 }
 
 main()

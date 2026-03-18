@@ -14,6 +14,8 @@ const StudentProfileForm = () => {
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState(1);
 
+    const [initialProfile, setInitialProfile] = useState(null);
+
     // Initial empty state
     const [formData, setFormData] = useState({
         fullName: '', rollNumber: '', collegeRollNumber: '', phone: '', dob: '', address: '', aadhar: '', aadhaarNumber: '', photoUrl: '',
@@ -30,6 +32,7 @@ const StudentProfileForm = () => {
                 if (res.data.data) {
                     console.log('>>> FETCHED PROFILE (Dashboard):', res.data.data);
                     const d = res.data.data;
+                    setInitialProfile(d); // Store original for comparison
                     // Format date for inputs
                     const dDob = d.dob ? new Date(d.dob).toISOString().split('T')[0] : '';
                     setFormData(prev => ({ 
@@ -125,6 +128,11 @@ const StudentProfileForm = () => {
             return false;
         }
 
+        if (activeTab === 2 && parseFloat(formData.cgpa) > 10) {
+            setError('CGPA must be between 0 and 10');
+            return false;
+        }
+
         const fieldsToHero = requiredFields[activeTab] || [];
         for (const f of fieldsToHero) {
             if (!formData[f]) {
@@ -176,8 +184,21 @@ const StudentProfileForm = () => {
         try {
             console.log('>>> Submitting Profile Data:', submissionData);
             const res = await api.post('/students/profile', submissionData);
-            console.log('>>> Profile Update Success:', res.data.data);
-            alert(`Profile Updated! Roll Number: ${res.data.data.rollNumber}`);
+            const updatedProfile = res.data.data;
+
+            // Determine specific alert message
+            let msg = 'Profile updated successfully!';
+            const photoChanged = formData.photoUrl !== (initialProfile?.photoUrl || '');
+            const rollChanged = formData.collegeRollNumber !== (initialProfile?.collegeRollNumber || '');
+
+            if (photoChanged && rollChanged) msg = 'profile picture edited and roll number changed';
+            else if (photoChanged) msg = 'profile picture edited';
+            else if (rollChanged) msg = 'roll number changed';
+            else if (updatedProfile.rollNumber && !initialProfile?.rollNumber) {
+                msg = `Profile verified! Your APTRANSCO Roll Number is: ${updatedProfile.rollNumber}`;
+            }
+
+            alert(msg);
             navigate('/student/dashboard');
         } catch (err) {
             console.error('>>> Profile Update Error:', err.response?.data);
@@ -463,10 +484,24 @@ const StudentProfileForm = () => {
                                                 <option value="5">5th Year (Dual)</option>
                                             </select>
                                         </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">CGPA (Out of 10)</label>
-                                            <input type="number" step="0.01" max="10" name="cgpa" className="input-field" value={formData.cgpa} onChange={handleChange} placeholder="e.g. 8.5" />
-                                        </div>
+                                         <div>
+                                             <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">CGPA (Out of 10)</label>
+                                             <input 
+                                                type="number" 
+                                                step="0.01" 
+                                                min="0" 
+                                                max="10" 
+                                                name="cgpa" 
+                                                className="input-field" 
+                                                value={formData.cgpa} 
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    if (val > 10) return; // Prevent typing > 10
+                                                    handleChange(e);
+                                                }} 
+                                                placeholder="e.g. 8.5" 
+                                             />
+                                         </div>
                                     </div>
                             </div>
                         </div>
