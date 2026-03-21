@@ -42,7 +42,9 @@ npm install
 ```
 
 ### 2. Database Setup
-Ensure PostgreSQL is running and update `backend/.env`:
+
+#### Option A: Automatic Schema Setup (Empty Database)
+Use this if you want a clean database with no existing data. Ensure PostgreSQL is running and update `backend/.env`:
 ```env
 PORT=5001
 JWT_SECRET=your_secret_key
@@ -56,6 +58,21 @@ npx prisma db push
 node seed.js
 cd ..
 ```
+
+#### Option B: Manual Import (Schema + Pre-populated Data)
+Use this if you want to import the database with existing internships, applications, and student profiles (highly recommended for mentors):
+1. **Create Database**: Open pgAdmin and create a new database named `aptransco`.
+2. **Import SQL**: Right-click on the `aptransco` database -> **Query Tool**. Open the [backend/schema.sql](./backend/schema.sql) file and execute it.
+3. **Configure Environment**: Create a `.env` file in the `backend` folder and set your `DATABASE_URL`:
+   ```env
+   DATABASE_URL="postgresql://YOUR_POSTGRES_USER:YOUR_POSTGRES_PASSWORD@localhost:5432/aptransco?schema=public"
+   ```
+4. **Seed/Update Admin**: (Ensures you have the latest admin login)
+   ```bash
+   cd backend
+   node seed.js
+   cd ..
+   ```
 
 ### 3. Run Development Services
 Start the backend, student frontend, and admin portal simultaneously from the root:
