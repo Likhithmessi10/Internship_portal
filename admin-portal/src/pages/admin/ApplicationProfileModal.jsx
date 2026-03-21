@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen } from 'lucide-react';
+import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles } from 'lucide-react';
+
+const getMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('data:')) return url;
+    if (url.startsWith('http')) return url;
+    return `http://localhost:5001/${url.replace(/\\/g, '/')}`;
+};
 
 // Fullscreen PDF/image viewer panel overlay
 const DocViewer = ({ url, label, onClose }) => {
-    const fullUrl = url ? `http://localhost:5001/${url.replace(/\\/g, '/')}` : null;
-    const isImage = fullUrl && /\.(jpg|jpeg|png|webp|gif)$/i.test(fullUrl);
+    const fullUrl = getMediaUrl(url);
+    const isImage = fullUrl && (url?.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(fullUrl));
 
     return (
         <div className="fixed inset-0 z-[100] flex flex-col bg-white/95 backdrop-blur-md">
@@ -87,12 +94,12 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
     if (!application) return null;
     const { student, documents, status, trackingId, createdAt } = application;
 
-    const getDoc = (type) => documents?.find(d => d.type === type);
-    const resumeDoc = getDoc('RESUME');
-    const nocDoc = getDoc('NOC_LETTER') || getDoc('PRINCIPAL_LETTER');
-    const hodDoc = getDoc('HOD_LETTER');
-    const markDoc = getDoc('MARKSHEET');
-    const photoDoc = getDoc('PASSPORT_PHOTO');
+    const getDoc = (type, label) => documents?.find(d => d.type === type || d.type === label);
+    const resumeDoc = getDoc('RESUME', 'Resume / CV');
+    const nocDoc = getDoc('NOC_LETTER', 'NOC Letter') || getDoc('PRINCIPAL_LETTER', 'Principal Letter');
+    const hodDoc = getDoc('HOD_LETTER', 'HOD Letter');
+    const markDoc = getDoc('MARKSHEET', 'Mark Sheet');
+    const photoDoc = getDoc('PASSPORT_PHOTO', 'Passport Size Photo');
 
     const openViewer = (url, label) => { setViewerUrl(url); setViewerLabel(label); };
     const closeViewer = () => { setViewerUrl(null); setViewerLabel(''); };
@@ -130,12 +137,12 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
                     {/* Header */}
                     <div className="shrink-0 bg-white border-b border-gray-100 px-8 py-5 flex items-center justify-between z-10">
                         <div className="flex items-center gap-4">
-                            {photoDoc ? (
+                            {photoDoc || student?.photoUrl ? (
                                 <img
-                                    src={`http://localhost:5001/${photoDoc.url.replace(/\\/g, '/')}`}
+                                    src={getMediaUrl(photoDoc ? photoDoc.url : student.photoUrl)}
                                     alt="Passport"
                                     className="w-12 h-12 rounded-xl object-cover cursor-pointer border-2 border-indigo-100 shadow-sm transition-transform hover:scale-105"
-                                    onClick={() => openViewer(photoDoc.url, 'Passport Photo')}
+                                    onClick={() => openViewer(photoDoc ? photoDoc.url : student.photoUrl, 'Passport Photo')}
                                     title="Click to view full photo"
                                 />
                             ) : (
@@ -210,68 +217,95 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
                                 <BookOpen size={14} /> Documents Uploaded
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <DocRow doc={resumeDoc} label="Resume / CV" onView={openViewer} />
-                                <DocRow doc={nocDoc} label="Principal Letter" onView={openViewer} />
-                                <DocRow doc={hodDoc} label="HOD Letter" onView={openViewer} />
-                                <DocRow doc={markDoc} label="Mark Sheet" onView={openViewer} />
+                                {internship?.requiredDocuments && internship.requiredDocuments.length > 0 ? (
+                                    internship.requiredDocuments.map(reqDoc => {
+                                        let doc = getDoc(reqDoc.id, reqDoc.label);
+                                        // Legacy handling for NOC/Principal letter IDs
+                                        if (!doc) {
+                                            if (reqDoc.id === 'NOC_LETTER') doc = getDoc('PRINCIPAL_LETTER', 'Principal Letter');
+                                            else if (reqDoc.id === 'PRINCIPAL_LETTER') doc = getDoc('NOC_LETTER', 'NOC Letter');
+                                        }
+                                        return <DocRow key={reqDoc.id} doc={doc} label={reqDoc.label} onView={openViewer} />;
+                                    })
+                                ) : (
+                                    <>
+                                        <DocRow doc={resumeDoc} label="Resume / CV" onView={openViewer} />
+                                        <DocRow doc={nocDoc} label="Principal Letter" onView={openViewer} />
+                                        <DocRow doc={hodDoc} label="HOD Letter" onView={openViewer} />
+                                        <DocRow doc={markDoc} label="Mark Sheet" onView={openViewer} />
+                                    </>
+                                )}
                             </div>
                         </section>
 
                         {/* Actions */}
                         {status !== 'HIRED' && status !== 'REJECTED' && (
                             <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
-                                {internship?.rolesData?.length > 0 && (
-                                    <div className="flex flex-col gap-4 bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Step 1: Assign Role & Roll Number</label>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-5 bg-indigo-50/40 p-6 rounded-[2rem] border border-indigo-100/50 shadow-inner">
+                                        <div className="text-center space-y-1 mb-2">
+                                            <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center justify-center gap-2">
+                                                <Sparkles size={14} className="text-amber-500" /> Final Step: Hiring Confirmation
+                                            </h4>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Assign a position and internal ID to complete selection</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Designated Position</label>
                                                 <select
-                                                    className="admin-input bg-white border-indigo-100 font-semibold text-indigo-900 w-full"
+                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 text-xs py-3.5"
                                                     value={selectedRole}
                                                     onChange={e => setSelectedRole(e.target.value)}
                                                 >
-                                                    <option value="">-- Choose Role --</option>
-                                                    {internship.rolesData.map(r => {
+                                                    <option value="">-- Choose Position --</option>
+                                                    {!internship?.rolesData?.length && internship?.roles?.split(',')?.map(r => (
+                                                        <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
+                                                    ))}
+                                                    {internship?.rolesData?.map(r => {
                                                         const roleHired = application.roleHiredStats?.[r.name] || 0;
                                                         const isFull = roleHired >= (r.openings || 0);
                                                         return (
                                                             <option key={r.name} value={r.name} disabled={isFull}>
-                                                                {r.name} ({roleHired} / {r.openings || 0} filled) {isFull ? ' - FULL' : ''}
+                                                                {r.name} ({roleHired} / {r.openings || 0} Filled) {isFull ? ' - [FULL]' : ''}
                                                             </option>
                                                         );
                                                     })}
                                                 </select>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Assigned ID Number</label>
                                                 <input
                                                     type="text"
-                                                    placeholder="Internal Roll Number (e.g. APT-2026-001)"
+                                                    placeholder="e.g. APT-26-001"
                                                     value={manualRollNumber}
                                                     onChange={e => setManualRollNumber(e.target.value)}
-                                                    className="admin-input bg-white border-indigo-100 text-sm font-semibold text-indigo-900 w-full"
+                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 placeholder:text-slate-300 text-xs py-3.5"
                                                 />
                                             </div>
                                         </div>
+
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Joining Date</label>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
                                                 <input
                                                     type="date"
                                                     value={joiningDate}
                                                     onChange={e => setJoiningDate(e.target.value)}
-                                                    className="admin-input bg-white border-indigo-100 text-sm font-semibold text-indigo-900"
+                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 text-xs py-3.5"
                                                 />
                                             </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">End Date</label>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">End Date</label>
                                                 <input
                                                     type="date"
                                                     value={endDate}
                                                     onChange={e => setEndDate(e.target.value)}
-                                                    className="admin-input bg-white border-indigo-100 text-sm font-semibold text-indigo-900"
+                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 text-xs py-3.5"
                                                 />
                                             </div>
                                         </div>
                                     </div>
-                                )}
                                 <div className="flex gap-4">
                                     <button onClick={handleHire}
                                         disabled={internship?.rolesData?.length > 0 && !selectedRole}

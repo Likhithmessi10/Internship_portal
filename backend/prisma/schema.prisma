@@ -47,7 +47,7 @@ model User {
   id       String @id @default(uuid())
   email    String @unique
   password String
-  role     Role   @default(ADMIN) // Default to ADMIN now since students are passwordless
+  role     Role   @default(STUDENT) // Default to STUDENT for safety
 
   studentProfile StudentProfile?
 
@@ -141,6 +141,8 @@ model Application {
   updatedAt DateTime @updatedAt
 
   @@unique([studentId, internshipId])
+  @@index([internshipId])
+  @@index([status])
 }
 
 model Document {

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import './LandingPage.css';
+import { downloadNocPdf } from '../utils/nocGenerator';
+import { FileDown } from 'lucide-react';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -60,7 +62,7 @@ const LandingPage = () => {
           <h2>Power Your Future with<br /><em>APTRANSCO Internship</em></h2>
           <p style={{ color: '#aac4e8', fontSize: '16px', margin: '20px auto 30px', maxWidth: '680px' }}>Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in substations, control rooms, and planning divisions across Andhra Pradesh.</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '14px' }}>
-            <button className="btn-hero-primary" onClick={() => navigate('/login')}>Apply Now →</button>
+            <button className="btn-hero-primary" onClick={() => navigate('/student/register')}>Apply Now →</button>
           </div>
         </div>
       </div>
@@ -106,7 +108,7 @@ const LandingPage = () => {
                   <span>📍 {internship.location}</span>
                   <span>⏱️ {internship.duration}</span>
                 </div>
-                <button onClick={() => navigate('/login')} style={{ background: '#003087', color: '#fff', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>View & Apply →</button>
+                <button onClick={() => navigate('/student/register')} style={{ background: '#003087', color: '#fff', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>View & Apply →</button>
               </div>
             ))}
           </div>
@@ -169,12 +171,27 @@ const LandingPage = () => {
             <p style={{ fontSize: '12.5px', color: '#555' }}>Valid Aadhaar Card is mandatory for identity verification.</p>
           </div>
         </div>
+
+        {/* NOC Download Component */}
+        <div style={{ marginTop: '40px', textAlign: 'center' }}>
+          <div style={{ background: '#f0f4f8', padding: '30px', borderRadius: '24px', border: '2px dashed #003087', display: 'inline-block' }}>
+            <h4 style={{ color: '#003087', fontWeight: 800, marginBottom: '10px' }}>Need the NOC Template?</h4>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>Download the official APTRANSCO No Objection Certificate format required from your college.</p>
+            <button 
+                onClick={downloadNocPdf}
+                className="btn-noc-download"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+            >
+              <FileDown size={18} /> Download NOC Format (PDF)
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="cta-bar">
         <h3>Ready to Begin Your Internship Journey?</h3>
         <p style={{ marginBottom: '24px' }}>Applications are open for the Academic Year 2024–25.</p>
-        <button className="btn-cta" onClick={() => navigate('/login')}>⚡ Apply for Internship Now</button>
+        <button className="btn-cta" onClick={() => navigate('/student/register')}>⚡ Apply for Internship Now</button>
       </div>
 
       <footer className="landing-footer">

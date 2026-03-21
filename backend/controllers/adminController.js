@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const xl = require('exceljs');
+const { allocateApplicants } = require('../services/allocationService');
 
 /**
  * @desc    Create Internship
@@ -563,6 +564,65 @@ const updatePortalConfig = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Deterministically Allocate Applicants (Proposed Selection)
+ * @route   POST /api/v1/admin/internships/:id/allocate
+ * @access  Private (Admin)
+ */
+const allocateApplicantsAction = async (req, res, next) => {
+    try {
+        const internshipId = req.params.id;
+
+        // 1. Fetch Internship Data
+        const internship = await prisma.internship.findUnique({
+            where: { id: internshipId }
+        });
+
+        if (!internship) return res.status(404).json({ success: false, message: 'Internship not found' });
+
+        // 2. Fetch ALL Applications for this Internship (only Pending/Shortlisted)
+        const applications = await prisma.application.findMany({
+            where: { 
+                internshipId,
+                status: { in: ['PENDING', 'SHORTLISTED'] } 
+            },
+            include: { student: true }
+        });
+
+        if (applications.length === 0) {
+            return res.status(200).json({ 
+                success: true, 
+                message: 'No pending applications to allocate.',
+                allocated: [],
+                stats: { total: 0, selected: 0 }
+            });
+        }
+
+        // 3. Trigger Allocation Engine
+        const allocation = allocateApplicants(applications, internship);
+
+        // 4. Return the Proposed allocation
+        // We do NOT update the DB yet. The UI will show this and let the admin "Confirm".
+        res.status(200).json({
+            success: true,
+            data: allocation,
+            stats: {
+                totalApplicants: applications.length,
+                totalCapacity: internship.openingsCount,
+                selectedCount: allocation.length,
+                categories: {
+                    priority: allocation.filter(a => a.category === 'PRIORITY').length,
+                    topUniv: allocation.filter(a => a.category === 'TOP_UNIV').length,
+                    normal: allocation.filter(a => a.category === 'NORMAL').length
+                }
+            }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -575,5 +635,6 @@ module.exports = {
     exportAdvanced,
     extendDeadline,
     getPortalConfig,
-    updatePortalConfig
+    updatePortalConfig,
+    allocateApplicantsAction
 };

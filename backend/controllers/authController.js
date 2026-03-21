@@ -10,7 +10,7 @@ const getSignedJwtToken = (id, role) => {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
     return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-        expiresIn: '30d'
+        expiresIn: '7d'
     });
 };
 
@@ -34,11 +34,13 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create user
+        // SECURITY FIX: Never allow role from body in public registration
+        // Default to STUDENT. Admin creation should be a separate, restricted route.
         const user = await prisma.user.create({
             data: {
                 email,
                 password: hashedPassword,
-                role: role || 'STUDENT'
+                role: 'STUDENT'
             }
         });
 

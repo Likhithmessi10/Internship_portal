@@ -48,6 +48,15 @@ app.get('/', (req, res) => {
 // Serve Uploaded Files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Rate Limiting
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+app.use('/api/', limiter);
+
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const studentRoutes = require('./routes/studentRoutes');
@@ -62,7 +71,7 @@ app.use('/api/v1/students', studentRoutes); // Still here for backward compat/ad
 app.use('/api/v1/internships', internshipRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/public', publicRoutes);
-app.use('/api/v1/public', collegeRoutes);
+app.use('/api/v1/colleges', collegeRoutes); // Changed from /api/v1/public to /api/v1/colleges
 
 // Global Error Handler Middleware
 app.use(errorHandler);

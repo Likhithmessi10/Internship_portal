@@ -24,8 +24,10 @@ const submitApplication = async (req, res, next) => {
         }
 
         // 1. Find or Create Student Profile based on Aadhar (Unique ID)
+        // We also need a User record for the 1:1 relation to work
         let student = await prisma.studentProfile.findUnique({
-            where: { aadhar }
+            where: { aadhar },
+            include: { user: true }
         });
 
         const profileData = {
@@ -53,19 +55,34 @@ const submitApplication = async (req, res, next) => {
             skills: skills || null
         };
 
-        if (student) {
-            // Update existing profile
-            student = await prisma.studentProfile.update({
-                where: { aadhar },
-                data: profileData
-            });
-        } else {
+        if (!student) {
+            // Check if a User already exists with this email (if provided) or create a dummy one
+            // In a passwordless/OTP system, we might use phone/aadhar as identifier
+            const email = req.body.email || `${aadhar}@aptransco.portal`; // Fallback email
+            
+            let user = await prisma.user.findUnique({ where: { email } });
+            if (!user) {
+                user = await prisma.user.create({
+                    data: {
+                        email,
+                        password: 'PASSWORDLESS_STUDENT', // Placeholder for OTP users
+                        role: 'STUDENT'
+                    }
+                });
+            }
+
             // Create new profile
             student = await prisma.studentProfile.create({
                 data: {
                     ...profileData,
-                    rollNumber
+                    userId: user.id
                 }
+            });
+        } else {
+            // Update existing profile
+            student = await prisma.studentProfile.update({
+                where: { aadhar },
+                data: profileData
             });
         }
 

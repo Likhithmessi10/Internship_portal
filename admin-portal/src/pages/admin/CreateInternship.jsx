@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
-import { Plus, X, ArrowLeft, Briefcase, Users, FileText, MapPin, Clock, Star, Trash2 } from 'lucide-react';
+import { 
+    Plus, X, ArrowLeft, Briefcase, Users, FileText, 
+    MapPin, Clock, Star, Trash2, Check, Info, 
+    ChevronRight, AlertTriangle, Lightbulb, FileCheck 
+} from 'lucide-react';
 import { collegesData } from '../../data/colleges';
 
 const PRESET_LOCATIONS = [
@@ -9,13 +13,24 @@ const PRESET_LOCATIONS = [
     'Rajahmundry', 'Nellore', 'Kadapa', 'Anantapur', 'Eluru'
 ];
 
-const InputField = ({ label, required, hint, children }) => (
-    <div>
-        <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1.5">
+/**
+ * Premium Input Component with High Contrast and Clear Labels
+ */
+const InputField = ({ label, required, hint, children, tooltip }) => (
+    <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-black text-slate-700 dark:text-indigo-200 uppercase tracking-tight">
             {label} {required && <span className="text-red-500">*</span>}
+            {tooltip && (
+                <div className="group relative cursor-help">
+                    <Info size={14} className="text-indigo-400" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none shadow-xl font-medium">
+                        {tooltip}
+                    </div>
+                </div>
+            )}
         </label>
         {children}
-        {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+        {hint && <p className="text-[11px] text-slate-400 font-bold italic mt-1.5">{hint}</p>}
     </div>
 );
 
@@ -23,24 +38,9 @@ const CreateInternshipForm = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [step, setStep] = useState(1);
 
-    // Role capacities
-    const [roleNameInput, setRoleNameInput] = useState('');
-    const [roleOpeningsInput, setRoleOpeningsInput] = useState(1);
-    const [roleQuotaInput, setRoleQuotaInput] = useState(50); // Default 50% for the role
-    const [roles, setRoles] = useState([]); // [{name, openings, topUnivQuota}]
-
-    // Location chips
-    const [locationInput, setLocationInput] = useState('');
-    const [locations, setLocations] = useState([]);
-
-    const [docNameInput, setDocNameInput] = useState('');
-    const [docTypeInput, setDocTypeInput] = useState('PDF');
-    const [requiredDocs, setRequiredDocs] = useState([
-        { id: 'RESUME', label: 'Resume / CV', type: 'PDF' },
-        { id: 'PASSPORT_PHOTO', label: 'Passport Size Photo', type: 'IMAGE' }
-    ]);
-
+    // Form Data
     const [formData, setFormData] = useState({
         title: '',
         department: '',
@@ -51,59 +51,61 @@ const CreateInternshipForm = () => {
         applicationDeadline: '',
         topUniversityQuota: 50, // Default 50%
         priorityCollege: '',
-        priorityCollegeQuota: 10, // Default 10% for priority college
+        priorityCollegeQuota: 10, // Default 10%
         manualOpenings: ''
     });
 
-    const addDoc = () => {
-        const name = docNameInput.trim();
-        if (name) {
-            const id = name.toUpperCase().replace(/\s+/g, '_') + '_' + Date.now();
-            setRequiredDocs([...requiredDocs, { id, label: name, type: docTypeInput }]);
-            setDocNameInput('');
-        }
-    };
-    const removeDoc = (id) => setRequiredDocs(requiredDocs.filter(d => d.id !== id));
+    // Sub-states
+    const [roles, setRoles] = useState([]);
+    const [roleNameInput, setRoleNameInput] = useState('');
+    const [roleOpeningsInput, setRoleOpeningsInput] = useState(1);
+    
+    const [locations, setLocations] = useState([]);
+    const [locationInput, setLocationInput] = useState('');
 
-    const totalOpenings = roles.reduce((sum, r) => sum + r.openings, 0);
+    const [requiredDocs, setRequiredDocs] = useState([
+        { id: 'RESUME', label: 'Resume / CV', type: 'PDF' },
+        { id: 'PASSPORT_PHOTO', label: 'Passport Size Photo', type: 'IMAGE' }
+    ]);
+    const [docNameInput, setDocNameInput] = useState('');
+    const [docTypeInput, setDocTypeInput] = useState('PDF');
+
+    const totalOpenings = roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0;
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-    // Roles
-    const addRole = (name) => {
-        const rName = (name || roleNameInput).trim();
-        const rOpens = parseInt(roleOpeningsInput);
-        const rQuota = parseInt(roleQuotaInput);
-        if (rName && rOpens > 0 && !roles.find(r => r.name === rName)) {
-            setRoles([...roles, { name: rName, openings: rOpens, topUnivQuota: rQuota }]);
+    const addRole = () => {
+        if (roleNameInput.trim() && roleOpeningsInput > 0) {
+            setRoles([...roles, { name: roleNameInput.trim(), openings: parseInt(roleOpeningsInput) }]);
+            setRoleNameInput('');
+            setRoleOpeningsInput(1);
         }
-        setRoleNameInput('');
-        setRoleOpeningsInput(1);
-        setRoleQuotaInput(50);
     };
-    const removeRole = (name) => setRoles(roles.filter(x => x.name !== name));
 
-    // Locations
     const addLocation = (loc) => {
-        const l = (loc || locationInput).trim();
-        if (!l) return;
-        if (l === 'ANY') { setLocations(['ANY']); setLocationInput(''); return; }
+        const val = (loc || locationInput).trim();
+        if (!val) return;
+        if (val === 'ANY') { setLocations(['ANY']); setLocationInput(''); return; }
         const next = locations.filter(x => x !== 'ANY');
-        if (!next.includes(l)) setLocations([...next, l]);
+        if (!next.includes(val)) setLocations([...next, val]);
         setLocationInput('');
     };
-    const removeLocation = (l) => setLocations(locations.filter(x => x !== l));
+
+    const addDoc = () => {
+        if (docNameInput.trim()) {
+            const id = docNameInput.toUpperCase().replace(/\s+/g, '_') + '_' + Date.now();
+            setRequiredDocs([...requiredDocs, { id, label: docNameInput, type: docTypeInput }]);
+            setDocNameInput('');
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (roles.length === 0) { setError('Please add at least one available role.'); return; }
-        if (locations.length === 0) { setError('Please select at least one location.'); return; }
         setLoading(true);
-        setError('');
         try {
             await api.post('/admin/internships', {
                 ...formData,
-                openingsCount: parseInt(formData.manualOpenings) || totalOpenings,
+                openingsCount: totalOpenings,
                 roles: roles.map(r => r.name).join(', '),
                 rolesData: roles,
                 location: locations.join(', '),
@@ -120,373 +122,391 @@ const CreateInternshipForm = () => {
         }
     };
 
-    return (
-        <div className="max-w-3xl mx-auto">
-            {/* Premium Header/Banner */}
-            <div className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-indigo-950 rounded-[2.5rem] p-8 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 dark:border-white/10">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
+    const nextStep = () => {
+        if (step === 1 && (!formData.title || !formData.department)) {
+            setError('Please fill in required basic details');
+            return;
+        }
+        if (step === 3 && roles.length === 0) {
+            setError('Add at least one role to continue');
+            return;
+        }
+        setError('');
+        setStep(step + 1);
+    };
 
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-5">
-                        <button onClick={() => navigate('/dashboard')} className="w-12 h-12 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-xl shadow-inner hover:bg-white/20 transition-all hover:rotate-6">
-                            <ArrowLeft className="w-5 h-5 text-white" />
-                        </button>
-                        <div>
-                            <h1 className="text-3xl font-black font-rajdhani mb-1 text-white uppercase tracking-tighter">
-                                Create <span className="text-amber-400">Internship</span>
-                            </h1>
-                            <p className="text-indigo-200/70 font-medium text-sm tracking-wide uppercase text-[10px] font-bold tracking-[0.3em]">
-                                Post a new internship opportunity
-                            </p>
+    // Live Calculation Logic for Visualization
+    const pPct = parseInt(formData.priorityCollegeQuota) || 0;
+    const tPct = parseInt(formData.topUniversityQuota) || 0;
+    const gPct = Math.max(0, 100 - pPct - tPct);
+    
+    const pSeats = Math.round((totalOpenings * pPct) / 100);
+    const tSeats = Math.round((totalOpenings * tPct) / 100);
+    const gSeats = Math.max(0, totalOpenings - pSeats - tSeats);
+
+    return (
+        <div className="max-w-4xl mx-auto pb-20">
+            {/* Navigation Header */}
+            <div className="flex items-center justify-between mb-8">
+                <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-bold transition-all group">
+                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1" /> Back to Dashboard
+                </button>
+                <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map(s => (
+                        <div key={s} className="flex items-center">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs transition-all ${step >= s ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
+                                {step > s ? <Check size={14} /> : s}
+                            </div>
+                            {s < 5 && <div className={`w-8 h-1 mx-1 rounded-full ${step > s ? 'bg-indigo-600' : 'bg-slate-100'}`} />}
                         </div>
-                    </div>
+                    ))}
                 </div>
             </div>
 
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium flex items-center gap-2">
-                    <X size={16} /> {error}
+            <div className="bg-white dark:bg-slate-900/50 rounded-[3rem] p-10 shadow-2xl shadow-indigo-100/50 border border-slate-100 dark:border-white/5 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-slate-50">
+                    <div className="h-full bg-indigo-600 transition-all duration-500" style={{ width: `${(step / 5) * 100}%` }} />
                 </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                    <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 text-sm font-bold flex items-center gap-3 animate-shake">
+                        <AlertTriangle size={18} /> {error}
+                    </div>
+                )}
 
-                {/* Basic Info */}
-                <div className="admin-card">
-                    <h2 className="text-base font-bold text-gray-800 dark:text-indigo-100 mb-5 flex items-center gap-2">
-                        <Briefcase size={16} className="text-indigo-500" /> Basic Information
-                    </h2>
-                    <div className="space-y-5">
-                        <InputField label="Internship Title" required>
-                            <input type="text" name="title" required value={formData.title} onChange={handleChange}
-                                placeholder="e.g. Software Engineering Internship" className="admin-input" />
-                        </InputField>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <InputField label="Department" required>
+                {/* STEP 1: BASIC DETAILS */}
+                {step === 1 && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tighter uppercase">Step 1: <span className="text-indigo-600">Basic Information</span></h2>
+                            <p className="text-slate-400 font-medium">Tell us about the internship program and its core details.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <InputField label="Internship Program Title" required tooltip="Visible to all students. Keep it descriptive.">
+                                <input type="text" name="title" required value={formData.title} onChange={handleChange}
+                                    placeholder="e.g. Software Engineering Apprenticeship 2026" className="admin-input text-lg font-bold" />
+                            </InputField>
+
+                            <InputField label="Department / Category" required>
                                 <select name="department" required value={formData.department} onChange={handleChange} className="admin-input font-bold">
-                                    <option value="">-- Select --</option>
-                                    <option value="TECHNICAL">TECHNICAL</option>
-                                    <option value="NON-TECHNICAL">NON-TECHNICAL</option>
+                                    <option value="">-- Choose Category --</option>
+                                    <option value="TECHNICAL">⚙️ TECHNICAL (Engineering, IT, R&D)</option>
+                                    <option value="NON-TECHNICAL">💼 NON-TECHNICAL (Finance, HR, Admin)</option>
                                 </select>
                             </InputField>
-                            <InputField label="Total Openings" required hint="Manual override or auto-calc">
-                                <input 
-                                    type="number" 
-                                    name="manualOpenings"
-                                    value={formData.manualOpenings || totalOpenings}
-                                    onChange={handleChange}
-                                    placeholder={totalOpenings.toString()}
-                                    className="admin-input font-black text-indigo-600 dark:text-indigo-400"
-                                />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <InputField label="Internship Duration" required hint="Standard engagement period">
+                                <select name="duration" required value={formData.duration} onChange={handleChange} className="admin-input font-bold">
+                                    <option value="">-- Select Duration --</option>
+                                    <option>4 Weeks</option><option>6 Weeks</option><option>8 Weeks</option>
+                                    <option>3 Months</option><option>6 Months</option>
+                                </select>
                             </InputField>
-                            <InputField label="Application Deadline" hint="Optional">
+
+                            <InputField label="Application Deadline" hint="Leave empty for no deadline">
                                 <input type="date" name="applicationDeadline" value={formData.applicationDeadline} onChange={handleChange}
                                     className="admin-input" />
                             </InputField>
                         </div>
-                        <InputField label="Description" required>
+
+                        <InputField label="Detailed Description" required hint="Explain what the program is about">
                             <textarea name="description" required value={formData.description} onChange={handleChange}
-                                rows={4} placeholder="Describe the internship programme..." className="admin-input resize-none" />
+                                rows={4} placeholder="Briefly describe the internship objectives..." className="admin-input resize-none" />
                         </InputField>
-                    </div>
-                </div>
 
-                {/* Priority & Quotas */}
-                <div className="admin-card border-amber-100/50 dark:border-amber-500/10 bg-gradient-to-br from-white to-amber-50/20 dark:from-slate-900/40 dark:to-amber-500/5">
-                    <h2 className="text-base font-bold text-gray-800 dark:text-amber-100 mb-5 flex items-center gap-2">
-                        <Star size={16} className="text-amber-400" /> Priority & Quota Settings
-                    </h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <InputField label="Top Priority College" hint="Nominate for absolute priority (Optional)">
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Star size={16} className="text-amber-400" />
-                                </div>
-                                <input 
-                                    list="colleges-list"
-                                    name="priorityCollege"
-                                    value={formData.priorityCollege}
-                                    onChange={handleChange}
-                                    placeholder="Search college..."
-                                    className="admin-input pl-11 font-bold border-amber-200/50 bg-white/50 focus:ring-amber-400"
-                                />
-                                <datalist id="colleges-list">
-                                    {collegesData.slice(0, 500).map((c, idx) => (
-                                        <option key={idx} value={c.label} />
-                                    ))}
-                                </datalist>
-                            </div>
-                        </InputField>
-                        <InputField label="Priority College Intake (%)" hint={`Calculates to ${Math.round(((parseInt(formData.manualOpenings) || totalOpenings) * (parseInt(formData.priorityCollegeQuota) || 0)) / 100)} reserved seats`}>
-                            <div className="flex items-center gap-3">
-                                <input 
-                                    type="number" 
-                                    name="priorityCollegeQuota"
-                                    min="0" max="100"
-                                    value={formData.priorityCollegeQuota}
-                                    onChange={handleChange}
-                                    className="admin-input font-black text-amber-600 w-24"
-                                />
-                                <span className="text-amber-600 font-bold">% Intake</span>
-                            </div>
-                        </InputField>
-                    </div>
-
-                    <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
-                        <p className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-[0.2em] mb-1">
-                            Priority Influence:
-                        </p>
-                        <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
-                            Students from this specific college will be prioritized first, up to the <strong>Intake Capacity</strong>. Extra students will fall to the standard pool.
-                        </p>
-                    </div>
-
-                    <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5">
-                        <InputField label="General Top University Quota (%)" hint="Target reservation across all roles (if not specified per-role)">
-                            <div className="flex items-center gap-4">
-                                <input 
-                                    type="range" 
-                                    name="topUniversityQuota" 
-                                    min="0" 
-                                    max="100" 
-                                    step="5"
-                                    value={formData.topUniversityQuota} 
-                                    onChange={handleChange}
-                                    className="flex-1 accent-indigo-600 h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                                />
-                                <span className="bg-indigo-600 text-white font-black px-4 py-2 rounded-xl shadow-lg shadow-indigo-600/20 min-w-[70px] text-center">
-                                    {formData.topUniversityQuota}%
-                                </span>
-                            </div>
-                        </InputField>
-                        <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100 dark:border-indigo-500/10">
-                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-[0.2em] mb-1">
-                                Priority Mapping:
-                            </p>
-                            <p className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
-                                Students from NIRF Rank ≤ 100 institutes OR IIT, NIT, IIIT, and Central Universities will be auto-categorized into this quota.
-                            </p>
+                        <div className="pt-6">
+                            <button onClick={nextStep} className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-indigo-200 transition-all hover:scale-[1.01] active:scale-95">
+                                Continue to Seat Distribution <ChevronRight size={20} />
+                            </button>
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* Roles */}
-                <div className="admin-card">
-                    <h2 className="text-base font-bold text-gray-800 dark:text-white mb-5 flex items-center gap-2">
-                        <Users size={16} className="text-indigo-500" /> Available Roles & Capacities
-                    </h2>
-                    
-                    <p className="text-xs text-gray-400 mb-5 font-medium">Define the specific positions available within this internship. Set a unique quota % for each role if needed.</p>
-
-                    <div className="space-y-4 mb-4 p-4 bg-gray-50 dark:bg-slate-800/40 rounded-xl border border-gray-100 dark:border-white/5">
+                {/* STEP 2: SEAT DISTRIBUTION */}
+                {step === 2 && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div>
-                            <label className="block text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                                <Plus size={12} /> Role Name
-                            </label>
-                            <input type="text" value={roleNameInput} onChange={e => setRoleNameInput(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addRole())}
-                                placeholder="e.g. Graduate Engineer Trainee, Finance Analyst..." className="admin-input font-bold" />
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tighter uppercase">Step 2: <span className="text-amber-500">Seat Distribution</span></h2>
+                            <p className="text-slate-400 font-medium italic">Define how many students you want and who should be selected first.</p>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Openings</label>
-                                <input type="number" min="1" value={roleOpeningsInput} onChange={e => setRoleOpeningsInput(e.target.value)}
-                                    className="admin-input" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Top Univ. Quota: {roleQuotaInput}%</label>
-                                <input type="range" min="0" max="100" step="5" value={roleQuotaInput} onChange={e => setRoleQuotaInput(e.target.value)}
-                                    className="w-full h-8 accent-indigo-600" />
-                            </div>
-                        </div>
-                        <button type="button" onClick={() => addRole()}
-                            className="w-full py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-sm flex items-center gap-2 justify-center shadow-md">
-                            <Plus size={16} /> Add Role to Internship
-                        </button>
-                    </div>
 
-                    {roles.length > 0 && (
-                        <div className="flex flex-col gap-3 mt-6">
-                            {roles.map(r => (
-                                <div key={r.name} className="flex items-center justify-between pl-6 pr-4 py-4 bg-white/50 dark:bg-slate-900/40 border border-indigo-100 dark:border-white/5 rounded-2xl shadow-sm hover:shadow-md transition-all group">
-                                    <div className="flex flex-col">
-                                        <span className="text-base font-black text-gray-800 dark:text-indigo-200">{r.name}</span>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-widest">
-                                                Top Univ. Quota: {r.topUnivQuota}%
-                                            </span>
-                                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-slate-700" />
-                                            <span className="text-[10px] text-gray-400 font-bold">{r.openings} Positions</span>
+                        <div className="p-8 bg-slate-50 dark:bg-slate-950/40 rounded-[2rem] border border-slate-100 dark:border-white/5">
+                            <InputField label="Total Available Seats" required hint="Total number of students you can accommodate">
+                                <div className="flex items-center gap-4">
+                                    <input 
+                                        type="number" 
+                                        name="manualOpenings" 
+                                        value={formData.manualOpenings} 
+                                        onChange={handleChange}
+                                        placeholder="Enter total seats (e.g. 100)" 
+                                        className="admin-input text-2xl font-black text-indigo-600 w-48" 
+                                    />
+                                    <div className="flex-1 p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl border border-indigo-100 text-[11px] font-bold text-indigo-700 leading-relaxed uppercase">
+                                        <Lightbulb size={16} className="mb-1" />
+                                        Important: Our automated system will pick the best candidates precisely up to this limit.
+                                    </div>
+                                </div>
+                            </InputField>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-4">
+                            <div className="space-y-6">
+                                <InputField label="Preferred College" tooltip="Students from this specific institution will be selected first.">
+                                    <div className="relative">
+                                        <input list="colleges-list" name="priorityCollege" value={formData.priorityCollege} onChange={handleChange}
+                                            placeholder="Search & Select College..." className="admin-input pl-12 font-bold border-amber-200 bg-amber-50/20" />
+                                        <Star className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500" size={20} />
+                                        <datalist id="colleges-list">
+                                            {collegesData.slice(0, 500).map((c, idx) => <option key={idx} value={c.label} />)}
+                                        </datalist>
+                                    </div>
+                                </InputField>
+
+                                <InputField label="Reserved for Preferred College (%)" hint={`${pPct}% of seats (${pSeats}) reserved`}>
+                                    <div className="flex items-center gap-4">
+                                        <input type="range" min="0" max="100" step="5" name="priorityCollegeQuota" value={pPct} onChange={handleChange} className="flex-1 accent-amber-500 h-2 bg-slate-200 rounded-full appearance-none cursor-pointer" />
+                                        <span className="w-16 text-center font-black text-amber-600 bg-amber-100 px-3 py-1.5 rounded-xl">{pPct}%</span>
+                                    </div>
+                                </InputField>
+                            </div>
+
+                            <div className="space-y-6">
+                                <InputField label="Top Tier Institutes %" tooltip="Reservation for IIT, NIT, IIIT, and Top 100 NIRF institutes.">
+                                    <div className="relative">
+                                        <div className="admin-input bg-indigo-50/30 font-bold text-slate-600 flex items-center gap-3">
+                                            <ShieldCheck size={20} className="text-indigo-600" />
+                                            IIT, NIT, IIIT & NIRF ≤ 100
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <button type="button" onClick={() => removeRole(r.name)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all">
-                                            <Trash2 size={18} />
-                                        </button>
+                                </InputField>
+
+                                <InputField label="Reserved for Top Colleges (%)" hint={`${tPct}% of seats (${tSeats}) reserved`}>
+                                    <div className="flex items-center gap-4">
+                                        <input type="range" min="0" max="100" step="5" name="topUniversityQuota" value={tPct} onChange={handleChange} className="flex-1 accent-indigo-600 h-2 bg-slate-200 rounded-full appearance-none cursor-pointer" />
+                                        <span className="w-16 text-center font-black text-indigo-600 bg-indigo-100 px-3 py-1.5 rounded-xl">{tPct}%</span>
                                     </div>
-                                </div>
-                            ))}
+                                </InputField>
+                            </div>
                         </div>
-                    )}
-                </div>
 
-                {/* Requirements & Expectations */}
-                <div className="admin-card">
-                    <h2 className="text-base font-bold text-gray-800 dark:text-white mb-5 flex items-center gap-2">
-                        <FileText size={16} className="text-indigo-500" /> Requirements & Expectations
-                    </h2>
-                    <div className="space-y-5">
-                        <InputField label="Candidate Requirements" required hint="Qualifications, skills, CGPA etc.">
-                            <textarea name="requirements" required value={formData.requirements} onChange={handleChange}
-                                rows={4} placeholder="• Min CGPA 7.0&#10;• EEE / ECE preferred&#10;• Basic electrical knowledge" className="admin-input resize-none" />
-                        </InputField>
-                        <InputField label="What Interns Will Do / Learn" required hint="Expectations & daily tasks">
-                            <textarea name="expectations" required value={formData.expectations} onChange={handleChange}
-                                rows={4} placeholder="• Work in substations&#10;• SCADA monitoring&#10;• Weekly technical sessions" className="admin-input resize-none" />
-                        </InputField>
+                        <div className="mt-6 p-8 bg-slate-950 rounded-[2.5rem] text-white shadow-2xl">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Selection Visualizer</h3>
+                                <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${pPct + tPct > 100 ? 'bg-red-500 text-white border-red-400' : 'bg-emerald-500 text-white border-emerald-400'}`}>
+                                    {pPct + tPct > 100 ? '⚠️ TOTAL EXCEEDS 100%' : '✅ SCALE VALID'}
+                                </span>
+                            </div>
 
-                        <div className="pt-4 border-t border-gray-100">
-                            <label className="block text-sm font-bold text-gray-700 dark:text-indigo-100 mb-3 uppercase tracking-tighter">Required Documents for Application</label>
-                            
-                            {/* Document Adder */}
-                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-6 p-4 bg-gray-50 dark:bg-slate-900/40 rounded-2xl border border-gray-100 dark:border-white/5">
-                                <div className="sm:col-span-6">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Document Name</label>
-                                    <input 
-                                        type="text" 
-                                        value={docNameInput} 
-                                        onChange={e => setDocNameInput(e.target.value)}
-                                        placeholder="e.g. NOC, Marksheet, ID card..." 
-                                        className="admin-input text-sm" 
-                                    />
+                            <div className="h-6 w-full flex rounded-full overflow-hidden mb-8 border-4 border-white/5">
+                                <div style={{ width: `${pPct}%` }} className="bg-amber-400 h-full transition-all duration-500 flex items-center justify-center text-[8px] font-black text-amber-950">PREFERRED</div>
+                                <div style={{ width: `${tPct}%` }} className="bg-indigo-500 h-full transition-all duration-500 flex items-center justify-center text-[8px] font-black">TOP COLLEGES</div>
+                                <div style={{ width: `${gPct}%` }} className="bg-slate-700 h-full transition-all duration-500 flex items-center justify-center text-[8px] font-black">GENERAL MERIT</div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-amber-400 text-2xl font-black">{pSeats}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Preferred College Students</p>
                                 </div>
-                                <div className="sm:col-span-4">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">File Type</label>
-                                    <select 
-                                        value={docTypeInput} 
-                                        onChange={e => setDocTypeInput(e.target.value)}
-                                        className="admin-input text-sm font-bold"
-                                    >
-                                        <option value="PDF">PDF Document</option>
-                                        <option value="IMAGE">Image (JPG/PNG)</option>
+                                <div className="space-y-1">
+                                    <p className="text-indigo-400 text-2xl font-black">{tSeats}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Top Tier Institute Students</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-slate-200 text-2xl font-black">{gSeats}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">General Merit (Any College)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4 pt-6">
+                            <button onClick={() => setStep(1)} className="px-8 py-5 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all">Back</button>
+                            <button onClick={nextStep} disabled={pPct + tPct > 100} className="flex-1 py-5 bg-indigo-600 disabled:opacity-50 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all">
+                                Continue to Roles <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* STEP 3: ROLES */}
+                {step === 3 && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tighter uppercase">Step 3: <span className="text-emerald-500">Available Roles</span></h2>
+                            <p className="text-slate-400 font-medium italic">Assign seats to specific positions within the internship.</p>
+                        </div>
+
+                        <div className="p-8 bg-emerald-50/30 rounded-[2rem] border border-emerald-100 flex flex-col md:flex-row gap-6">
+                            <div className="flex-1">
+                                <InputField label="Role/Position Name">
+                                    <input type="text" value={roleNameInput} onChange={e => setRoleNameInput(e.target.value)}
+                                        placeholder="e.g. Graduate Engineer Trainee" className="admin-input font-bold" />
+                                </InputField>
+                            </div>
+                            <div className="w-48">
+                                <InputField label="Seats for this Role">
+                                    <input type="number" min="1" value={roleOpeningsInput} onChange={e => setRoleOpeningsInput(e.target.value)}
+                                        className="admin-input font-black" />
+                                </InputField>
+                            </div>
+                            <div className="flex items-end">
+                                <button type="button" onClick={addRole} className="h-[52px] px-8 bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-700 transition-all">
+                                    <Plus size={20} /> Add Role
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {roles.length === 0 ? (
+                                <div className="p-10 border-2 border-dashed border-slate-200 rounded-[2rem] text-center">
+                                    <Users size={32} className="mx-auto mb-4 text-slate-200" />
+                                    <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">No roles added yet. Add at least one to continue.</p>
+                                </div>
+                            ) : (
+                                roles.map((r, i) => (
+                                    <div key={i} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-[1.5rem] shadow-sm hover:shadow-md transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-black tracking-tighter">R{i+1}</div>
+                                            <div>
+                                                <p className="font-black text-slate-800 uppercase tracking-tighter">{r.name}</p>
+                                                <p className="text-xs text-slate-400 font-bold">{r.openings} Positions available</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setRoles(roles.filter((_, idx) => idx !== i))} className="p-3 text-red-100 hover:text-red-500 transition-colors"><Trash2 size={20} /></button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="flex gap-4 pt-6">
+                            <button onClick={() => setStep(2)} className="px-8 py-5 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all">Back</button>
+                            <button onClick={nextStep} disabled={roles.length === 0} className="flex-1 py-5 bg-indigo-600 disabled:opacity-50 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all">
+                                Continue to Documents <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* STEP 4: REQUIRED DOCUMENTS (NEW) */}
+                {step === 4 && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tighter uppercase">Step 4: <span className="text-rose-500">Required Documents</span></h2>
+                            <p className="text-slate-400 font-medium italic">Specify exactly what documents candidates must upload to apply.</p>
+                        </div>
+
+                        <div className="p-8 bg-rose-50/30 rounded-[2rem] border border-rose-100 flex flex-col md:flex-row gap-6">
+                            <div className="flex-1">
+                                <InputField label="Document Name (e.g. NOC Letter)">
+                                    <input type="text" value={docNameInput} onChange={e => setDocNameInput(e.target.value)}
+                                        placeholder="Enter document name..." className="admin-input font-bold" />
+                                </InputField>
+                            </div>
+                            <div className="w-48">
+                                <InputField label="Acceptable Format">
+                                    <select value={docTypeInput} onChange={e => setDocTypeInput(e.target.value)} className="admin-input font-black">
+                                        <option value="PDF">📑 PDF Only</option>
+                                        <option value="IMAGE">🖼️ Image (JPG/PNG)</option>
                                     </select>
-                                </div>
-                                <div className="sm:col-span-2 flex items-end">
-                                    <button 
-                                        type="button" 
-                                        onClick={addDoc}
-                                        className="w-full h-[42px] bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 shadow-md"
-                                    >
-                                        <Plus size={20} />
+                                </InputField>
+                            </div>
+                            <div className="flex items-end">
+                                <button type="button" onClick={addDoc} className="h-[52px] px-8 bg-rose-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-rose-700 transition-all">
+                                    <Plus size={20} /> Add Requirement
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {requiredDocs.map((doc, i) => (
+                                <div key={i} className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-[1.5rem] shadow-sm hover:shadow-md transition-all group">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${doc.type === 'PDF' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                            {doc.type === 'PDF' ? <FileText size={18} /> : <FileCheck size={18} />}
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-slate-800 uppercase tracking-tighter text-sm">{doc.label}</p>
+                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{doc.type} FORMAT</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setRequiredDocs(requiredDocs.filter((_, idx) => idx !== i))} 
+                                        className="p-3 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                                        <Trash2 size={18} />
                                     </button>
                                 </div>
-                            </div>
-
-                            {/* Added Docs List */}
-                            <div className="space-y-3">
-                                {requiredDocs.map(doc => (
-                                    <div key={doc.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900/60 border border-gray-100 dark:border-white/5 rounded-2xl group shadow-sm">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                                <FileText size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-900 dark:text-indigo-100">{doc.label}</p>
-                                                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{doc.type}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => removeDoc(doc.id)}
-                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            <p className="text-[10px] text-gray-400 mt-4 font-medium uppercase tracking-wider text-center">Students will see custom upload fields for each document added above</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Locations */}
-                <div className="admin-card">
-                    <h2 className="text-base font-bold text-gray-800 mb-5 flex items-center gap-2">
-                        <MapPin size={16} className="text-indigo-500" /> Locations
-                    </h2>
-                    <p className="text-xs text-gray-400 mb-3">Click a preset or type a custom location. Select "ANY" to accept all locations.</p>
-
-                    {/* Preset quick-add buttons */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {PRESET_LOCATIONS.map(l => (
-                            <button key={l} type="button" onClick={() => addLocation(l)}
-                                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors
-                                    ${locations.includes(l)
-                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-indigo-400 hover:text-indigo-600'
-                                    } ${l === 'ANY' ? 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100' : ''}`}>
-                                {l}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Custom input */}
-                    <div className="flex gap-2">
-                        <input type="text" value={locationInput} onChange={e => setLocationInput(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addLocation())}
-                            placeholder="Custom location..." className="admin-input flex-1" />
-                        <button type="button" onClick={() => addLocation()}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-sm flex items-center gap-1">
-                            <Plus size={14} /> Add
-                        </button>
-                    </div>
-
-                    {/* Selected chips */}
-                    {locations.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                            {locations.map(l => (
-                                <span key={l} className={`inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-sm font-semibold
-                                    ${l === 'ANY' ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'}`}>
-                                    <MapPin size={11} /> {l}
-                                    <button type="button" onClick={() => removeLocation(l)} className="hover:bg-gray-200 rounded-full p-0.5"><X size={11} /></button>
-                                </span>
                             ))}
                         </div>
-                    )}
-                </div>
 
-                {/* Duration & Locations */}
-                <div className="admin-card">
-                    <h2 className="text-base font-bold text-gray-800 dark:text-white mb-5 flex items-center gap-2">
-                        <Clock size={16} className="text-indigo-500" /> Duration
-                    </h2>
-                    <div className="grid grid-cols-1 gap-4">
-                        <InputField label="Duration" required>
-                            <select name="duration" required value={formData.duration} onChange={handleChange} className="admin-input font-bold">
-                                <option value="">-- Select --</option>
-                                <option>4 Weeks</option><option>6 Weeks</option><option>8 Weeks</option>
-                                <option>3 Months</option><option>6 Months</option>
-                            </select>
-                        </InputField>
+                        <div className="flex gap-4 pt-6">
+                            <button onClick={() => setStep(3)} className="px-8 py-5 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all">Back</button>
+                            <button onClick={nextStep} className="flex-1 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all">
+                                Finalize & Preview <ChevronRight size={20} />
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
 
-                <div className="flex justify-end gap-4 pb-12">
-                    <button type="button" onClick={() => navigate('/dashboard')}
-                        className="px-8 py-4 rounded-2xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-slate-400 font-black uppercase tracking-widest text-xs hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-                        Cancel
-                    </button>
-                    <button type="submit" disabled={loading}
-                        className="px-10 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 flex items-center gap-3">
-                        {loading ? <><span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Publishing...</> : <><Briefcase size={16} /> Publish Internship</>}
-                    </button>
-                </div>
-            </form>
+                {/* STEP 5: FINAL PREVIEW */}
+                {step === 5 && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tighter uppercase">Step 5: <span className="text-sky-500">Finalize & Preview</span></h2>
+                            <p className="text-slate-400 font-medium italic">Review everything and set candidate requirements.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <InputField label="Candidate Requirements" required hint="Qualities, Skills, Academic criteria">
+                                <textarea name="requirements" required value={formData.requirements} onChange={handleChange} 
+                                    rows={4} placeholder="• Minimum 7.0 CGPA&#10;• Final year students preferred..." className="admin-input resize-none" />
+                            </InputField>
+                            <InputField label="Learn & Do (Job Description)" required hint="What the intern will actually do">
+                                <textarea name="expectations" required value={formData.expectations} onChange={handleChange}
+                                    rows={4} placeholder="• Assist in network monitoring&#10;• Hands-on with substation field work..." className="admin-input resize-none" />
+                            </InputField>
+                        </div>
+
+                        <div className="p-8 bg-sky-50/30 rounded-[2.5rem] border border-sky-100/50">
+                            <h3 className="text-sm font-black text-sky-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Info size={16} /> How your selection will happen
+                            </h3>
+                            <div className="space-y-4 text-sm font-medium text-slate-600 leading-relaxed">
+                                <p className="flex items-start gap-4">
+                                    <span className="w-8 h-8 rounded-full bg-sky-200 flex items-center justify-center text-[10px] font-black shrink-0">1</span>
+                                    <span>First, the system will look for students from <strong className="text-sky-900 font-black underline decoration-sky-300 underline-offset-4">{formData.priorityCollege || 'your Preferred College'}</strong>. It will pick the top performers by CGPA up to <strong>{pPct}%</strong> of seats.</span>
+                                </p>
+                                <p className="flex items-start gap-4">
+                                    <span className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-[10px] font-black shrink-0">2</span>
+                                    <span>Next, it will fill the <strong>{tPct}%</strong> Top Tier quota using students from <strong>IITs, NITs, and IIITs</strong>, plus any leftover seats from step 1.</span>
+                                </p>
+                                <p className="flex items-start gap-4">
+                                    <span className="w-8 h-8 rounded-full bg-emerald-200 flex items-center justify-center text-[10px] font-black shrink-0">3</span>
+                                    <span>Finally, all remaining seats will be filled by picking the <strong>highest CGPA students</strong> from any college in the pool.</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4 pt-6">
+                            <button onClick={() => setStep(4)} className="px-8 py-5 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all">Back</button>
+                            <button onClick={handleSubmit} disabled={loading} className="flex-1 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl shadow-indigo-300 transition-all hover:scale-[1.02]">
+                                {loading ? <span className="animate-pulse">Launching Program...</span> : <><Briefcase size={20} /> Launch Internship Program</>}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
+
+const ShieldCheck = ({ size, className }) => (
+    <div className={className}>
+        <div className="relative group">
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+    </div>
+);
 
 export default CreateInternshipForm;

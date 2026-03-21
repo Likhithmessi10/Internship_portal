@@ -1,19 +1,27 @@
 # APTRANSCO Internship Management Portal
 
-The APTRANSCO Internship Management Portal is an enterprise-grade solution for managing student internships. It features a student portal, a dedicated admin dashboard, and a robust Node.js/Prisma backend.
+The APTRANSCO Internship Management Portal is an enterprise-grade solution for managing student internships. It features a student portal, a dedicated standalone admin dashboard, and a robust Node.js/Prisma backend.
 
 ## 🚀 Key Features
 
 ### 🎓 For Students
 - **Profile Builder**: Multi-step academic and experience profile setup.
 - **Application Flow**: Single-click applications to internships with document upload.
+- **NOC Generator**: Instant download of official APTRANSCO No Objection Certificate (NOC) templates.
 - **Tracking**: Real-time status updates (Pending, Shortlisted, Hired).
 
 ### 💼 For Administrators
+- **Standalone Portal**: A dedicated, premium admin interface for secure internship management.
 - **Internship Creation**: Define internships with quotas, roles, and departments.
 - **Application Review**: Detailed review of student profiles and documents.
 - **Hiring System**: Effortless hiring with roll number and role assignment.
 - **Data Export**: Export student data to formatted Excel files.
+
+## 🔐 Security & Engineering
+- **Rate Limiting**: Integrated global protection against brute-force and DDoS attacks.
+- **Role-Based Access Control (RBAC)**: Strict separation of Student and Admin roles with server-side validation.
+- **JWT Authentication**: Secure session management with industry-standard token expiry.
+- **Prisma ORM**: Type-safe database queries and performance-optimized schema with indexing.
 
 ---
 
@@ -30,7 +38,7 @@ The APTRANSCO Internship Management Portal is an enterprise-grade solution for m
 ### 1. Initial Installation
 From the **root directory**, install all dependencies for both frontend and backend:
 ```bash
-npm run install-all
+npm install
 ```
 
 ### 2. Database Setup
@@ -62,6 +70,7 @@ npm run dev
 | Portal | URL | Default Admin Credentials |
 | :--- | :--- | :--- |
 | **Landing Page** | `http://localhost:5173/` | N/A |
+| **Student Registration** | `http://localhost:5173/student/register` | Register manually |
 | **Student Login** | `http://localhost:5173/login` | Register manually |
 | **Admin Portal** | `http://localhost:5174/login` | `admin@aptransco.gov.in` / `admin123` |
 
@@ -71,9 +80,9 @@ npm run dev
 
 ```text
 📂 internship portal
- ├── 📂 admin-portal      # Refined Admin Dashboard (Vite/React)
- ├── 📂 backend           # Node.js/Prisma API
- ├── 📂 frontend          # Student Portal & Profile (Vite/React)
+ ├── 📂 admin-portal      # Refined Standalone Admin Dashboard (Vite/React)
+ ├── 📂 backend           # Node.js/Prisma API (Security Hardened)
+ ├── 📂 frontend          # Student Portal & Public Landing Page (Vite/React)
  └── 📄 package.json      # Concurrent dev scripts
 ```
 

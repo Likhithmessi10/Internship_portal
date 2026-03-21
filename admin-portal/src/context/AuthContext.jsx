@@ -34,8 +34,8 @@ export const AuthProvider = ({ children }) => {
         return res.data.user;
     };
 
-    const register = async (email, password, role = 'STUDENT') => {
-        const res = await api.post('/auth/register', { email, password, role });
+    const register = async (email, password) => {
+        const res = await api.post('/auth/register', { email, password });
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
         return res.data.user;
@@ -44,7 +44,8 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         localStorage.removeItem('token');
         setUser(null);
-        window.location.href = '/login';
+        // Admin portal usually starts at /login or /
+        window.location.href = '/';
     };
 
     return (

@@ -58,7 +58,7 @@ const applyForInternship = async (req, res) => {
                 
                 return {
                     applicationId: application.id,
-                    type: docMeta ? docMeta.label : file.fieldname.toUpperCase(), 
+                    type: file.fieldname, 
                     url: file.path
                 };
             });
