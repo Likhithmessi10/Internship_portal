@@ -73,6 +73,12 @@ Use this if you want to import the database with existing internships, applicati
    node seed.js
    cd ..
    ```
+5. **Load College Data**: (Optional but recommended) To populate the list of 39,000+ colleges for registration dropdowns:
+   ```bash
+   cd backend
+   node scripts/tools/import_json_colleges.js
+   cd ..
+   ```
 
 ### 3. Run Development Services
 Start the backend, student frontend, and admin portal simultaneously from the root:
