@@ -61,9 +61,6 @@ const LandingPage = () => {
           <div style={{ background: '#D4A017', color: '#003087', display: 'inline-block', fontSize: '11px', fontWeight: 700, padding: '4px 16px', borderRadius: '20px', marginBottom: '18px' }}>⚡ APTRANSCO Student Internship Programme 2024–25</div>
           <h2>Power Your Future with<br /><em>APTRANSCO Internship</em></h2>
           <p style={{ color: '#aac4e8', fontSize: '16px', margin: '20px auto 30px', maxWidth: '680px' }}>Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in substations, control rooms, and planning divisions across Andhra Pradesh.</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '14px' }}>
-            <button className="btn-hero-primary" onClick={() => navigate('/student/register')}>Apply Now →</button>
-          </div>
         </div>
       </div>
 
@@ -177,10 +174,10 @@ const LandingPage = () => {
           <div style={{ background: '#f0f4f8', padding: '30px', borderRadius: '24px', border: '2px dashed #003087', display: 'inline-block' }}>
             <h4 style={{ color: '#003087', fontWeight: 800, marginBottom: '10px' }}>Need the NOC Template?</h4>
             <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>Download the official APTRANSCO No Objection Certificate format required from your college.</p>
-            <button 
-                onClick={downloadNocPdf}
-                className="btn-noc-download"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+            <button
+              onClick={downloadNocPdf}
+              className="btn-noc-download"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
             >
               <FileDown size={18} /> Download NOC Format (PDF)
             </button>

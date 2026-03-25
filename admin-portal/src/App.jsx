@@ -24,6 +24,8 @@ const AdminLayout = ({ children }) => (
   </div>
 );
 
+const APTRANSCO_ROLES = ['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
+
 const RootRedirect = () => {
   const { user, loading } = useAuth();
   if (loading) return (
@@ -33,8 +35,7 @@ const RootRedirect = () => {
   );
   
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== 'ADMIN') {
-        // If a student somehow lands here, redirect to student portal (port 5173) or just show error
+  if (!APTRANSCO_ROLES.includes(user.role)) {
         return <div className="p-10 text-center">Unauthorized. This is the Admin Portal.</div>;
   }
   return <Navigate to="/dashboard" replace />;
@@ -52,27 +53,27 @@ function App() {
 
           {/* Protected Admin Routes */}
           <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={APTRANSCO_ROLES}>
               <AdminLayout><AdminDashboard /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/internships/new" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
               <AdminLayout><CreateInternshipForm /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/internships/:id/applications" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={APTRANSCO_ROLES}>
               <AdminLayout><AdminApplicationReview /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/rejected" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
               <AdminLayout><AdminRejected /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/internships/past" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
               <AdminLayout><AdminPastInternships /></AdminLayout>
             </ProtectedRoute>
           } />

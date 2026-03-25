@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const AdminLogin = () => {
     const { login, user } = useAuth();
@@ -11,9 +11,11 @@ const AdminLogin = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const APTRANSCO_ROLES = ['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
+
     // If already logged in as admin, redirect
     useEffect(() => {
-        if (user?.role === 'ADMIN') navigate('/dashboard', { replace: true });
+        if (user && APTRANSCO_ROLES.includes(user.role)) navigate('/dashboard', { replace: true });
     }, [user, navigate]);
 
     const handleSubmit = async (e) => {
@@ -22,8 +24,8 @@ const AdminLogin = () => {
         setLoading(true);
         try {
             const u = await login(email, password);
-            if (u.role !== 'ADMIN') {
-                setError('Access denied. Admin credentials required.');
+            if (!APTRANSCO_ROLES.includes(u.role)) {
+                setError('Access denied. Authorized credentials required.');
                 return;
             }
             navigate('/dashboard');
@@ -109,9 +111,10 @@ const AdminLogin = () => {
                 </div>
 
                 {/* Footer note */}
-                <p className="text-center text-gray-400 tracking-wide font-medium text-xs mt-8">
-                    Students must apply via the <a href="/" className="text-indigo-500 hover:underline">public portal</a>.
-                </p>
+                <div className="text-center mt-8 space-y-2 text-xs font-medium text-gray-400">
+                    <p>New staff member? <Link to="/register" className="text-indigo-500 font-bold hover:underline">Create an account</Link></p>
+                    <p>Students must apply via the <a href="/" className="text-indigo-500 hover:underline">public portal</a>.</p>
+                </div>
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles } from 'lucide-react';
+import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles, Send, Users } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const getMediaUrl = (url) => {
     if (!url) return null;
@@ -83,13 +84,16 @@ const DocRow = ({ doc, label, onView }) => (
     </div>
 );
 
-const ApplicationProfileModal = ({ application, internship, onClose, onHire, onReject }) => {
+const ApplicationProfileModal = ({ application, internship, onClose, updateStatus }) => {
+    const { user } = useAuth();
     const [viewerUrl, setViewerUrl] = useState(null);
     const [viewerLabel, setViewerLabel] = useState('');
     const [selectedRole, setSelectedRole] = useState('');
     const [manualRollNumber, setManualRollNumber] = useState('');
     const [joiningDate, setJoiningDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [mentorIdInput, setMentorIdInput] = useState('');
+    const [interviewScore, setInterviewScore] = useState('');
 
     if (!application) return null;
     const { student, documents, status, trackingId, createdAt } = application;
@@ -104,21 +108,27 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
     const openViewer = (url, label) => { setViewerUrl(url); setViewerLabel(label); };
     const closeViewer = () => { setViewerUrl(null); setViewerLabel(''); };
 
-    const handleHire = () => {
-        if (!selectedRole && internship?.rolesData?.length > 0) {
-            alert('Please assign a role to the candidate before hiring.');
+    const handleForwardCommittee = () => {
+        if (!mentorIdInput) {
+            alert('Please assign a Mentor ID or Name before forwarding to the Committee.');
             return;
         }
-        if (!manualRollNumber) {
-            alert('Please assign an internal Roll Number to the candidate.');
-            return;
-        }
-        if (!joiningDate || !endDate) {
-            alert('Please specify both Joining and End dates before hiring.');
-            return;
-        }
-        onHire(selectedRole, { rollNumber: manualRollNumber, joiningDate, endDate });
+        updateStatus('COMMITTEE_EVALUATION', { mentorId: mentorIdInput });
     };
+
+    const handleCommitteeSelect = () => {
+        if (!interviewScore) return alert('Enter an interview score (1-100).');
+        updateStatus('CA_APPROVED', { score: interviewScore, committeeId: user.id });
+    };
+
+    const handleHire = () => {
+        if (!selectedRole && internship?.rolesData?.length > 0) return alert('Assign a role.');
+        if (!manualRollNumber) return alert('Assign an internal Roll Number.');
+        if (!joiningDate || !endDate) return alert('Specify Joining and End dates.');
+        updateStatus('HIRED', { rollNumber: manualRollNumber, joiningDate, endDate, assignedRole: selectedRole });
+    };
+
+    const handleReject = () => updateStatus('REJECTED');
 
     const statusColor = {
         PENDING: 'bg-amber-100 text-amber-700',
@@ -239,82 +249,126 @@ const ApplicationProfileModal = ({ application, internship, onClose, onHire, onR
                         </section>
 
                         {/* Actions */}
-                        {status !== 'HIRED' && status !== 'REJECTED' && (
+                        {status === 'SUBMITTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
                             <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
-                                    <div className="flex flex-col gap-5 bg-indigo-50/40 p-6 rounded-[2rem] border border-indigo-100/50 shadow-inner">
-                                        <div className="text-center space-y-1 mb-2">
-                                            <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center justify-center gap-2">
-                                                <Sparkles size={14} className="text-amber-500" /> Final Step: Hiring Confirmation
-                                            </h4>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Assign a position and internal ID to complete selection</p>
+                                <div className="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 shadow-inner">
+                                    <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2 mb-4">
+                                        <Send size={14} className="text-indigo-500" /> HOD Action: Forward to Committee
+                                    </h4>
+                                    <div className="space-y-1.5 mb-6">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Assign Mentor (ID or Name)</label>
+                                        <input type="text" value={mentorIdInput} onChange={e => setMentorIdInput(e.target.value)} placeholder="e.g. MENTOR-45 or John Doe" className="admin-input bg-white w-full border-indigo-100 font-bold text-indigo-900 text-xs py-3.5" />
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button onClick={handleForwardCommittee} className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
+                                            <Send size={16} /> Forward Application
+                                        </button>
+                                        <button onClick={handleReject} className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
+                                            <XCircle size={16} /> Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {status === 'COMMITTEE_EVALUATION' && ['ADMIN', 'CE_PRTI', 'COMMITTEE_MEMBER'].includes(user?.role) && (
+                            <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
+                                <div className="bg-purple-50 p-6 rounded-[2rem] border border-purple-100 shadow-inner">
+                                    <h4 className="text-xs font-black text-purple-600 uppercase tracking-widest flex items-center gap-2 mb-4">
+                                        <Users size={14} className="text-purple-500" /> Committee Action: Interview & Select
+                                    </h4>
+                                    <div className="space-y-1.5 mb-6">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Interview Score (1-100)</label>
+                                        <input type="number" min="1" max="100" value={interviewScore} onChange={e => setInterviewScore(e.target.value)} placeholder="Enter Score" className="admin-input bg-white w-full border-purple-100 font-bold text-purple-900 text-xs py-3.5" />
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button onClick={handleCommitteeSelect} className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
+                                            <CheckCircle size={16} /> Shortlist 
+                                        </button>
+                                        <button onClick={handleReject} className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
+                                            <XCircle size={16} /> Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {status === 'CA_APPROVED' && ['ADMIN', 'CE_PRTI'].includes(user?.role) && (
+                            <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
+                                <div className="flex flex-col gap-5 bg-emerald-50/40 p-6 rounded-[2rem] border border-emerald-100/50 shadow-inner">
+                                    <div className="text-center space-y-1 mb-2">
+                                        <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center justify-center gap-2">
+                                            <Sparkles size={14} className="text-amber-500" /> Final Step: Hiring Confirmation
+                                        </h4>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Assign a position and internal ID to complete selection</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Designated Position</label>
+                                            <select
+                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 text-xs py-3.5"
+                                                value={selectedRole}
+                                                onChange={e => setSelectedRole(e.target.value)}
+                                            >
+                                                <option value="">-- Choose Position --</option>
+                                                {!internship?.rolesData?.length && internship?.roles?.split(',')?.map(r => (
+                                                    <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
+                                                ))}
+                                                {internship?.rolesData?.map(r => {
+                                                    const roleHired = application.roleHiredStats?.[r.name] || 0;
+                                                    const isFull = roleHired >= (r.openings || 0);
+                                                    return (
+                                                        <option key={r.name} value={r.name} disabled={isFull}>
+                                                            {r.name} ({roleHired} / {r.openings || 0} Filled) {isFull ? ' - [FULL]' : ''}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Designated Position</label>
-                                                <select
-                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 text-xs py-3.5"
-                                                    value={selectedRole}
-                                                    onChange={e => setSelectedRole(e.target.value)}
-                                                >
-                                                    <option value="">-- Choose Position --</option>
-                                                    {!internship?.rolesData?.length && internship?.roles?.split(',')?.map(r => (
-                                                        <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
-                                                    ))}
-                                                    {internship?.rolesData?.map(r => {
-                                                        const roleHired = application.roleHiredStats?.[r.name] || 0;
-                                                        const isFull = roleHired >= (r.openings || 0);
-                                                        return (
-                                                            <option key={r.name} value={r.name} disabled={isFull}>
-                                                                {r.name} ({roleHired} / {r.openings || 0} Filled) {isFull ? ' - [FULL]' : ''}
-                                                            </option>
-                                                        );
-                                                    })}
-                                                </select>
-                                            </div>
-
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Assigned ID Number</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. APT-26-001"
-                                                    value={manualRollNumber}
-                                                    onChange={e => setManualRollNumber(e.target.value)}
-                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 placeholder:text-slate-300 text-xs py-3.5"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
-                                                <input
-                                                    type="date"
-                                                    value={joiningDate}
-                                                    onChange={e => setJoiningDate(e.target.value)}
-                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 text-xs py-3.5"
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">End Date</label>
-                                                <input
-                                                    type="date"
-                                                    value={endDate}
-                                                    onChange={e => setEndDate(e.target.value)}
-                                                    className="admin-input bg-white border-indigo-100 font-bold text-indigo-900 text-xs py-3.5"
-                                                />
-                                            </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Assigned ID Number</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. APT-26-001"
+                                                value={manualRollNumber}
+                                                onChange={e => setManualRollNumber(e.target.value)}
+                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 placeholder:text-slate-300 text-xs py-3.5"
+                                            />
                                         </div>
                                     </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
+                                            <input
+                                                type="date"
+                                                value={joiningDate}
+                                                onChange={e => setJoiningDate(e.target.value)}
+                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 text-xs py-3.5"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">End Date</label>
+                                            <input
+                                                type="date"
+                                                value={endDate}
+                                                onChange={e => setEndDate(e.target.value)}
+                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 text-xs py-3.5"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className="flex gap-4">
                                     <button onClick={handleHire}
                                         disabled={internship?.rolesData?.length > 0 && !selectedRole}
                                         className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
                                         <CheckCircle size={18} /> Accept & Hire
                                     </button>
-                                    <button onClick={onReject}
+                                    <button onClick={handleReject}
                                         className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-[0.98]">
-                                        <XCircle size={18} /> Reject Application
+                                        <XCircle size={18} /> Reject
                                     </button>
                                 </div>
                             </div>

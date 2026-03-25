@@ -7,18 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================
+// ENUMS
+// ==========================================
+
 enum Role {
-  ADMIN
   STUDENT
+  HOD
+  COMMITTEE_MEMBER
+  MENTOR
+  CE_PRTI
+  ADMIN
 }
 
 enum ApplicationStatus {
   PENDING
   SHORTLISTED
-  REJECTED
   HIRED
+  REJECTED
+  SUBMITTED
+  HOD_REVIEW
+  COMMITTEE_EVALUATION
+  CA_APPROVED
+  ONGOING
   COMPLETED
-  CERTIFIED
+}
+
+enum InternshipCategory {
+  MONETARY
+  CERTIFICATE_ONLY
 }
 
 enum CollegeCategory {
@@ -26,148 +43,176 @@ enum CollegeCategory {
   NIT
   IIIT
   CENTRAL
-  STATE_UNIV
-  DEEMED
-  AUTONOMOUS
-  COLLEGE
-  INSTITUTE
+  STATE
+  PRIVATE
   OTHER
 }
 
-enum DocumentType {
-  RESUME
-  PRINCIPAL_LETTER
-  HOD_LETTER
-  NOC_LETTER
-  MARKSHEET
-  PASSPORT_PHOTO
-}
-
+// ==========================================
+// MODELS
+// ==========================================
 model User {
-  id       String @id @default(uuid())
-  email    String @unique
-  password String
-  role     Role   @default(STUDENT) // Default to STUDENT for safety
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String?
+  role       Role     @default(STUDENT)
+  department String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   studentProfile StudentProfile?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  mentoredApps   Application[]   @relation("MentorApps")
 }
 
 model StudentProfile {
-  id         String @id @default(uuid())
-  userId     String @unique
-  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rollNumber        String? @unique // Assigned manually by Admin during hiring
-  collegeRollNumber String? // Actual roll number from candidate's institution
-
-  // Personal Details
-  fullName String
-  phone    String
-  dob      DateTime
-  address  String
-  aadhar   String   @unique
-
-  // Educational Details
-  collegeName     String
-  collegeCode     String?
-  university      String
-  degree          String
-  branch          String
-  yearOfStudy     Int
-  cgpa            Float
-  collegeCategory CollegeCategory
-  nirfRanking     Int?
-
-  // Optional Details
-  hasExperience     Boolean @default(false)
-  hasProjects       Boolean @default(false)
-  hasCertifications Boolean @default(false)
+  id                String          @id @default(uuid())
+  userId            String          @unique
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rollNumber        String?         @unique
+  collegeRollNumber String?
+  fullName          String
+  phone             String
+  dob               DateTime
+  address           String
+  aadhar            String          @unique
+  collegeName       String
+  collegeCode       String?
+  university        String
+  degree            String
+  branch            String
+  yearOfStudy       Int
+  cgpa              Float
+  collegeCategory   CollegeCategory
+  nirfRanking       Int?
+  hasExperience     Boolean         @default(false)
+  hasProjects       Boolean         @default(false)
+  hasCertifications Boolean         @default(false)
   experienceDesc    String?
   projectsDesc      String?
   skills            String?
-  photoUrl          String? // NEW PROFILE PHOTO URL
+  photoUrl          String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   applications Application[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
 }
 
 model Internship {
-  id                  String    @id @default(uuid())
-  title               String
-  department          String
-  description         String
-  roles               String? // Legacy string field (kept to not break existing)
-  rolesData           Json?     @db.JsonB // New structured array [{name, openings, hired}]
-  requirements        String? // Candidate requirements
-  expectations        String? // What interns will learn/do
-  location            String
-  duration            String // e.g., "6 Months", "10 Weeks"
-  openingsCount       Int
-  isActive            Boolean   @default(true)
-  applicationDeadline DateTime?
-  quotaPercentages    Json?     @db.JsonB
-  priorityCollege     String?
+  id                   String    @id @default(uuid())
+  title                String
+  department           String
+  description          String
+  roles                String?
+  rolesData            Json?
+  requirements         String?
+  expectations         String?
+  location             String
+  duration             String
+  openingsCount        Int
+  isActive             Boolean   @default(true)
+  applicationDeadline  DateTime?
+  quotaPercentages     Json?
+  priorityCollege      String?
   priorityCollegeQuota Int?      @default(0)
-  requiredDocuments   Json?     @db.JsonB // Array of required document types
+  requiredDocuments    Json?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   applications Application[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
 }
 
 model Application {
-  id           String            @id @default(uuid())
-  trackingId   String            @unique // Human readable tracking code
-  studentId    String
-  internshipId String
-  status       ApplicationStatus @default(PENDING)
-  score        Float             @default(0.0) // Automated System Score
-  assignedRole String? // The role they were hired for
-
+  id              String              @id @default(uuid())
+  trackingId      String              @unique
+  studentId       String
+  internshipId    String
+  status          ApplicationStatus   @default(SUBMITTED)
+  score           Int?                @default(0)
+  assignedRole    String?
   preferredCircle String?
   duration        String?
-  startDate       String?
+  startDate       DateTime?
   joiningDate     DateTime?
   endDate         DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  category        InternshipCategory?
+  domain          String?
+  mentorId        String?
 
   student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   internship Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  documents  Document[]
+  mentor     User?          @relation("MentorApps", fields: [mentorId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  documents  Document[]
+  shortlist  Shortlist?
+  stipend    Stipend?
+  attendance Attendance?
 
   @@unique([studentId, internshipId])
-  @@index([internshipId])
-  @@index([status])
 }
 
 model Document {
-  id            String       @id @default(uuid())
+  id            String   @id @default(uuid())
   applicationId String
-  type          String       // Support dynamic document labels
-  url           String // S3 or local path
+  type          String
+  url           String?
+  fileUrl       String?
+  label         String?
+  verified      Boolean  @default(false)
+  uploadedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  createdAt   DateTime    @default(now())
 }
 
-model AutomationRule {
-  id               String   @id @default(uuid())
-  collegeWeight    Float    @default(40.0)
-  cgpaWeight       Float    @default(30.0)
-  experienceWeight Float    @default(20.0)
-  nirfWeight       Float    @default(10.0)
-  updatedAt        DateTime @updatedAt
+model Shortlist {
+  id            String   @id @default(uuid())
+  applicationId String   @unique
+  committeeId   String
+  score         Int
+  decision      String
+  evaluatedAt   DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model Stipend {
+  id             String @id @default(uuid())
+  applicationId  String @unique
+  panNumber      String
+  bankAccount    String
+  ifscCode       String
+  approvalStatus String @default("PENDING")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model Attendance {
+  id            String  @id @default(uuid())
+  applicationId String  @unique
+  daysAttended  Int     @default(0)
+  totalDays     Int     @default(0)
+  mentorReview  String?
+  meetsMinimum  Boolean @default(false)
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
 model PortalConfiguration {
   id              String   @id @default("singleton")
   authorizedTotal Int      @default(0)
   updatedAt       DateTime @updatedAt
+}
+
+model AutomationRule {
+  id               String   @id @default(uuid())
+  collegeWeight    Float
+  cgpaWeight       Float
+  experienceWeight Float
+  nirfWeight       Float
+  updatedAt        DateTime @updatedAt
 }
 
 model OtpVerification {
@@ -178,7 +223,7 @@ model OtpVerification {
   createdAt  DateTime @default(now())
 }
 
-model AisheCollege {
+model aishe_colleges {
   id              Int       @id @default(autoincrement())
   aishe_code      String    @unique @db.VarChar(20)
   college_name    String
@@ -193,8 +238,6 @@ model AisheCollege {
   programmes      String?
   nirf_rank       Int?
   is_active       Boolean?  @default(true)
-  created_at      DateTime? @default(now()) @db.Timestamptz
-  updated_at      DateTime? @default(now()) @db.Timestamptz
-
-  @@map("aishe_colleges")
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
 }

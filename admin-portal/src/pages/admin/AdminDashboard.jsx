@@ -328,20 +328,22 @@ const AdminDashboard = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button 
-                            onClick={() => setShowAdvancedExport(true)}
-                            className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-2"
-                        >
-                            <Filter size={18} /> Advanced Export
-                        </button>
-                        <Link to="/internships/new" className="bg-amber-500 hover:bg-amber-400 text-indigo-950 font-black py-4 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3 group/btn">
-                            <div className="p-1 bg-indigo-950/10 rounded-lg group-hover/btn:rotate-90 transition-transform">
-                                <Plus className="w-5 h-5" />
-                            </div>
-                            {t('dashboard.new')}
-                        </Link>
-                    </div>
+                    {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={() => setShowAdvancedExport(true)}
+                                className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-2"
+                            >
+                                <Filter size={18} /> Advanced Export
+                            </button>
+                            <Link to="/internships/new" className="bg-amber-500 hover:bg-amber-400 text-indigo-950 font-black py-4 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3 group/btn">
+                                <div className="p-1 bg-indigo-950/10 rounded-lg group-hover/btn:rotate-90 transition-transform">
+                                    <Plus className="w-5 h-5" />
+                                </div>
+                                {t('dashboard.new')}
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -446,43 +448,47 @@ const AdminDashboard = () => {
                                                     >
                                                         Review <ChevronRight size={12} />
                                                     </Link>
-                                                    <input
-                                                        type="date"
-                                                        className="hidden"
-                                                        id={`date-${int.id}`}
-                                                        onChange={(e) => handleExtendDeadline(int.id, e.target.value)}
-                                                    />
-                                                    <button
-                                                        onClick={() => { try { document.getElementById(`date-${int.id}`).showPicker(); } catch { const d = prompt('Enter new date YYYY-MM-DD'); if (d !== null) handleExtendDeadline(int.id, d); } }}
-                                                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        title="Extend/Change Deadline"
-                                                    >
-                                                        <Calendar size={15} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleExport(int.id, int.title)}
-                                                        disabled={exporting === int.id}
-                                                        className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
-                                                        title="Export Excel"
-                                                    >
-                                                        {exporting === int.id ? <span className="animate-spin w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full" /> : <Download size={15} />}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleToggle(int.id)}
-                                                        disabled={toggling === int.id}
-                                                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                        title={int.isActive ? 'Close applications' : 'Open applications'}
-                                                    >
-                                                        {int.isActive ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(int.id, int.title)}
-                                                        disabled={deleting === int.id}
-                                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 size={15} />
-                                                    </button>
+                                                    {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
+                                                        <>
+                                                            <input
+                                                                type="date"
+                                                                className="hidden"
+                                                                id={`date-${int.id}`}
+                                                                onChange={(e) => handleExtendDeadline(int.id, e.target.value)}
+                                                            />
+                                                            <button
+                                                                onClick={() => { try { document.getElementById(`date-${int.id}`).showPicker(); } catch { const d = prompt('Enter new date YYYY-MM-DD'); if (d !== null) handleExtendDeadline(int.id, d); } }}
+                                                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                title="Extend/Change Deadline"
+                                                            >
+                                                                <Calendar size={15} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleExport(int.id, int.title)}
+                                                                disabled={exporting === int.id}
+                                                                className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
+                                                                title="Export Excel"
+                                                            >
+                                                                {exporting === int.id ? <span className="animate-spin w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full" /> : <Download size={15} />}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleToggle(int.id)}
+                                                                disabled={toggling === int.id}
+                                                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                                title={int.isActive ? 'Close applications' : 'Open applications'}
+                                                            >
+                                                                {int.isActive ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(int.id, int.title)}
+                                                                disabled={deleting === int.id}
+                                                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 size={15} />
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

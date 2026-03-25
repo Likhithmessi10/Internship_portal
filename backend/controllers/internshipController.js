@@ -46,7 +46,7 @@ const applyForInternship = async (req, res) => {
                 trackingId,
                 studentId: profile.id, // Linking to StudentProfile ID
                 internshipId: internship.id,
-                status: 'PENDING'
+                status: 'SUBMITTED'
             }
         });
 

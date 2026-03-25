@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 import ApplicationProfileModal from './ApplicationProfileModal';
 import { 
     ArrowLeft, Download, Users, CheckCircle, Clock, XCircle, 
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-const FILTERS = ['All', 'PENDING', 'SHORTLISTED', 'HIRED', 'REJECTED'];
+const FILTERS = ['All', 'SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION', 'CA_APPROVED', 'ONGOING', 'COMPLETED', 'REJECTED'];
 
 const getMediaUrl = (url) => {
     if (!url) return null;
@@ -20,9 +21,12 @@ const getMediaUrl = (url) => {
 
 const StatusBadge = ({ status }) => {
     const map = {
-        PENDING: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 shadow-sm shadow-amber-500/5 transition-all',
-        SHORTLISTED: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20 shadow-sm shadow-blue-500/5 transition-all',
-        HIRED: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 shadow-sm shadow-emerald-500/5 transition-all',
+        SUBMITTED: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 shadow-sm shadow-amber-500/5 transition-all',
+        HOD_REVIEW: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20 shadow-sm shadow-purple-500/5 transition-all',
+        COMMITTEE_EVALUATION: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20 shadow-sm shadow-blue-500/5 transition-all',
+        CA_APPROVED: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20 shadow-sm shadow-teal-500/5 transition-all',
+        ONGOING: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 shadow-sm shadow-emerald-500/5 transition-all',
+        COMPLETED: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20 shadow-sm shadow-indigo-500/5 transition-all',
         REJECTED: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20 shadow-sm shadow-red-500/5 transition-all',
     };
     return (
@@ -34,6 +38,7 @@ const StatusBadge = ({ status }) => {
 
 const AdminApplicationReview = () => {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -177,8 +182,8 @@ const AdminApplicationReview = () => {
 
     const stats = {
         total: applications.length,
-        pending: applications.filter(a => a.status === 'PENDING').length,
-        hired: applications.filter(a => a.status === 'HIRED').length,
+        pending: applications.filter(a => ['SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION'].includes(a.status)).length,
+        hired: applications.filter(a => ['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
         rejected: applications.filter(a => a.status === 'REJECTED').length,
     };
     const fillPct = internship ? Math.min(100, Math.round((stats.hired / internship.openingsCount) * 100)) : 0;
@@ -208,11 +213,11 @@ const AdminApplicationReview = () => {
                     </div>
                     
                     <div className="flex flex-col md:flex-row items-center gap-4">
-                        {/* AI Auto-Select Button Removed */}
-                        
-                        <button onClick={handleExport} className="bg-white/5 hover:bg-white/10 text-white font-bold py-4 px-8 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-3 group">
-                            <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform text-indigo-300" /> EXPORT EXCEL
-                        </button>
+                        {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
+                            <button onClick={handleExport} className="bg-white/5 hover:bg-white/10 text-white font-bold py-4 px-8 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-3 group">
+                                <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform text-indigo-300" /> EXPORT EXCEL
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -332,7 +337,7 @@ const AdminApplicationReview = () => {
 
             {selected && (
                 <ApplicationProfileModal application={{ ...selected, roleHiredStats }} internship={internship} onClose={() => setSelected(null)}
-                    onHire={(assignedRole, dates) => updateStatus(selected.id, 'HIRED', assignedRole, dates)} onReject={() => updateStatus(selected.id, 'REJECTED')} />
+                    updateStatus={(status, extra) => updateStatus(selected.id, status, extra?.assignedRole, extra)} />
             )}
         </div>
     );
@@ -430,7 +435,7 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
             <td className="px-6 py-6 text-center">
                 <div className="flex items-center justify-center gap-3">
                     <button onClick={() => setSelected(app)} className="p-3 bg-white hover:bg-indigo-600 hover:text-white text-indigo-600 border border-slate-100 rounded-xl transition-all shadow-sm hover:shadow-indigo-200"><Eye size={18} /></button>
-                    {app.status === 'PENDING' && <button onClick={() => setSelected(app)} className="p-3 bg-emerald-600 text-white rounded-xl transition-all shadow-md hover:scale-105 active:scale-95"><CheckCircle size={18} /></button>}
+                    {['SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION', 'CA_APPROVED'].includes(app.status) && <button onClick={() => setSelected(app)} className="p-3 bg-emerald-600 text-white rounded-xl transition-all shadow-md hover:scale-105 active:scale-95"><CheckCircle size={18} /></button>}
                 </div>
             </td>
         </tr>

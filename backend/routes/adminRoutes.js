@@ -18,7 +18,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 router.use(protect);
-router.use(authorize('ADMIN'));
+router.use(authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'));
 
 // Portal Configuration
 router.get('/config', getPortalConfig);
