@@ -11,10 +11,16 @@ const Navbar = () => {
     const { lang, toggleLanguage, t } = useLanguage();
     const location = useLocation();
 
+    let dashboardPath = '/dashboard';
+    if (user?.role === 'ADMIN') dashboardPath = '/admin/dashboard';
+    else if (user?.role === 'CE_PRTI') dashboardPath = '/prti/dashboard';
+    else if (user?.role === 'HOD') dashboardPath = '/hod/dashboard';
+    else if (user?.role === 'MENTOR') dashboardPath = '/mentor/dashboard';
+
     const tabs = [
-        { name: t('nav.dashboard'), path: '/dashboard', icon: <LayoutDashboard size={18} /> },
-        { name: t('nav.past'), path: '/internships/past', icon: <History size={18} /> },
-        { name: t('nav.rejected'), path: '/rejected', icon: <XCircle size={18} /> },
+        { name: t?.('nav.dashboard') || 'Dashboard', path: dashboardPath, icon: <LayoutDashboard size={18} /> },
+        { name: t?.('nav.past') || 'Past Internships', path: '/internships/past', icon: <History size={18} /> },
+        { name: t?.('nav.rejected') || 'Rejected', path: '/rejected', icon: <XCircle size={18} /> },
     ];
 
     return (
@@ -24,7 +30,7 @@ const Navbar = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         {/* Brand */}
-                        <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-90 transition group">
+                        <Link to={dashboardPath} className="flex items-center gap-3 hover:opacity-90 transition group">
                             <div className="relative">
                                 <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-indigo-100 dark:border-white/5 flex items-center justify-center group-hover:rotate-6 transition-transform">
                                     <span className="font-rajdhani font-black text-lg text-indigo-600 dark:text-indigo-400">AP</span>
@@ -75,7 +81,7 @@ const Navbar = () => {
                             if (tab.name === t('nav.past') && !['ADMIN', 'CE_PRTI'].includes(user.role)) return null;
                             if (tab.name === t('nav.rejected') && !['ADMIN', 'CE_PRTI'].includes(user.role)) return null;
                             
-                            const isActive = location.pathname === tab.path || (tab.path === '/dashboard' && location.pathname.startsWith('/internships/new'));
+                            const isActive = location.pathname === tab.path || (tab.path === dashboardPath && location.pathname.startsWith('/internships/new'));
                             return (
                                 <Link
                                     key={tab.name}

@@ -1,23 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, Navigate } from 'react-router-dom';
+import api from '../../utils/api';
 
 const AdminRegister = () => {
     const { registerAdmin, user } = useAuth();
     const navigate = useNavigate();
 
+    const [searchParams] = useSearchParams();
+    const targetRole = searchParams.get('role');
+
+    const roleNames = { 'ADMIN': 'Super Admin', 'CE_PRTI': 'PRTI', 'HOD': 'HOD', 'MENTOR': 'Mentor' };
+    const roleDisplay = targetRole ? roleNames[targetRole] : 'Admin';
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState('CE_PRTI');
+    const [role, setRole] = useState(targetRole || 'CE_PRTI');
     const [department, setDepartment] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [departments, setDepartments] = useState([]);
 
     useEffect(() => {
-        if (user?.role === 'ADMIN') navigate('/dashboard', { replace: true });
+        if (user?.role) {
+            if (user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
+            else if (user.role === 'CE_PRTI') navigate('/prti/dashboard', { replace: true });
+            else if (user.role === 'HOD') navigate('/hod/dashboard', { replace: true });
+            else if (user.role === 'MENTOR') navigate('/mentor/dashboard', { replace: true });
+            else navigate('/dashboard', { replace: true });
+        }
+
+        const fetchConfig = async () => {
+            try {
+                const res = await api.get('/admin/config');
+                setDepartments(res.data.data.departments || []);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchConfig();
     }, [user, navigate]);
+
+    if (!targetRole) {
+        return <Navigate to="/landing" replace />;
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -29,7 +57,11 @@ const AdminRegister = () => {
         setLoading(true);
         try {
             await registerAdmin(email, password, role, name, department);
-            navigate('/dashboard');
+            if (role === 'ADMIN') navigate('/admin/dashboard');
+            else if (role === 'CE_PRTI') navigate('/prti/dashboard');
+            else if (role === 'HOD') navigate('/hod/dashboard');
+            else if (role === 'MENTOR') navigate('/mentor/dashboard');
+            else navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
@@ -52,7 +84,7 @@ const AdminRegister = () => {
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-2xl">
-                    <h2 className="text-gray-900 dark:text-white font-bold text-xl mb-1 text-center">Admin Registration</h2>
+                    <h2 className="text-gray-900 dark:text-white font-bold text-xl mb-1 text-center">{roleDisplay} Registration</h2>
                     <p className="text-gray-400 dark:text-slate-500 text-sm mb-7 text-center">Create a new administrative account</p>
 
                     {error && (
@@ -88,43 +120,24 @@ const AdminRegister = () => {
                                 className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
                             />
                         </div>
-                        <div className={`grid ${role === 'CE_PRTI' ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                        {role !== 'CE_PRTI' && role !== 'ADMIN' && (
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
-                                    Administrative Role
+                                    Department
                                 </label>
                                 <select 
                                     className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white font-bold rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
-                                    value={role} 
-                                    onChange={e => setRole(e.target.value)}
+                                    value={department} 
+                                    onChange={e => setDepartment(e.target.value)}
+                                    required
                                 >
-                                    <option value="CE_PRTI">PRTI Level</option>
-                                    <option value="HOD">HOD (Head of Dept)</option>
-                                    <option value="MENTOR">Mentor / Supervisor</option>
-                                    <option value="COMMITTEE_MEMBER">Committee Evaluator</option>
+                                    <option value="">-- Select Department --</option>
+                                    {departments.map((d) => (
+                                        <option key={d} value={d}>{d}</option>
+                                    ))}
                                 </select>
                             </div>
-                            {role !== 'CE_PRTI' && (
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
-                                        Department
-                                    </label>
-                                    <select 
-                                        className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white font-bold rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
-                                        value={department} 
-                                        onChange={e => setDepartment(e.target.value)}
-                                        required
-                                    >
-                                        <option value="">-- Select --</option>
-                                        <option value="IT">IT / Software</option>
-                                        <option value="ELECTRICAL">Electrical/Grid</option>
-                                        <option value="CIVIL">Civil Engineering</option>
-                                        <option value="HR">Human Resources</option>
-                                        <option value="FINANCE">Finance & Audit</option>
-                                    </select>
-                                </div>
-                            )}
-                        </div>
+                        )}
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
                                 Password

@@ -539,12 +539,27 @@ const exportAdvanced = async (req, res) => {
  */
 const getPortalConfig = async (req, res) => {
     try {
+        const defaultDepartments = [
+            "PRTI", "SLDC", "Transmission", "Planning and power systems", "Projects", 
+            "APPCC and LEgal", "Commercial and coordination LMC", "HRD", "Zone/Vijayawada", 
+            "Zone/Vishakapatnam", "APPCC", "Zone/Kadapa", "Civil", "Telecom and IT", 
+            "Additional Secretary", "CGM/Finance"
+        ];
+
         let config = await prisma.portalConfiguration.findUnique({ where: { id: 'singleton' } });
+        
         if (!config) {
             config = await prisma.portalConfiguration.create({ 
-                data: { id: 'singleton', authorizedTotal: 0 } 
+                data: { id: 'singleton', authorizedTotal: 0, departments: defaultDepartments } 
+            });
+        } else if (!config.departments || (Array.isArray(config.departments) && config.departments.length === 0)) {
+            // Set default departments if missing or completely empty
+            config = await prisma.portalConfiguration.update({
+                where: { id: 'singleton' },
+                data: { departments: defaultDepartments }
             });
         }
+
         res.status(200).json({ success: true, data: config });
     } catch (error) {
         console.error(error);
@@ -559,11 +574,20 @@ const getPortalConfig = async (req, res) => {
  */
 const updatePortalConfig = async (req, res) => {
     try {
-        const { authorizedTotal } = req.body;
+        const { authorizedTotal, departments } = req.body;
+        
+        const updateData = {};
+        if (authorizedTotal !== undefined) updateData.authorizedTotal = parseInt(authorizedTotal) || 0;
+        if (departments !== undefined) updateData.departments = departments;
+
         const config = await prisma.portalConfiguration.upsert({
             where: { id: 'singleton' },
-            update: { authorizedTotal: parseInt(authorizedTotal) || 0 },
-            create: { id: 'singleton', authorizedTotal: parseInt(authorizedTotal) || 0 }
+            update: updateData,
+            create: { 
+                id: 'singleton', 
+                authorizedTotal: parseInt(authorizedTotal) || 0,
+                departments: departments || []
+            }
         });
         res.status(200).json({ success: true, data: config });
     } catch (error) {
@@ -631,6 +655,68 @@ const allocateApplicantsAction = async (req, res, next) => {
     }
 };
 
+/**
+ * @desc    Get Committee details for an Internship
+ * @route   GET /api/v1/admin/internships/:id/committee
+ * @access  Private
+ */
+const getCommitteeDetails = async (req, res) => {
+    try {
+        const committee = await prisma.committee.findUnique({
+            where: { internshipId: req.params.id }
+        });
+        res.status(200).json({ success: true, data: committee });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Update Committee details
+ * @route   PUT /api/v1/admin/internships/:id/committee
+ * @access  Private
+ */
+const updateCommitteeDetails = async (req, res) => {
+    try {
+        const { meetLink, interviewDate, membersData } = req.body;
+        const committee = await prisma.committee.upsert({
+            where: { internshipId: req.params.id },
+            update: { meetLink, interviewDate: interviewDate ? new Date(interviewDate) : null, membersData },
+            create: { internshipId: req.params.id, meetLink, interviewDate: interviewDate ? new Date(interviewDate) : null, membersData }
+        });
+        res.status(200).json({ success: true, data: committee });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Get Users by Role
+ * @route   GET /api/v1/admin/users
+ * @access  Private (Admin, PRTI)
+ */
+const getUsersByRole = async (req, res) => {
+    try {
+        const { role } = req.query;
+        const whereClause = {};
+        if (role) {
+            whereClause.role = role;
+        }
+
+        const users = await prisma.user.findMany({
+            where: whereClause,
+            select: { id: true, name: true, email: true, department: true },
+            orderBy: { name: 'asc' }
+        });
+        res.status(200).json({ success: true, data: users });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -644,5 +730,8 @@ module.exports = {
     extendDeadline,
     getPortalConfig,
     updatePortalConfig,
-    allocateApplicantsAction
+    allocateApplicantsAction,
+    getCommitteeDetails,
+    updateCommitteeDetails,
+    getUsersByRole
 };

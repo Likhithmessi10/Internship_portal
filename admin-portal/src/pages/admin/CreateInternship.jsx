@@ -39,6 +39,19 @@ const CreateInternshipForm = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [step, setStep] = useState(1);
+    const [departments, setDepartments] = useState([]);
+
+    React.useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await api.get('/admin/config');
+                setDepartments(res.data.data.departments || []);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -188,11 +201,12 @@ const CreateInternshipForm = () => {
                                     placeholder="e.g. Software Engineering Apprenticeship 2026" className="admin-input text-lg font-bold" />
                             </InputField>
 
-                            <InputField label="Department / Category" required>
+                            <InputField label="Target Department" required>
                                 <select name="department" required value={formData.department} onChange={handleChange} className="admin-input font-bold">
-                                    <option value="">-- Choose Category --</option>
-                                    <option value="TECHNICAL">⚙️ TECHNICAL (Engineering, IT, R&D)</option>
-                                    <option value="NON-TECHNICAL">💼 NON-TECHNICAL (Finance, HR, Admin)</option>
+                                    <option value="">-- Select Department --</option>
+                                    {departments.map(d => (
+                                        <option key={d} value={d}>{d}</option>
+                                    ))}
                                 </select>
                             </InputField>
                         </div>

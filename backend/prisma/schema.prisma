@@ -120,6 +120,7 @@ model Internship {
   updatedAt            DateTime  @updatedAt
 
   applications Application[]
+  committee    Committee?
 }
 
 model Application {
@@ -203,6 +204,7 @@ model Attendance {
 model PortalConfiguration {
   id              String   @id @default("singleton")
   authorizedTotal Int      @default(0)
+  departments     Json?    @default("[]")
   updatedAt       DateTime @updatedAt
 }
 
@@ -221,6 +223,18 @@ model OtpVerification {
   otp        String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+}
+
+model Committee {
+  id            String    @id @default(uuid())
+  internshipId  String    @unique
+  meetLink      String?
+  interviewDate DateTime?
+  membersData   Json?     // store array of role+userIds or unstructured {hodId, mentorIds}
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  internship    Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
 }
 
 model aishe_colleges {

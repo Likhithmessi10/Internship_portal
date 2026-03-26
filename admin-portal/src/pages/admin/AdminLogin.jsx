@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 
 const AdminLogin = () => {
     const { login, user } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const targetRole = searchParams.get('role');
+
+    const roleNames = { 'ADMIN': 'Super Admin', 'CE_PRTI': 'PRTI', 'HOD': 'HOD', 'MENTOR': 'Mentor' };
+    const roleDisplay = targetRole ? roleNames[targetRole] : 'Admin';
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -13,9 +18,14 @@ const AdminLogin = () => {
 
     const APTRANSCO_ROLES = ['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
 
-    // If already logged in as admin, redirect
     useEffect(() => {
-        if (user && APTRANSCO_ROLES.includes(user.role)) navigate('/dashboard', { replace: true });
+        if (user && APTRANSCO_ROLES.includes(user.role)) {
+            if (user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
+            else if (user.role === 'CE_PRTI') navigate('/prti/dashboard', { replace: true });
+            else if (user.role === 'HOD') navigate('/hod/dashboard', { replace: true });
+            else if (user.role === 'MENTOR') navigate('/mentor/dashboard', { replace: true });
+            else navigate('/dashboard', { replace: true });
+        }
     }, [user, navigate]);
 
     const handleSubmit = async (e) => {
@@ -28,7 +38,11 @@ const AdminLogin = () => {
                 setError('Access denied. Authorized credentials required.');
                 return;
             }
-            navigate('/dashboard');
+            if (u.role === 'ADMIN') navigate('/admin/dashboard');
+            else if (u.role === 'CE_PRTI') navigate('/prti/dashboard');
+            else if (u.role === 'HOD') navigate('/hod/dashboard');
+            else if (u.role === 'MENTOR') navigate('/mentor/dashboard');
+            else navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
         } finally {
@@ -56,7 +70,7 @@ const AdminLogin = () => {
                     <div className="text-center mb-8">
                         <h1 className="text-gray-900 dark:text-white font-extrabold text-2xl tracking-tight mb-1">APTRANSCO</h1>
                         <p className="text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.25em] mb-3">Administrator Portal</p>
-                        <h2 className="text-gray-900 dark:text-white font-black text-xl tracking-tighter uppercase font-rajdhani">Admin <span className="text-indigo-600 dark:text-indigo-400">Login</span></h2>
+                        <h2 className="text-gray-900 dark:text-white font-black text-xl tracking-tighter uppercase font-rajdhani">{roleDisplay} <span className="text-indigo-600 dark:text-indigo-400">Login</span></h2>
                         <p className="text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Authorized Access Only</p>
                     </div>
 

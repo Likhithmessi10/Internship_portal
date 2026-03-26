@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../utils/api';
-import { useAuth } from '../../context/AuthContext';
+import api from '../../../utils/api';
+import { useAuth } from '../../../context/AuthContext';
 import {
     Briefcase, Plus, Download, Trash2, ToggleLeft, ToggleRight,
-    Users, TrendingUp, CheckCircle, Clock, ChevronRight, BarChart2, Calendar, Filter, X, FileSpreadsheet, Settings, Building2
+    Users, TrendingUp, CheckCircle, Clock, ChevronRight, BarChart2, Calendar, Filter, X, FileSpreadsheet, Video
 } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const StatCard = ({ icon: Icon, label, value, color, subtext, onEdit }) => (
     <div className={`glass-card bg-white/50 dark:bg-indigo-950/40 border-l-4 ${color} dark:border-white/5 premium-shadow rounded-3xl p-6 hover:-translate-y-1 transition-all duration-300 group`}>
@@ -173,51 +173,58 @@ const AdvancedExportModal = ({ onClose }) => {
     );
 };
 
-const DepartmentsModal = ({ onClose }) => {
-    const [departments, setDepartments] = useState([]);
-    const [newDept, setNewDept] = useState('');
+const CommitteeModal = ({ internship, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [prtiUsers, setPrtiUsers] = useState([]);
+    const [data, setData] = useState({ meetLink: '', interviewDate: '', prtiMemberId: '' });
 
     useEffect(() => {
-        const fetchConfig = async () => {
+        const fetchCommitteeAndUsers = async () => {
             try {
-                const res = await api.get('/admin/config');
-                setDepartments(res.data.data.departments || []);
+                // Fetch PRTI users for dropdown
+                const usersRes = await api.get('/admin/users?role=CE_PRTI');
+                setPrtiUsers(usersRes.data.data || []);
+
+                // Fetch existing committee
+                const res = await api.get(`/admin/internships/${internship.id}/committee`);
+                if (res.data && res.data.data) {
+                    const c = res.data.data;
+                    let parsedMembers = {};
+                    try { parsedMembers = typeof c.membersData === 'string' ? JSON.parse(c.membersData) : (c.membersData || {}); } catch(e) {}
+                    
+                    setData({
+                        meetLink: c.meetLink || '',
+                        interviewDate: c.interviewDate ? new Date(new Date(c.interviewDate).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '',
+                        prtiMemberId: parsedMembers.prtiMemberId || ''
+                    });
+                }
             } catch (err) {
-                console.error('Failed to fetch departments');
+                console.error('No committee found or error fetch', err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchConfig();
-    }, []);
+        fetchCommitteeAndUsers();
+    }, [internship.id]);
 
-    const handleAdd = async () => {
-        const val = newDept.trim();
-        if (!val || departments.includes(val)) return;
-        setSaving(true);
-        try {
-            const updated = [...departments, val];
-            await api.put('/admin/config', { departments: updated });
-            setDepartments(updated);
-            setNewDept('');
-        } catch (err) {
-            alert('Failed to add department');
-        } finally {
-            setSaving(false);
+    const handleSave = async () => {
+        if (!data.prtiMemberId) {
+            alert('Please select a PRTI Committee Member.');
+            return;
         }
-    };
 
-    const handleRemove = async (dept) => {
-        if (!window.confirm(`Are you sure you want to remove "${dept}"? Users will no longer be able to select it.`)) return;
         setSaving(true);
         try {
-            const updated = departments.filter(d => d !== dept);
-            await api.put('/admin/config', { departments: updated });
-            setDepartments(updated);
+            await api.put(`/admin/internships/${internship.id}/committee`, {
+                meetLink: data.meetLink,
+                interviewDate: data.interviewDate,
+                membersData: { prtiMemberId: data.prtiMemberId }
+            });
+            alert('Committee Saved successfully!');
+            onClose();
         } catch (err) {
-            alert('Failed to remove department');
+            alert('Failed to save committee');
         } finally {
             setSaving(false);
         }
@@ -225,10 +232,10 @@ const DepartmentsModal = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl border border-white/10 animate-fade-in-up">
-                <div className="bg-purple-600 p-6 flex justify-between items-center">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl border border-white/10 animate-fade-in-up">
+                <div className="bg-sky-600 p-6 flex justify-between items-center">
                     <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2">
-                        <Building2 size={20} /> Manage Departments
+                        <Video size={20} /> Interview Committee
                     </h3>
                     <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
                         <X size={24} />
@@ -236,50 +243,54 @@ const DepartmentsModal = ({ onClose }) => {
                 </div>
                 {loading ? (
                     <div className="p-12 text-center flex flex-col items-center">
-                        <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mb-4"></div>
-                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Loading Settings...</p>
+                        <div className="animate-spin w-8 h-8 border-4 border-sky-600 border-t-transparent rounded-full mb-4"></div>
+                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Loading Details...</p>
                     </div>
                 ) : (
-                    <div className="p-8 space-y-6">
-                        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-500/20">
-                            <p className="text-xs text-purple-700 dark:text-purple-300 font-medium leading-relaxed">
-                                Manage the list of official APTRANSCO departments. These options appear during account registration and internship creation.
-                            </p>
+                    <div className="p-8 space-y-5">
+                        <div className="bg-sky-50 dark:bg-sky-900/20 p-4 rounded-xl border border-sky-100 dark:border-sky-500/20">
+                            <p className="text-sm font-black text-sky-900 dark:text-sky-300 mb-1">{internship.title}</p>
+                            <p className="text-xs text-sky-700 dark:text-sky-400 font-medium leading-relaxed">Set up the evaluation committee and schedule the interview google meet.</p>
                         </div>
                         
-                        <div className="flex gap-2">
-                            <input 
-                                type="text"
-                                placeholder="New Department Name..."
-                                className="admin-input flex-1 font-bold bg-slate-50 dark:bg-slate-800"
-                                value={newDept}
-                                onChange={e => setNewDept(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleAdd()}
-                                disabled={saving}
-                            />
-                            <button 
-                                onClick={handleAdd}
-                                disabled={saving || !newDept.trim()}
-                                className="px-6 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 flex items-center gap-2"
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">PRTI Committee Member <span className="text-red-500">*</span></label>
+                            <select 
+                                value={data.prtiMemberId} 
+                                onChange={e => setData({...data, prtiMemberId: e.target.value})} 
+                                className="admin-input w-full bg-slate-50 dark:bg-slate-800 font-bold"
                             >
-                                <Plus size={18} /> Add
-                            </button>
+                                <option value="">-- Select PRTI Member --</option>
+                                {prtiUsers.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name || u.email.split('@')[0]} (PRTI)</option>
+                                ))}
+                            </select>
+                            <p className="text-[10px] text-gray-400 font-medium px-2 mt-1">
+                                Note: The 3-member committee will automatically include the HOD ({internship.department}) and the specific Mentor assigned to each applicant.
+                            </p>
                         </div>
-
-                        <div className="max-h-64 overflow-y-auto pr-2 space-y-2">
-                            {departments.map((dept, i) => (
-                                <div key={i} className="flex flex-row justify-between items-center p-3 px-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-2xl group hover:border-purple-200 transition-colors">
-                                    <span className="font-bold text-slate-700 dark:text-slate-200">{dept}</span>
-                                    <button 
-                                        onClick={() => handleRemove(dept)}
-                                        disabled={saving}
-                                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-0"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            ))}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Google Meet Link</label>
+                            <div className="relative">
+                                <Video className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500" size={16} />
+                                <input type="url" value={data.meetLink} onChange={e => setData({...data, meetLink: e.target.value})} placeholder="https://meet.google.com/..." className="admin-input w-full pl-11 bg-slate-50 dark:bg-slate-800" />
+                            </div>
                         </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Interview Date & Time</label>
+                            <div className="relative">
+                                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" size={16} />
+                                <input type="datetime-local" value={data.interviewDate} onChange={e => setData({...data, interviewDate: e.target.value})} className="admin-input w-full pl-11 bg-slate-50 dark:bg-slate-800 font-bold" />
+                            </div>
+                        </div>
+                        
+                        <button 
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="w-full py-4 mt-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-sky-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            {saving ? <><span className="animate-spin w-4 h-4 border-2 border-white/60 border-t-white rounded-full"></span> Saving...</> : 'Save Committee Details'}
+                        </button>
                     </div>
                 )}
             </div>
@@ -287,7 +298,7 @@ const DepartmentsModal = ({ onClose }) => {
     );
 };
 
-const AdminDashboard = () => {
+const PrtiDashboard = () => {
     const { user } = useAuth();
     const { lang, t } = useLanguage();
     const [internships, setInternships] = useState([]);
@@ -296,10 +307,10 @@ const AdminDashboard = () => {
     const [toggling, setToggling] = useState(null);
     const [exporting, setExporting] = useState(null);
     const [showAdvancedExport, setShowAdvancedExport] = useState(false);
-    const [showDepartments, setShowDepartments] = useState(false);
     const [authorizedTotal, setAuthorizedTotal] = useState(0);
     const [isEditingTarget, setIsEditingTarget] = useState(false);
     const [newTarget, setNewTarget] = useState(0);
+    const [committeeModalData, setCommitteeModalData] = useState(null);
 
     useEffect(() => { fetchData(); fetchConfig(); }, []);
 
@@ -435,11 +446,11 @@ const AdminDashboard = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <h1 className="text-3xl font-black font-rajdhani mb-1 text-white flex items-center gap-3 tracking-tight">
-                                {t('dashboard.welcome') || 'WELCOME BACK,'} <span className="text-amber-400">{user?.email?.split('@')[0].toUpperCase()}</span>! 👋
+                                PRTI DASHBOARD, <span className="text-amber-400">{user?.name || user?.email?.split('@')[0]}</span>! 👋
                             </h1>
                             <p className="text-indigo-200/60 font-medium text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                                APTRANSCO System Integrated · Admin Portal
+                                Department Internship Posting & Committee Management
                             </p>
                         </div>
                     </div>
@@ -451,15 +462,6 @@ const AdminDashboard = () => {
                             >
                                 <Filter size={18} /> Advanced Export
                             </button>
-                            {user?.role === 'ADMIN' && (
-                                <button
-                                    onClick={() => setShowDepartments(true)}
-                                    className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-4 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-2"
-                                    title="Manage Departments"
-                                >
-                                    <Building2 size={20} />
-                                </button>
-                            )}
                             <Link to="/internships/new" className="bg-amber-500 hover:bg-amber-400 text-indigo-950 font-black py-4 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3 group/btn">
                                 <div className="p-1 bg-indigo-950/10 rounded-lg group-hover/btn:rotate-90 transition-transform">
                                     <Plus className="w-5 h-5" />
@@ -518,7 +520,6 @@ const AdminDashboard = () => {
                                 <tr className="border-b border-gray-100 dark:border-white/5">
                                     <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.title')}</th>
                                     <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.status')}</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.applications')}</th>
                                     <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Openings</th>
                                     <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] pl-6">Fill Rate</th>
                                     <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.actions')}</th>
@@ -548,9 +549,6 @@ const AdminDashboard = () => {
                                                 </span>
                                             </td>
                                             <td className="py-4 text-center">
-                                                <span className="text-lg font-black text-gray-800 dark:text-white">{int.applicationsCount}</span>
-                                            </td>
-                                            <td className="py-4 text-center">
                                                 <span className="font-bold text-gray-700 dark:text-slate-300">{int.hiredCount}</span>
                                                 <span className="text-gray-300 dark:text-slate-600 mx-1">/</span>
                                                 <span className="text-gray-500 dark:text-slate-400">{effectiveOpenings}</span>
@@ -566,12 +564,12 @@ const AdminDashboard = () => {
                                             </td>
                                             <td className="py-5">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <Link
-                                                        to={`/internships/${int.id}/applications`}
-                                                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                                    <button
+                                                        onClick={() => setCommitteeModalData(int)}
+                                                        className="flex items-center gap-1 px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-lg transition-colors shadow-md"
                                                     >
-                                                        Review <ChevronRight size={12} />
-                                                    </Link>
+                                                        <Video size={12} /> Committee Mgt
+                                                    </button>
                                                     {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
                                                         <>
                                                             <input
@@ -624,9 +622,11 @@ const AdminDashboard = () => {
                 )}
             </div>
             {showAdvancedExport && <AdvancedExportModal onClose={() => setShowAdvancedExport(false)} />}
-            {showDepartments && <DepartmentsModal onClose={() => setShowDepartments(false)} />}
+            {committeeModalData && (
+                <CommitteeModal internship={committeeModalData} onClose={() => setCommitteeModalData(null)} />
+            )}
         </div>
     );
 };
 
-export default AdminDashboard;
+export default PrtiDashboard;
