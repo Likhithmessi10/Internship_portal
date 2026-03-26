@@ -48,6 +48,17 @@ enum CollegeCategory {
   OTHER
 }
 
+enum ScoreCriteria {
+  ACADEMIC_MERIT
+  SOP_QUALITY
+  DISCIPLINE_RELEVANCE
+}
+
+enum Decision {
+  YES
+  NO
+}
+
 // ==========================================
 // MODELS
 // ==========================================
@@ -172,7 +183,16 @@ model Shortlist {
   id            String   @id @default(uuid())
   applicationId String   @unique
   committeeId   String
-  score         Int
+  
+  // Instructor requirements for 3-member tracking
+  member1Id     String?
+  member1Score  ScoreCriteria?
+  member2Id     String?
+  member2Score  ScoreCriteria?
+  member3Id     String?
+  member3Score  ScoreCriteria?
+  
+  score         Int      @default(0)
   decision      String
   evaluatedAt   DateTime @default(now())
 
@@ -185,6 +205,8 @@ model Stipend {
   panNumber      String
   bankAccount    String
   ifscCode       String
+  bankName       String?
+  bankBranch     String?
   approvalStatus String @default("PENDING")
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)

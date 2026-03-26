@@ -70,46 +70,46 @@ const AdminRegister = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 transition-colors duration-200">
-            <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-                style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        <div className="min-h-screen bg-surface-container-lowest flex items-center justify-center p-6 sm:p-12 font-inter">
+            {/* Background elements omitted for clean Stitch look */}
 
-            <div className="relative w-full max-w-md">
-                <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center mb-6">
-                        <img src="/logo.png" alt="APTRANSCO Logo" className="h-24 object-contain drop-shadow-md" />
-                    </div>
-                    <h1 className="text-gray-900 dark:text-white font-extrabold text-3xl tracking-tight mb-2">APTRANSCO</h1>
-                    <p className="text-gray-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-widest">Administrator Portal</p>
+            <div className="w-full max-w-[480px]">
+                <div className="text-center mb-12">
+                     <div className="text-primary font-bold text-xs uppercase tracking-[0.3em] mb-4">Institutional Portal</div>
+                     <h1 className="text-4xl font-extrabold text-primary tracking-tighter uppercase mb-2">APTRANSCO</h1>
+                     <div className="h-1 w-12 bg-primary mx-auto rounded-full"></div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-2xl">
-                    <h2 className="text-gray-900 dark:text-white font-bold text-xl mb-1 text-center">{roleDisplay} Registration</h2>
-                    <p className="text-gray-400 dark:text-slate-500 text-sm mb-7 text-center">Create a new administrative account</p>
+
+                <div className="bg-surface-container-low border border-outline-variant/10 rounded-xl p-10 shadow-sm relative">
+                    <div className="mb-8">
+                        <h2 className="text-xl font-bold text-primary tracking-tight">{roleDisplay} Registration</h2>
+                        <p className="text-[10px] text-outline font-bold uppercase tracking-wider mt-1">Institutional Access Enrollment</p>
+                    </div>
 
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-medium flex items-center justify-center text-center gap-2">
-                             ⚠️ {error}
+                        <div className="mb-8 p-4 bg-error-container text-on-error-container rounded-lg text-[10px] font-bold uppercase tracking-widest border border-error/10 text-center">
+                            Error: {error}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
+                            <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
                                 Full Name
                             </label>
                             <input
                                 type="text"
                                 required
-                                placeholder="John Doe"
+                                placeholder="Enter Name"
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
+                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
-                                Email Address
+                            <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
+                                Institutional Email
                             </label>
                             <input
                                 type="email"
@@ -117,21 +117,21 @@ const AdminRegister = () => {
                                 placeholder="name@aptransco.gov.in"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
+                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
                             />
                         </div>
                         {role !== 'CE_PRTI' && role !== 'ADMIN' && (
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
+                                <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
                                     Department
                                 </label>
                                 <select 
-                                    className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white font-bold rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                                    className="w-full bg-white border border-outline-variant/20 text-primary font-bold rounded-lg px-4 py-3 text-xs focus:outline-primary shadow-sm"
                                     value={department} 
                                     onChange={e => setDepartment(e.target.value)}
                                     required
                                 >
-                                    <option value="">-- Select Department --</option>
+                                    <option value="">Choose Unit</option>
                                     {departments.map((d) => (
                                         <option key={d} value={d}>{d}</option>
                                     ))}
@@ -139,7 +139,7 @@ const AdminRegister = () => {
                             </div>
                         )}
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
+                            <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
                                 Password
                             </label>
                             <input
@@ -148,12 +148,12 @@ const AdminRegister = () => {
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm"
+                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
-                                Confirm Password
+                            <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
+                                Confirm Security Key
                             </label>
                             <input
                                 type="password"
@@ -161,26 +161,28 @@ const AdminRegister = () => {
                                 placeholder="••••••••"
                                 value={confirmPassword}
                                 onChange={e => setConfirmPassword(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm"
+                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/30 active:scale-[0.98] flex items-center justify-center gap-2 text-sm mt-4"
+                            className="w-full bg-primary text-white font-bold py-4 rounded-lg transition-all hover:opacity-95 shadow-md active:scale-[0.98] flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] mt-6"
                         >
                             {loading ? (
-                                <><span className="animate-spin w-4 h-4 border-2 border-white/60 border-t-white rounded-full" /> Registering...</>
+                                <><span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> Processing</>
                             ) : (
-                                'Register Admin Account →'
+                                'Complete Enrollment'
                             )}
                         </button>
                     </form>
 
-                    <p className="mt-6 text-center text-sm text-gray-500">
-                        Already have an account? <Link to="/login" className="text-indigo-600 font-bold hover:underline">Sign in</Link>
-                    </p>
+                    <div className="mt-10 pt-8 border-t border-outline-variant/10 text-center">
+                        <p className="text-[10px] text-outline font-bold uppercase tracking-widest">
+                            Authorized personnel only · <Link to="/login" className="text-primary hover:underline">Sign In</Link>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

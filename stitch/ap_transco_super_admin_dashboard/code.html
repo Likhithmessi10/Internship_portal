@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AP Transco Admin Portal - Super Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-primary": "#a7c8ff",
+              "surface-container": "#eceef0",
+              "on-background": "#191c1e",
+              "inverse-on-surface": "#eff1f3",
+              "secondary-fixed-dim": "#b9c7df",
+              "on-surface-variant": "#43474f",
+              "outline-variant": "#c3c6d1",
+              "on-secondary": "#ffffff",
+              "primary-container": "#003366",
+              "background": "#f7f9fb",
+              "tertiary-fixed": "#ffdbca",
+              "surface-variant": "#e0e3e5",
+              "on-primary-fixed-variant": "#1f477b",
+              "on-secondary-fixed": "#0d1c2e",
+              "tertiary-fixed-dim": "#ffb690",
+              "outline": "#737780",
+              "tertiary": "#381300",
+              "on-primary-container": "#799dd6",
+              "on-error-container": "#93000a",
+              "on-surface": "#191c1e",
+              "surface-tint": "#3a5f94",
+              "secondary": "#515f74",
+              "surface-bright": "#f7f9fb",
+              "on-error": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "on-secondary-container": "#57657a",
+              "surface-dim": "#d8dadc",
+              "primary-fixed": "#d5e3ff",
+              "secondary-container": "#d5e3fc",
+              "secondary-fixed": "#d5e3fc",
+              "surface-container-highest": "#e0e3e5",
+              "tertiary-container": "#592300",
+              "on-tertiary-fixed-variant": "#723610",
+              "error": "#ba1a1a",
+              "primary-fixed-dim": "#a7c8ff",
+              "surface": "#f7f9fb",
+              "on-secondary-fixed-variant": "#3a485b",
+              "on-primary-fixed": "#001b3c",
+              "surface-container-lowest": "#ffffff",
+              "inverse-surface": "#2d3133",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f2f4f6",
+              "primary": "#001e40",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed": "#341100",
+              "on-tertiary-container": "#d8885c",
+              "surface-container-high": "#e6e8ea"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased font-body">
+<!-- SideNavBar (The Anchor) -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r-0 bg-slate-100 dark:bg-slate-900 font-inter antialiased tracking-tight flex flex-col py-8 z-50">
+<div class="px-8 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary-container shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-widest uppercase text-sky-950 dark:text-sky-50 leading-tight">AP Transco</h1>
+<p class="text-[10px] text-slate-500 font-medium">Scholaris Prime Portal</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 text-sky-900 dark:text-sky-400 font-semibold border-l-4 border-sky-900 dark:border-sky-400 pl-4 bg-white/50 dark:bg-white/5 h-12 transition-all opacity-90" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Intern Management</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+<span>Applications</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Committees</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span>Meetings</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span>Reports</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<button class="w-full bg-primary-container text-white py-3 rounded-lg flex items-center justify-center gap-2 mb-6 font-medium shadow-md hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-sm">add_circle</span>
+<span>New Research Project</span>
+</button>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-800/20 h-16 flex justify-between items-center px-8 shadow-sm dark:shadow-none">
+<div class="flex items-center flex-1">
+<div class="relative w-96 group focus-within:ring-2 focus-within:ring-sky-500/20 rounded-lg">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg pl-10 py-2 text-sm focus:ring-0 placeholder:text-slate-400" placeholder="Search research, interns, or logs..." type="text"/>
+</div>
+<nav class="ml-10 flex gap-8">
+<a class="text-sky-900 dark:text-sky-400 border-b-2 border-sky-900 dark:border-sky-400 pb-2 font-inter text-sm font-medium" href="#">Overview</a>
+<a class="text-slate-500 dark:text-slate-400 pb-2 hover:text-sky-700 dark:hover:text-sky-300 transition-colors font-inter text-sm font-medium" href="#">Analytics</a>
+<a class="text-slate-500 dark:text-slate-400 pb-2 hover:text-sky-700 dark:hover:text-sky-300 transition-colors font-inter text-sm font-medium" href="#">Archives</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">PRTI Admin</p>
+<p class="text-[10px] text-slate-500">Super Admin Control</p>
+</div>
+<img class="w-10 h-10 rounded-full object-cover border-2 border-primary-container/20" data-alt="portrait of a professional male administrator in a clean modern office setting with soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNI5u5drWkfARJhISrJDQWpM8s387MjhxEiFSr9Jmv-5hfTzGHP-AVf0WfZGpEGsWXm4yILwqj5quCfAmRYM7OkMb90PlcDu1SiIpeixitz-1iDYduZqg1jFGHFjfar3UNUfTaR8sJBjOCc4SeMG3FphVIKN7WR1HKT2TT0NWk-I06QWJmQXX5AROqw7KjTlXpCALU7JK46E09Y3iq5e88V3VolzMRlL6Yk2r7l3A_fPdP3KRL4IXjqCXGvc8PI_iIwsU0m0AbLw"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 px-8 pb-12 min-h-screen">
+<!-- Metrics Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm border border-outline-variant/10 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold tracking-widest uppercase text-slate-500 block mb-2">Total Departments</span>
+<h2 class="text-4xl font-extrabold text-primary tracking-tighter">14</h2>
+</div>
+<div class="mt-4 flex items-center text-xs text-emerald-600 font-medium">
+<span class="material-symbols-outlined text-sm mr-1">trending_up</span>
+<span>+2 from last month</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm border border-outline-variant/10 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold tracking-widest uppercase text-slate-500 block mb-2">Total Active Interns</span>
+<h2 class="text-4xl font-extrabold text-primary tracking-tighter">284</h2>
+</div>
+<div class="mt-4 flex items-center text-xs text-emerald-600 font-medium">
+<span class="material-symbols-outlined text-sm mr-1">trending_up</span>
+<span>12.4% yield increase</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm border border-outline-variant/10 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold tracking-widest uppercase text-slate-500 block mb-2">Active Internships</span>
+<h2 class="text-4xl font-extrabold text-primary tracking-tighter">86</h2>
+</div>
+<div class="mt-4 flex items-center text-xs text-sky-600 font-medium">
+<span class="material-symbols-outlined text-sm mr-1">sync</span>
+<span>4 finishing this week</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm border border-outline-variant/10 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold tracking-widest uppercase text-slate-500 block mb-2">Pending Applications</span>
+<h2 class="text-4xl font-extrabold text-error tracking-tighter">1,240</h2>
+</div>
+<div class="mt-4 flex items-center text-xs text-error font-medium">
+<span class="material-symbols-outlined text-sm mr-1">warning</span>
+<span>Requires immediate review</span>
+</div>
+</div>
+</section>
+<!-- Main Section: Department Management -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<section class="lg:col-span-2 space-y-6">
+<div class="flex justify-between items-end mb-2">
+<div>
+<h3 class="text-xl font-bold text-primary tracking-tight">Departmental Infrastructure</h3>
+<p class="text-sm text-slate-500">Manage institutional units and research branches.</p>
+</div>
+<button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+                    Add Department
+                </button>
+</div>
+<div class="bg-surface-container-lowest rounded-lg overflow-hidden shadow-sm border border-outline-variant/10">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/20">
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Department Name</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Lead Researcher</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Status</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Capacity</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4">
+<p class="font-semibold text-primary">Quantum Dynamics</p>
+<p class="text-[11px] text-slate-400">ID: QD-0922</p>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">Dr. Elena Rostova</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase">Active</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">45 / 50</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">block</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4">
+<p class="font-semibold text-primary">Biometric Ethics</p>
+<p class="text-[11px] text-slate-400">ID: BE-1044</p>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">Marcus Thorne</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase">Active</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">12 / 20</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">block</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4">
+<p class="font-semibold text-primary">Sustainable Energy</p>
+<p class="text-[11px] text-slate-400">ID: SE-8812</p>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">Sarah Jenkins</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded uppercase">Disabled</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">0 / 35</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-emerald-600 transition-colors"><span class="material-symbols-outlined text-lg">check_circle</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4">
+<p class="font-semibold text-primary">Cybernetic Systems</p>
+<p class="text-[11px] text-slate-400">ID: CS-2210</p>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">Dr. Victor Vance</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase">Active</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600">28 / 30</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">block</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 bg-surface-container-low flex items-center justify-between text-xs text-slate-500">
+<span>Showing 4 of 14 Departments</span>
+<div class="flex gap-4">
+<button class="hover:text-primary font-medium">Previous</button>
+<button class="hover:text-primary font-medium">Next</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Secondary Section: Configuration & Logs -->
+<aside class="space-y-8">
+<div>
+<h3 class="text-xl font-bold text-primary tracking-tight mb-6">Portal Configuration</h3>
+<div class="space-y-4">
+<div class="p-4 bg-surface-container-low rounded-lg hover:shadow-md transition-shadow group cursor-pointer border border-transparent hover:border-outline-variant/30">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 bg-white rounded flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-primary">User Role Permissions</h4>
+<p class="text-xs text-slate-500 mt-1 leading-relaxed">Modify hierarchy and access tokens for PRTI Admin roles.</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low rounded-lg hover:shadow-md transition-shadow group cursor-pointer border border-transparent hover:border-outline-variant/30">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 bg-white rounded flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined">terminal</span>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-primary">Backend Diagnostics</h4>
+<p class="text-xs text-slate-500 mt-1 leading-relaxed">Run automated health checks and fix common sync tools.</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low rounded-lg hover:shadow-md transition-shadow group cursor-pointer border border-transparent hover:border-outline-variant/30">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 bg-white rounded flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined">data_object</span>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-primary">Global Audit Logs</h4>
+<p class="text-xs text-slate-500 mt-1 leading-relaxed">Full traceability of all administrative actions and system events.</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-primary p-6 rounded-lg text-white relative overflow-hidden">
+<div class="relative z-10">
+<h4 class="text-lg font-bold mb-2">System Health: Optimal</h4>
+<div class="w-full bg-white/20 h-1.5 rounded-full mb-4">
+<div class="bg-emerald-400 h-full w-[98%] rounded-full shadow-[0_0_8px_rgba(52,211,153,0.6)]"></div>
+</div>
+<p class="text-xs text-white/70 mb-4">Last server synchronization was 14 minutes ago. No critical failures detected.</p>
+<button class="w-full py-2 border border-white/30 rounded text-xs font-bold hover:bg-white hover:text-primary transition-colors">View Status Page</button>
+</div>
+<!-- Decorative element -->
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/10">
+<h4 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Recent Access Logs</h4>
+<ul class="space-y-4">
+<li class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<div class="text-xs">
+<span class="font-bold text-primary">Login:</span> PRTI_Admin_Marcus
+                            <p class="text-slate-400 text-[10px]">2 minutes ago from 192.168.1.104</p>
+</div>
+</li>
+<li class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-sky-500"></div>
+<div class="text-xs">
+<span class="font-bold text-primary">Export:</span> Dept_Report_Q3
+                            <p class="text-slate-400 text-[10px]">1 hour ago by Elena_R</p>
+</div>
+</li>
+<li class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<div class="text-xs">
+<span class="font-bold text-primary">Failed Login:</span> Unknown_User
+                            <p class="text-slate-400 text-[10px]">3 hours ago from 45.12.33.2</p>
+</div>
+</li>
+</ul>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

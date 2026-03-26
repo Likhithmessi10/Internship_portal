@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mentor Progress Tracker | AP Transco Admin Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-primary": "#a7c8ff",
+                        "surface-container": "#eceef0",
+                        "on-background": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "on-surface-variant": "#43474f",
+                        "outline-variant": "#c3c6d1",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#003366",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdbca",
+                        "surface-variant": "#e0e3e5",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "outline": "#737780",
+                        "tertiary": "#381300",
+                        "on-primary-container": "#799dd6",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1e",
+                        "surface-tint": "#3a5f94",
+                        "secondary": "#515f74",
+                        "surface-bright": "#f7f9fb",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#57657a",
+                        "surface-dim": "#d8dadc",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-container": "#d5e3fc",
+                        "secondary-fixed": "#d5e3fc",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary-container": "#592300",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "on-primary-fixed": "#001b3c",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f2f4f6",
+                        "primary": "#001e40",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "on-tertiary-container": "#d8885c",
+                        "surface-container-high": "#e6e8ea"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c3c6d1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r-0 bg-slate-100 dark:bg-slate-900 flex flex-col py-8 font-inter antialiased tracking-tight z-50">
+<div class="px-8 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm">account_balance</span>
+</div>
+<div>
+<h1 class="text-sm font-bold tracking-tight uppercase text-sky-950 dark:text-sky-50 leading-none">AP Transco</h1>
+<p class="text-[10px] text-slate-500 font-medium mt-1">Admin Portal</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-sky-900 dark:text-sky-400 font-semibold border-l-4 border-sky-900 dark:border-sky-400 pl-4 bg-white/50 dark:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-sm">Intern Management</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-sm font-medium">Applications</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="text-sm font-medium">Committees</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="text-sm font-medium">Meetings</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+</nav>
+<div class="mt-auto px-5 space-y-1">
+<button class="w-full mb-6 py-3 px-4 bg-primary text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Research Project
+            </button>
+<a class="flex items-center gap-4 py-2 text-slate-500 hover:text-sky-800 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm">Settings</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-slate-500 hover:text-sky-800 transition-colors" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="text-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-800/20 shadow-sm dark:shadow-none flex justify-between items-center px-8 h-16 font-inter text-sm font-medium">
+<div class="flex items-center flex-1">
+<div class="relative w-64 focus-within:ring-2 focus-within:ring-sky-500/20 rounded-lg overflow-hidden transition-all">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-full bg-slate-100/50 border-none pl-10 pr-4 py-2 text-xs focus:ring-0" placeholder="Search interns or tasks..." type="text"/>
+</div>
+<nav class="ml-10 flex gap-8">
+<a class="text-slate-500 dark:text-slate-400 pb-2 hover:text-sky-700 transition-colors" href="#">Overview</a>
+<a class="text-sky-900 dark:text-sky-400 border-b-2 border-sky-900 dark:border-sky-400 pb-2" href="#">Analytics</a>
+<a class="text-slate-500 dark:text-slate-400 pb-2 hover:text-sky-700 transition-colors" href="#">Archives</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-slate-500 hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+</button>
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-slate-200">
+<div class="text-right">
+<p class="text-xs font-bold text-sky-950">Dr. Aris Thorne</p>
+<p class="text-[10px] text-slate-500">PRTI Role: Senior Research Mentor</p>
+</div>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full object-cover" data-alt="Close-up portrait of a professional middle-aged man with short hair and glasses in a brightly lit academic office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTCKmG4GyjzxuDRxEYKDjmJH0US0LufRiA5DtmIeHPk0DxnNRO5Ut8wKFL7a1YkPwN7EFozP7ReJEqduoI_rYWQmyHTrlJbLd8HYvhA3ByEVxJMyhfJb78nd0mBkL7ytlft7QRgYbmJxXszMf-9lTnNw_EjsjAp7uxmN-65PtDIn4bW4nJ-2zvMwhgZWb4MhbHvF7E1qevzHLfpJSPP8DxreXJi-XsVC5pMSDEojkNH1zWljKBfUO0qZyHZXQgnLRaL5WCEddZ9g"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 px-8 pb-12 space-y-8">
+<!-- Header Section -->
+<section class="flex justify-between items-end">
+<div>
+<span class="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Operational Dashboard</span>
+<h2 class="text-3xl font-bold text-primary tracking-tight">Mentor Progress Tracker</h2>
+</div>
+<div class="flex gap-3">
+<div class="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">calendar_today</span>
+<span class="text-xs font-semibold text-on-surface-variant">October 24, 2023</span>
+</div>
+</div>
+</section>
+<!-- Top Row: Metrics & Progress Reports -->
+<section class="grid grid-cols-12 gap-6">
+<!-- Overall Performance Chart -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-sm font-bold uppercase tracking-wider text-primary">Cohort Performance Index</h3>
+<div class="flex gap-2">
+<span class="flex items-center gap-1 text-[10px] font-bold text-sky-600"><span class="w-2 h-2 rounded-full bg-sky-600"></span> ATTENDANCE</span>
+<span class="flex items-center gap-1 text-[10px] font-bold text-secondary"><span class="w-2 h-2 rounded-full bg-secondary"></span> TASK VELOCITY</span>
+</div>
+</div>
+<div class="h-48 flex items-end justify-between gap-4 px-2">
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group h-[60%]">
+<div class="absolute bottom-0 w-full bg-primary/40 h-[80%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-outline">MON</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group h-[75%]">
+<div class="absolute bottom-0 w-full bg-primary/40 h-[90%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-outline">TUE</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group h-[65%]">
+<div class="absolute bottom-0 w-full bg-primary/40 h-[70%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-outline">WED</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group h-[90%]">
+<div class="absolute bottom-0 w-full bg-primary/40 h-[95%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-outline font-bold text-primary">THU</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group h-[40%]">
+<div class="absolute bottom-0 w-full bg-primary/40 h-[50%] rounded-t-sm transition-all group-hover:bg-primary/60"></div>
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-outline">FRI</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group h-[20%]">
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-outline">SAT</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group h-[15%]">
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-outline">SUN</div>
+</div>
+</div>
+</div>
+<!-- Stats Column -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<div class="bg-primary-container p-6 rounded-xl text-on-primary-container flex flex-col justify-between h-full">
+<div>
+<span class="text-[10px] font-bold tracking-widest uppercase opacity-70">Active Interns</span>
+<div class="text-4xl font-extrabold text-white mt-1">12</div>
+</div>
+<div class="mt-4 pt-4 border-t border-white/10">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[10px] font-medium">Weekly Goal Progress</span>
+<span class="text-[10px] font-bold">84%</span>
+</div>
+<div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+<div class="bg-white h-full w-[84%]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Workspace Section -->
+<section class="grid grid-cols-12 gap-8 items-start">
+<!-- Intern List -->
+<div class="col-span-12 xl:col-span-4 bg-surface-container-low rounded-xl overflow-hidden shadow-sm">
+<div class="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-white">
+<h3 class="text-sm font-bold uppercase tracking-wider text-primary">Intern Rosters</h3>
+<button class="text-primary hover:bg-slate-100 p-1 rounded transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="divide-y divide-outline-variant/5">
+<!-- Intern Item 1 -->
+<div class="p-4 hover:bg-white transition-colors flex items-center gap-4 group">
+<div class="relative">
+<img alt="Intern avatar" class="w-10 h-10 rounded-lg object-cover" data-alt="Candid portrait of a young male intern smiling in a modern office environment with blurred computer screens in background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeJ4beIqf9ib6cqORizN3gJe5D20dNp3kKeWAE-CL0BPXvHdmGz_OhbLO0RsEqh47syJLWBB6cqbT-YiCeut4tP9h5B9ob3BKJZeVa3f2rA1gVwhmXN9ihp5fdLz_6Yy0xT90lqNcIMQTe8krMdKOAU3qhRo0NGgTWbDfS0o8Q2nXaTptgQhPZ_2tK2BPhPnHfWTNfqbo4CZfYas99z7JghrxeM4c807u4-dsiYUiE8C2XyHRxoPLyhG9I06V0bJsytlRMk4ymlQ"/>
+<span class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold text-primary truncate">Julian Vance</p>
+<p class="text-[10px] text-outline font-medium truncate">Last: Data Scrubbing - 2h ago</p>
+</div>
+<div class="text-right">
+<span class="block text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded uppercase tracking-tighter">Present</span>
+</div>
+</div>
+<!-- Intern Item 2 -->
+<div class="p-4 hover:bg-white transition-colors flex items-center gap-4 group">
+<div class="relative">
+<img alt="Intern avatar" class="w-10 h-10 rounded-lg object-cover" data-alt="Headshot of a confident young woman with curly hair looking directly into the camera with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALs63L2XVOkGitrapFJHCg4v3gMZAu7Jc_Puq6kWf3YimSfgUct6-smV5_C9l0FWSy5haxPMjtT71fsDzAH-yD6BRmt2zRg8mGiVDi2vU5Xly6zCoiiYprmjduUTswa_caDbDhPMGZ4Lp-wgfodwmfJHzbNxAmZakai6Dg30BBSCWyK2MCZIJ1wSePzIVj11rgX_G8qsYGmWelHWu9YMG4onG6fXR26GnidY5dnh3saND_6vjXpThsJMWoC9D45fSxDybUaHQX8A"/>
+<span class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold text-primary truncate">Elena Rossi</p>
+<p class="text-[10px] text-outline font-medium truncate">Last: Literature Review - 15m ago</p>
+</div>
+<div class="text-right">
+<span class="block text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded uppercase tracking-tighter">Present</span>
+</div>
+</div>
+<!-- Intern Item 3 -->
+<div class="p-4 hover:bg-white transition-colors flex items-center gap-4 group">
+<div class="relative">
+<img alt="Intern avatar" class="w-10 h-10 rounded-lg object-cover" data-alt="Professional profile photo of a young man with a slight smile wearing a neutral gray sweater in a clean studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzggA83u-yqEYcSVSYJSJKhZ4uVa8vtuwS-GkQCeGljMveR7BKgqOeZ7nxDqxn-nRm_6S1URKN-l2HEnq53vaeO4Vt9YAaBKDz0_ZURiDLrQP38hSVpDrFDWBbQR44ynIArMt9RMB9QcsuOz2KPSY6kxVh5f_b4pl_24pIn_e43WtFl0pxkS59nU7AHtkQ3INdm_iapx-c492S27inF4kDdF5Uww55uvDdaVczXjcNnOzu0Rn1tF19cxxg-2qgLtKRIHDWYuMbYA"/>
+<span class="absolute -bottom-1 -right-1 w-3 h-3 bg-slate-400 border-2 border-white rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold text-primary truncate">Marcus Chen</p>
+<p class="text-[10px] text-outline font-medium truncate">Last: Lab Calibration - Yesterday</p>
+</div>
+<div class="text-right">
+<span class="block text-[10px] font-bold text-outline bg-slate-200 px-2 py-0.5 rounded uppercase tracking-tighter">Away</span>
+</div>
+</div>
+<!-- Intern Item 4 -->
+<div class="p-4 hover:bg-white transition-colors flex items-center gap-4 group">
+<div class="relative">
+<img alt="Intern avatar" class="w-10 h-10 rounded-lg object-cover" data-alt="Vibrant portrait of a young student in a university library with books in the background and warm soft focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8NByzdfogKoNRWwKh5fhuivznYXA7KXEOgm8Ipp_h17qeY5jgpIkn2gvkNG-48Q5N1rTACNWGlqbAkOK7R_pVll9HOfYBU57uY6DuxCAIpJuN6xFMFuqgnsLeEqMcCk8VD9VV5T9TlU4Caq6cya4J2oMmmGs4hPvbozyj3CQV87iirfs3TkwmivXcA4hiAAHUm2XW9bst25IySthYHrxGhMA02h4LL5BsNji0RTFpkp5dLMsQxu0D2VGPX7PjyOznPDiiuFHKIg"/>
+<span class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold text-primary truncate">Sarah Jenkins</p>
+<p class="text-[10px] text-outline font-medium truncate">Last: Abstract Draft - 4h ago</p>
+</div>
+<div class="text-right">
+<span class="block text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded uppercase tracking-tighter">Present</span>
+</div>
+</div>
+</div>
+<button class="w-full py-4 text-[10px] font-bold text-primary uppercase tracking-widest hover:bg-white border-t border-outline-variant/10 transition-colors">
+                    View All 12 Interns
+                </button>
+</div>
+<!-- Task Management: Kanban Board -->
+<div class="col-span-12 xl:col-span-8">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-sm font-bold uppercase tracking-wider text-primary">Research Pipeline</h3>
+<div class="flex items-center gap-2">
+<button class="bg-primary text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">add</span> Assign Task
+                        </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<!-- To Do Column -->
+<div class="space-y-4">
+<div class="flex items-center justify-between px-1">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest">To Do (2)</span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/10 space-y-3">
+<div class="bg-surface-container-lowest p-3 rounded shadow-sm border-l-4 border-slate-300">
+<p class="text-xs font-bold text-primary mb-1">Dataset Validation</p>
+<p class="text-[10px] text-outline leading-tight">Verify P-values for experimental group B.</p>
+<div class="mt-3 flex justify-between items-center">
+<span class="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">DATA</span>
+<div class="flex -space-x-1">
+<div class="w-4 h-4 rounded-full bg-primary-container text-[8px] text-white flex items-center justify-center border border-white">+3</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- In Progress Column -->
+<div class="space-y-4">
+<div class="flex items-center justify-between px-1">
+<span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">In Progress (3)</span>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest p-3 rounded shadow-sm border border-outline-variant/10 border-l-4 border-blue-500">
+<p class="text-xs font-bold text-primary mb-1">Literature Synthesis</p>
+<p class="text-[10px] text-outline leading-tight">Compile 2023 papers on Neural Plasticity.</p>
+<div class="mt-3 flex justify-between items-center">
+<span class="text-[9px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">THEORY</span>
+<img class="w-4 h-4 rounded-full object-cover" data-alt="Small avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyI13D5uZ4EmEVUTtaemqmpi_bLgeGy6qSpIdxf7E5qL_YRj1YihTHeOYngA5Lyfspcd_pmMFFqwMUAED5iTufcg7wfv7sOuKhoEnhBGzRDKa1aPMQd1BH6DlU-VHoI27rrZxmr7BfrRp4eM-eddxrj-I-URI6PQ1Vcq3puVZE_-N8lYniljVrZDC7-wBZyvsgMJHp6C5tYmpvutmjLRVdJRWmlYoFZTSW1ykrFsZiC5LIVrixwRGBNpyV4w4LKUJX1zUBlb9ffA"/>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded shadow-sm border border-outline-variant/10 border-l-4 border-blue-500">
+<p class="text-xs font-bold text-primary mb-1">Lab Maintenance</p>
+<p class="text-[10px] text-outline leading-tight">Recalibrate the spectrometer-X4.</p>
+<div class="mt-3 flex justify-between items-center">
+<span class="text-[9px] font-bold bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded">FIELD</span>
+<img class="w-4 h-4 rounded-full object-cover" data-alt="Small avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-g9VP84d0HMHjI1iHea8bjOUwvNbFA6nLzvrQ9wYq8yEI_2sMeMOt6p74TbbPPdHfyRAuBM2OJFFddYgcUiPdWWyYCqTTJJXPTkd4CVWJ4EJn66n1tQLwU2y0kY-1EWM9zuDojBLNXvAAMN4spc1fEPYI-OJfIKHf3F3uTIHjcBc4Rep5Si_-dUJrguw82PB49hm9REtvNji-JPigGb0oCJZzuv0mLxSO5i3fXbZ8DqW5NGwX8c2dxxCumKYPjQ3SOt0UlMrq9A"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Review Column -->
+<div class="space-y-4">
+<div class="flex items-center justify-between px-1">
+<span class="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Review (1)</span>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest p-3 rounded shadow-sm border border-outline-variant/10 border-l-4 border-amber-500">
+<div class="flex justify-between items-start mb-1">
+<p class="text-xs font-bold text-primary">Abstract Draft V1</p>
+<span class="material-symbols-outlined text-amber-500 text-sm">priority_high</span>
+</div>
+<p class="text-[10px] text-outline leading-tight">Submit final draft for the PRTI Symposium.</p>
+<div class="mt-3 flex justify-between items-center">
+<span class="text-[9px] font-bold bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded">URGENT</span>
+<img class="w-4 h-4 rounded-full object-cover" data-alt="Small avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3e0Vz1os9Jodd4WgHEwV-L-IJRo3eRncyxkJqPAOtYJCkBsByUGaMvuwM4rtdefbQFiVyE1YPpsJQvAqfKvkqiNQF7lETTJsdwjU3QXI7VGiGwgxWeLLTHfq1lqDJmuXWzmRIPebnInvFPDSSPZn6kjl0M0jv6N0sGf3xL1dMU-VFK-MbLSCjo_udd6PDnHldnSmiNylRiWmy6QzWR5FOY4NJXUCpjMHnUQNRHVPlIa_OXecv7N2042MfxE4cL5Pbwa0SH6OvkA"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Done Column -->
+<div class="space-y-4">
+<div class="flex items-center justify-between px-1">
+<span class="text-[10px] font-bold text-green-600 uppercase tracking-widest">Done (8)</span>
+</div>
+<div class="space-y-3 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all cursor-default">
+<div class="bg-surface-container-lowest p-3 rounded shadow-sm border border-outline-variant/10 border-l-4 border-green-500">
+<p class="text-xs font-bold text-primary mb-1 line-through">Safety Protocol Test</p>
+<div class="mt-2 flex justify-between items-center">
+<span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+<span class="text-[8px] font-bold text-outline">COMPLETED OCT 23</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Row: Task Activity & Notes -->
+<section class="grid grid-cols-12 gap-8">
+<!-- Recent Activity Feed -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<h3 class="text-sm font-bold uppercase tracking-wider text-primary mb-6">Recent Academic Log</h3>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0 ring-4 ring-blue-50"></div>
+<div>
+<p class="text-xs font-medium text-on-surface">
+<span class="font-bold text-primary">Elena Rossi</span> moved <span class="font-bold">Literature Synthesis</span> to In Progress.
+                            </p>
+<p class="text-[10px] text-outline mt-1">15 minutes ago</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-green-500 mt-1.5 shrink-0 ring-4 ring-green-50"></div>
+<div>
+<p class="text-xs font-medium text-on-surface">
+<span class="font-bold text-primary">System</span> automatically verified <span class="font-bold">Julian Vance's</span> attendance via RFID.
+                            </p>
+<p class="text-[10px] text-outline mt-1">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0 ring-4 ring-amber-50"></div>
+<div>
+<p class="text-xs font-medium text-on-surface">
+<span class="font-bold text-primary">Dr. Aris Thorne</span> (PRTI) requested revisions on <span class="font-bold">Abstract Draft V1</span>.
+                            </p>
+<p class="text-[10px] text-outline mt-1">4 hours ago</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Mentor Quick Notes -->
+<div class="col-span-12 lg:col-span-5 bg-white rounded-xl border border-outline-variant/20 overflow-hidden shadow-sm flex flex-col">
+<div class="p-4 bg-slate-50 border-b border-outline-variant/10 flex justify-between items-center">
+<h3 class="text-xs font-bold uppercase tracking-wider text-primary">Mentor Observations</h3>
+<span class="material-symbols-outlined text-sm text-outline">edit_note</span>
+</div>
+<div class="p-6 flex-1 bg-[linear-gradient(rgba(242,244,246,0.5)_1px,transparent_1px)] bg-[length:100%_24px]">
+<p class="text-xs leading-6 text-slate-700 font-medium">
+                        Julian is showing exceptional progress in data validation. Consider moving him to the main spectrometer project by next week as part of his PRTI track.
+                    </p>
+<p class="text-xs leading-6 text-slate-700 font-medium mt-6">
+                        Sarah needs additional guidance on the symposium abstract formatting. Scheduling a 1:1 for Friday at 10 AM.
+                    </p>
+</div>
+<div class="p-4 border-t border-outline-variant/10">
+<input class="w-full bg-transparent border-none text-xs focus:ring-0 p-0 text-outline" placeholder="Add a quick note..." type="text"/>
+</div>
+</div>
+</section>
+</main>
+</body></html>

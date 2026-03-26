@@ -97,7 +97,8 @@ const getProfile = async (req, res) => {
             include: { 
                 applications: {
                     include: {
-                        internship: true
+                        internship: true,
+                        stipend: true
                     }
                 } 
             }
@@ -114,7 +115,40 @@ const getProfile = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Upsert Stipend Details for an application
+ * @route   POST /api/v1/students/applications/:id/stipend
+ * @access  Private (Student)
+ */
+const upsertStipend = async (req, res) => {
+    try {
+        const { panNumber, bankAccount, ifscCode, bankName, bankBranch } = req.body;
+        const applicationId = req.params.id;
+
+        // Verify application belongs to student
+        const application = await prisma.application.findFirst({
+            where: { id: applicationId, student: { userId: req.user.id } }
+        });
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        const stipend = await prisma.stipend.upsert({
+            where: { applicationId },
+            update: { panNumber, bankAccount, ifscCode, bankName, bankBranch },
+            create: { applicationId, panNumber, bankAccount, ifscCode, bankName, bankBranch }
+        });
+
+        res.status(200).json({ success: true, data: stipend });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     upsertProfile,
-    getProfile
+    getProfile,
+    upsertStipend
 };

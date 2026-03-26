@@ -21,17 +21,17 @@ const getMediaUrl = (url) => {
 
 const StatusBadge = ({ status }) => {
     const map = {
-        SUBMITTED: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 shadow-sm shadow-amber-500/5 transition-all',
-        HOD_REVIEW: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20 shadow-sm shadow-purple-500/5 transition-all',
-        COMMITTEE_EVALUATION: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20 shadow-sm shadow-blue-500/5 transition-all',
-        CA_APPROVED: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20 shadow-sm shadow-teal-500/5 transition-all',
-        ONGOING: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 shadow-sm shadow-emerald-500/5 transition-all',
-        COMPLETED: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20 shadow-sm shadow-indigo-500/5 transition-all',
-        REJECTED: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20 shadow-sm shadow-red-500/5 transition-all',
+        SUBMITTED: 'bg-surface-container-low text-outline border-outline-variant/20',
+        HOD_REVIEW: 'bg-primary/10 text-primary border-primary/20',
+        COMMITTEE_EVALUATION: 'bg-secondary/10 text-secondary border-secondary/20',
+        CA_APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        ONGOING: 'bg-emerald-100/50 text-emerald-800 border-emerald-300/50',
+        COMPLETED: 'bg-surface-container-high text-primary/60 border-outline-variant/10',
+        REJECTED: 'bg-error/5 text-error border-error/10',
     };
     return (
-        <span className={`px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 ${map[status] || 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-white/5'}`}>
-            {status}
+        <span className={`px-4 py-1.5 rounded text-[9px] font-bold uppercase tracking-[0.15em] border ${map[status] || 'bg-surface-container text-outline border-outline-variant/10'}`}>
+            {status?.replace(/_/g, ' ')}
         </span>
     );
 };
@@ -192,140 +192,133 @@ const AdminApplicationReview = () => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-20">
-            {/* Super Premium Header */}
-            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group border border-white/5">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500 opacity-[0.05] rounded-full -translate-y-1/2 translate-x-1/2 blur-[100px] transition-all duration-1000 group-hover:scale-110"></div>
-                
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => navigate('/dashboard')} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-3xl shadow-2xl hover:bg-white/10 transition-all hover:-translate-x-1">
-                            <ArrowLeft className="w-6 h-6 text-indigo-300" />
-                        </button>
+            {/* Stitch-style Header Section */}
+            <section className="flex justify-between items-end mb-8 pt-4">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-lg bg-surface-container-low border border-outline-variant/10 flex items-center justify-center text-primary hover:bg-surface-variant transition-all">
+                        <span className="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <div>
+                        <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Candidate Selection Board</span>
+                        <h2 className="text-3xl font-bold text-primary tracking-tight">{internship?.title}</h2>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <button onClick={handleExport} className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors">
+                        <span className="material-symbols-outlined text-lg">download</span> Export Pool
+                    </button>
+                </div>
+            </section>
+
+            {/* Selection Visualiser - Bento Style */}
+            <section className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-8 bg-surface-container-low p-8 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h1 className="text-4xl font-black font-rajdhani mb-2 tracking-tighter uppercase leading-none">
-                                Selection <span className="text-amber-400">Board</span>
-                            </h1>
-                            <div className="flex items-center gap-3">
-                                <span className="px-3 py-1 bg-indigo-500/20 rounded-lg text-indigo-300 font-black text-[10px] uppercase tracking-widest border border-indigo-500/20">{internship?.department}</span>
-                                <p className="text-slate-400 font-bold text-sm tracking-tight">{internship?.title}</p>
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Recruitment Progress</h3>
+                            <p className="text-[10px] text-outline font-medium">Real-time fulfillment tracking for this program</p>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-4xl font-extrabold text-primary">{fillPct}%</span>
+                            <div className="text-[9px] font-bold text-outline uppercase tracking-wider mt-1">Status: {fillPct >= 100 ? 'FULFILLED' : 'OPEN'}</div>
+                        </div>
+                    </div>
+                    
+                    <div className="w-full bg-surface-container-high h-2.5 rounded-full overflow-hidden mb-8">
+                        <div className="bg-primary h-full transition-all duration-1000 shadow-[0_0_15px_rgba(79,70,229,0.3)]" style={{ width: `${fillPct}%` }} />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-6">
+                        <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
+                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Preferred</p>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold text-primary">{nominatedHired}</span>
+                                <span className="text-[10px] text-outline">/ {priorityMetricCap}</span>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
+                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Top Tier</p>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold text-primary">{quotaHired}</span>
+                                <span className="text-[10px] text-outline">/ {quotaCap}</span>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
+                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Total Pool</p>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold text-primary">{stats.total}</span>
+                                <span className="text-[10px] text-outline underline decoration-outline-variant">LIFETIME</span>
                             </div>
                         </div>
                     </div>
-                    
-                    <div className="flex flex-col md:flex-row items-center gap-4">
-                        {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
-                            <button onClick={handleExport} className="bg-white/5 hover:bg-white/10 text-white font-bold py-4 px-8 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-3 group">
-                                <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform text-indigo-300" /> EXPORT EXCEL
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Selection Visualiser */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 admin-card p-10 bg-white/80 dark:bg-slate-900/40 rounded-[2.5rem] border border-black/5 dark:border-white/5 premium-shadow relative overflow-hidden">
-                    <div className="flex items-center justify-between mb-10">
-                        <div>
-                            <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tighter mb-1">Live <span className="text-indigo-600">Fulfillment</span></h3>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-none">Monitoring your hiring progress</p>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{fillPct}%</span>
-                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mt-1">Status: {fillPct >= 100 ? 'FULL' : 'OPEN'}</p>
-                        </div>
-                    </div>
-                    
-                    <div className="space-y-6">
-                        <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border-2 border-white dark:border-slate-800 p-0.5">
-                            <div className="h-full rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(79,70,229,0.3)]"
-                                style={{
-                                    width: `${fillPct}%`,
-                                    background: `linear-gradient(90deg, #6366f1, #a855f7)`
-                                }} />
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-500">
-                            <span>0 Hired</span>
-                            <span>{stats.hired} / {internship?.openingsCount} Students Recruited</span>
-                            <span>{internship?.openingsCount} Capacity</span>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 mt-12 bg-slate-50 dark:bg-slate-950/40 p-6 rounded-3xl border border-slate-100 dark:border-white/5">
-                        <div className="text-center">
-                            <p className="text-lg font-black text-amber-600 dark:text-amber-400 leading-none mb-1">{nominatedHired} / {priorityMetricCap}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Preferred Seats</p>
-                        </div>
-                        <div className="group text-center border-x border-slate-200 dark:border-white/5">
-                            <p className="text-lg font-black text-indigo-600 dark:text-indigo-400 leading-none mb-1">{quotaHired} / {quotaCap}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Top College Seats</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 leading-none mb-1">{stats.hired - nominatedHired - quotaHired}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">General Seats</p>
-                        </div>
-                    </div>
                 </div>
 
-                <div className="space-y-6">
-                    <div className="admin-card p-8 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-900 border-indigo-100 dark:border-indigo-500/10 rounded-[2.5rem]">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white"><Users size={20} /></div>
-                            <h4 className="font-black text-slate-800 dark:text-white uppercase tracking-tighter">Pool Overview</h4>
-                        </div>
-                        <div className="space-y-6">
-                            <StatRow label="Total Applicants" val={stats.total} />
-                            <StatRow label="In Review" val={stats.pending} color="text-amber-600" />
-                            <StatRow label="Confirmed Hire" val={stats.hired} color="text-emerald-600" />
-                            <StatRow label="Rejected" val={stats.rejected} color="text-rose-600" />
-                        </div>
+                <div className="col-span-12 lg:col-span-4 bg-primary-container p-8 rounded-xl text-on-primary-container flex flex-col justify-between">
+                    <div>
+                         <span className="text-[10px] font-bold tracking-widest uppercase opacity-70">Decision Pipeline</span>
+                         <div className="space-y-4 mt-6">
+                            <div className="flex justify-between items-center text-xs font-bold text-white">
+                                <span className="opacity-60 uppercase">In Review</span>
+                                <span>{stats.pending}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-bold text-white">
+                                <span className="opacity-60 uppercase">Confirmed</span>
+                                <span>{stats.hired}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-bold text-white">
+                                <span className="opacity-60 uppercase">Rejected</span>
+                                <span>{stats.rejected}</span>
+                            </div>
+                         </div>
+                    </div>
+                    <div className="mt-8 pt-6 border-t border-white/10 uppercase font-bold text-[10px] tracking-widest opacity-60">
+                        Admin Approval Required
                     </div>
                 </div>
-            </div>
+            </section>
 
-            {/* Main Application Table Area */}
-            <div className="admin-card overflow-hidden rounded-[3rem] premium-shadow border-black/5 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl">
-                <div className="px-10 py-8 border-b border-black/5 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex gap-2 bg-slate-100 dark:bg-slate-950/60 p-1.5 rounded-2xl border border-black/5">
+            {/* Candidate Table Area - Stitch Style */}
+            <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+                <div className="p-6 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
+                    <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
                         {FILTERS.map(f => (
                             <button key={f} onClick={() => setFilter(f)}
-                                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === f ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-indigo-600'}`}>
+                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${filter === f ? 'bg-primary text-white shadow-md' : 'bg-surface-container-high text-outline hover:bg-surface-variant'}`}>
                                 {f}
                             </button>
                         ))}
                     </div>
                     
-                    <div className="relative group">
-                        <input list="college-list" value={highlightCollege} onChange={e => setHighlightCollege(e.target.value)} 
-                            placeholder="Find students by college..." className="admin-input pl-12 pr-10 py-3 text-xs font-bold w-80 bg-white/50 border-slate-200" />
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
-                        {highlightCollege && <button onClick={() => setHighlightCollege('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500"><XCircle size={16} /></button>}
-                        <datalist id="college-list">{uniqueColleges.map((c, i) => <option key={i} value={c} />)}</datalist>
+                    <div className="relative w-full md:w-80">
+                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+                         <input list="college-list" value={highlightCollege} onChange={e => setHighlightCollege(e.target.value)} 
+                            placeholder="College filter..." className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary placeholder:text-outline/40" />
+                         <datalist id="college-list">{uniqueColleges.map((c, i) => <option key={i} value={c} />)}</datalist>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto pb-10">
-                    <table className="w-full">
+                <div className="overflow-x-auto pb-6">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-slate-50 dark:border-white/5">
-                                <th className="text-left px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Candidate Info</th>
-                                <th className="text-left px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identification</th>
-                                <th className="text-left px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">College Profile</th>
-                                <th className="text-center px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">CGPA</th>
-                                <th className="text-center px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                <th className="text-center px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                            <tr className="bg-surface-container-high/30">
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Candidate Info</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Identification</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">College Profile</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">CGPA</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Status</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                            <GroupingHeader label="Preferred College Students" icon={<Star className="fill-current" />} active={nominatedApps.length > 0} 
+                        <tbody className="divide-y divide-outline-variant/5">
+                            <GroupingHeader label="Preferred College Students" icon={<span className="material-symbols-outlined text-[12px] fill">grade</span>} active={nominatedApps.length > 0} 
                                 collapsed={collapsed.nominated} onToggle={() => toggleSection('nominated')} count={nominatedApps.length} hired={nominatedHired} cap={priorityMetricCap} color="amber" />
                             {!collapsed.nominated && nominatedApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
 
-                            <GroupingHeader label="Top Tier Institute Students" icon={<Award />} active={quotaApps.length > 0} 
+                            <GroupingHeader label="Top Tier Institute Students" icon={<span className="material-symbols-outlined text-[12px]">school</span>} active={quotaApps.length > 0} 
                                 collapsed={collapsed.quota} onToggle={() => toggleSection('quota')} count={quotaApps.length} hired={quotaHired} cap={quotaCap} color="indigo" />
                             {!collapsed.quota && quotaApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
                             
-                            <GroupingHeader label="Other Applicants (General Merit)" icon={<Users />} active={standardApps.length > 0} 
+                            <GroupingHeader label="Other Applicants (General Merit)" icon={<span className="material-symbols-outlined text-[12px]">groups</span>} active={standardApps.length > 0} 
                                 collapsed={collapsed.standard} onToggle={() => toggleSection('standard')} count={standardApps.length} color="slate" />
                             {!collapsed.standard && standardApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
                         </tbody>
@@ -403,39 +396,52 @@ const SummaryCard = ({ label, val, total, color }) => {
 const ApplicationRow = ({ app, updateStatus, setSelected }) => {
     const fullPhotoUrl = getMediaUrl(app.student?.photoUrl);
     return (
-        <tr className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all group border-b border-slate-50">
-            <td className="py-6 px-10">
-                <div className="flex items-center gap-5">
-                    {fullPhotoUrl ? <img src={fullPhotoUrl} className="w-14 h-14 rounded-2xl object-cover ring-4 ring-white shadow-xl" alt="" /> : 
-                     <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700 font-extrabold text-xl uppercase border shadow-inner">{app.student?.fullName?.charAt(0)}</div>}
+        <tr className="hover:bg-primary/5 transition-colors group">
+            <td className="px-6 py-5">
+                <div className="flex items-center gap-4">
+                    {fullPhotoUrl ? (
+                         <img src={fullPhotoUrl} className="w-10 h-10 rounded-lg object-cover bg-surface-container-high" alt="" />
+                    ) : (
+                         <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-outline font-bold text-sm uppercase">
+                            {app.student?.fullName?.charAt(0)}
+                         </div>
+                    )}
                     <div>
-                        <p className="font-black text-slate-800 dark:text-white uppercase tracking-tighter leading-none">{app.student?.fullName}</p>
-                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2 inline-block">ID: {app.trackingId.slice(-6)}</span>
+                        <p className="text-sm font-bold text-primary">{app.student?.fullName}</p>
+                        <p className="text-[10px] text-outline font-medium tracking-tighter uppercase mt-0.5">ID: {app.trackingId.slice(-6)}</p>
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-6 font-mono text-[10px] font-bold text-slate-400 space-y-1">
-                <p className="bg-white dark:bg-slate-800 px-2 py-0.5 rounded border shadow-sm w-fit text-slate-600 dark:text-slate-300">{app.student?.rollNumber || 'NOT HIRED'}</p>
-                <p className="px-2 py-0.5 opacity-50">{app.student?.collegeRollNumber || 'N/A'}</p>
+            <td className="px-6 py-5">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-tight">{app.student?.rollNumber || 'PENDING'}</p>
+                <p className="text-[9px] text-outline font-medium uppercase mt-0.5">{app.student?.collegeRollNumber || 'N/A'}</p>
             </td>
-            <td className="px-6 py-6">
-                <p className="text-xs font-black text-slate-600 dark:text-slate-200 uppercase tracking-tight max-w-[200px] truncate">{app.student?.collegeName}</p>
-                <div className="flex items-center gap-1.5 mt-2">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-100 uppercase tracking-widest">NIRF #{app.student?.nirfRanking || 'N/A'}</span>
-                    <span className="text-[9px] font-black px-1.5 py-0.5 bg-slate-100 text-slate-400 rounded border border-slate-200 uppercase tracking-widest">{app.student?.collegeCategory}</span>
+            <td className="px-6 py-5">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-tight max-w-[180px] truncate">{app.student?.collegeName}</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[8px] font-bold px-1 py-0.5 bg-primary/10 text-primary rounded-sm uppercase tracking-widest">NIRF #{app.student?.nirfRanking || 'N/A'}</span>
+                    <span className="text-[8px] font-bold px-1 py-0.5 bg-surface-container-high text-outline rounded-sm uppercase tracking-widest">{app.student?.collegeCategory}</span>
                 </div>
             </td>
-            <td className="px-6 py-6 text-center">
-                <span className="text-2xl font-black text-slate-800 dark:text-indigo-400">{app.student?.cgpa}</span>
-                <div className="w-10 h-1 bg-slate-100 dark:bg-slate-800 mx-auto mt-1 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500" style={{ width: `${(app.student?.cgpa/10)*100}%` }} />
+            <td className="px-6 py-5 text-center">
+                <span className="text-lg font-bold text-primary">{app.student?.cgpa}</span>
+                <div className="w-8 bg-surface-container-high h-0.5 mt-0.5 mx-auto rounded-full overflow-hidden">
+                    <div className="bg-primary h-full" style={{ width: `${(app.student?.cgpa/10)*100}%` }}></div>
                 </div>
             </td>
-            <td className="px-6 py-6 text-center"><StatusBadge status={app.status} /></td>
-            <td className="px-6 py-6 text-center">
-                <div className="flex items-center justify-center gap-3">
-                    <button onClick={() => setSelected(app)} className="p-3 bg-white hover:bg-indigo-600 hover:text-white text-indigo-600 border border-slate-100 rounded-xl transition-all shadow-sm hover:shadow-indigo-200"><Eye size={18} /></button>
-                    {['SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION', 'CA_APPROVED'].includes(app.status) && <button onClick={() => setSelected(app)} className="p-3 bg-emerald-600 text-white rounded-xl transition-all shadow-md hover:scale-105 active:scale-95"><CheckCircle size={18} /></button>}
+            <td className="px-6 py-5 text-center">
+                <StatusBadge status={app.status} />
+            </td>
+            <td className="px-6 py-5 text-right">
+                <div className="flex items-center justify-end gap-2">
+                    <button onClick={() => setSelected(app)} className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all">
+                        <span className="material-symbols-outlined text-lg">visibility</span>
+                    </button>
+                    {['SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION', 'CA_APPROVED'].includes(app.status) && (
+                        <button onClick={() => setSelected(app)} className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white hover:opacity-90 transition-all shadow-sm">
+                            <span className="material-symbols-outlined text-lg">task_alt</span>
+                        </button>
+                    )}
                 </div>
             </td>
         </tr>

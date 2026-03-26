@@ -51,83 +51,75 @@ const AdminLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 transition-colors duration-200 relative overflow-hidden">
-            {/* Ambient Background Glows */}
-            <div className="absolute top-0 -left-20 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-            <div className="absolute bottom-0 -right-20 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-            
-            {/* Background grid decoration */}
-            <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.1]"
-                style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #6366f1 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        <div className="min-h-screen bg-surface-container-lowest flex items-center justify-center p-6 sm:p-12 font-inter">
+            <div className="w-full max-w-[480px]">
+                <div className="text-center mb-12">
+                     <div className="text-primary font-bold text-xs uppercase tracking-[0.3em] mb-4">Institutional Portal</div>
+                     <h1 className="text-4xl font-extrabold text-primary tracking-tighter uppercase mb-2">APTRANSCO</h1>
+                     <div className="h-1 w-12 bg-primary mx-auto rounded-full"></div>
+                </div>
 
-            <div className="relative w-full max-w-md">
-                {/* Card */}
-                <div className="glass-card bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-[2.5rem] pt-16 px-10 pb-10 shadow-2xl relative mt-14">
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-gray-100 dark:border-white/5">
-                        <img src="/logo.png" alt="APTRANSCO" className="h-16 w-16 object-contain" />
-                    </div>
-                    
-                    <div className="text-center mb-8">
-                        <h1 className="text-gray-900 dark:text-white font-extrabold text-2xl tracking-tight mb-1">APTRANSCO</h1>
-                        <p className="text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.25em] mb-3">Administrator Portal</p>
-                        <h2 className="text-gray-900 dark:text-white font-black text-xl tracking-tighter uppercase font-rajdhani">{roleDisplay} <span className="text-indigo-600 dark:text-indigo-400">Login</span></h2>
-                        <p className="text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Authorized Access Only</p>
+                <div className="bg-surface-container-low border border-outline-variant/10 rounded-xl p-10 shadow-sm relative">
+                    <div className="mb-8">
+                        <h2 className="text-xl font-bold text-primary tracking-tight">{roleDisplay} Access</h2>
+                        <p className="text-[10px] text-outline font-bold uppercase tracking-wider mt-1">Authorized Management Login</p>
                     </div>
 
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-medium flex items-center justify-center text-center gap-2">
-                            ⚠️ {error}
+                        <div className="mb-8 p-4 bg-error-container text-on-error-container rounded-lg text-[10px] font-bold uppercase tracking-widest border border-error/10 text-center">
+                            Error: {error}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
-                                Admin Email
+                            <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
+                                Institutional Email
                             </label>
                             <input
                                 type="email"
                                 required
-                                autoComplete="email"
-                                placeholder="admin@aptransco.gov.in"
+                                placeholder="name@aptransco.gov.in"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm"
+                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 ml-1">
-                                Password
+                            <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
+                                Security Key
                             </label>
                             <input
                                 type="password"
                                 required
-                                autoComplete="current-password"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm"
+                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl transition-all shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/40 active:scale-[0.98] flex items-center justify-center gap-3 mt-4"
+                            className="w-full bg-primary text-white font-bold py-4 rounded-lg transition-all hover:opacity-95 shadow-md active:scale-[0.98] flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] mt-6"
                         >
                             {loading ? (
-                                <><span className="animate-spin w-4 h-4 border-2 border-white/60 border-t-white rounded-full" /> Verifying...</>
+                                <><span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> Validating</>
                             ) : (
                                 'Enter Dashboard'
                             )}
                         </button>
                     </form>
+
+                    <div className="mt-10 pt-8 border-t border-outline-variant/10 text-center font-bold">
+                        <p className="text-[10px] text-outline uppercase tracking-widest mb-2">Role assigned by PRTI Admin</p>
+                        <p className="text-[10px] text-primary uppercase tracking-widest underline"><Link to="/register">Staff Enrollment</Link></p>
+                    </div>
                 </div>
 
-                {/* Footer note */}
-                <div className="text-center mt-8 space-y-2 text-xs font-medium text-gray-400">
-                    <p>New staff member? <Link to="/register" className="text-indigo-500 font-bold hover:underline">Create an account</Link></p>
-                    <p>Students must apply via the <a href="/" className="text-indigo-500 hover:underline">public portal</a>.</p>
+                <div className="text-center mt-12 text-[10px] font-bold text-outline uppercase tracking-[0.2em] opacity-50">
+                    &copy; 2024 Transco Systems
                 </div>
             </div>
         </div>

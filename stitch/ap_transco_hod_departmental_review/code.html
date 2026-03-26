@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HOD Departmental Review | AP Transco Admin Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-primary": "#a7c8ff",
+                        "surface-container": "#eceef0",
+                        "on-background": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "on-surface-variant": "#43474f",
+                        "outline-variant": "#c3c6d1",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#003366",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdbca",
+                        "surface-variant": "#e0e3e5",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "outline": "#737780",
+                        "tertiary": "#381300",
+                        "on-primary-container": "#799dd6",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1e",
+                        "surface-tint": "#3a5f94",
+                        "secondary": "#515f74",
+                        "surface-bright": "#f7f9fb",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#57657a",
+                        "surface-dim": "#d8dadc",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-container": "#d5e3fc",
+                        "secondary-fixed": "#d5e3fc",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary-container": "#592300",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "on-primary-fixed": "#001b3c",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f2f4f6",
+                        "primary": "#001e40",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "on-tertiary-container": "#d8885c",
+                        "surface-container-high": "#e6e8ea"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r-0 bg-slate-100 dark:bg-slate-900 font-inter antialiased tracking-tight flex flex-col h-full py-8 z-50">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">APT</div>
+<div>
+<h1 class="text-base font-bold tracking-tight text-sky-950 dark:text-sky-50 leading-tight">AP Transco</h1>
+<p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Admin Portal</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-sm font-medium">Intern Management</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-sky-900 dark:text-sky-400 font-semibold border-l-4 border-sky-900 dark:border-sky-400 pl-4 bg-white/50 dark:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="text-sm font-medium">Applications</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="text-sm font-medium">Committees</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="text-sm font-medium">Meetings</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<a class="flex items-center gap-3 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-800/20 flex justify-between items-center px-8 h-16 shadow-sm dark:shadow-none">
+<div class="flex items-center gap-8">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-surface-container-high border-none rounded-full pl-10 pr-4 py-2 text-sm w-64 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all" placeholder="Search applications..." type="text"/>
+</div>
+<nav class="flex gap-6">
+<a class="text-sky-900 dark:text-sky-400 border-b-2 border-sky-900 dark:border-sky-400 pb-2 text-sm font-medium" href="#">Overview</a>
+<a class="text-slate-500 dark:text-slate-400 pb-2 text-sm font-medium hover:text-sky-700 transition-colors" href="#">Analytics</a>
+<a class="text-slate-500 dark:text-slate-400 pb-2 text-sm font-medium hover:text-sky-700 transition-colors" href="#">Archives</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-slate-200">
+<div class="text-right">
+<p class="text-xs font-bold text-sky-950">Dr. Sarah Chen</p>
+<p class="text-[10px] text-slate-500">HOD, Computer Engineering | PRTI Head</p>
+</div>
+<img class="w-8 h-8 rounded-full border border-slate-200 object-cover" data-alt="Professional portrait of a middle-aged female academic with glasses, neutral office background, soft daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLanjqYubPF0kDvZPpyPpXBw0cXxT_2txYPvx8LWnrpSdvKZhMVV7cLtKDEMxprcT6zHkCLgrBf0cepa7cQ2u016Nex8H8nDgomGavnjlwY4eZou5dgCBFamvPNC3VE_qcK32JYfwsGkG7N3Qa9BuOsSo7UJt8_VXturZTZbSwHzowHgemX7-I14bAfvZ6UFjXOyFTgYdMwQ3I4oO35BsQNbYKYRHMvAqph5NeKENKTwHmX8rFvE5dCD9iJQ8vuDsGjhfJ17MPOA"/>
+</div>
+</div>
+</header>
+<div class="pt-24 px-8 pb-12">
+<!-- Header Section -->
+<div class="mb-10 flex justify-between items-end">
+<div>
+<h2 class="text-3xl font-extrabold text-primary tracking-tight mb-1">Departmental Review</h2>
+<p class="text-slate-500 font-medium">Computer Engineering Faculty Portal (PRTI Unit)</p>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 bg-white border border-outline-variant/20 rounded-lg text-sm font-semibold text-slate-700 hover:bg-surface-container-high transition-all shadow-sm">
+                        Export Faculty Report
+                    </button>
+<button class="px-5 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-lg text-sm font-semibold shadow-md hover:opacity-90 transition-all">
+                        Schedule Faculty Meeting
+                    </button>
+</div>
+</div>
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+<div class="col-span-1 bg-surface-container-lowest p-6 rounded-xl border-none shadow-sm flex flex-col justify-between min-h-[140px]">
+<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Incoming</span>
+<div>
+<div class="text-4xl font-extrabold text-primary">142</div>
+<div class="text-xs text-sky-600 font-medium mt-1">+12% from last week</div>
+</div>
+</div>
+<div class="col-span-1 bg-surface-container-lowest p-6 rounded-xl border-none shadow-sm flex flex-col justify-between min-h-[140px]">
+<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pending Review</span>
+<div>
+<div class="text-4xl font-extrabold text-tertiary-container">28</div>
+<div class="flex gap-1 items-center mt-1">
+<span class="w-2 h-2 rounded-full bg-orange-400"></span>
+<span class="text-xs text-slate-500">Action Required</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 bg-surface-container-lowest p-6 rounded-xl border-none shadow-sm flex flex-col justify-between min-h-[140px]">
+<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Shortlisted</span>
+<div>
+<div class="text-4xl font-extrabold text-sky-800">54</div>
+<div class="text-xs text-slate-500 mt-1">Ready for interview</div>
+</div>
+</div>
+<div class="col-span-1 bg-surface-container-lowest p-6 rounded-xl border-none shadow-sm flex flex-col justify-between min-h-[140px]">
+<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Assigned Mentors</span>
+<div>
+<div class="text-4xl font-extrabold text-on-secondary-container">60</div>
+<div class="text-xs text-green-600 font-medium mt-1">Mentorship active</div>
+</div>
+</div>
+</div>
+<!-- Review Panel Section -->
+<div class="flex gap-8">
+<!-- Main Applications List -->
+<div class="flex-grow">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+<h3 class="font-bold text-primary">Pending Applications</h3>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+</button>
+<button class="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+</div>
+<div class="divide-y divide-slate-50">
+<!-- Candidate Row 1 -->
+<div class="p-6 hover:bg-slate-50/50 transition-colors group">
+<div class="flex items-start justify-between">
+<div class="flex gap-5">
+<div class="relative">
+<img class="w-14 h-14 rounded-lg object-cover" data-alt="Close up portrait of a young male student smiling, wearing a simple t-shirt, neutral indoor lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdTDkoAs_isBBmO11PwavondVaH2GtaFVhDnEeG8xnvNh2ttSk7dhmPtClPhagTq8kAWhJi0WGpc-Ru9MhHZhV6Aurt_SAhCIffMGuGaIz_ivZ7v6sR-VFDL_CJtJUdpjcpxivgqAupGaaMAajB9pvCqd3TDSIhYcF_0FbAaRigbE85CYNX3YV6BJUSHHC-a4WSCnRjnja36iWwaXhUaDV18hmkXI0yBJICriYzcZY0BcGh8c9h4OfFJWrEZOViFWti91NPhdzjw"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-bold text-slate-900">Arjun Malhotra</h4>
+<span class="px-2 py-0.5 bg-sky-50 text-sky-700 text-[10px] font-bold rounded uppercase tracking-tight">GPA: 3.92</span>
+</div>
+<p class="text-sm text-slate-500 mb-2 font-medium">Focus: Machine Learning &amp; Distributed Systems</p>
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-sm">school</span> IIT Madras
+                                                </span>
+<span class="flex items-center gap-1 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-sm">description</span> 2 Publications
+                                                </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="flex items-center gap-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">
+<span class="material-symbols-outlined text-sm">close</span> Reject
+                                        </button>
+<button class="flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-sm hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-sm">star</span> Shortlist
+                                        </button>
+<button class="flex items-center gap-1 px-4 py-2 border border-primary/20 text-primary rounded-lg text-xs font-bold hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined text-sm">person_add</span> Assign Mentor
+                                        </button>
+</div>
+</div>
+</div>
+<!-- Candidate Row 2 -->
+<div class="p-6 hover:bg-slate-50/50 transition-colors group">
+<div class="flex items-start justify-between">
+<div class="flex gap-5">
+<div class="relative">
+<img class="w-14 h-14 rounded-lg object-cover" data-alt="Headshot of a confident young female graduate student, bright studio lighting, soft gray background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCScoUZppTlGP33WxV9GFyeHpm-EGIORRPSuK9lIRgpDFHUmJIY-Jj_jNMeE8136S2YkbVthJXrKi8u3seK7jyKbnmwLoC0FxSvlw1FKb3iXssqmWLuctYLDAJusrNogqIdjhJpCj9RjHhh16d5ACsT0TPbG9ZvBjxjK1nZo6QX2famDFUAVyulAPlQNij09ySaMnCDa-BN-4WKVE9crxbWkyEskKBdG4f06hirkVVQ12mTsK8YoYZmWNPo5sppmGRnqpR85YG2MA"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-orange-400 border-2 border-white rounded-full"></div>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-bold text-slate-900">Sanya Gupta</h4>
+<span class="px-2 py-0.5 bg-sky-50 text-sky-700 text-[10px] font-bold rounded uppercase tracking-tight">GPA: 3.85</span>
+</div>
+<p class="text-sm text-slate-500 mb-2 font-medium">Focus: Cybersecurity &amp; Blockchain Architecture</p>
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-sm">school</span> BITS Pilani
+                                                </span>
+<span class="flex items-center gap-1 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-sm">verified</span> Cert: CISSP
+                                                </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="flex items-center gap-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">
+<span class="material-symbols-outlined text-sm">close</span> Reject
+                                        </button>
+<button class="flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-sm hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-sm">star</span> Shortlist
+                                        </button>
+<button class="flex items-center gap-1 px-4 py-2 border border-primary/20 text-primary rounded-lg text-xs font-bold hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined text-sm">person_add</span> Assign Mentor
+                                        </button>
+</div>
+</div>
+</div>
+<!-- Candidate Row 3 -->
+<div class="p-6 hover:bg-slate-50/50 transition-colors group">
+<div class="flex items-start justify-between">
+<div class="flex gap-5">
+<div class="relative">
+<img class="w-14 h-14 rounded-lg object-cover" data-alt="Portrait of a young male engineering student with short hair, casual denim jacket, warm afternoon light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcVWNmMmebqR45KeQBASSURw29xWbfZFS5xA41fnWIzs7vC0pXWkleFlokFujTiI3JwSHVTiwrAaYBn6uF2c3yxChVINGWDvUlNxPTd2UCj7WahZQvUShM1fWM5w1oIO-Hz473xhO5qWc-j7qLeiqJt4hg7EESN5KQgzn8hbj7TF4RKxofWnF4SZqmdhpBkFL6KaHPphklwnmopQg5bNSEVjV7mBhybIj3kLpY3d8bqCFBSqheuTCyKle43t_VjJRktAVywpistQ"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-bold text-slate-900">Rohan Varma</h4>
+<span class="px-2 py-0.5 bg-sky-50 text-sky-700 text-[10px] font-bold rounded uppercase tracking-tight">GPA: 3.78</span>
+</div>
+<p class="text-sm text-slate-500 mb-2 font-medium">Focus: Computer Vision &amp; Robotics</p>
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-sm">school</span> NIT Trichy
+                                                </span>
+<span class="flex items-center gap-1 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-sm">code</span> PyTorch Specialist
+                                                </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="flex items-center gap-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">
+<span class="material-symbols-outlined text-sm">close</span> Reject
+                                        </button>
+<button class="flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-sm hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-sm">star</span> Shortlist
+                                        </button>
+<button class="flex items-center gap-1 px-4 py-2 border border-primary/20 text-primary rounded-lg text-xs font-bold hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined text-sm">person_add</span> Assign Mentor
+                                        </button>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low text-center">
+<button class="text-sm font-bold text-sky-900 hover:underline">View All 28 Pending Applications</button>
+</div>
+</div>
+</div>
+<!-- Side Summary Panel -->
+<div class="w-80 flex-shrink-0">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm mb-6">
+<h3 class="font-bold text-primary mb-4 text-sm uppercase tracking-wider">PRTI Mentor Load</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="Portrait of a female professor in a business suit, looking professional, scholarly office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA4E_KlhHYfKgQbdbJeWCPRzS1FqI3tyzZ6IacHW1nHFpiAfBfUrXSA3A2vVuzrlBG2mPtcHON8FQA9TmkstXUMVGy7fvpB6AUAz8sAgb6oJ_Qr7epEUi87PqviKp79dnAUAK0DywtcjY6_voXxT9y2P67QZoA5Da2hUXqJaHNRJDH4Pj9HripLxzHu6Sje2On2frY1mi-PxKgjACVCXHuuGJyi3YKk0i-B2kxt0jP9gDQK9P4zGr-dbzoUCJh8f5oHfnAXo4bzA"/>
+<span class="text-xs font-semibold text-slate-700">Dr. K. Iyer</span>
+</div>
+<span class="text-xs font-bold text-primary">4 / 5</span>
+</div>
+<div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[80%]"></div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="Professional man in academic environment, wearing a blazer, confident expression, neutral tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7qUu1OUR-L1tJtQlWNTtzhma0uW8nMx9sIQpvpLNjAC8QNASJKs7NbAP5rSXjVT5YLtOcpVCpFyp5hZxRt2oc6V7F_G_6c6EGdsDO1FYOqLGbmmGH-Hj6H4478pb1KT5rZH9cy55GQVAgJtWBaxzNOrjNEzkY0kvK3g13TIguo1uePJU89e7IlUHOcgBhEzeox-jXJr0VA6dKwbiqBBuE9goQvw__3Rx8nda-geZdUIVslilil3eLPiVEDk4bfhfdvvfIIHwPNg"/>
+<span class="text-xs font-semibold text-slate-700">Prof. M. Rao</span>
+</div>
+<span class="text-xs font-bold text-primary">2 / 5</span>
+</div>
+<div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[40%]"></div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="Female academic researcher in laboratory setting, soft blurred tech background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkOhpznYTyRrg1muSfnSdxY5KV5_nM8IIKWkbueO8QhIYXqPeJfFh3V7t1EVEHjZpRm8ZQU_t-bKmP1R7IhRcGZpNgq9tzVWM_8GXHN4Igpj2v1wKOLlUNqYgHla9HgJRJcaY4B-HXjGcyp9IgAPyu0eU-EG9unDfHyG7ENq0X_piAA7--w9nlks9ySxyp_LQNV2tog4eSmMc1MaRISbehJDc1eMPNro6EAY2Gnv7RtLaAb1YExI5mzSkBrxSD64TV2adP6ORmbw"/>
+<span class="text-xs font-semibold text-slate-700">Dr. L. Watts</span>
+</div>
+<span class="text-xs font-bold text-primary">5 / 5</span>
+</div>
+<div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-error h-full w-full"></div>
+</div>
+</div>
+</div>
+<div class="bg-primary-container p-6 rounded-xl shadow-sm text-white relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="font-bold mb-2">PRTI Review Deadline</h3>
+<p class="text-xs text-on-primary-container font-medium mb-4 leading-relaxed">All Phase-1 applications must be reviewed by Friday, 24th Oct.</p>
+<div class="text-2xl font-black mb-4">03d : 14h : 22m</div>
+<button class="w-full py-2 bg-white text-primary text-xs font-bold rounded-lg shadow-lg hover:bg-slate-100 transition-colors">Notify Faculty</button>
+</div>
+<div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Backdrop (Hidden by default, shown for "Assign Mentor") -->
+<div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
+<div class="bg-surface-container-lowest w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+<div class="p-6 border-b border-slate-100">
+<div class="flex justify-between items-center">
+<h3 class="text-lg font-bold text-primary">Assign PRTI Mentor</h3>
+<button class="text-slate-400 hover:text-slate-600">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-4 mb-6 p-4 bg-slate-50 rounded-xl">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Candidate profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD688r7XOmwoHbO79O4nYmEHlwTThjGOA6QHxYCWLAy542CJUYLvs81I-Se94JLydWailHowzALgAcMVsWaSKfgEYRCl1QN70tcR_IQ-A4rP8bpRTMt7QEYz_qM1QVT5fLDSGS9GQmyHJwlM2zh8X6wpfcKcFZ8Y8pBG6jk_B31Mr5SYxCFYejzsitds46JzBIf5sZiZIdxLZ8k0wAlTUxg9lEpFAXHiFbXrFwBdl4KCwvDWLOB3h0qn-VaxU2TMO3zr_ADR9qMVA"/>
+<div>
+<p class="text-xs text-slate-500 font-bold uppercase tracking-tight">Assigning For</p>
+<p class="font-bold text-slate-900">Arjun Malhotra</p>
+</div>
+</div>
+<label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Faculty Member</label>
+<select class="w-full bg-surface-container-high border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none mb-6">
+<option>Dr. K. Iyer (4/5 active)</option>
+<option>Prof. M. Rao (2/5 active)</option>
+<option>Dr. Amit Singh (0/5 active)</option>
+<option disabled="">Dr. L. Watts (Full)</option>
+</select>
+<label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Project Track</label>
+<div class="grid grid-cols-2 gap-3 mb-8">
+<button class="p-3 border-2 border-primary bg-primary/5 rounded-xl text-left">
+<p class="text-[10px] font-bold text-primary uppercase">Research</p>
+<p class="text-xs font-medium text-slate-700">Deep Learning</p>
+</button>
+<button class="p-3 border-2 border-transparent bg-slate-100 rounded-xl text-left hover:border-slate-200">
+<p class="text-[10px] font-bold text-slate-400 uppercase">Applied</p>
+<p class="text-xs font-medium text-slate-700">Cloud Infrastr.</p>
+</button>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors">Cancel</button>
+<button class="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg hover:opacity-90 transition-opacity">Confirm Assignment</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Button (FAB) - Restricted context -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-40">
+<span class="material-symbols-outlined" data-icon="add" style="font-variation-settings: 'FILL' 0;">add</span>
+</button>
+</body></html>

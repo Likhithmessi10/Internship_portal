@@ -1,105 +1,63 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, XCircle, LogOut, History, Moon, Sun, Globe } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { Search, Bell, HelpCircle, Moon, Sun, Globe } from 'lucide-react';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
     const { isDarkMode, toggleTheme } = useTheme();
-    const { lang, toggleLanguage, t } = useLanguage();
-    const location = useLocation();
-
-    let dashboardPath = '/dashboard';
-    if (user?.role === 'ADMIN') dashboardPath = '/admin/dashboard';
-    else if (user?.role === 'CE_PRTI') dashboardPath = '/prti/dashboard';
-    else if (user?.role === 'HOD') dashboardPath = '/hod/dashboard';
-    else if (user?.role === 'MENTOR') dashboardPath = '/mentor/dashboard';
-
-    const tabs = [
-        { name: t?.('nav.dashboard') || 'Dashboard', path: dashboardPath, icon: <LayoutDashboard size={18} /> },
-        { name: t?.('nav.past') || 'Past Internships', path: '/internships/past', icon: <History size={18} /> },
-        { name: t?.('nav.rejected') || 'Rejected', path: '/rejected', icon: <XCircle size={18} /> },
-    ];
+    const { lang, toggleLanguage } = useLanguage();
 
     return (
-        <div className="flex flex-col w-full">
-            {/* Top Navbar */}
-            <nav className="glass-navbar border-b-4 border-amber-500 shadow-xl dark:border-amber-600/50 z-50 transition-all duration-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        {/* Brand */}
-                        <Link to={dashboardPath} className="flex items-center gap-3 hover:opacity-90 transition group">
-                            <div className="relative">
-                                <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-indigo-100 dark:border-white/5 flex items-center justify-center group-hover:rotate-6 transition-transform">
-                                    <span className="font-rajdhani font-black text-lg text-indigo-600 dark:text-indigo-400">AP</span>
-                                </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-amber-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></div>
-                            </div>
-                            <div>
-                                <span className="font-rajdhani font-black text-2xl tracking-tight hidden sm:block text-indigo-900 dark:text-white leading-none">APTRANSCO</span>
-                                <span className="text-[10px] font-black tracking-[0.2em] text-amber-600 dark:text-amber-400 uppercase hidden sm:block">Admin Hub</span>
-                            </div>
-                        </Link>
+        <header className="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-800/20 h-16 flex justify-between items-center px-8 shadow-sm dark:shadow-none">
+            <div className="flex items-center flex-1">
+                <div className="relative w-96 group focus-within:ring-2 focus-within:ring-sky-500/20 rounded-lg">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                        className="w-full bg-surface-container-low border-none rounded-lg pl-10 py-2 text-sm focus:ring-0 placeholder:text-slate-400 dark:bg-slate-900/50" 
+                        placeholder="Search research, interns, or logs..." 
+                        type="text"
+                    />
+                </div>
+                <nav className="ml-10 flex gap-8">
+                    <button className="text-sky-900 dark:text-sky-400 border-b-2 border-sky-900 dark:border-sky-400 pb-2 font-inter text-sm font-medium">Overview</button>
+                    <button className="text-slate-500 dark:text-slate-400 pb-2 hover:text-sky-700 dark:hover:text-sky-300 transition-colors font-inter text-sm font-medium">Analytics</button>
+                    <button className="text-slate-500 dark:text-slate-400 pb-2 hover:text-sky-700 dark:hover:text-sky-300 transition-colors font-inter text-sm font-medium">Archives</button>
+                </nav>
+            </div>
 
-                        {/* Right Menu */}
-                        <div className="flex items-center gap-4">
-                            <div className="hidden lg:flex items-center gap-1 glass-card p-1 rounded-2xl bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5">
-                                <button
-                                    onClick={toggleTheme}
-                                    className={`p-2.5 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
-                                    title="Toggle Theme"
-                                >
-                                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                                </button>
-                                <button
-                                    onClick={toggleLanguage}
-                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all font-black text-[10px] tracking-widest ${lang === 'te' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
-                                    title="Toggle Language"
-                                >
-                                    <Globe size={16} /> {lang === 'en' ? 'ENGLISH' : 'తెలుగు'}
-                                </button>
-                            </div>
+            <div className="flex items-center gap-4">
+                <button onClick={toggleTheme} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+                <button onClick={toggleLanguage} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center gap-1">
+                    <Globe size={18} />
+                    <span className="text-[10px] font-bold uppercase">{lang === 'en' ? 'EN' : 'TE'}</span>
+                </button>
+                
+                <div className="h-8 w-[1px] bg-slate-200 mx-2 dark:bg-slate-800"></div>
 
-                            <button
-                                onClick={logout}
-                                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 text-[10px] font-black uppercase tracking-widest"
-                            >
-                                <LogOut size={16} /> <span className="hidden xl:inline">{t('nav.logout')}</span>
+                <div className="flex items-center gap-3">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-xs font-bold text-on-surface">{user?.name || 'Admin User'}</p>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-tight">{user?.role?.replace('_', ' ') || 'Role'}</p>
+                    </div>
+                    <div className="relative group">
+                        <img 
+                            className="w-10 h-10 rounded-full object-cover border-2 border-primary-container/20 cursor-pointer" 
+                            src={`https://ui-avatars.com/api/?name=${user?.name || 'Admin'}&background=003366&color=fff`}
+                            alt="Profile"
+                        />
+                        <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 p-2 opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all">
+                            <button onClick={logout} className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2">
+                                Sign Out
                             </button>
                         </div>
                     </div>
                 </div>
-            </nav>
-
-            {/* Sub Nav / Tabs */}
-            {user && ['ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'].includes(user.role) && (
-                <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-white/5 shadow-sm sticky top-[80px] z-40 transition-colors duration-300">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto no-scrollbar">
-                        {tabs.map((tab) => {
-                            if (tab.name === t('nav.past') && !['ADMIN', 'CE_PRTI'].includes(user.role)) return null;
-                            if (tab.name === t('nav.rejected') && !['ADMIN', 'CE_PRTI'].includes(user.role)) return null;
-                            
-                            const isActive = location.pathname === tab.path || (tab.path === dashboardPath && location.pathname.startsWith('/internships/new'));
-                            return (
-                                <Link
-                                    key={tab.name}
-                                    to={tab.path}
-                                    className={`px-6 py-3 border-b-2 text-[10px] uppercase tracking-[0.2em] font-rajdhani transition-all flex items-center gap-2 whitespace-nowrap 
-                                    ${isActive
-                                        ? 'border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 font-black'
-                                        : 'border-transparent text-gray-500 dark:text-gray-400 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
-                                >
-                                    {tab.icon && React.cloneElement(tab.icon, { size: 14 })} {tab.name}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </div>
+            </div>
+        </header>
     );
 };
-
 export default Navbar;

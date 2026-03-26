@@ -65,96 +65,118 @@ const HodDashboard = () => {
     return (
         <div className="max-w-7xl mx-auto space-y-8">
             {/* Header */}
-            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 rounded-[2.5rem] p-8 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500 opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500 opacity-10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-xl shadow-inner group-hover:rotate-6 transition-transform">
-                            <Star className="w-8 h-8 text-purple-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-3xl font-black font-rajdhani mb-1 text-white flex items-center gap-3 tracking-tight">
-                                HOD DASHBOARD, <span className="text-purple-400">{user?.name || user?.email?.split('@')[0]}</span>! 👋
-                            </h1>
-                            <p className="text-indigo-200/60 font-medium text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                                {user?.department || 'Department'} Internship Management
-                            </p>
-                        </div>
+            {/* Stitch-style Header Section */}
+            <section className="flex justify-between items-end mb-8">
+                <div>
+                    <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Departmental Oversight</span>
+                    <h2 className="text-3xl font-bold text-primary tracking-tight">{user?.department} Dashboard</h2>
+                </div>
+                <div className="flex gap-3 text-right">
+                    <div>
+                        <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Academic Year</p>
+                        <p className="text-sm font-bold text-primary">2023 - 2024</p>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                <StatCard icon={Briefcase} label="Dept Internships" value={internships.length} color="border-purple-500" subtext="Active Programs" />
-                <StatCard icon={Users} label="Total Applications" value={totalApplications} color="border-sky-500" subtext="Pending & Reviewed" />
-                <StatCard icon={CheckCircle} label="Students Hired" value={totalHired} color="border-emerald-500" subtext={`Out of ${totalAllocated} openings`} />
-            </div>
+            {/* Bento Grid Stats */}
+            <section className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Active Programs</span>
+                    <div className="text-4xl font-extrabold text-primary mt-2">{internships.length}</div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded w-fit uppercase">
+                        <span className="material-symbols-outlined text-xs">trending_up</span> Live Status
+                    </div>
+                </div>
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Pool Size</span>
+                    <div className="text-4xl font-extrabold text-primary mt-2">{totalApplications}</div>
+                    <div className="mt-4 text-[10px] font-bold text-outline uppercase">Cumulative Applicants</div>
+                </div>
+                <div className="col-span-12 lg:col-span-4 bg-primary-container p-6 rounded-xl shadow-sm">
+                    <span className="text-[10px] font-bold text-on-primary-container uppercase tracking-widest opacity-80">Hiring Quota</span>
+                    <div className="flex items-end justify-between mt-2 text-white">
+                        <div className="text-4xl font-extrabold">{totalHired}</div>
+                        <div className="text-xl font-medium opacity-50 mb-1">/ {totalAllocated}</div>
+                    </div>
+                    <div className="w-full bg-white/20 h-1.5 rounded-full mt-4 overflow-hidden">
+                        <div className="bg-white h-full transition-all duration-1000" style={{ width: `${totalAllocated > 0 ? (totalHired/totalAllocated)*100 : 0}%` }}></div>
+                    </div>
+                </div>
+            </section>
 
             {/* Internship Table */}
-            <div className="glass-card bg-white dark:bg-slate-900/60 border-black/5 dark:border-white/10 rounded-[2.5rem] premium-shadow overflow-hidden transition-all duration-500">
-                <div className="p-8 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-indigo-950/20">
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-4 font-rajdhani uppercase tracking-widest">
-                        <div className="p-2 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
-                            <Briefcase size={20} className="text-purple-600 dark:text-purple-400" />
-                        </div>
-                        {user?.department} Internships
-                    </h2>
+            {/* Internship Table - Stitch Style */}
+            <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
+                    <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Departmental Programs</h3>
+                        <p className="text-[10px] text-outline font-medium mt-0.5">Recruitment overview for {user?.department}</p>
+                    </div>
+                    <div className="flex gap-2 text-outline">
+                         <span className="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">filter_list</span>
+                    </div>
                 </div>
 
-                {internships.length === 0 ? (
-                    <div className="text-center py-16">
-                        <Briefcase size={48} className="mx-auto text-gray-200 mb-4" />
-                        <p className="text-gray-500 font-medium">No active internships in your department.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto px-8 pb-8">
-                        <table className="w-full text-sm mt-4">
-                            <thead>
-                                <tr className="border-b border-gray-100 dark:border-white/5">
-                                    <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Internship Title</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Applications</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Openings</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50 dark:divide-white/5">
-                                {internships.map(int => {
-                                    const effectiveOpenings = int.openingsCount || (int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0);
-                                    return (
-                                        <tr key={int.id} className="hover:bg-purple-50/30 dark:hover:bg-purple-500/5 transition-all group">
-                                            <td className="py-5 pr-6">
-                                                <p className="font-bold text-gray-800 dark:text-indigo-100">{int.title}</p>
-                                                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 font-medium">{int.location}</p>
-                                            </td>
-                                            <td className="py-4 text-center">
-                                                <span className="text-lg font-black text-gray-800 dark:text-white">{int.applicationsCount}</span>
-                                            </td>
-                                            <td className="py-4 text-center">
-                                                <span className="font-bold text-gray-700 dark:text-slate-300">{int.hiredCount}</span>
-                                                <span className="text-gray-300 mx-1">/</span>
-                                                <span className="text-gray-500">{effectiveOpenings}</span>
-                                            </td>
-                                            <td className="py-5 text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Link
-                                                        to={`/internships/${int.id}/applications`}
-                                                        className="flex items-center gap-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-md active:scale-95"
-                                                    >
-                                                        Review Applications <ChevronRight size={14} />
-                                                    </Link>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-surface-container-high/30">
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Program</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Applications</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Quota Status</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant/5">
+                            {internships.map(int => {
+                                const effectiveOpenings = int.openingsCount || (int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0);
+                                const isFilled = int.hiredCount >= effectiveOpenings && effectiveOpenings > 0;
+                                return (
+                                    <tr key={int.id} className="hover:bg-white dark:hover:bg-slate-800/50 transition-colors group">
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-primary-container/10 rounded-lg flex items-center justify-center text-primary">
+                                                    <span className="material-symbols-outlined">description</span>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                                <div>
+                                                    <p className="text-sm font-bold text-primary">{int.title}</p>
+                                                    <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">{int.location}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <div className="inline-flex flex-col items-center">
+                                                <span className="text-sm font-bold text-primary">{int.applicationsCount}</span>
+                                                <span className="text-[9px] text-outline font-bold uppercase tracking-tighter">Pool Size</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <div className="inline-flex flex-col items-center">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-sm font-bold text-primary">{int.hiredCount}</span>
+                                                    <span className="text-[10px] text-outline">/ {effectiveOpenings}</span>
+                                                </div>
+                                                <span className={`text-[9px] font-bold uppercase tracking-tighter ${isFilled ? 'text-green-600' : 'text-amber-500'}`}>
+                                                    {isFilled ? 'FULFILLED' : 'OPEN'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-right">
+                                            <Link
+                                                to={`/internships/${int.id}/applications`}
+                                                className="bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg hover:opacity-90 transition-all inline-flex items-center gap-2"
+                                            >
+                                                Review Pool <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

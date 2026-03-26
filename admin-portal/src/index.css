@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,8 +8,13 @@
 @layer base {
   html,
   body {
-    @apply bg-slate-50 text-gray-900 min-h-screen antialiased transition-colors duration-200;
-    font-family: 'Source Sans 3', sans-serif;
+    @apply bg-surface text-on-surface min-h-screen antialiased transition-colors duration-200;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
   }
 
   ::selection {

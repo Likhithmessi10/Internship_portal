@@ -14,7 +14,9 @@ const {
     updatePortalConfig,
     getCommitteeDetails,
     updateCommitteeDetails,
-    getUsersByRole
+    getUsersByRole,
+    getStipendDetails,
+    updateStipendDetails
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -46,6 +48,11 @@ router.get('/internships/:id/export', exportApplications);
 router.get('/applications/export/advanced', exportAdvanced);
 router.get('/applications/rejected', getRejectedApplications);
 router.put('/applications/:id', updateApplicationStatus);
+
+// Stipend Management
+router.get('/applications/:id/stipend', getStipendDetails);
+router.put('/applications/:id/stipend', updateStipendDetails);
+
 router.post('/internships/:id/allocate', authorize('ADMIN'), (req, res, next) => {
     const { allocateApplicantsAction } = require('../controllers/adminController');
     allocateApplicantsAction(req, res, next);

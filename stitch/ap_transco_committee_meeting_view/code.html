@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AP Transco Admin Portal - Evaluation Committee Meeting</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-primary": "#a7c8ff",
+                        "surface-container": "#eceef0",
+                        "on-background": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "on-surface-variant": "#43474f",
+                        "outline-variant": "#c3c6d1",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#003366",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdbca",
+                        "surface-variant": "#e0e3e5",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "outline": "#737780",
+                        "tertiary": "#381300",
+                        "on-primary-container": "#799dd6",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1e",
+                        "surface-tint": "#3a5f94",
+                        "secondary": "#515f74",
+                        "surface-bright": "#f7f9fb",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#57657a",
+                        "surface-dim": "#d8dadc",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-container": "#d5e3fc",
+                        "secondary-fixed": "#d5e3fc",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary-container": "#592300",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "on-primary-fixed": "#001b3c",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f2f4f6",
+                        "primary": "#001e40",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "on-tertiary-container": "#d8885c",
+                        "surface-container-high": "#e6e8ea"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .editorial-gutter {
+            margin-left: 3.5rem;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-hidden">
+<!-- SideNavBar (Predicted Component) -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r-0 bg-slate-100 dark:bg-slate-900 flex flex-col py-8 z-50">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight uppercase text-sky-950 dark:text-sky-50 leading-tight">AP Transco</h1>
+<p class="text-[10px] text-slate-500 font-medium">Admin Portal</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200 py-3" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200 py-3" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-medium">Intern Management</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200 py-3" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-medium">Applications</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200 py-3" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-medium">Committees</span>
+</a>
+<!-- Active State: Meetings -->
+<a class="flex items-center gap-4 text-sky-900 dark:text-sky-400 font-semibold border-l-4 border-sky-900 dark:border-sky-400 pl-4 bg-white/50 dark:bg-white/5 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="font-medium">Meetings</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200 py-3" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="font-medium">Reports</span>
+</a>
+</nav>
+<div class="mt-auto px-4 space-y-1">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3 rounded-lg font-semibold text-sm mb-6 flex items-center justify-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Power Project
+            </button>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 transition-colors duration-200 py-2" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 transition-colors duration-200 py-2" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span class="font-medium text-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar (Predicted Component) -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-800/20 flex justify-between items-center px-8 h-16 shadow-sm dark:shadow-none">
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-lg" data-icon="search">search</span>
+<input class="bg-surface-container-high border-none rounded-lg pl-10 pr-4 py-1.5 text-sm w-80 focus:ring-2 focus:ring-sky-500/20 transition-all outline-none" placeholder="Search candidate records..." type="text"/>
+</div>
+<nav class="flex items-center gap-6 font-inter text-sm font-medium">
+<a class="text-slate-500 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors pb-2" href="#">Overview</a>
+<a class="text-sky-900 dark:text-sky-400 border-b-2 border-sky-900 dark:border-sky-400 pb-2" href="#">Analytics</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors pb-2" href="#">Archives</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-surface-container rounded-full transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+<div class="flex items-center gap-3">
+<span class="text-sm font-semibold text-sky-950">Dr. Aris Thorne</span>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-slate-200" data-alt="professional headshot of a middle-aged male academic with glasses and a friendly expression, soft office lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJcxwNk1x1I3Lzfvf6OdrgURve2hcnsi2pSpAhK2PY-olGzxfQvvbRPlFX3cAp_FAw2s5AcQuJcZX6zt3vraEAfbvfHplIMcxRGW7BzeJF49-4jEdHvLCmPJqe0pQ9Lgsfl1IxfeHEUCXL4SmbIfiVZLSP64z-iCMvEyDXgzx1nlnO9WwreleSFQ2tKfElkqF25JpBCZ0oEN4hluKvuJsHwftR0EeatRQGn5UJ_RgMS8mtsizvr7DJSSwnTjnsyJ8JvEnppMjg5A"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 pt-16 h-screen flex flex-col bg-surface">
+<!-- Header Section -->
+<div class="px-8 py-6 flex items-center justify-between border-b border-outline-variant/10">
+<div class="editorial-gutter">
+<div class="flex items-center gap-2 text-xs font-bold text-outline tracking-widest uppercase mb-1">
+<span class="material-symbols-outlined text-xs" data-icon="emergency_recording">emergency_recording</span>
+                    Live Session — Room 402B
+                </div>
+<h2 class="text-3xl font-bold tracking-tight text-primary">Evaluation Committee: Power Grid Simulation Lab</h2>
+<div class="flex items-center gap-4 mt-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-on-secondary-container"></span>
+                        3 Participants Joined
+                    </span>
+<span class="text-sm text-outline">Candidate: <strong class="text-on-surface">Elena Vostrova</strong></span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 text-sm font-semibold text-outline-variant border border-outline-variant/30 rounded-lg hover:bg-surface-container transition-colors">
+                    Pause Session
+                </button>
+<button class="px-6 py-2 text-sm font-semibold bg-error text-white rounded-lg shadow-sm hover:opacity-90 transition-all">
+                    End Meeting
+                </button>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Workspace: Candidate Info & Evaluation -->
+<div class="flex-[1.2] overflow-y-auto p-8 border-r border-outline-variant/10 bg-surface">
+<div class="max-w-4xl mx-auto space-y-10">
+<!-- Candidate Identity Bento -->
+<section>
+<h3 class="text-xs font-bold uppercase tracking-widest text-outline mb-4">Candidate Profile</h3>
+<div class="grid grid-cols-3 gap-6">
+<div class="col-span-2 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 flex gap-6 shadow-sm">
+<img alt="Elena Vostrova profile" class="w-24 h-24 rounded-lg object-cover" data-alt="professional portrait of a young woman with a focused, intelligent expression, clean studio lighting, minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE1_5oHsXHAC_CSLz2N33QrKN7ZW7PKIaxAl5bvNlg-tSQzDd7kvj9k6UVwfw6VwLabAjiuUXOBUiAOSna14oJLSMhiNK5mXYeoSxp6ZlvXL4LpaZ7eajF_3LuaKI9uofbbUnolJZCzcTGIv_W-X-nzqcEcDWla0SIToAYeSbmPjQRww5eYw0nYmxXEUrlRxQXvTa5WvAkmSq1EsttysZaIGEHqeZazwgMi0dE6P6MXs-E9Y2p4-TqK75ybUVPnI2SSW_B4D7g0g"/>
+<div class="flex-1">
+<h4 class="text-xl font-bold text-primary mb-1">Elena Vostrova</h4>
+<p class="text-sm text-outline mb-3">M.Sc. Electrical Engineering, IIT Madras</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container text-[10px] font-bold uppercase tracking-tighter text-outline-variant rounded">Smart Grids</span>
+<span class="px-2 py-1 bg-surface-container text-[10px] font-bold uppercase tracking-tighter text-outline-variant rounded">Power Electronics</span>
+<span class="px-2 py-1 bg-surface-container text-[10px] font-bold uppercase tracking-tighter text-outline-variant rounded">MATLAB/Simulink</span>
+</div>
+</div>
+</div>
+<div class="bg-primary-container p-6 rounded-xl text-on-primary-container flex flex-col justify-between">
+<span class="text-[10px] font-bold uppercase tracking-widest opacity-70">Application Status</span>
+<div class="text-2xl font-bold text-white">Final Interview</div>
+<div class="text-[10px] opacity-70">Submitted: Oct 12, 2023</div>
+</div>
+</div>
+</section>
+<!-- CV Content / Shared Workspace -->
+<section class="bg-surface-container-low p-1 rounded-xl">
+<div class="flex items-center justify-between px-4 py-2">
+<div class="flex gap-4">
+<button class="text-sm font-bold border-b-2 border-primary py-2 px-1">CV &amp; Portfolio</button>
+<button class="text-sm font-medium text-outline py-2 px-1">Case Study Result</button>
+<button class="text-sm font-medium text-outline py-2 px-1">References</button>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="fullscreen">fullscreen</button>
+</div>
+<div class="bg-surface-container-lowest rounded-lg p-8 shadow-inner min-h-[400px]">
+<div class="prose prose-sm max-w-none text-on-surface-variant">
+<h5 class="text-lg font-bold text-primary mb-4">Professional Experience</h5>
+<div class="mb-6">
+<div class="flex justify-between items-baseline mb-1">
+<p class="font-bold text-on-surface">Graduate Engineer Trainee</p>
+<p class="text-xs italic">2021 — Present</p>
+</div>
+<p class="text-sm">Assisted in the implementation of SCADA systems for regional grid control. Conducted load flow analysis for distributed energy resources integration.</p>
+</div>
+<div class="mb-6">
+<div class="flex justify-between items-baseline mb-1">
+<p class="font-bold text-on-surface">Engineering Intern, NTPC</p>
+<p class="text-xs italic">Summer 2020</p>
+</div>
+<p class="text-sm">Analyzed thermal efficiency of power plant subsystems, recommending optimizations that improved operational monitoring precision by 12%.</p>
+</div>
+<hr class="border-outline-variant/20 my-6"/>
+<h5 class="text-lg font-bold text-primary mb-4">Statement of Intent</h5>
+<p class="text-sm leading-relaxed">"My goal in my PRTI role is to bridge the gap between grid stability and renewable energy integration. I believe my background in electrical systems uniquely positions me to contribute to AP Transco's modernization mission..."</p>
+</div>
+</div>
+</section>
+<!-- Evaluation Form -->
+<section class="pb-12">
+<h3 class="text-xs font-bold uppercase tracking-widest text-outline mb-6">Evaluation Scorecard</h3>
+<div class="space-y-8">
+<!-- Criterion: Technical -->
+<div class="grid grid-cols-3 gap-8 items-start">
+<div>
+<p class="font-bold text-primary">Technical Proficiency</p>
+<p class="text-xs text-outline mt-1">Domain knowledge, tool mastery, and problem-solving depth.</p>
+</div>
+<div class="col-span-2 flex items-center gap-4">
+<div class="flex-1 flex justify-between bg-surface-container-high p-1 rounded-lg">
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">1</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">2</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">3</button>
+<button class="w-full py-2 text-sm font-bold rounded bg-primary text-white shadow-md">4</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">5</button>
+</div>
+<input class="bg-transparent border-b border-outline-variant/30 text-sm focus:border-primary outline-none py-1 w-48" placeholder="Notes..." type="text"/>
+</div>
+</div>
+<!-- Criterion: Communication -->
+<div class="grid grid-cols-3 gap-8 items-start">
+<div>
+<p class="font-bold text-primary">Communication</p>
+<p class="text-xs text-outline mt-1">Clarity of thought, articulation, and receptive listening.</p>
+</div>
+<div class="col-span-2 flex items-center gap-4">
+<div class="flex-1 flex justify-between bg-surface-container-high p-1 rounded-lg">
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">1</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">2</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">3</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">4</button>
+<button class="w-full py-2 text-sm font-bold rounded bg-primary text-white shadow-md">5</button>
+</div>
+<input class="bg-transparent border-b border-outline-variant/30 text-sm focus:border-primary outline-none py-1 w-48" placeholder="Notes..." type="text"/>
+</div>
+</div>
+<!-- Criterion: Aptitude -->
+<div class="grid grid-cols-3 gap-8 items-start">
+<div>
+<p class="font-bold text-primary">Operational Aptitude</p>
+<p class="text-xs text-outline mt-1">Safety awareness, adaptability, and ethical considerations.</p>
+</div>
+<div class="col-span-2 flex items-center gap-4">
+<div class="flex-1 flex justify-between bg-surface-container-high p-1 rounded-lg">
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">1</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">2</button>
+<button class="w-full py-2 text-sm font-bold rounded bg-primary text-white shadow-md">3</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">4</button>
+<button class="w-full py-2 text-sm font-bold rounded hover:bg-white transition-all text-outline">5</button>
+</div>
+<input class="bg-transparent border-b border-outline-variant/30 text-sm focus:border-primary outline-none py-1 w-48" placeholder="Notes..." type="text"/>
+</div>
+</div>
+<div class="pt-6 border-t border-outline-variant/10">
+<p class="text-sm font-bold text-primary mb-4">Final Recommendation</p>
+<div class="flex gap-4">
+<button class="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-on-secondary-container bg-secondary-container/20 text-on-secondary-container font-bold hover:bg-secondary-container/40 transition-colors">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+                                        Offer Internship
+                                    </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-error/20 text-error font-bold hover:bg-error/5 transition-colors">
+<span class="material-symbols-outlined" data-icon="cancel">cancel</span>
+                                        Reject Candidate
+                                    </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Right Sidebar: Video Call & Participants -->
+<div class="flex-[0.8] bg-surface-container-low flex flex-col h-full border-l border-outline-variant/10">
+<!-- Video Call Placeholder (Google Meet Style) -->
+<div class="aspect-video bg-slate-900 m-6 rounded-xl overflow-hidden relative shadow-2xl">
+<img alt="Video feed background" class="w-full h-full object-cover opacity-50" data-alt="blurred view of a modern conference room with large windows and digital displays, dark cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD12LTbOIkA7EEv8uYdi77VlWNZ-J193JYO-JfghXjIAklMG05IUX8dqW031xG_MuMpK-7CbpsIducB9kNwOjgrgaAFcKlHDk-XrnFft4FN9IWCA_BQFsJO0Z3J1s2HolR6it8D28AtIDX_vr6ctz-j0mw6M05HwcV79p0zD-P6FCymi01M57wzy_LAIKIc25NfAe7_ww55RsyrGDdM5LeVtoJzueGwhSah-5jD8Mb5xmaSoFaVknX6yIRfJpIUlaYZuD8AHoyf4Q"/>
+<!-- Candidate Feed (Main) -->
+<div class="absolute inset-0 flex flex-col">
+<div class="flex-1 flex items-center justify-center">
+<div class="text-center">
+<div class="w-24 h-24 bg-primary-container rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-white/20">
+<span class="text-white font-bold text-3xl">EV</span>
+</div>
+<p class="text-white font-medium">Elena Vostrova (Candidate)</p>
+<p class="text-white/60 text-xs">Connecting audio...</p>
+</div>
+</div>
+<!-- Call Controls -->
+<div class="h-16 bg-black/40 backdrop-blur-md flex items-center justify-center gap-4 px-4">
+<button class="w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="mic">mic</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="videocam">videocam</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="closed_caption">closed_caption</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-error text-white flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="call_end">call_end</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Participants Status -->
+<div class="px-6 flex-1 flex flex-col">
+<h3 class="text-xs font-bold uppercase tracking-widest text-outline mb-4 flex items-center justify-between">
+                        Committee Status
+                        <span class="text-[10px] font-normal lowercase opacity-60">3 online</span>
+</h3>
+<div class="space-y-3">
+<!-- AP Transco Member (Self) -->
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<img alt="Dr Aris" class="w-8 h-8 rounded-full" data-alt="male academic profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZNjwF9gWWuWcDwtJ7WTYENnNLy41d2cT1iQn7brZuvhRN4NH2Ig0UbjuIboBQjzUeaAYmkraGPft4tDy1eECVAapjchuYLhoIAIjFKnWpARh0cc2k1tws7gzO-C9Fmp0XnIfSDTRb6tvJ726kVOUV-Xmn5L-AY-XKYrhA9CnEtw5jIMv8q_1Xf3J3yIgC8SMg2JCTfFHJhb33x_GktRVns2sygzPph1SbeQS5sCk7vO9-Bu47vi2r6NtumG6vmc_QoZGwjIZhBQ"/>
+<div>
+<p class="text-xs font-bold text-primary">Dr. Aris Thorne (You)</p>
+<p class="text-[10px] text-outline">PRTI Role: Lead Researcher</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-on-secondary-container"></span>
+<span class="material-symbols-outlined text-sm text-outline" data-icon="mic">mic</span>
+</div>
+</div>
+<!-- HOD -->
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<img alt="Sarah Jenkins" class="w-8 h-8 rounded-full" data-alt="female academic professional with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4-Ore267Yn0qEx2ll8bI1Bw8Prjzk6-iYLJl4rCUebNUXcpv9N3wNbzNWxmwwOWmZT9NN79U_CXQyATOldZcvRRxBqBnHrEPHrPQrRtHI4wSu8pG-DpkuRRMHzGUFLMSetAHtknVzAFfUNdqkz9RQIyNQG84ly6-oT6EqhHIj7HEiTQBq9SmG8hcDH7pQTaEURWyVDXzPQgbYzJbUJ8uwEAy8Xwn-DWOmDRAOYmtT4a1Hs0XSICMVwEIxveydmSdWEQkc8nJKtg"/>
+<div>
+<p class="text-xs font-bold text-primary">Dr. Sarah Jenkins</p>
+<p class="text-[10px] text-outline">PRTI Role: Head of Department</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-on-secondary-container"></span>
+<span class="material-symbols-outlined text-sm text-error" data-icon="mic_off">mic_off</span>
+</div>
+</div>
+<!-- Mentor -->
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10 flex items-center justify-between opacity-70">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-[10px] font-bold">MK</div>
+<div>
+<p class="text-xs font-bold text-primary">Prof. Marcus Kael</p>
+<p class="text-[10px] text-outline">PRTI Role: Technical Mentor</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-outline">NOT READY</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+</div>
+</div>
+<!-- Live Meeting Chat/Notes Toggle -->
+<div class="mt-auto mb-6">
+<div class="bg-white rounded-xl shadow-sm border border-outline-variant/10 p-4">
+<div class="flex items-center justify-between mb-4">
+<span class="text-[10px] font-bold text-primary tracking-widest uppercase">Live Session Notes</span>
+<span class="material-symbols-outlined text-sm text-outline" data-icon="edit">edit</span>
+</div>
+<div class="space-y-3 max-h-48 overflow-y-auto pr-2 scrollbar-thin">
+<div class="text-[11px]">
+<span class="font-bold text-primary">Jenkins:</span>
+<span class="text-on-surface-variant">Sound technical understanding of grid stability.</span>
+</div>
+<div class="text-[11px]">
+<span class="font-bold text-primary">Thorne:</span>
+<span class="text-on-surface-variant">Ask about experience with high-voltage simulation tools.</span>
+</div>
+</div>
+<div class="mt-4 flex gap-2">
+<input class="flex-1 text-[11px] bg-surface-container px-3 py-2 rounded border-none outline-none focus:ring-1 focus:ring-primary" placeholder="Add a quick note..." type="text"/>
+<button class="p-2 bg-primary text-white rounded">
+<span class="material-symbols-outlined text-xs" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

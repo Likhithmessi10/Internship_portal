@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -18,14 +19,12 @@ import HodDashboard from './pages/admin/hod/HodDashboard';
 import MentorDashboard from './pages/admin/mentor/MentorDashboard';
 
 const AdminLayout = ({ children }) => (
-  <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-500 selection:bg-indigo-100 dark:selection:bg-indigo-500/30">
+  <div className="min-h-screen bg-surface dark:bg-slate-950 transition-colors duration-500 font-inter">
+    <Sidebar />
     <Navbar />
-    <main className="pt-8 pb-16 px-4 md:px-8 max-w-7xl mx-auto">
+    <main className="ml-64 pt-24 px-8 pb-12 min-h-screen">
       {children}
     </main>
-    <footer className="border-t border-black/5 dark:border-white/5 py-12 text-center text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 dark:text-slate-600">
-      © {new Date().getFullYear()} APTRANSCO · Admin Portal · System Integrated
-    </footer>
   </div>
 );
 

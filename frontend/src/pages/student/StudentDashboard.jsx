@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { Link } from 'react-router-dom';
-import { FileText, Briefcase, GraduationCap, MapPin, AlertCircle, CheckCircle, Clock, ShieldCheck, Zap, Award, BookOpen, User } from 'lucide-react';
+import { FileText, Briefcase, GraduationCap, MapPin, AlertCircle, CheckCircle, Clock, ShieldCheck, Zap, Award, BookOpen, User, X, Landmark, CreditCard, Shield } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 const StudentDashboard = () => {
@@ -10,6 +10,7 @@ const StudentDashboard = () => {
     const { t } = useLanguage();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [stipendModalApp, setStipendModalApp] = useState(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -145,16 +146,26 @@ const StudentDashboard = () => {
                                                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider
                                                     ${app.status === 'PENDING' ? 'bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400' :
                                                         app.status === 'SHORTLISTED' ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-400' :
-                                                            app.status === 'HIRED' ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-400' :
+                                                            app.status === 'HIRED' || app.status === 'CA_APPROVED' ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-400' :
                                                                 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400'
                                                     }`}>
-                                                    {app.status}
+                                                    {app.status === 'CA_APPROVED' ? 'SELECTED' : app.status}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-gray-500 dark:text-slate-400 font-medium flex items-center gap-1">
                                                 <MapPin className="w-3.5 h-3.5" /> {app.internship?.location || 'APTRANSCO'} • Applied on {new Date(app.createdAt).toLocaleDateString()}
                                             </p>
                                         </div>
+                                        {['HIRED', 'CA_APPROVED'].includes(app.status) && (
+                                            <button 
+                                                onClick={() => setStipendModalApp(app)}
+                                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center gap-2
+                                                    ${app.stipend ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-indigo-600 text-white hover:bg-black'}
+                                                `}
+                                            >
+                                                {app.stipend ? <><CheckCircle size={14}/> Bank Details Added</> : <><Landmark size={14}/> Complete Stipend Profile</>}
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -211,6 +222,106 @@ const StudentDashboard = () => {
                         )}
                     </div>
                 </div>
+            </div>
+            {/* Stipend Modal */}
+            {stipendModalApp && (
+                <StipendModal 
+                    application={stipendModalApp} 
+                    onClose={() => setStipendModalApp(null)}
+                    onSuccess={(updatedStipend) => {
+                        setProfile(prev => ({
+                            ...prev,
+                            applications: prev.applications.map(a => 
+                                a.id === stipendModalApp.id ? { ...a, stipend: updatedStipend } : a
+                            )
+                        }));
+                        setStipendModalApp(null);
+                    }}
+                />
+            )}
+        </div>
+    );
+};
+
+const StipendModal = ({ application, onClose, onSuccess }) => {
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState({
+        panNumber: application.stipend?.panNumber || '',
+        bankAccount: application.stipend?.bankAccount || '',
+        ifscCode: application.stipend?.ifscCode || '',
+        bankName: application.stipend?.bankName || '',
+        bankBranch: application.stipend?.bankBranch || ''
+    });
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const res = await api.post(`/students/applications/${application.id}/stipend`, data);
+            alert('Stipend details saved successfully!');
+            onSuccess(res.data.data);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to save stipend details');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-indigo-950/40 backdrop-blur-md" onClick={onClose} />
+            <div className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-white/20">
+                <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/20">
+                            <Landmark size={24} />
+                        </div>
+                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors"><X size={20} /></button>
+                    </div>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter">Stipend Profile</h3>
+                    <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mt-1">Provide your banking details for processing</p>
+                </div>
+                
+                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PAN Card Number</label>
+                            <div className="relative">
+                                <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                                <input type="text" value={data.panNumber} onChange={e => setData({...data, panNumber: e.target.value.toUpperCase()})} placeholder="ABCDE1234F" className="admin-input pl-12 w-full font-mono font-bold" required />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bank Name (Instructor Req)</label>
+                            <div className="relative">
+                                <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                                <input type="text" value={data.bankName} onChange={e => setData({...data, bankName: e.target.value})} placeholder="e.g. State Bank of India" className="admin-input pl-12 w-full font-bold" required />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2 text-xs font-bold text-gray-500 italic px-1">
+                             Mapping instructor fields: `bank_name` and `bank_branch`
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">IFS Code</label>
+                            <input type="text" value={data.ifscCode} onChange={e => setData({...data, ifscCode: e.target.value.toUpperCase()})} placeholder="SBIN0001234" className="admin-input w-full font-mono font-bold" required />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bank Branch</label>
+                            <input type="text" value={data.bankBranch} onChange={e => setData({...data, bankBranch: e.target.value})} placeholder="Main Branch" className="admin-input w-full font-bold" required />
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Number</label>
+                            <div className="relative">
+                                <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                                <input type="text" value={data.bankAccount} onChange={e => setData({...data, bankAccount: e.target.value})} placeholder="300012345678" className="admin-input pl-12 w-full font-mono font-bold" required />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" disabled={loading} className="w-full py-4 bg-indigo-600 hover:bg-black text-white font-black rounded-2xl transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest text-xs">
+                        {loading ? <div className="animate-spin w-5 h-5 border-2 border-white/20 border-t-white rounded-full"></div> : <><CheckCircle size={16}/> Save Details</>}
+                    </button>
+                </form>
             </div>
         </div>
     );

@@ -149,7 +149,8 @@ const getApplications = async (req, res) => {
                 documents: true,
                 mentor: { select: { name: true, email: true } },
                 shortlist: true,
-                attendance: true
+                attendance: true,
+                stipend: true
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -191,7 +192,10 @@ const updateApplicationStatus = async (req, res) => {
     console.log('>>> updateApplicationStatus Triggered for ID:', req.params.id);
     console.log('>>> Payload:', req.body);
     try {
-        const { status, assignedRole, rollNumber, joiningDate, endDate, mentorId, committeeId, score } = req.body;
+        const { 
+            status, assignedRole, rollNumber, joiningDate, endDate, mentorId, committeeId, score,
+            member1Id, member1Score, member2Id, member2Score, member3Id, member3Score
+        } = req.body;
         const applicationId = req.params.id;
 
         const application = await prisma.application.findUnique({
@@ -310,10 +314,22 @@ const updateApplicationStatus = async (req, res) => {
 
         // Add to Shortlist if committeeId is provided
         if (committeeId) {
+            const shortlistData = {
+                committeeId,
+                score: parseInt(score) || 0,
+                decision: status,
+                member1Id: member1Id || undefined,
+                member1Score: member1Score || undefined,
+                member2Id: member2Id || undefined,
+                member2Score: member2Score || undefined,
+                member3Id: member3Id || undefined,
+                member3Score: member3Score || undefined
+            };
+
             await prisma.shortlist.upsert({
                 where: { applicationId },
-                update: { committeeId, score: parseInt(score) || 0, decision: status },
-                create: { applicationId, committeeId, score: parseInt(score) || 0, decision: status }
+                update: shortlistData,
+                create: { ...shortlistData, applicationId }
             });
         }
 
@@ -717,6 +733,43 @@ const getUsersByRole = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Get Stipend Details for an application
+ * @route   GET /api/v1/admin/applications/:id/stipend
+ * @access  Private (Admin)
+ */
+const getStipendDetails = async (req, res) => {
+    try {
+        const stipend = await prisma.stipend.findUnique({
+            where: { applicationId: req.params.id }
+        });
+        res.status(200).json({ success: true, data: stipend });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Update Stipend Details
+ * @route   PUT /api/v1/admin/applications/:id/stipend
+ * @access  Private (Admin)
+ */
+const updateStipendDetails = async (req, res) => {
+    try {
+        const { panNumber, bankAccount, ifscCode, bankName, bankBranch, approvalStatus } = req.body;
+        const stipend = await prisma.stipend.upsert({
+            where: { applicationId: req.params.id },
+            update: { panNumber, bankAccount, ifscCode, bankName, bankBranch, approvalStatus },
+            create: { applicationId: req.params.id, panNumber, bankAccount, ifscCode, bankName, bankBranch, approvalStatus }
+        });
+        res.status(200).json({ success: true, data: stipend });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -733,5 +786,7 @@ module.exports = {
     allocateApplicantsAction,
     getCommitteeDetails,
     updateCommitteeDetails,
-    getUsersByRole
+    getUsersByRole,
+    getStipendDetails,
+    updateStipendDetails
 };

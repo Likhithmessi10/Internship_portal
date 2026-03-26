@@ -9,22 +9,28 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 
 const StatCard = ({ icon: Icon, label, value, color, subtext, onEdit }) => (
-    <div className={`glass-card bg-white/50 dark:bg-indigo-950/40 border-l-4 ${color} dark:border-white/5 premium-shadow rounded-3xl p-6 hover:-translate-y-1 transition-all duration-300 group`}>
-        <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-slate-800 group-hover:scale-110 transition-transform shadow-sm">
-                {React.createElement(Icon, { size: 24, className: "text-indigo-600 dark:text-indigo-400" })}
+    <div className="bg-surface-container-low border border-outline-variant/10 rounded-xl p-8 shadow-sm transition-all hover:translate-y-[-2px]">
+        <div className="flex items-center justify-between mb-6">
+            <div className="shrink-0">
+                <span className="material-symbols-outlined text-primary text-2xl">
+                    {Icon === Briefcase ? 'work' : 
+                     Icon === Users ? 'group' : 
+                     Icon === TrendingUp ? 'trending_up' : 
+                     Icon === CheckCircle ? 'verified' : 
+                     Icon === Clock ? 'schedule' : 'query_stats'}
+                </span>
             </div>
-            <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-indigo-400/60">{label}</span>
-                {onEdit && (
-                    <button onClick={onEdit} className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-indigo-600">
-                        <TrendingUp size={12} />
-                    </button>
-                )}
-            </div>
+            {onEdit && (
+                <button onClick={onEdit} className="p-1.5 hover:bg-surface-container-high rounded transition-colors text-outline">
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                </button>
+            )}
         </div>
-        <p className="text-4xl font-black text-gray-900 dark:text-white mb-2 leading-none">{value}</p>
-        {subtext && <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-slate-500">{subtext}</p>}
+        <div className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-outline">{label}</span>
+            <p className="text-4xl font-black text-primary tracking-tighter leading-none">{value}</p>
+            {subtext && <p className="text-[10px] font-bold uppercase tracking-widest text-outline/50 mt-2">{subtext}</p>}
+        </div>
     </div>
 );
 
@@ -92,21 +98,22 @@ const AdvancedExportModal = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl border border-white/10">
-                <div className="bg-indigo-600 p-6 flex justify-between items-center">
-                    <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2">
-                        <FileSpreadsheet size={20} /> Advanced Export
-                    </h3>
-                    <button onClick={onClose} className="text-white/70 hover:text-white">
-                        <X size={24} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary/20 backdrop-blur-md">
+            <div className="bg-surface-container-low rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10">
+                <div className="bg-white border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
+                    <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined">file_export</span>
+                        <h3 className="text-sm font-bold uppercase tracking-[0.2em]">Institutional Export</h3>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-surface-container-high rounded-lg text-outline transition-colors">
+                        <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
                 <div className="p-8 space-y-4">
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Filter by Internship</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline">Filter by Internship</label>
                         <select 
-                            className="admin-input w-full font-bold"
+                            className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary"
                             value={filters.internshipId}
                             onChange={e => setFilters({...filters, internshipId: e.target.value})}
                         >
@@ -224,14 +231,15 @@ const DepartmentsModal = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl border border-white/10 animate-fade-in-up">
-                <div className="bg-purple-600 p-6 flex justify-between items-center">
-                    <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2">
-                        <Building2 size={20} /> Manage Departments
-                    </h3>
-                    <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
-                        <X size={24} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary/20 backdrop-blur-md">
+            <div className="bg-surface-container-low rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10 animate-fade-in-up">
+                <div className="bg-white border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
+                    <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-primary">corporate_fare</span>
+                        <h3 className="text-sm font-bold uppercase tracking-[0.2em]">Institutional Units</h3>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-surface-container-high rounded-lg text-outline transition-colors">
+                        <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
                 {loading ? (
@@ -422,207 +430,213 @@ const AdminDashboard = () => {
     return (
         <div className="max-w-7xl mx-auto space-y-8">
 
-            {/* Premium Header/Banner */}
-            <div className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-indigo-950 rounded-[2.5rem] p-8 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 dark:border-white/10">
-                {/* Decorative Blur Elements */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500 opacity-10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-xl shadow-inner group-hover:rotate-6 transition-transform">
-                            <BarChart2 className="w-8 h-8 text-emerald-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-3xl font-black font-rajdhani mb-1 text-white flex items-center gap-3 tracking-tight">
-                                {t('dashboard.welcome') || 'WELCOME BACK,'} <span className="text-amber-400">{user?.email?.split('@')[0].toUpperCase()}</span>! 👋
-                            </h1>
-                            <p className="text-indigo-200/60 font-medium text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                                APTRANSCO System Integrated · Admin Portal
-                            </p>
-                        </div>
-                    </div>
-                    {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
-                        <div className="flex items-center gap-4">
-                            <button 
-                                onClick={() => setShowAdvancedExport(true)}
-                                className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-2"
-                            >
-                                <Filter size={18} /> Advanced Export
-                            </button>
-                            {user?.role === 'ADMIN' && (
-                                <button
-                                    onClick={() => setShowDepartments(true)}
-                                    className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-4 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-2"
-                                    title="Manage Departments"
-                                >
-                                    <Building2 size={20} />
-                                </button>
-                            )}
-                            <Link to="/internships/new" className="bg-amber-500 hover:bg-amber-400 text-indigo-950 font-black py-4 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3 group/btn">
-                                <div className="p-1 bg-indigo-950/10 rounded-lg group-hover/btn:rotate-90 transition-transform">
-                                    <Plus className="w-5 h-5" />
-                                </div>
-                                {t('dashboard.new')}
-                            </Link>
-                        </div>
+            {/* Stitch-style Header Section */}
+            <section className="flex justify-between items-end mb-8">
+                <div>
+                    <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Institutional Overview</span>
+                    <h2 className="text-3xl font-bold text-primary tracking-tight">Super Admin Dashboard</h2>
+                </div>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setShowAdvancedExport(true)}
+                        className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors"
+                    >
+                        <Download size={16} /> Advanced Export
+                    </button>
+                    {user?.role === 'ADMIN' && (
+                        <button
+                            onClick={() => setShowDepartments(true)}
+                            className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors"
+                        >
+                            <Building2 size={16} /> Departments
+                        </button>
                     )}
+                    <Link to="/internships/new" className="bg-primary text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
+                        <Plus size={16} /> New Internship
+                    </Link>
                 </div>
-            </div>
+            </section>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                    icon={Briefcase} 
-                    label="Active Internships" 
-                    value={internships.length} 
-                    color="border-indigo-500" 
-                    subtext="Total Live Programs"
-                />
-                <StatCard 
-                    icon={TrendingUp} 
-                    label="Total Openings" 
-                    value={totalAllocated} 
-                    color="border-sky-500" 
-                    subtext="Consolidated Intake" 
-                />
-                <StatCard icon={Users} label="Actual Hired" value={totalHired} color="border-emerald-500" subtext={`${progressPct}% toward ${authorizedTotal > 0 ? 'target' : 'allocation'}`} />
-                <StatCard icon={Clock} label="Net Remaining" value={netRemaining} color="border-amber-500" subtext={netRemaining < 0 ? "Target Exceeded" : "Slots to be filled"} />
-            </div>
-
-            {/* Internship Table */}
-            <div className="glass-card bg-white dark:bg-slate-900/60 border-black/5 dark:border-white/10 rounded-[2.5rem] premium-shadow overflow-hidden transition-all duration-500">
-                <div className="p-8 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-indigo-950/20">
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-4 font-rajdhani uppercase tracking-widest">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl">
-                            <Briefcase size={24} className="text-indigo-600 dark:text-indigo-400" />
+            {/* Bento Grid Stats */}
+            <section className="grid grid-cols-12 gap-6">
+                {/* Main Progress Metric */}
+                <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+                    <div className="flex justify-between items-center mb-10">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Intake Performance Index</h3>
+                        <div className="flex gap-4">
+                            <span className="flex items-center gap-2 text-[10px] font-bold text-sky-600"><span className="w-2 h-2 rounded-full bg-sky-600"></span> APPLICATIONS</span>
+                            <span className="flex items-center gap-2 text-[10px] font-bold text-secondary text-primary"><span className="w-2 h-2 rounded-full bg-primary"></span> HIRED</span>
                         </div>
-                        Internship Management
-                    </h2>
-                    <span className="text-[10px] bg-indigo-600 text-white px-4 py-1.5 rounded-full font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20">{internships.length} Listings</span>
+                    </div>
+                    <div className="h-48 flex items-end justify-between gap-6 px-4">
+                        {internships.slice(0, 7).map((int, idx) => {
+                            const rolesTotal = int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0;
+                            const total = int.openingsCount || rolesTotal;
+                            const hiredHeight = total > 0 ? (int.hiredCount / total) * 100 : 0;
+                            const appHeight = total > 0 ? (int.applicationsCount / (total * 5)) * 100 : 0; // scaled
+                            
+                            return (
+                                <div key={int.id} className="flex-1 bg-surface-container-high rounded-t-lg relative group h-full">
+                                    <div 
+                                        className="absolute bottom-0 w-full bg-sky-200 dark:bg-sky-900/40 rounded-t-lg transition-all group-hover:bg-sky-300" 
+                                        style={{ height: `${Math.min(100, appHeight)}%` }}
+                                    ></div>
+                                    <div 
+                                        className="absolute bottom-0 w-full bg-primary/40 dark:bg-primary/60 rounded-t-lg transition-all group-hover:bg-primary/60"
+                                        style={{ height: `${Math.min(100, hiredHeight)}%` }}
+                                    ></div>
+                                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-[9px] font-bold text-outline text-center uppercase tracking-tighter w-full truncate px-1">
+                                        {int.title.split(' ')[0]}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+                
+                {/* Secondary Metrics Column */}
+                <div className="col-span-12 lg:col-span-4 space-y-6">
+                    <div className="bg-primary-container p-6 rounded-xl text-on-primary-container flex flex-col justify-between h-full">
+                        <div>
+                            <span className="text-[10px] font-bold tracking-widest uppercase opacity-70">Total Intake Goal</span>
+                            <div className="flex items-center justify-between mt-1">
+                                <div className="text-4xl font-extrabold text-white">{totalHired}</div>
+                                <div className="text-xl font-medium text-white/50">/ {effectiveTarget}</div>
+                            </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-[10px] font-medium">Fulfillment Rate</span>
+                                <span className="text-[10px] font-bold">{progressPct}%</span>
+                            </div>
+                            <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                <div className="bg-white h-full transition-all duration-1000" style={{ width: `${progressPct}%` }}></div>
+                            </div>
+                            <p className="text-[9px] mt-2 opacity-60 font-medium">Target based on {authorizedTotal > 0 ? 'Institutional' : 'Project'} caps</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Internship Management Table - Stitch Style */}
+            <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
+                    <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Active Internship Programs</h3>
+                        <p className="text-[10px] text-outline font-medium mt-0.5">Managing {internships.length} live recruitment cycles</p>
+                    </div>
+                    <div className="flex gap-2">
+                         <span className="material-symbols-outlined text-outline cursor-pointer hover:text-primary transition-colors">filter_list</span>
+                         <span className="material-symbols-outlined text-outline cursor-pointer hover:text-primary transition-colors">more_vert</span>
+                    </div>
                 </div>
 
-                {internships.length === 0 ? (
-                    <div className="text-center py-16">
-                        <Briefcase size={48} className="mx-auto text-gray-200 mb-4" />
-                        <p className="text-gray-500 font-medium">No internships created yet.</p>
-                        <Link to="/internships/new" className="mt-4 inline-flex items-center gap-2 text-indigo-600 font-bold hover:underline">
-                            <Plus size={14} /> Create your first internship
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto px-8 pb-8">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-gray-100 dark:border-white/5">
-                                    <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.title')}</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.status')}</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.applications')}</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Openings</th>
-                                    <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] pl-6">Fill Rate</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {internships.map(int => {
-                                    const rolesTotal = int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0;
-                                    const effectiveOpenings = int.openingsCount || rolesTotal;
-                                    const fillPct = effectiveOpenings > 0 ? Math.round((int.hiredCount / effectiveOpenings) * 100) : 0;
-                                    return (
-                                        <tr key={int.id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all group">
-                                            <td className="py-5 pr-6">
-                                                <p className="font-bold text-gray-800 dark:text-indigo-100">{int.title}</p>
-                                                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 font-medium italic underline decoration-indigo-500/20 underline-offset-4">{int.department} · {int.location}</p>
-                                                {int.applicationDeadline && (
-                                                    <p className={`text-xs mt-0.5 font-bold ${new Date(int.applicationDeadline) < new Date() ? 'text-red-500' : 'text-amber-600'}`}>
-                                                        {new Date(int.applicationDeadline) < new Date() ? 'Closed: ' : 'Deadline: '}
-                                                        {new Date(int.applicationDeadline).toLocaleDateString()}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-surface-container-high/30">
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Program Details</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Lifecycle</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Applicants</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Fill Rate</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant/5">
+                            {internships.map(int => {
+                                const rolesTotal = int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0;
+                                const total = int.openingsCount || rolesTotal;
+                                const fillPct = total > 0 ? Math.round((int.hiredCount / total) * 100) : 0;
+                                const isExpired = int.applicationDeadline && new Date(int.applicationDeadline) < new Date();
+
+                                return (
+                                    <tr key={int.id} className="hover:bg-white dark:hover:bg-slate-800/50 transition-colors group">
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-primary-container/10 rounded-lg flex items-center justify-center text-primary">
+                                                    <span className="material-symbols-outlined">work</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-primary">{int.title}</p>
+                                                    <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">
+                                                        {int.department} • {int.location}
                                                     </p>
-                                                )}
-                                            </td>
-                                            <td className="py-4 text-center">
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${int.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${int.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                                                    {int.isActive ? 'Active' : 'Closed'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <div className="flex flex-col items-center">
+                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tighter ${int.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                    {int.isActive ? 'Active' : 'Paused'}
                                                 </span>
-                                            </td>
-                                            <td className="py-4 text-center">
-                                                <span className="text-lg font-black text-gray-800 dark:text-white">{int.applicationsCount}</span>
-                                            </td>
-                                            <td className="py-4 text-center">
-                                                <span className="font-bold text-gray-700 dark:text-slate-300">{int.hiredCount}</span>
-                                                <span className="text-gray-300 dark:text-slate-600 mx-1">/</span>
-                                                <span className="text-gray-500 dark:text-slate-400">{effectiveOpenings}</span>
-                                            </td>
-                                            <td className="py-5 pl-6 w-36">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex-1">
-                                                        <ProgressBar value={int.hiredCount} max={effectiveOpenings}
-                                                            color={fillPct >= 100 ? 'bg-red-500' : fillPct >= 80 ? 'bg-amber-400' : 'bg-emerald-500'} />
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-gray-400 w-8 text-right underline decoration-indigo-500/20 underline-offset-4">{fillPct}%</span>
+                                                {int.applicationDeadline && (
+                                                    <span className={`text-[9px] mt-1 font-bold ${isExpired ? 'text-error' : 'text-outline'}`}>
+                                                        {isExpired ? 'EXPIRED' : `DUE: ${new Date(int.applicationDeadline).toLocaleDateString()}`}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <div className="inline-flex flex-col items-center">
+                                                <span className="text-sm font-bold text-primary">{int.applicationsCount}</span>
+                                                <span className="text-[9px] text-outline font-bold uppercase tracking-tighter">Submitted</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <div className="flex flex-col items-center w-32 mx-auto">
+                                                <div className="flex justify-between w-full mb-1">
+                                                    <span className="text-[9px] font-bold text-outline">{int.hiredCount}/{total}</span>
+                                                    <span className="text-[9px] font-bold text-primary">{fillPct}%</span>
                                                 </div>
-                                            </td>
-                                            <td className="py-5">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Link
-                                                        to={`/internships/${int.id}/applications`}
-                                                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
-                                                    >
-                                                        Review <ChevronRight size={12} />
-                                                    </Link>
-                                                    {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
-                                                        <>
-                                                            <input
-                                                                type="date"
-                                                                className="hidden"
-                                                                id={`date-${int.id}`}
-                                                                onChange={(e) => handleExtendDeadline(int.id, e.target.value)}
-                                                            />
-                                                            <button
-                                                                onClick={() => { try { document.getElementById(`date-${int.id}`).showPicker(); } catch { const d = prompt('Enter new date YYYY-MM-DD'); if (d !== null) handleExtendDeadline(int.id, d); } }}
-                                                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                                title="Extend/Change Deadline"
-                                                            >
-                                                                <Calendar size={15} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleExport(int.id, int.title)}
-                                                                disabled={exporting === int.id}
-                                                                className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
-                                                                title="Export Excel"
-                                                            >
-                                                                {exporting === int.id ? <span className="animate-spin w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full" /> : <Download size={15} />}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleToggle(int.id)}
-                                                                disabled={toggling === int.id}
-                                                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                                title={int.isActive ? 'Close applications' : 'Open applications'}
-                                                            >
-                                                                {int.isActive ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(int.id, int.title)}
-                                                                disabled={deleting === int.id}
-                                                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                                title="Delete"
-                                                            >
-                                                                <Trash2 size={15} />
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                <div className="w-full bg-surface-container-high h-1 rounded-full overflow-hidden">
+                                                    <div className={`h-full transition-all duration-500 ${fillPct >= 100 ? 'bg-primary' : 'bg-sky-500'}`} style={{ width: `${fillPct}%` }}></div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Link
+                                                    to={`/internships/${int.id}/applications`}
+                                                    className="p-1 text-outline hover:text-primary hover:bg-surface-container-high rounded transition-all"
+                                                    title="Review Applications"
+                                                >
+                                                    <span className="material-symbols-outlined text-lg">visibility</span>
+                                                </Link>
+                                                {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleToggle(int.id)}
+                                                            className={`p-1 rounded transition-all ${int.isActive ? 'text-amber-600 hover:bg-amber-50' : 'text-green-600 hover:bg-green-50'}`}
+                                                            title={int.isActive ? 'Suspend Program' : 'Activate Program'}
+                                                        >
+                                                            <span className="material-symbols-outlined text-lg">{int.isActive ? 'pause_circle' : 'play_circle'}</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleExport(int.id, int.title)}
+                                                            className="p-1 text-outline hover:text-green-600 hover:bg-green-50 rounded transition-all"
+                                                            title="Institutional Export"
+                                                        >
+                                                            <span className="material-symbols-outlined text-lg">download</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(int.id, int.title)}
+                                                            className="p-1 text-outline hover:text-error hover:bg-error/5 rounded transition-all"
+                                                            title="Purge Record"
+                                                        >
+                                                            <span className="material-symbols-outlined text-lg">delete</span>
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
             {showAdvancedExport && <AdvancedExportModal onClose={() => setShowAdvancedExport(false)} />}
             {showDepartments && <DepartmentsModal onClose={() => setShowDepartments(false)} />}
         </div>

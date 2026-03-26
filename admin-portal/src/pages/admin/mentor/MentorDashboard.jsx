@@ -7,68 +7,61 @@ const MentorDashboard = () => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-fade-in relative z-10 pb-20">
-            {/* Header */}
-            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 rounded-[2.5rem] p-8 mt-6 text-white shadow-2xl relative overflow-hidden border border-white/5">
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-sky-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
-
-                <div className="relative z-10 flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-xl shadow-inner">
-                        <Network className="w-8 h-8 text-sky-400" />
-                    </div>
+            {/* Stitch-style Header Section */}
+            <section className="flex justify-between items-end mb-8 pt-4">
+                <div>
+                    <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Mentorship Portal</span>
+                    <h2 className="text-3xl font-bold text-primary tracking-tight">Active Mentoring Sessions</h2>
+                </div>
+                <div className="flex gap-3 text-right">
                     <div>
-                        <h1 className="text-3xl font-black font-rajdhani mb-1 flex items-center gap-3">
-                            MENTOR PORTAL, <span className="text-sky-400">{user?.name || user?.email?.split('@')[0]}</span>!
-                        </h1>
-                        <p className="text-indigo-200/60 font-medium text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                            Assigned Intern Monitoring & Attendance
-                        </p>
+                        <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Current Period</p>
+                        <p className="text-sm font-bold text-primary">MAR - APR 2024</p>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            {/* Mentor Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="glass-card bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2.5 rounded-xl bg-sky-100 text-sky-600"><Users size={20} /></div>
-                        <h3 className="font-bold text-slate-700 dark:text-slate-300">My Interns</h3>
+            {/* Bento Grid Stats */}
+            <section className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Active Interns</span>
+                    <div className="text-4xl font-extrabold text-primary mt-2">0</div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-1 rounded w-fit uppercase">
+                        <span className="material-symbols-outlined text-xs">group</span> Assigned Students
                     </div>
-                    <p className="text-4xl font-black text-slate-800 dark:text-white">0</p>
-                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">Currently Assigned</p>
                 </div>
-                
-                <div className="glass-card bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600"><Activity size={20} /></div>
-                        <h3 className="font-bold text-slate-700 dark:text-slate-300">Avg Attendance</h3>
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Avg Attendance</span>
+                    <div className="text-4xl font-extrabold text-primary mt-2">--%</div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded w-fit uppercase">
+                         Engagement Score
                     </div>
-                    <p className="text-4xl font-black text-slate-800 dark:text-white">--%</p>
-                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">Overall Performance</p>
+                </div>
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Pending Reviews</span>
+                    <div className="text-4xl font-extrabold text-primary mt-2">0</div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded w-fit uppercase">
+                        <span className="material-symbols-outlined text-xs">history_edu</span> Tasks
+                    </div>
+                </div>
+            </section>
+
+            {/* Allocated Students Table - Stitch Style */}
+            <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
+                    <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Student Cohort</h3>
+                        <p className="text-[10px] text-outline font-medium mt-0.5">Monitoring active learners under your guidance</p>
+                    </div>
+                    <div className="flex gap-2">
+                         <span className="material-symbols-outlined text-outline cursor-pointer hover:text-primary transition-colors">download</span>
+                    </div>
                 </div>
 
-                <div className="glass-card bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600"><Clock size={20} /></div>
-                        <h3 className="font-bold text-slate-700 dark:text-slate-300">Pending Tasks</h3>
-                    </div>
-                    <p className="text-4xl font-black text-slate-800 dark:text-white">0</p>
-                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">Requires Review</p>
-                </div>
-            </div>
-
-            {/* Interns List Mockup */}
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                    <h2 className="text-lg font-black uppercase tracking-widest text-slate-800 dark:text-white flex items-center gap-3">
-                        <Briefcase size={20} className="text-sky-500" /> Allocated Students
-                    </h2>
-                </div>
-                <div className="p-16 text-center">
-                    <BookOpen size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
-                    <p className="text-slate-500 font-bold mb-2">No interns assigned to you yet.</p>
-                    <p className="text-slate-400 text-sm">Once the HOD assigns candidates to your mentorship, they will appear here.</p>
+                <div className="p-16 text-center bg-white">
+                    <span className="material-symbols-outlined text-outline/30 text-6xl mb-4">school</span>
+                    <p className="text-outline font-bold mb-2">No interns assigned yet</p>
+                    <p className="text-outline/60 text-[10px] uppercase font-bold tracking-widest">Assignments will appear once finalized by HOD</p>
                 </div>
             </div>
         </div>

@@ -433,193 +433,145 @@ const PrtiDashboard = () => {
     return (
         <div className="max-w-7xl mx-auto space-y-8">
 
-            {/* Premium Header/Banner */}
-            <div className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-indigo-950 rounded-[2.5rem] p-8 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 dark:border-white/10">
-                {/* Decorative Blur Elements */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500 opacity-10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
+            {/* Stitch-style Header Section */}
+            <section className="flex justify-between items-end mb-8">
+                <div>
+                    <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Institutional Coordination</span>
+                    <h2 className="text-3xl font-bold text-primary tracking-tight">PRTI Admin Dashboard</h2>
+                </div>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setShowAdvancedExport(true)}
+                        className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors"
+                    >
+                        <Download size={16} /> Advanced Export
+                    </button>
+                    <Link to="/internships/new" className="bg-primary text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
+                        <Plus size={16} /> New Internship
+                    </Link>
+                </div>
+            </section>
 
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-xl shadow-inner group-hover:rotate-6 transition-transform">
-                            <BarChart2 className="w-8 h-8 text-emerald-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-3xl font-black font-rajdhani mb-1 text-white flex items-center gap-3 tracking-tight">
-                                PRTI DASHBOARD, <span className="text-amber-400">{user?.name || user?.email?.split('@')[0]}</span>! 👋
-                            </h1>
-                            <p className="text-indigo-200/60 font-medium text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                                Department Internship Posting & Committee Management
-                            </p>
+            {/* Bento Grid Stats */}
+            <section className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+                    <div className="flex justify-between items-center mb-10">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Prgram Performance Index</h3>
+                        <div className="flex gap-4 text-[10px] font-bold">
+                            <span className="flex items-center gap-2 text-sky-600"><span className="w-2 h-2 rounded-full bg-sky-600"></span> APPLICANTS</span>
+                            <span className="flex items-center gap-2 text-primary"><span className="w-2 h-2 rounded-full bg-primary"></span> HIRED</span>
                         </div>
                     </div>
-                    {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
-                        <div className="flex items-center gap-4">
-                            <button 
-                                onClick={() => setShowAdvancedExport(true)}
-                                className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-2xl transition-all backdrop-blur-md border border-white/10 flex items-center gap-2"
-                            >
-                                <Filter size={18} /> Advanced Export
-                            </button>
-                            <Link to="/internships/new" className="bg-amber-500 hover:bg-amber-400 text-indigo-950 font-black py-4 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3 group/btn">
-                                <div className="p-1 bg-indigo-950/10 rounded-lg group-hover/btn:rotate-90 transition-transform">
-                                    <Plus className="w-5 h-5" />
+                    <div className="h-40 flex items-end justify-between gap-6 px-4">
+                        {internships.slice(0, 8).map((int) => {
+                            const rolesTotal = int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0;
+                            const total = int.openingsCount || rolesTotal;
+                            const h1 = total > 0 ? (int.hiredCount / total) * 100 : 0;
+                            const h2 = total > 0 ? (int.applicationsCount / (total * 5)) * 100 : 0;
+                            return (
+                                <div key={int.id} className="flex-1 bg-surface-container-high rounded-t-lg relative group h-full">
+                                    <div className="absolute bottom-0 w-full bg-sky-100 rounded-t-lg" style={{ height: `${Math.min(100, h2)}%` }}></div>
+                                    <div className="absolute bottom-0 w-full bg-primary/40 rounded-t-lg" style={{ height: `${Math.min(100, h1)}%` }}></div>
                                 </div>
-                                {t('dashboard.new')}
-                            </Link>
-                        </div>
-                    )}
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                    icon={Briefcase} 
-                    label="Active Internships" 
-                    value={internships.length} 
-                    color="border-indigo-500" 
-                    subtext="Total Live Programs"
-                />
-                <StatCard 
-                    icon={TrendingUp} 
-                    label="Total Openings" 
-                    value={totalAllocated} 
-                    color="border-sky-500" 
-                    subtext="Consolidated Intake" 
-                />
-                <StatCard icon={Users} label="Actual Hired" value={totalHired} color="border-emerald-500" subtext={`${progressPct}% toward ${authorizedTotal > 0 ? 'target' : 'allocation'}`} />
-                <StatCard icon={Clock} label="Net Remaining" value={netRemaining} color="border-amber-500" subtext={netRemaining < 0 ? "Target Exceeded" : "Slots to be filled"} />
-            </div>
-
-            {/* Internship Table */}
-            <div className="glass-card bg-white dark:bg-slate-900/60 border-black/5 dark:border-white/10 rounded-[2.5rem] premium-shadow overflow-hidden transition-all duration-500">
-                <div className="p-8 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-indigo-950/20">
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-4 font-rajdhani uppercase tracking-widest">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl">
-                            <Briefcase size={24} className="text-indigo-600 dark:text-indigo-400" />
+                <div className="col-span-12 lg:col-span-4 bg-primary-container p-6 rounded-xl text-on-primary-container flex flex-col justify-between">
+                    <div>
+                         <span className="text-[10px] font-bold tracking-widest uppercase opacity-70">Global Fulfillment</span>
+                         <div className="flex items-end justify-between mt-2">
+                            <div className="text-4xl font-extrabold text-white">{totalHired}</div>
+                            <div className="text-xl font-medium text-white/50 pb-1">/ {effectiveTarget}</div>
+                         </div>
+                    </div>
+                    <div className="mt-6">
+                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-white h-full" style={{ width: `${progressPct}%` }}></div>
                         </div>
-                        Internship Management
-                    </h2>
-                    <span className="text-[10px] bg-indigo-600 text-white px-4 py-1.5 rounded-full font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20">{internships.length} Listings</span>
+                        <p className="text-[9px] mt-2 opacity-60 font-medium">Institutional Target Status</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Internship Management Table - Stitch Style */}
+            <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
+                    <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Master Internship Directory</h3>
+                        <p className="text-[10px] text-outline font-medium mt-0.5">Overseeing {internships.length} institutional recruitment cycles</p>
+                    </div>
+                    <div className="flex gap-2">
+                         <span className="material-symbols-outlined text-outline cursor-pointer hover:text-primary transition-colors">filter_list</span>
+                    </div>
                 </div>
 
-                {internships.length === 0 ? (
-                    <div className="text-center py-16">
-                        <Briefcase size={48} className="mx-auto text-gray-200 mb-4" />
-                        <p className="text-gray-500 font-medium">No internships created yet.</p>
-                        <Link to="/internships/new" className="mt-4 inline-flex items-center gap-2 text-indigo-600 font-bold hover:underline">
-                            <Plus size={14} /> Create your first internship
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto px-8 pb-8">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-gray-100 dark:border-white/5">
-                                    <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.title')}</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.status')}</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Openings</th>
-                                    <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] pl-6">Fill Rate</th>
-                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">{t('dashboard.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {internships.map(int => {
-                                    const rolesTotal = int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0;
-                                    const effectiveOpenings = int.openingsCount || rolesTotal;
-                                    const fillPct = effectiveOpenings > 0 ? Math.round((int.hiredCount / effectiveOpenings) * 100) : 0;
-                                    return (
-                                        <tr key={int.id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all group">
-                                            <td className="py-5 pr-6">
-                                                <p className="font-bold text-gray-800 dark:text-indigo-100">{int.title}</p>
-                                                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 font-medium italic underline decoration-indigo-500/20 underline-offset-4">{int.department} · {int.location}</p>
-                                                {int.applicationDeadline && (
-                                                    <p className={`text-xs mt-0.5 font-bold ${new Date(int.applicationDeadline) < new Date() ? 'text-red-500' : 'text-amber-600'}`}>
-                                                        {new Date(int.applicationDeadline) < new Date() ? 'Closed: ' : 'Deadline: '}
-                                                        {new Date(int.applicationDeadline).toLocaleDateString()}
-                                                    </p>
-                                                )}
-                                            </td>
-                                            <td className="py-4 text-center">
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${int.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${int.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                                                    {int.isActive ? 'Active' : 'Closed'}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 text-center">
-                                                <span className="font-bold text-gray-700 dark:text-slate-300">{int.hiredCount}</span>
-                                                <span className="text-gray-300 dark:text-slate-600 mx-1">/</span>
-                                                <span className="text-gray-500 dark:text-slate-400">{effectiveOpenings}</span>
-                                            </td>
-                                            <td className="py-5 pl-6 w-36">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex-1">
-                                                        <ProgressBar value={int.hiredCount} max={effectiveOpenings}
-                                                            color={fillPct >= 100 ? 'bg-red-500' : fillPct >= 80 ? 'bg-amber-400' : 'bg-emerald-500'} />
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-gray-400 w-8 text-right underline decoration-indigo-500/20 underline-offset-4">{fillPct}%</span>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-surface-container-high/30">
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Program Details</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Applicants</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Fill Rate</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Coordination</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant/5">
+                            {internships.map(int => {
+                                const rolesTotal = int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0;
+                                const total = int.openingsCount || rolesTotal;
+                                const fillPct = total > 0 ? Math.round((int.hiredCount / total) * 100) : 0;
+                                const isExpired = int.applicationDeadline && new Date(int.applicationDeadline) < new Date();
+
+                                return (
+                                    <tr key={int.id} className="hover:bg-white dark:hover:bg-slate-800/50 transition-colors group">
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-primary-container/10 rounded-lg flex items-center justify-center text-primary">
+                                                    <span className="material-symbols-outlined">account_balance</span>
                                                 </div>
-                                            </td>
-                                            <td className="py-5">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => setCommitteeModalData(int)}
-                                                        className="flex items-center gap-1 px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-lg transition-colors shadow-md"
-                                                    >
-                                                        <Video size={12} /> Committee Mgt
-                                                    </button>
-                                                    {['ADMIN', 'CE_PRTI'].includes(user?.role) && (
-                                                        <>
-                                                            <input
-                                                                type="date"
-                                                                className="hidden"
-                                                                id={`date-${int.id}`}
-                                                                onChange={(e) => handleExtendDeadline(int.id, e.target.value)}
-                                                            />
-                                                            <button
-                                                                onClick={() => { try { document.getElementById(`date-${int.id}`).showPicker(); } catch { const d = prompt('Enter new date YYYY-MM-DD'); if (d !== null) handleExtendDeadline(int.id, d); } }}
-                                                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                                title="Extend/Change Deadline"
-                                                            >
-                                                                <Calendar size={15} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleExport(int.id, int.title)}
-                                                                disabled={exporting === int.id}
-                                                                className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
-                                                                title="Export Excel"
-                                                            >
-                                                                {exporting === int.id ? <span className="animate-spin w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full" /> : <Download size={15} />}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleToggle(int.id)}
-                                                                disabled={toggling === int.id}
-                                                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                                title={int.isActive ? 'Close applications' : 'Open applications'}
-                                                            >
-                                                                {int.isActive ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(int.id, int.title)}
-                                                                disabled={deleting === int.id}
-                                                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                                title="Delete"
-                                                            >
-                                                                <Trash2 size={15} />
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                <div>
+                                                    <p className="text-sm font-bold text-primary">{int.title}</p>
+                                                    <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">{int.department} • {int.location}</p>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <div className="inline-flex flex-col items-center">
+                                                <span className="text-sm font-bold text-primary">{int.applicationsCount}</span>
+                                                <span className="text-[9px] text-outline font-bold uppercase tracking-tighter">Pool Size</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <div className="inline-flex flex-col items-baseline gap-1">
+                                                <span className="text-sm font-bold text-primary">{fillPct}%</span>
+                                                <div className="w-16 bg-surface-container-high h-1 rounded-full overflow-hidden">
+                                                    <div className="bg-primary h-full" style={{ width: `${fillPct}%` }}></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => setCommitteeModalData(int)}
+                                                    className="bg-surface-container-high text-primary text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-lg hover:bg-primary hover:text-white transition-all inline-flex items-center gap-2"
+                                                >
+                                                    <span className="material-symbols-outlined text-xs">groups</span> Committee
+                                                </button>
+                                                <button
+                                                    onClick={() => handleExport(int.id, int.title)}
+                                                    className="p-2 text-outline hover:text-green-600 rounded transition-all"
+                                                >
+                                                    <span className="material-symbols-outlined text-lg">download</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {showAdvancedExport && <AdvancedExportModal onClose={() => setShowAdvancedExport(false)} />}
             {committeeModalData && (

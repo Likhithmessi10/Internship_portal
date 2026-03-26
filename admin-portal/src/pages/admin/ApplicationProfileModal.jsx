@@ -54,9 +54,9 @@ const DocViewer = ({ url, label, onClose }) => {
 };
 
 const InfoRow = ({ label, value }) => (
-    <div className="flex justify-between py-1.5 border-b border-gray-50 last:border-0">
-        <span className="text-xs text-gray-400 font-medium">{label}</span>
-        <span className="text-xs text-gray-800 font-semibold text-right max-w-xs">{value || '—'}</span>
+    <div className="flex justify-between py-2 border-b border-outline-variant/5 last:border-0">
+        <span className="text-[10px] text-outline font-bold uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] text-primary font-bold text-right max-w-xs uppercase">{value || '—'}</span>
     </div>
 );
 
@@ -68,18 +68,18 @@ const Badge = ({ yes, label }) => (
 );
 
 const DocRow = ({ doc, label, onView }) => (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
-        <div className="flex items-center gap-2.5">
-            <FileText size={15} className={doc ? 'text-indigo-500' : 'text-gray-300'} />
-            <span className={`text-sm font-semibold ${doc ? 'text-gray-700' : 'text-gray-300'}`}>{label}</span>
+    <div className="flex items-center justify-between p-4 rounded-lg bg-surface-container-high/40 border border-outline-variant/10">
+        <div className="flex items-center gap-3">
+             <span className={`material-symbols-outlined text-lg ${doc ? 'text-primary' : 'text-outline/30'}`}>description</span>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${doc ? 'text-primary' : 'text-outline/30'}`}>{label}</span>
         </div>
         {doc ? (
             <button onClick={() => onView(doc.url, label)}
-                className="text-xs px-3.5 py-1.5 bg-indigo-100 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold rounded-lg transition-colors">
-                View Fullscreen
+                className="text-[9px] px-3 py-1.5 bg-primary text-white font-bold rounded uppercase tracking-widest hover:opacity-90 transition-all">
+                View File
             </button>
         ) : (
-            <span className="text-xs text-gray-300 italic px-2">Not uploaded</span>
+            <span className="text-[9px] text-outline/30 font-bold uppercase tracking-widest">Missing</span>
         )}
     </div>
 );
@@ -94,6 +94,11 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     const [endDate, setEndDate] = useState('');
     const [mentorIdInput, setMentorIdInput] = useState('');
     const [interviewScore, setInterviewScore] = useState('');
+    
+    // Instructor Schema fields
+    const [member1Score, setMember1Score] = useState('');
+    const [member2Score, setMember2Score] = useState('');
+    const [member3Score, setMember3Score] = useState('');
 
     if (!application) return null;
     const { student, documents, status, trackingId, createdAt } = application;
@@ -118,7 +123,13 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
 
     const handleCommitteeSelect = () => {
         if (!interviewScore) return alert('Enter an interview score (1-100).');
-        updateStatus('CA_APPROVED', { score: interviewScore, committeeId: user.id });
+        updateStatus('CA_APPROVED', { 
+            score: interviewScore, 
+            committeeId: internship.committee?.id || user.id,
+            member1Score: member1Score || undefined,
+            member2Score: member2Score || undefined,
+            member3Score: member3Score || undefined
+        });
     };
 
     const handleHire = () => {
@@ -139,98 +150,83 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
 
     return (
         <>
-            {/* Main modal overlay */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-                <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden z-10">
+                <div className="absolute inset-0 bg-secondary/20 backdrop-blur-md" onClick={onClose} />
+                <div className="relative bg-surface-container-low rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden z-10 border border-outline-variant/10">
 
-                    {/* Header */}
-                    <div className="shrink-0 bg-white border-b border-gray-100 px-8 py-5 flex items-center justify-between z-10">
-                        <div className="flex items-center gap-4">
+                    {/* Stitch-style Header Section */}
+                    <div className="shrink-0 bg-white border-b border-outline-variant/10 px-8 py-6 flex items-center justify-between">
+                        <div className="flex items-center gap-5">
                             {photoDoc || student?.photoUrl ? (
                                 <img
                                     src={getMediaUrl(photoDoc ? photoDoc.url : student.photoUrl)}
-                                    alt="Passport"
-                                    className="w-12 h-12 rounded-xl object-cover cursor-pointer border-2 border-indigo-100 shadow-sm transition-transform hover:scale-105"
-                                    onClick={() => openViewer(photoDoc ? photoDoc.url : student.photoUrl, 'Passport Photo')}
-                                    title="Click to view full photo"
+                                    alt="Candidate"
+                                    className="w-14 h-14 rounded-lg object-cover ring-2 ring-primary/10 shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                                    onClick={() => openViewer(photoDoc ? photoDoc.url : student.photoUrl, 'Candidate Photo')}
                                 />
                             ) : (
-                                <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md">
+                                <div className="w-14 h-14 rounded-lg bg-primary flex items-center justify-center text-white font-extrabold text-2xl uppercase shadow-md">
                                     {student?.fullName?.charAt(0)}
                                 </div>
                             )}
                             <div>
-                                <p className="font-black text-gray-900 text-lg leading-tight">{student?.fullName}</p>
-                                <p className="text-xs text-gray-400 font-medium mt-0.5">{trackingId} · Applied {new Date(createdAt).toLocaleDateString()}</p>
+                                <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-0.5 block">Application Profile</span>
+                                <h2 className="text-2xl font-bold text-primary tracking-tight leading-none">{student?.fullName}</h2>
+                                <p className="text-[10px] text-outline font-bold mt-1.5 tracking-wider uppercase">ID: {trackingId} · SUBMITTED {new Date(createdAt).toLocaleDateString()}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1 rounded-full text-xs font-black ring-1 ring-inset ring-black/5 ${statusColor}`}>{status}</span>
-                            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-900">
-                                <X size={20} />
+                        <div className="flex items-center gap-4">
+                            <span className="px-3 py-1 bg-primary/10 rounded text-[10px] font-bold text-primary uppercase tracking-[0.15em] border border-primary/20">{status}</span>
+                            <button onClick={onClose} className="w-10 h-10 rounded-lg hover:bg-surface-container-high flex items-center justify-center text-outline transition-colors">
+                                <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-                        {/* Personal */}
-                        <section>
-                            <h3 className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <User size={14} /> Personal Details
-                            </h3>
-                            <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                                <InfoRow label="Phone" value={student?.phone} />
-                                <InfoRow label="Date of Birth" value={student?.dob ? new Date(student.dob).toLocaleDateString() : null} />
-                                <InfoRow label="Aadhaar" value={student?.aadhar ? `XXXX XXXX ${student.aadhar.slice(-4)}` : null} />
-                                <InfoRow label="Address" value={student?.address} />
-                            </div>
-                        </section>
+                    <div className="p-10 space-y-10 overflow-y-auto flex-1 custom-scrollbar bg-white">
+                        {/* Section Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            {/* Personal */}
+                            <section>
+                                <div className="flex items-center gap-2 mb-4">
+                                     <span className="material-symbols-outlined text-primary text-xl">person</span>
+                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Personal Details</h3>
+                                </div>
+                                <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10">
+                                    <InfoRow label="Phone" value={student?.phone} />
+                                    <InfoRow label="Date of Birth" value={student?.dob ? new Date(student.dob).toLocaleDateString() : null} />
+                                    <InfoRow label="Aadhaar" value={student?.aadhar ? `XXXX XXXX ${student.aadhar.slice(-4)}` : null} />
+                                    <InfoRow label="Address" value={student?.address} />
+                                </div>
+                            </section>
 
-                        {/* Academic */}
-                        <section>
-                            <h3 className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <GraduationCap size={14} /> Academic Details
-                            </h3>
-                            <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                                <InfoRow label="College" value={student?.collegeName} />
-                                <InfoRow label="Degree & Branch" value={student ? `${student.degree} – ${student.branch}` : null} />
-                                <InfoRow label="Year of Study" value={student?.yearOfStudy} />
-                                <InfoRow label="CGPA" value={student?.cgpa} />
-                                <InfoRow label="Tier" value={student?.collegeCategory} />
-                                {student?.nirfRanking && <InfoRow label="NIRF Rank" value={`#${student.nirfRanking}`} />}
-                                <InfoRow label="Allocated Roll Number" value={student?.rollNumber} />
-                                <InfoRow label="College Roll Number" value={student?.collegeRollNumber} />
-                            </div>
-                        </section>
+                            {/* Academic */}
+                            <section>
+                                <div className="flex items-center gap-2 mb-4">
+                                     <span className="material-symbols-outlined text-primary text-xl">school</span>
+                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Academic Profile</h3>
+                                </div>
+                                <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10">
+                                    <InfoRow label="College" value={student?.collegeName} />
+                                    <InfoRow label="Year of Study" value={student?.yearOfStudy} />
+                                    <InfoRow label="CGPA" value={student?.cgpa} />
+                                    <InfoRow label="Tier" value={student?.collegeCategory} />
+                                    <InfoRow label="NIRF Rank" value={student?.nirfRanking ? `#${student.nirfRanking}` : 'N/A'} />
+                                    <InfoRow label="Assigned ID" value={student?.rollNumber} />
+                                </div>
+                            </section>
+                        </div>
 
-                        {/* Highlights */}
+                        {/* Full Width Sections */}
                         <section>
-                            <h3 className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Award size={14} /> Profile Highlights
-                            </h3>
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                <Badge yes={student?.hasExperience} label="Experience" />
-                                <Badge yes={student?.hasProjects} label="Projects" />
-                                <Badge yes={student?.hasCertifications} label="Certifications" />
+                            <div className="flex items-center gap-2 mb-4">
+                                 <span className="material-symbols-outlined text-primary text-xl">description</span>
+                                 <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Documentation Pool</h3>
                             </div>
-                            <div className="space-y-2">
-                                {student?.skills && <div className="p-4 bg-indigo-50/50 border border-indigo-100/50 rounded-xl text-sm text-gray-700 leading-relaxed"><strong className="text-indigo-900 block mb-1 text-xs">Skills</strong> {student.skills}</div>}
-                                {student?.experienceDesc && <div className="p-4 bg-indigo-50/50 border border-indigo-100/50 rounded-xl text-sm text-gray-700 leading-relaxed"><strong className="text-indigo-900 block mb-1 text-xs">Experience</strong> {student.experienceDesc}</div>}
-                                {student?.projectsDesc && <div className="p-4 bg-indigo-50/50 border border-indigo-100/50 rounded-xl text-sm text-gray-700 leading-relaxed"><strong className="text-indigo-900 block mb-1 text-xs">Projects</strong> {student.projectsDesc}</div>}
-                            </div>
-                        </section>
-
-                        {/* Documents */}
-                        <section>
-                            <h3 className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <BookOpen size={14} /> Documents Uploaded
-                            </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {internship?.requiredDocuments && internship.requiredDocuments.length > 0 ? (
                                     internship.requiredDocuments.map(reqDoc => {
                                         let doc = getDoc(reqDoc.id, reqDoc.label);
-                                        // Legacy handling for NOC/Principal letter IDs
                                         if (!doc) {
                                             if (reqDoc.id === 'NOC_LETTER') doc = getDoc('PRINCIPAL_LETTER', 'Principal Letter');
                                             else if (reqDoc.id === 'PRINCIPAL_LETTER') doc = getDoc('NOC_LETTER', 'NOC Letter');
@@ -248,23 +244,45 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             </div>
                         </section>
 
+                        {/* Stipend / Bank Details (Instructor Requirement) */}
+                        {application.stipend && (
+                            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <Landmark size={14} /> Stipend & Banking Information
+                                </h3>
+                                <div className="bg-emerald-50/30 border border-emerald-100 rounded-2xl p-5 shadow-sm space-y-3">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <InfoRow label="Bank Name" value={application.stipend.bankName} />
+                                        <InfoRow label="Bank Branch" value={application.stipend.bankBranch} />
+                                        <InfoRow label="IFSC Code" value={application.stipend.ifscCode} />
+                                        <InfoRow label="PAN Number" value={application.stipend.panNumber} />
+                                    </div>
+                                    <div className="pt-2 border-t border-emerald-100/50">
+                                        <InfoRow label="Account Number" value={application.stipend.bankAccount} />
+                                    </div>
+                                    <p className="text-[9px] text-emerald-600/60 font-medium uppercase tracking-tight text-center">Instructor Schema Compliant: `bank_name`, `bank_branch` included</p>
+                                </div>
+                            </section>
+                        )}
+
                         {/* Actions */}
                         {status === 'SUBMITTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
-                            <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
-                                <div className="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 shadow-inner">
-                                    <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2 mb-4">
-                                        <Send size={14} className="text-indigo-500" /> HOD Action: Forward to Committee
-                                    </h4>
-                                    <div className="space-y-1.5 mb-6">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Assign Mentor (ID or Name)</label>
-                                        <input type="text" value={mentorIdInput} onChange={e => setMentorIdInput(e.target.value)} placeholder="e.g. MENTOR-45 or John Doe" className="admin-input bg-white w-full border-indigo-100 font-bold text-indigo-900 text-xs py-3.5" />
+                            <div className="pt-8 mt-4 border-t border-outline-variant/10">
+                                <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <span className="material-symbols-outlined text-primary text-lg">forward_to_inbox</span>
+                                        <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Assignment Control</h4>
+                                    </div>
+                                    <div className="space-y-2 mb-8">
+                                        <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocate Mentor (ID or Full Name)</label>
+                                        <input type="text" value={mentorIdInput} onChange={e => setMentorIdInput(e.target.value)} placeholder="e.g. MENTOR-102" className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary placeholder:text-outline/30" />
                                     </div>
                                     <div className="flex gap-4">
-                                        <button onClick={handleForwardCommittee} className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
-                                            <Send size={16} /> Forward Application
+                                        <button onClick={handleForwardCommittee} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
+                                            Forward for Review <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                         </button>
-                                        <button onClick={handleReject} className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
-                                            <XCircle size={16} /> Reject
+                                        <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+                                            Reject Candidate
                                         </button>
                                     </div>
                                 </div>
@@ -272,21 +290,58 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                         )}
 
                         {status === 'COMMITTEE_EVALUATION' && ['ADMIN', 'CE_PRTI', 'COMMITTEE_MEMBER'].includes(user?.role) && (
-                            <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
-                                <div className="bg-purple-50 p-6 rounded-[2rem] border border-purple-100 shadow-inner">
-                                    <h4 className="text-xs font-black text-purple-600 uppercase tracking-widest flex items-center gap-2 mb-4">
-                                        <Users size={14} className="text-purple-500" /> Committee Action: Interview & Select
-                                    </h4>
-                                    <div className="space-y-1.5 mb-6">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Interview Score (1-100)</label>
-                                        <input type="number" min="1" max="100" value={interviewScore} onChange={e => setInterviewScore(e.target.value)} placeholder="Enter Score" className="admin-input bg-white w-full border-purple-100 font-bold text-purple-900 text-xs py-3.5" />
+                            <div className="pt-8 mt-4 border-t border-outline-variant/10">
+                                <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <span className="material-symbols-outlined text-primary text-lg">fact_check</span>
+                                        <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Committee Evaluation Session</h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-6 mb-8">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Assessment Merit (1-100)</label>
+                                            <input type="number" min="1" max="100" value={interviewScore} onChange={e => setInterviewScore(e.target.value)} placeholder="Aggregate Score" className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary" />
+                                        </div>
+
+                                        <div className="bg-white p-6 rounded-lg border border-outline-variant/10 space-y-5">
+                                            <p className="text-[9px] font-bold text-outline uppercase tracking-[0.2em] mb-2 text-center">— Statutory Member Criteria —</p>
+                                            
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1">Member 1 (HOD)</label>
+                                                    <select value={member1Score} onChange={e => setMember1Score(e.target.value)} className="w-full border border-outline-variant/20 rounded px-2 py-2 text-[10px] font-bold text-primary bg-surface-container-lowest">
+                                                        <option value="">Select</option>
+                                                        <option value="ACADEMIC_MERIT">Academic</option>
+                                                        <option value="SOP_QUALITY">SOP</option>
+                                                        <option value="DISCIPLINE_RELEVANCE">Discipline</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1">Member 2 (Mentor)</label>
+                                                    <select value={member2Score} onChange={e => setMember2Score(e.target.value)} className="w-full border border-outline-variant/20 rounded px-2 py-2 text-[10px] font-bold text-primary bg-surface-container-lowest">
+                                                        <option value="">Select</option>
+                                                        <option value="ACADEMIC_MERIT">Academic</option>
+                                                        <option value="SOP_QUALITY">SOP</option>
+                                                        <option value="DISCIPLINE_RELEVANCE">Discipline</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1">Member 3 (PRTI)</label>
+                                                    <select value={member3Score} onChange={e => setMember3Score(e.target.value)} className="w-full border border-outline-variant/20 rounded px-2 py-2 text-[10px] font-bold text-primary bg-surface-container-lowest">
+                                                        <option value="">Select</option>
+                                                        <option value="ACADEMIC_MERIT">Academic</option>
+                                                        <option value="SOP_QUALITY">SOP</option>
+                                                        <option value="DISCIPLINE_RELEVANCE">Discipline</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex gap-4">
-                                        <button onClick={handleCommitteeSelect} className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
-                                            <CheckCircle size={16} /> Shortlist 
+                                        <button onClick={handleCommitteeSelect} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
+                                            Confirm Shortlist <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
                                         </button>
-                                        <button onClick={handleReject} className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95">
-                                            <XCircle size={16} /> Reject
+                                        <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+                                            Reject Candidate
                                         </button>
                                     </div>
                                 </div>
@@ -294,24 +349,25 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                         )}
 
                         {status === 'CA_APPROVED' && ['ADMIN', 'CE_PRTI'].includes(user?.role) && (
-                            <div className="pt-4 mt-8 border-t border-gray-100 flex flex-col gap-4">
-                                <div className="flex flex-col gap-5 bg-emerald-50/40 p-6 rounded-[2rem] border border-emerald-100/50 shadow-inner">
-                                    <div className="text-center space-y-1 mb-2">
-                                        <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center justify-center gap-2">
-                                            <Sparkles size={14} className="text-amber-500" /> Final Step: Hiring Confirmation
-                                        </h4>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Assign a position and internal ID to complete selection</p>
+                            <div className="pt-8 mt-4 border-t border-outline-variant/10">
+                                <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm relative overflow-hidden">
+                                     {/* Accent bar for confirmation */}
+                                     <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/50"></div>
+                                    
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <span className="material-symbols-outlined text-emerald-600 text-lg">verified</span>
+                                        <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em]">Institutional Onboarding</h4>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Designated Position</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocated Unit/Position</label>
                                             <select
-                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 text-xs py-3.5"
+                                                className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-emerald-500"
                                                 value={selectedRole}
                                                 onChange={e => setSelectedRole(e.target.value)}
                                             >
-                                                <option value="">-- Choose Position --</option>
+                                                <option value="">Choose Position</option>
                                                 {!internship?.rolesData?.length && internship?.roles?.split(',')?.map(r => (
                                                     <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
                                                 ))}
@@ -320,73 +376,63 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                                     const isFull = roleHired >= (r.openings || 0);
                                                     return (
                                                         <option key={r.name} value={r.name} disabled={isFull}>
-                                                            {r.name} ({roleHired} / {r.openings || 0} Filled) {isFull ? ' - [FULL]' : ''}
+                                                            {r.name} ({roleHired} / {r.openings || 0} Filled)
                                                         </option>
                                                     );
                                                 })}
                                             </select>
                                         </div>
 
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Assigned ID Number</label>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Institutional ID / Roll Number</label>
                                             <input
                                                 type="text"
-                                                placeholder="e.g. APT-26-001"
+                                                placeholder="e.g. TR-2024-001"
                                                 value={manualRollNumber}
                                                 onChange={e => setManualRollNumber(e.target.value)}
-                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 placeholder:text-slate-300 text-xs py-3.5"
+                                                className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary placeholder:text-outline/30 focus:outline-emerald-500"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
-                                            <input
-                                                type="date"
-                                                value={joiningDate}
-                                                onChange={e => setJoiningDate(e.target.value)}
-                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 text-xs py-3.5"
-                                            />
+                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-outline uppercase block ml-1">Commencement Date</label>
+                                            <input type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)} className="w-full bg-white border border-outline-variant/20 rounded px-4 py-2 text-[11px] font-bold text-primary" />
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">End Date</label>
-                                            <input
-                                                type="date"
-                                                value={endDate}
-                                                onChange={e => setEndDate(e.target.value)}
-                                                className="admin-input bg-white border-emerald-100 font-bold text-emerald-900 text-xs py-3.5"
-                                            />
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-outline uppercase block ml-1">Completion Date</label>
+                                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-white border border-outline-variant/20 rounded px-4 py-2 text-[11px] font-bold text-primary" />
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <button onClick={handleHire}
-                                        disabled={internship?.rolesData?.length > 0 && !selectedRole}
-                                        className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <CheckCircle size={18} /> Accept & Hire
-                                    </button>
-                                    <button onClick={handleReject}
-                                        className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-[0.98]">
-                                        <XCircle size={18} /> Reject
-                                    </button>
+
+                                    <div className="flex gap-4">
+                                        <button onClick={handleHire}
+                                            disabled={internship?.rolesData?.length > 0 && !selectedRole}
+                                            className="flex-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 group disabled:opacity-50">
+                                            Authorize & Hire Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">verified_user</span>
+                                        </button>
+                                        <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+                                            Reject Candidate
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
                         {status === 'HIRED' && (
-                            <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 mt-6">
-                                <div className="p-2 bg-emerald-100 rounded-full text-emerald-600">
-                                    <CheckCircle size={20} />
+                            <div className="mt-8 pt-8 border-t border-outline-variant/10 flex flex-col gap-6">
+                                <div className="flex items-center gap-4 p-6 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                                    <span className="material-symbols-outlined text-emerald-600 text-2xl">check_circle</span>
+                                    <div>
+                                        <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest leading-none">Onboarding Complete</p>
+                                        <p className="text-[10px] text-emerald-600 font-bold mt-1 uppercase opacity-70">Institutional access granted</p>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-bold text-emerald-800">Candidate Hired</p>
-                                    <p className="text-xs text-emerald-600 mt-0.5">This application was accepted successfully.</p>
-                                </div>
-                                <div className="flex flex-col gap-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {application.assignedRole && (
-                                        <div className="px-3 py-1.5 bg-white border border-emerald-200 rounded-lg shadow-sm">
-                                            <p className="text-[10px] uppercase font-black tracking-widest text-emerald-500 mb-0.5">Assigned Role</p>
-                                            <p className="text-sm font-bold text-emerald-900">{application.assignedRole}</p>
+                                        <div className="p-4 bg-surface-container-lowest border border-outline-variant/10 rounded-lg">
+                                            <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-outline mb-1">Target Designation</p>
+                                            <p className="text-xs font-bold text-primary">{application.assignedRole}</p>
                                         </div>
                                     )}
                                     {(application.joiningDate || application.endDate) && (
