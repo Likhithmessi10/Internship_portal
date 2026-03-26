@@ -16,6 +16,9 @@ import AdminPastInternships from './pages/admin/AdminPastInternships';
 
 import PrtiDashboard from './pages/admin/prti/PrtiDashboard';
 import HodDashboard from './pages/admin/hod/HodDashboard';
+import HodApplications from './pages/admin/hod/HodApplications';
+import HodCommittees from './pages/admin/hod/HodCommittees';
+import HodMeetings from './pages/admin/hod/HodMeetings';
 import MentorDashboard from './pages/admin/mentor/MentorDashboard';
 
 const AdminLayout = ({ children }) => (
@@ -72,6 +75,21 @@ function App() {
           <Route path="/hod/dashboard" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
               <AdminLayout><HodDashboard /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/applications" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+              <AdminLayout><HodApplications /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/committees" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+              <AdminLayout><HodCommittees /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/meetings" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+              <AdminLayout><HodMeetings /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/mentor/dashboard" element={

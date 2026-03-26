@@ -289,7 +289,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             </div>
                         )}
 
-                        {status === 'COMMITTEE_EVALUATION' && ['ADMIN', 'CE_PRTI', 'COMMITTEE_MEMBER'].includes(user?.role) && (
+                        {status === 'COMMITTEE_EVALUATION' && ['ADMIN', 'CE_PRTI', 'COMMITTEE_MEMBER', 'HOD'].includes(user?.role) && (
                             <div className="pt-8 mt-4 border-t border-outline-variant/10">
                                 <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm">
                                     <div className="flex items-center gap-2 mb-6">
@@ -348,7 +348,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             </div>
                         )}
 
-                        {status === 'CA_APPROVED' && ['ADMIN', 'CE_PRTI'].includes(user?.role) && (
+                        {status === 'CA_APPROVED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
                             <div className="pt-8 mt-4 border-t border-outline-variant/10">
                                 <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm relative overflow-hidden">
                                      {/* Accent bar for confirmation */}

@@ -6,13 +6,17 @@ const Sidebar = () => {
     const { user } = useAuth();
     const location = useLocation();
 
+    const isAdmin = user?.role === 'ADMIN';
+    const isHOD = user?.role === 'HOD';
+    const isPRTI = user?.role === 'CE_PRTI';
+
     const menuItems = [
-        { label: 'Dashboard', icon: 'dashboard', path: user?.role === 'ADMIN' ? '/admin/dashboard' : `/${user?.role?.toLowerCase()}/dashboard` },
-        { label: 'Intern Management', icon: 'group', path: '/admin/interns' }, // Temporary path
-        { label: 'Applications', icon: 'description', path: '/internships/past' },
-        { label: 'Committees', icon: 'account_tree', path: '/committees' },
-        { label: 'Meetings', icon: 'event_available', path: '/meetings' },
-        { label: 'Reports', icon: 'assessment', path: '/reports' },
+        { label: 'Dashboard', icon: 'dashboard', path: isAdmin ? '/admin/dashboard' : `/${user?.role?.toLowerCase()}/dashboard` },
+        ...(isAdmin || isPRTI ? [{ label: 'Intern Management', icon: 'group', path: '/admin/interns' }] : []),
+        { label: 'Applications', icon: 'description', path: isHOD ? '/hod/applications' : '/internships/past' },
+        { label: 'Committees', icon: 'account_tree', path: isHOD ? '/hod/committees' : '/committees' },
+        { label: 'Meetings', icon: 'event_available', path: isHOD ? '/hod/meetings' : '/meetings' },
+        { label: 'Reports', icon: 'assessment', path: isHOD ? '/hod/reports' : '/reports' },
     ];
 
     return (
@@ -49,10 +53,12 @@ const Sidebar = () => {
             </nav>
 
             <div className="px-4 mt-auto space-y-1">
-                <button className="w-full bg-primary-container text-white py-3 rounded-lg flex items-center justify-center gap-2 mb-6 font-medium shadow-md hover:opacity-90 transition-all text-sm">
-                    <span className="material-symbols-outlined text-sm">add_circle</span>
-                    <span>New Project</span>
-                </button>
+                {(isAdmin || isPRTI) && (
+                    <button className="w-full bg-primary-container text-white py-3 rounded-lg flex items-center justify-center gap-2 mb-6 font-medium shadow-md hover:opacity-90 transition-all text-sm">
+                        <span className="material-symbols-outlined text-sm">add_circle</span>
+                        <span>New Project</span>
+                    </button>
+                )}
                 <NavLink to="/settings" className="flex items-center gap-4 text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200">
                     <span className="material-symbols-outlined">settings</span>
                     <span className="text-sm">Settings</span>
