@@ -111,68 +111,75 @@ const InternshipList = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                    {filtered.map(internship => (
-                        <div key={internship.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group overflow-hidden relative">
-                            
-                            {/* Card Header Strip */}
-                            <div className={`h-2 w-full ${
-                                internship.department === 'IT' ? 'bg-blue-500' : 
-                                internship.department === 'Operations' ? 'bg-emerald-500' : 
-                                internship.department === 'HR' ? 'bg-amber-500' : 
-                                'bg-indigo-500'
-                            }`}></div>
+                    {filtered.flatMap(internship => {
+                        const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim(), openings: 'N/A' })) : [{ name: internship.title, openings: internship.openingsCount }]);
+                        
+                        return roles.map((role, idx) => (
+                            <div key={`${internship.id}-${idx}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group overflow-hidden relative">
+                                
+                                {/* Card Header Strip */}
+                                <div className={`h-2 w-full ${
+                                    internship.department === 'IT' ? 'bg-blue-500' : 
+                                    internship.department === 'Operations' ? 'bg-emerald-500' : 
+                                    internship.department === 'HR' ? 'bg-amber-500' : 
+                                    'bg-indigo-500'
+                                }`}></div>
 
-                            <div className="p-6 flex-grow flex flex-col">
-                                <div className="flex justify-between items-start mb-4 gap-4">
-                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-100 text-xs font-bold uppercase tracking-wider">
-                                        <Briefcase className="w-3.5 h-3.5" />
-                                        {internship.department}
+                                <div className="p-6 flex-grow flex flex-col">
+                                    <div className="flex justify-between items-start mb-4 gap-4">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-100 text-xs font-bold uppercase tracking-wider">
+                                            <Briefcase className="w-3.5 h-3.5" />
+                                            {internship.department}
+                                        </div>
+                                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold">
+                                            <ShieldCheck className="w-3.5 h-3.5" /> Govt. Appr.
+                                        </div>
                                     </div>
-                                    <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold">
-                                        <ShieldCheck className="w-3.5 h-3.5" /> Govt. Appr.
+                                    
+                                    <h2 className="text-xl font-bold font-rajdhani text-gray-900 mb-1 line-clamp-2 leading-tight group-hover:text-indigo-600 transition-colors">
+                                        {role.name}
+                                    </h2>
+                                    <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-3 opacity-70">
+                                        Program: {internship.title}
+                                    </div>
+                                    
+                                    <p className="text-sm text-gray-500 font-medium mb-6 line-clamp-3 leading-relaxed flex-grow">
+                                        {internship.description}
+                                    </p>
+
+                                    <div className="space-y-3 pt-5 border-t border-gray-100">
+                                        <div className="flex items-center text-sm font-semibold text-gray-700 gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                                                <MapPin className="w-4 h-4 text-indigo-500" />
+                                            </div>
+                                            {internship.location || 'Multiple Locations'}
+                                        </div>
+                                        <div className="flex items-center text-sm font-semibold text-gray-700 gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                                                <Clock className="w-4 h-4 text-emerald-500" />
+                                            </div>
+                                            {internship.duration}
+                                        </div>
+                                        <div className="flex items-center text-sm font-semibold text-gray-700 gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                                                <Users className="w-4 h-4 text-amber-500" />
+                                            </div>
+                                            {role.openings} Openings for this role
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <h2 className="text-xl font-bold font-rajdhani text-gray-900 mb-3 line-clamp-2 leading-tight group-hover:text-indigo-600 transition-colors">
-                                    {internship.title}
-                                </h2>
-                                
-                                <p className="text-sm text-gray-500 font-medium mb-6 line-clamp-3 leading-relaxed flex-grow">
-                                    {internship.description}
-                                </p>
 
-                                <div className="space-y-3 pt-5 border-t border-gray-100">
-                                    <div className="flex items-center text-sm font-semibold text-gray-700 gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
-                                            <MapPin className="w-4 h-4 text-indigo-500" />
-                                        </div>
-                                        {internship.location}
-                                    </div>
-                                    <div className="flex items-center text-sm font-semibold text-gray-700 gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
-                                            <Clock className="w-4 h-4 text-emerald-500" />
-                                        </div>
-                                        {internship.duration}
-                                    </div>
-                                    <div className="flex items-center text-sm font-semibold text-gray-700 gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
-                                            <Users className="w-4 h-4 text-amber-500" />
-                                        </div>
-                                        {internship.openingsCount} Openings Available
-                                    </div>
+                                <div className="p-4 pt-0 mt-auto">
+                                    <Link
+                                        to={`/student/internships/${internship.id}/apply?role=${encodeURIComponent(role.name)}`}
+                                        className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 group-hover:bg-indigo-600"
+                                    >
+                                        View Details & Apply <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </Link>
                                 </div>
                             </div>
-
-                            <div className="p-4 pt-0 mt-auto">
-                                <Link
-                                    to={`/student/internships/${internship.id}/apply`}
-                                    className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 group-hover:bg-indigo-600"
-                                >
-                                    View Details & Apply <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                            </div>
-                        </div>
-                    ))}
+                        ));
+                    })}
                 </div>
             )}
         </div>

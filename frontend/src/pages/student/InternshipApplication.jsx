@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../utils/api';
-import { Upload, FileType, CheckCircle, AlertCircle, ArrowLeft, ShieldCheck, FileText, Check } from 'lucide-react';
+import { Upload, FileType, CheckCircle, AlertCircle, ArrowLeft, ShieldCheck, FileText, Check, MapPin, AlignLeft } from 'lucide-react';
 
 const InternshipApplication = () => {
     const { id } = useParams();
@@ -13,6 +13,15 @@ const InternshipApplication = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    
+    // New Fields
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const initialRole = queryParams.get('role') || '';
+    
+    const [assignedRole, setAssignedRole] = useState(initialRole);
+    const [sop, setSop] = useState('');
+    const [preferredLocation, setPreferredLocation] = useState('');
 
     // File States (Dynamic)
     const [files, setFiles] = useState({});
@@ -86,6 +95,13 @@ const InternshipApplication = () => {
                 formData.append(doc.id, file); // Use the doc ID as the field name
             }
         });
+
+        // Append new text fields
+        formData.append('assignedRole', assignedRole);
+        formData.append('sop', sop);
+        if (preferredLocation) {
+            formData.append('preferredLocation', preferredLocation);
+        }
 
         setSubmitting(true);
         setError('');
@@ -223,7 +239,7 @@ const InternshipApplication = () => {
                                 </div>
                             )}
 
-                            <div className="mb-8">
+                            <div className="mb-10">
                                 <h3 className="text-xl font-bold text-gray-900 mb-1">Supporting Documents</h3>
                                 <p className="text-sm text-gray-500 font-medium mb-6">Upload required authorization letters in PDF format (Max 5MB each).</p>
 
@@ -231,6 +247,64 @@ const InternshipApplication = () => {
                                     {(internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }]).map(doc => (
                                         <FileUploadInput key={doc.id} doc={doc} />
                                     ))}
+                                </div>
+                            </div>
+
+                            <div className="mb-10 space-y-8">
+                                <h3 className="text-xl font-bold text-gray-900 mb-1">Application Specifics</h3>
+                                <p className="text-sm text-gray-500 font-medium mb-6">Tell us why you're a great fit for this specific role.</p>
+
+                                <div className="grid grid-cols-1 gap-8">
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider ml-1">
+                                            <ShieldCheck className="w-4 h-4 text-indigo-500" /> Applying for Role
+                                        </label>
+                                        <input 
+                                            type="text" 
+                                            value={assignedRole} 
+                                            readOnly 
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:ring-0 cursor-default" 
+                                        />
+                                        <p className="text-[10px] text-gray-400 font-bold ml-1 uppercase">Position cannot be changed. Return to listings to select a different role.</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider ml-1">
+                                            <MapPin className="w-4 h-4 text-indigo-500" /> Preferred Deployment Location (Optional)
+                                        </label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="e.g. Vijayawada, Guntur, or Remote"
+                                            value={preferredLocation}
+                                            onChange={e => setPreferredLocation(e.target.value)}
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all font-medium placeholder:text-gray-300" 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center px-1">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                                <AlignLeft className="w-4 h-4 text-indigo-500" /> Statement of Purpose (SOP)
+                                            </label>
+                                            <span className={`text-[10px] font-bold uppercase tracking-tighter ${sop.length > 50 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                                {sop.length} / 500 characters
+                                            </span>
+                                        </div>
+                                        <textarea 
+                                            required
+                                            placeholder="Explain your interest, skills, and what you hope to achieve during this internship..." 
+                                            rows="5"
+                                            maxLength="500"
+                                            value={sop}
+                                            onChange={e => setSop(e.target.value)}
+                                            className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-sm font-medium text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-gray-300 min-h-[160px]"
+                                        />
+                                        {sop.length < 50 && (
+                                            <p className="text-[10px] text-amber-600 font-bold ml-1 uppercase flex items-center gap-1">
+                                                <AlertCircle className="w-3 h-3" /> Please provide at least 50 characters for a stronger application.
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

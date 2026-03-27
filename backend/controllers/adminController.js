@@ -30,7 +30,7 @@ const createInternship = async (req, res) => {
                 rolesData: rolesData || null,
                 requirements: requirements || null,
                 expectations: expectations || null,
-                location: location || 'ANY',
+                location: location || null,
                 duration,
                 openingsCount: parseInt(openingsCount),
                 applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,

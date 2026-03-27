@@ -34,12 +34,12 @@ const HodDashboard = () => {
             try {
                 const res = await api.get('/admin/internships');
                 // Filter only LIVE and belonging to HOD department
-                const live = res.data.data.filter(i => 
+                const live = (res.data.data || []).filter(i => 
                     i.isActive && (!i.applicationDeadline || new Date(i.applicationDeadline) >= new Date())
                 );
                 // IF HOD has a department set in their user profile, filter by it. Or show all if ADMIN.
                 const filtered = user?.role === 'ADMIN' ? live : live.filter(i => i.department?.toUpperCase() === user?.department?.toUpperCase());
-                setInternships(filtered);
+                setInternships(filtered || []);
             } catch {
                 console.error('Failed to fetch data');
             } finally {

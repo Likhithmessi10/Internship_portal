@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import ApplicationProfileModal from '../ApplicationProfileModal';
 import { 
     Search, Filter, Download, ChevronRight, ChevronDown,
-    GraduationCap, Award, Info, MapPin, Eye, TaskAlt
+    GraduationCap, Award, Info, MapPin, Eye, CheckCircle
 } from 'lucide-react';
 
 const HodApplications = () => {
@@ -20,16 +20,17 @@ const HodApplications = () => {
         try {
             // First get all internships for this HOD
             const intRes = await api.get('/admin/internships');
-            const deptInternships = intRes.data.data;
+            const deptInternships = intRes?.data?.data || [];
             
             // Then fetch applications for each internship and flatten
             const allAppsPromises = deptInternships.map(i => api.get(`/admin/internships/${i.id}/applications`));
             const appsResults = await Promise.all(allAppsPromises);
-            const flattened = appsResults.flatMap(r => r.data.data);
+            const flattened = appsResults.flatMap(r => r?.data?.data || []);
             
             setApplications(flattened);
         } catch (err) {
             console.error('Failed to fetch departmental applications');
+            setApplications([]);
         } finally {
             setLoading(false);
         }
@@ -37,7 +38,7 @@ const HodApplications = () => {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    const filteredApps = applications.filter(app => {
+    const filteredApps = (applications || []).filter(app => {
         const matchesStatus = filter === 'All' || app.status === filter;
         const matchesSearch = searchQuery === '' || 
             app.student?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||

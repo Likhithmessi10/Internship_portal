@@ -14,7 +14,7 @@ const submitApplication = async (req, res, next) => {
             rollNumber, collegeRollNumber, fullName, phone, dob, address, aadhar,
             collegeName, collegeCode, university, degree, branch,
             yearOfStudy, cgpa, collegeCategory, nirfRanking,
-            internshipId, preferredCircle, duration, startDate,
+            internshipId, preferredCircle, preferredLocation, sop, assignedRole, duration, startDate,
             hasExperience, hasProjects, hasCertifications,
             experienceDesc, projectsDesc, skills
         } = req.body;
@@ -121,6 +121,9 @@ const submitApplication = async (req, res, next) => {
                 internshipId,
                 status: 'PENDING',
                 preferredCircle: preferredCircle || null,
+                preferredLocation: preferredLocation || null,
+                sop: sop || null,
+                assignedRole: assignedRole || null,
                 duration: duration || null,
                 startDate: startDate || null
             }

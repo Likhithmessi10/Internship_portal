@@ -96,18 +96,23 @@ const LandingPage = () => {
           </div>
         ) : internships.length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '30px' }}>
-            {internships.map(internship => (
-              <div key={internship.id} style={{ background: '#fff', borderRadius: '20px', padding: '30px', border: '1px solid #eef2f6', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ color: '#003087', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', tracking: '1px', marginBottom: '8px' }}>{internship.department}</div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1a202c', marginBottom: '12px' }}>{internship.title}</h3>
-                <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px', lineHeight: 1.6, flex: 1 }}>{internship.description.substring(0, 120)}...</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#64748b', fontSize: '12px', marginBottom: '25px' }}>
-                  <span>📍 {internship.location}</span>
-                  <span>⏱️ {internship.duration}</span>
+            {internships.flatMap(internship => {
+              const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim(), openings: 'N/A' })) : [{ name: internship.title, openings: internship.openingsCount }]);
+              
+              return roles.map((role, idx) => (
+                <div key={`${internship.id}-${idx}`} style={{ background: '#fff', borderRadius: '20px', padding: '30px', border: '1px solid #eef2f6', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ color: '#003087', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', tracking: '1px', marginBottom: '8px' }}>{internship.department}</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1a202c', marginBottom: '12px' }}>{role.name}</h3>
+                  <div style={{ fontSize: '11px', color: '#003087', fontWeight: 600, marginBottom: '10px' }}>Part of: {internship.title}</div>
+                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px', lineHeight: 1.6, flex: 1 }}>{internship.description.substring(0, 120)}...</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#64748b', fontSize: '12px', marginBottom: '25px' }}>
+                    <span>📍 {internship.location || 'Multiple Locations'}</span>
+                    <span>⏱️ {internship.duration}</span>
+                  </div>
+                  <button onClick={() => navigate('/student/register')} style={{ background: '#003087', color: '#fff', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>View & Apply →</button>
                 </div>
-                <button onClick={() => navigate('/student/register')} style={{ background: '#003087', color: '#fff', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>View & Apply →</button>
-              </div>
-            ))}
+              ));
+            })}
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '20px' }}>
