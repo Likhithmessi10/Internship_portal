@@ -14,6 +14,7 @@ const {
     updatePortalConfig,
     getCommitteeDetails,
     updateCommitteeDetails,
+    getUsersByRole,
     updateUserRole,
     getStipendDetails,
     updateStipendDetails,

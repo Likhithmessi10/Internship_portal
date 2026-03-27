@@ -822,6 +822,31 @@ const getMeetings = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Update User Role
+ * @route   PUT /api/v1/admin/users/:id/role
+ * @access  Private (Admin, PRTI)
+ */
+const updateUserRole = async (req, res) => {
+    try {
+        const { role } = req.body;
+        const updatedUser = await prisma.user.update({
+            where: { id: req.params.id },
+            data: { role }
+        });
+        
+        res.status(200).json({ success: true, data: updatedUser });
+        
+        // Audit Log
+        if (typeof createAuditLog === 'function') {
+            await createAuditLog('UPDATE_USER_ROLE', req.user.email, `Role changed to ${role} for user ${updatedUser.email}`, updatedUser.id);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,

@@ -3,18 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import './LandingPage.css';
 import { downloadNocPdf } from '../utils/nocGenerator';
-import { FileDown } from 'lucide-react';
+import { FileDown, Sun, Moon, Zap, MapPin, Clock } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const [internships, setInternships] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const fetchInternships = async () => {
       try {
         const response = await api.get('/internships');
-        setInternships(response.data.data.slice(0, 3)); // Show first 3 active ones
+        setInternships(response.data.data.slice(0, 3)); 
       } catch (err) {
         console.error('Error fetching internships:', err);
       } finally {
@@ -27,19 +29,27 @@ const LandingPage = () => {
   return (
     <div className="landing-container">
       <div className="top-strip">
-        Government of Andhra Pradesh &nbsp;|&nbsp; APTRANSCO – Andhra Pradesh Transmission Corporation Limited &nbsp;|&nbsp;
-        <a href="mailto:internship@aptransco.in">internship@aptransco.in</a> &nbsp;|&nbsp; 040-23435272
+        <div className="top-strip-inner">
+          <span className="strip-text">Government of Andhra Pradesh &nbsp;|&nbsp; APTRANSCO</span>
+          <div className="strip-right">
+            <a href="mailto:internship@aptransco.in">internship@aptransco.in</a> &nbsp;|&nbsp; 040-23435272
+            <button className="theme-toggle-btn" onClick={toggleTheme} aria-label="Toggle Dark Theme">
+              {isDarkMode ? <Sun size={12} /> : <Moon size={12} />}
+              <span style={{marginLeft: '4px'}}>{isDarkMode ? 'Light' : 'Dark'}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <header className="landing-header">
         <div className="header-inner">
-          <img src="/logo.png" alt="APTRANSCO Logo" style={{ height: '80px', objectFit: 'contain', marginRight: '15px' }} />
+          <img src="/logo.png" alt="APTRANSCO Logo" className="header-logo" />
           <div className="header-text">
-            <div className="dept" style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#546e7a' }}>Government of Andhra Pradesh — Energy Department</div>
+            <div className="dept">Government of Andhra Pradesh — Energy Department</div>
             <h1>Andhra Pradesh Transmission Corporation Limited</h1>
-            <div className="sub" style={{ fontSize: '12.5px', color: '#546e7a' }}>APTRANSCO &nbsp;·&nbsp; Student Internship Management Portal &nbsp;·&nbsp; 2024–25</div>
+            <div className="sub">APTRANSCO &nbsp;·&nbsp; Student Internship Management Portal &nbsp;·&nbsp; 2024–25</div>
           </div>
-          <div className="header-right">
+          <div className="header-contact">
             <strong>Helpdesk</strong>
             internship@aptransco.in<br />
             040-23435272<br />
@@ -49,156 +59,110 @@ const LandingPage = () => {
         <div className="flag-bar"></div>
       </header>
 
-      <nav className="landing-nav">
-        <div className="nav-inner">
-          <div style={{ flex: 1 }}></div>
-          <div style={{ color: '#D4A017', fontSize: '12px', padding: '14px 20px', fontWeight: 600 }}>Academic Year 2024–25</div>
-        </div>
-      </nav>
-
       <div className="hero">
-        <div className="hero-inner" style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <div style={{ background: '#D4A017', color: '#003087', display: 'inline-block', fontSize: '11px', fontWeight: 700, padding: '4px 16px', borderRadius: '20px', marginBottom: '18px' }}>⚡ APTRANSCO Student Internship Programme 2024–25</div>
-          <h2>Power Your Future with<br /><em>APTRANSCO Internship</em></h2>
-          <p style={{ color: '#aac4e8', fontSize: '16px', margin: '20px auto 30px', maxWidth: '680px' }}>Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in substations, control rooms, and planning divisions across Andhra Pradesh.</p>
+        <div className="hero-content">
+          <div className="hero-badge"><Zap size={14} style={{marginRight: '6px'}} /> APTRANSCO Student Internship Programme 2024–25</div>
+          <h2>Power Your Future with<br /><span>APTRANSCO Internship</span></h2>
+          <p>Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in substations, control rooms, and planning divisions across Andhra Pradesh.</p>
+          <button className="btn-hero-primary" onClick={() => navigate('/student/register')}>
+            <Zap size={18} style={{marginRight: '8px'}}/> Apply for Internship Now
+          </button>
         </div>
       </div>
 
       <div className="stats-bar">
         <div className="stats-inner">
-          <div className="stat-item">
-            <div className="num">36,748</div>
-            <div className="lbl" style={{ fontSize: '11.5px', fontWeight: 600 }}>Circuit Kilometres</div>
-          </div>
-          <div className="stat-item">
-            <div className="num">700+</div>
-            <div className="lbl" style={{ fontSize: '11.5px', fontWeight: 600 }}>Substations</div>
-          </div>
-          <div className="stat-item">
-            <div className="num">26</div>
-            <div className="lbl" style={{ fontSize: '11.5px', fontWeight: 600 }}>Districts Served</div>
-          </div>
-          <div className="stat-item">
-            <div className="num">1,200+</div>
-            <div className="lbl" style={{ fontSize: '11.5px', fontWeight: 600 }}>Interns Trained Annually</div>
-          </div>
+          <div className="stat-item"><div className="num">36,748</div><div className="lbl">Circuit Kilometres</div></div>
+          <div className="stat-item"><div className="num">700+</div><div className="lbl">Substations</div></div>
+          <div className="stat-item"><div className="num">26</div><div className="lbl">Districts Served</div></div>
+          <div className="stat-item"><div className="num">1,200+</div><div className="lbl">Interns Annually</div></div>
         </div>
       </div>
 
-      {/* RECENT INTERNSHIPS SECTION */}
-      <div style={{ padding: '60px 28px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div className="section-title">Available Internships</div>
-        <div className="section-title-line"></div>
+      <section className="internships-section">
+        <div className="section-header">
+          <h2 className="section-title">Available Internships</h2>
+          <div className="section-title-line"></div>
+        </div>
+        
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <div className="spinner" style={{ border: '3px solid #f3f3f3', borderTop: '3px solid #003087', borderRadius: '50%', width: '30px', height: '30px', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
-            <p style={{ marginTop: '15px', color: '#666', fontSize: '14px' }}>Loading latest opportunities...</p>
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading latest opportunities...</p>
           </div>
         ) : internships.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '30px' }}>
+          <div className="internships-grid">
             {internships.flatMap(internship => {
-              const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim(), openings: 'N/A' })) : [{ name: internship.title, openings: internship.openingsCount }]);
-              
+              const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
               return roles.map((role, idx) => (
-                <div key={`${internship.id}-${idx}`} style={{ background: '#fff', borderRadius: '20px', padding: '30px', border: '1px solid #eef2f6', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ color: '#003087', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', tracking: '1px', marginBottom: '8px' }}>{internship.department}</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1a202c', marginBottom: '12px' }}>{role.name}</h3>
-                  <div style={{ fontSize: '11px', color: '#003087', fontWeight: 600, marginBottom: '10px' }}>Part of: {internship.title}</div>
-                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px', lineHeight: 1.6, flex: 1 }}>{internship.description.substring(0, 120)}...</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#64748b', fontSize: '12px', marginBottom: '25px' }}>
-                    <span>📍 {internship.location || 'Multiple Locations'}</span>
-                    <span>⏱️ {internship.duration}</span>
+                <div key={`${internship.id}-${idx}`} className="internship-card">
+                  <div className="card-dept">{internship.department}</div>
+                  <h3 className="card-title">{role.name}</h3>
+                  <div className="card-subtitle">Part of: {internship.title}</div>
+                  <p className="card-desc">{internship.description.substring(0, 100)}...</p>
+                  <div className="card-meta">
+                    <span className="card-meta-item"><MapPin size={14}/> {internship.location || 'Multiple Locations'}</span>
+                    <span className="card-meta-item"><Clock size={14}/> {internship.duration}</span>
                   </div>
-                  <button onClick={() => navigate('/student/register')} style={{ background: '#003087', color: '#fff', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>View & Apply →</button>
+                  <button className="btn-outline" onClick={() => navigate('/student/register')}>View & Apply →</button>
                 </div>
               ));
             })}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '20px' }}>
-            <p style={{ color: '#64748b' }}>No active internships at the moment. Please check back later.</p>
-          </div>
+          <div className="empty-state">No active internships at the moment. Please check back later.</div>
         )}
-      </div>
+      </section>
 
-      <div className="about-section">
-        <div className="section-title">About APTRANSCO</div>
-        <div className="section-title-line"></div>
-        <div className="about-grid">
-          <div className="about-text">
-            <p><strong>Andhra Pradesh Transmission Corporation Limited (APTRANSCO)</strong> is a government undertaking responsible for the bulk transmission of electricity across the state.</p>
-            <p>The corporation plays a vital role in ensuring reliable power supply to industries, agriculture, and households across all 26 districts of Andhra Pradesh.</p>
+      <section className="info-split-section">
+        <div className="info-split-inner">
+          
+          <div className="info-column">
+             <div className="section-header center">
+               <h2 className="section-title">Internship Domains</h2>
+               <div className="section-title-line center"></div>
+             </div>
+             <div className="domain-grid">
+               <div className="info-box">
+                  <h4>Electrical Engineering</h4>
+                  <p>Professional exposure and hands-on training.</p>
+               </div>
+               <div className="info-box">
+                  <h4>IT & SCADA</h4>
+                  <p>Professional exposure and hands-on training.</p>
+               </div>
+             </div>
           </div>
-          <div className="info-panels" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="highlight-card" style={{ borderLeft: '4px solid #003087' }}>
-              <div className="hc-title">Learning Environment</div>
-              <p style={{ fontSize: '12.5px', color: '#555' }}>Structured training under experienced engineers with real project assignments.</p>
-            </div>
-            <div className="highlight-card" style={{ borderLeft: '4px solid #003087' }}>
-              <div className="hc-title">Field Exposure</div>
-              <p style={{ fontSize: '12.5px', color: '#555' }}>Visits to substations, control rooms, and live transmission infrastructure.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style={{ background: '#f7f9ff', padding: '50px 28px' }}>
-        <div className="about-section" style={{ padding: 0 }}>
-          <div className="section-title">Internship Domains</div>
-          <div className="section-title-line"></div>
-          <div className="areas-grid">
-            {['Electrical Engineering', 'IT & SCADA', 'Renewable Integration', 'Civil & Construction'].map(domain => (
-              <div key={domain} className="area-card">
-                <div className="title">{domain}</div>
-                <p style={{ fontSize: '12.5px', color: '#666' }}>Professional exposure and hands-on training in {domain.toLowerCase()} departments.</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      <div className="eligibility-section">
-        <div className="section-title">Eligibility Criteria</div>
-        <div className="section-title-line"></div>
-        <div className="elig-grid">
-          <div className="elig-card">
-            <div className="hc-title">Academic Qualification</div>
-            <p style={{ fontSize: '12.5px', color: '#555' }}>Students pursuing B.Tech / B.E. / M.Tech / MBA / MCA with minimum 60% aggregate.</p>
+          <div className="info-column">
+             <div className="section-header center">
+               <h2 className="section-title">Eligibility Criteria</h2>
+               <div className="section-title-line center"></div>
+             </div>
+             <div className="eligibility-grid">
+               <div className="info-box lg">
+                  <h4>Academic</h4>
+                  <p>B.Tech/M.Tech/MBA/MCA with a minimum of 60% aggregate.</p>
+               </div>
+               <div className="info-box lg">
+                  <h4>NOC</h4>
+                  <p>Valid Institution No Objection Certificate is mandatory.</p>
+               </div>
+               <div className="info-box lg">
+                  <h4>Identity</h4>
+                  <p>Valid Aadhaar Card is required for verification.</p>
+               </div>
+             </div>
           </div>
-          <div className="elig-card">
-            <div className="hc-title">College Approval</div>
-            <p style={{ fontSize: '12.5px', color: '#555' }}>A valid Acknowledgement Letter / NOC from the institution is mandatory.</p>
-          </div>
-          <div className="elig-card">
-            <div className="hc-title">Identity Verification</div>
-            <p style={{ fontSize: '12.5px', color: '#555' }}>Valid Aadhaar Card is mandatory for identity verification.</p>
-          </div>
-        </div>
 
-        {/* NOC Download Component */}
-        <div style={{ marginTop: '40px', textAlign: 'center' }}>
-          <div style={{ background: '#f0f4f8', padding: '30px', borderRadius: '24px', border: '2px dashed #003087', display: 'inline-block' }}>
-            <h4 style={{ color: '#003087', fontWeight: 800, marginBottom: '10px' }}>Need the NOC Template?</h4>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>Download the official APTRANSCO No Objection Certificate format required from your college.</p>
-            <button
-              onClick={downloadNocPdf}
-              className="btn-noc-download"
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
-            >
-              <FileDown size={18} /> Download NOC Format (PDF)
-            </button>
-          </div>
         </div>
-      </div>
-
-      <div className="cta-bar">
-        <h3>Ready to Begin Your Internship Journey?</h3>
-        <p style={{ marginBottom: '24px' }}>Applications are open for the Academic Year 2024–25.</p>
-        <button className="btn-cta" onClick={() => navigate('/student/register')}>⚡ Apply for Internship Now</button>
-      </div>
+      </section>
 
       <footer className="landing-footer">
-        <p>© {new Date().getFullYear()} <strong>APTRANSCO</strong>. All Rights Reserved.</p>
-        <p style={{ fontSize: '11px', marginTop: '10px' }}>This is an official portal of Andhra Pradesh Transmission Corporation Limited.</p>
+        <div className="footer-content">
+          <p>© {new Date().getFullYear()} <strong>APTRANSCO</strong>. All Rights Reserved.</p>
+          <p className="footer-sub">This is an official portal of Andhra Pradesh Transmission Corporation Limited.</p>
+        </div>
       </footer>
     </div>
   );
