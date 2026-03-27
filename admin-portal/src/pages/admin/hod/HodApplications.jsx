@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import ApplicationProfileModal from '../ApplicationProfileModal';
 import { 
     Search, Filter, Download, ChevronRight, ChevronDown,
-    GraduationCap, Award, Info, MapPin, Eye, TaskAlt
+    GraduationCap, Award, Info, MapPin, Eye
 } from 'lucide-react';
 
 const HodApplications = () => {
