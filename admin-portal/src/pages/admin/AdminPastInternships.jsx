@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
     Briefcase, Download, Trash2, ToggleLeft, ToggleRight,
     Users, CheckCircle, ChevronRight, BarChart2, Calendar, ArrowLeft, History
@@ -29,6 +30,7 @@ const ProgressBar = ({ value, max, color = 'bg-emerald-500' }) => {
 };
 
 const AdminPastInternships = () => {
+    const { user } = useAuth();
     const [internships, setInternships] = useState([]);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(null);
@@ -201,12 +203,14 @@ const AdminPastInternships = () => {
                                         </td>
                                         <td className="py-5 pr-6">
                                             <div className="flex items-center justify-center gap-2">
-                                                <Link
-                                                    to={`/internships/${int.id}/applications`}
-                                                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
-                                                >
-                                                    Review <ChevronRight size={12} />
-                                                </Link>
+                                                {user?.role !== 'CE_PRTI' && (
+                                                    <Link
+                                                        to={`/internships/${int.id}/applications`}
+                                                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                                    >
+                                                        Review <ChevronRight size={12} />
+                                                    </Link>
+                                                )}
                                                 <button
                                                     onClick={() => handleExport(int.id, int.title)}
                                                     disabled={exporting === int.id}

@@ -44,7 +44,7 @@ const AdminRegister = () => {
     }, [user, navigate]);
 
     if (!targetRole) {
-        return <Navigate to="/landing" replace />;
+        return <Navigate to="/" replace />;
     }
 
     const handleSubmit = async (e) => {

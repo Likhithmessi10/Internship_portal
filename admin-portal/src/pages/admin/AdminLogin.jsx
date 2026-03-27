@@ -114,7 +114,7 @@ const AdminLogin = () => {
 
                     <div className="mt-10 pt-8 border-t border-outline-variant/10 text-center font-bold">
                         <p className="text-[10px] text-outline uppercase tracking-widest mb-2">Role assigned by PRTI Admin</p>
-                        <p className="text-[10px] text-primary uppercase tracking-widest underline"><Link to="/register">Staff Enrollment</Link></p>
+                        <p className="text-[10px] text-primary uppercase tracking-widest underline"><Link to="/">Staff Enrollment</Link></p>
                     </div>
                 </div>
 
