@@ -15,6 +15,12 @@ import AdminRegister from './pages/admin/AdminRegister';
 import AdminPastInternships from './pages/admin/AdminPastInternships';
 
 import PrtiDashboard from './pages/admin/prti/PrtiDashboard';
+import PrtiInterns from './pages/admin/prti/PrtiInterns';
+import PrtiMeetings from './pages/admin/prti/PrtiMeetings';
+import PrtiReports from './pages/admin/prti/PrtiReports';
+import PrtiPermissions from './pages/admin/prti/PrtiPermissions';
+import PrtiHealth from './pages/admin/prti/PrtiHealth';
+import PrtiAuditLogs from './pages/admin/prti/PrtiAuditLogs';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
@@ -33,22 +39,7 @@ const AdminLayout = ({ children }) => (
 
 const APTRANSCO_ROLES = ['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
 
-const RootRedirect = () => {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  
-  if (!user) return <Navigate to="/landing" replace />;
-  if (!APTRANSCO_ROLES.includes(user.role)) {
-        return <div className="p-10 text-center">Unauthorized. This is the Admin Portal.</div>;
-  }
-  
-  if (user.role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
-  if (user.role === 'CE_PRTI') return <Navigate to="/prti/dashboard" replace />;
-  if (user.role === 'HOD') return <Navigate to="/hod/dashboard" replace />;
-  if (user.role === 'MENTOR') return <Navigate to="/mentor/dashboard" replace />;
-  
-  return <Navigate to="/dashboard" replace />;
-};
+// Root redirection is handled by AdminLanding directly.
 
 function App() {
   return (
@@ -56,8 +47,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Admin Routes */}
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="/landing" element={<AdminLanding />} />
+          <Route path="/" element={<AdminLanding />} />
           <Route path="/login" element={<AdminLogin />} />
           <Route path="/register" element={<AdminRegister />} />
 
@@ -70,6 +60,36 @@ function App() {
           <Route path="/prti/dashboard" element={
             <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
               <AdminLayout><PrtiDashboard /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/interns" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiInterns /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/meetings" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiMeetings /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/reports" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiReports /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/permissions" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiPermissions /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/health" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiHealth /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/audit-logs" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiAuditLogs /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/hod/dashboard" element={
@@ -103,17 +123,17 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/internships/:id/applications" element={
-            <ProtectedRoute allowedRoles={APTRANSCO_ROLES}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER']}>
               <AdminLayout><AdminApplicationReview /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/rejected" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'HOD']}>
               <AdminLayout><AdminRejected /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/internships/past" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
+            <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminLayout><AdminPastInternships /></AdminLayout>
             </ProtectedRoute>
           } />

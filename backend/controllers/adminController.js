@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const xl = require('exceljs');
 const { allocateApplicants } = require('../services/allocationService');
+const { createAuditLog } = require('../utils/auditLogger');
 
 /**
  * @desc    Create Internship
@@ -42,6 +43,9 @@ const createInternship = async (req, res) => {
         });
 
         res.status(201).json({ success: true, data: internship });
+
+        // Audit Log
+        await createAuditLog('CREATE_INTERNSHIP', req.user.email, `Created: ${title}`, internship.id);
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -334,6 +338,9 @@ const updateApplicationStatus = async (req, res) => {
         }
 
         res.status(200).json({ success: true, data: app });
+
+        // Audit Log
+        await createAuditLog('UPDATE_APPLICATION', req.user.email, `Status changed to ${status}`, applicationId);
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -770,6 +777,51 @@ const updateStipendDetails = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Get All Interns (HIRED/ONGOING/COMPLETED)
+ * @route   GET /api/v1/admin/interns/all
+ * @access  Private (Admin, PRTI)
+ */
+const getAllInterns = async (req, res) => {
+    try {
+        const interns = await prisma.application.findMany({
+            where: {
+                status: { in: ['HIRED', 'ONGOING', 'COMPLETED'] }
+            },
+            include: {
+                student: true,
+                internship: { select: { title: true, department: true, location: true } },
+                mentor: { select: { name: true, email: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json({ success: true, data: interns });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Get All Meetings/Interviews
+ * @route   GET /api/v1/admin/meetings
+ * @access  Private (Admin, PRTI, HOD)
+ */
+const getMeetings = async (req, res) => {
+    try {
+        const committees = await prisma.committee.findMany({
+            include: {
+                internship: { select: { title: true, department: true } }
+            },
+            orderBy: { interviewDate: 'asc' }
+        });
+        res.status(200).json({ success: true, data: committees });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -787,6 +839,9 @@ module.exports = {
     getCommitteeDetails,
     updateCommitteeDetails,
     getUsersByRole,
+    updateUserRole,
     getStipendDetails,
-    updateStipendDetails
+    updateStipendDetails,
+    getAllInterns,
+    getMeetings
 };
