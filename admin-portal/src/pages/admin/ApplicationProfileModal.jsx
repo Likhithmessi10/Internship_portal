@@ -213,9 +213,25 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                     <InfoRow label="Tier" value={student?.collegeCategory} />
                                     <InfoRow label="NIRF Rank" value={student?.nirfRanking ? `#${student.nirfRanking}` : 'N/A'} />
                                     <InfoRow label="Assigned ID" value={student?.rollNumber} />
+                                    <InfoRow label="Pref. Location" value={application?.preferredLocation} />
                                 </div>
                             </section>
                         </div>
+
+                        {/* Statement of Purpose */}
+                        {application?.sop && (
+                            <section>
+                                <div className="flex items-center gap-2 mb-4">
+                                     <span className="material-symbols-outlined text-primary text-xl">article</span>
+                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Statement of Purpose</h3>
+                                </div>
+                                <div className="bg-primary/5 p-6 rounded-lg border border-primary/10">
+                                    <p className="text-xs font-medium text-primary/80 leading-relaxed whitespace-pre-wrap italic">
+                                        "{application.sop}"
+                                    </p>
+                                </div>
+                            </section>
+                        )}
 
                         {/* Full Width Sections */}
                         <section>

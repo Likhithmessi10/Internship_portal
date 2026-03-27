@@ -41,12 +41,18 @@ const applyForInternship = async (req, res) => {
         // 4. Create Application
         const identifier = profile.rollNumber || profile.aadhar || 'UNKNOWN';
         const trackingId = `APT-${Date.now()}-${identifier.slice(-4)}`.toUpperCase();
+        
+        const { sop, preferredLocation, assignedRole } = req.body;
+
         const application = await prisma.application.create({
             data: {
                 trackingId,
                 studentId: profile.id, // Linking to StudentProfile ID
                 internshipId: internship.id,
-                status: 'SUBMITTED'
+                status: 'SUBMITTED',
+                sop: sop || null,
+                preferredLocation: preferredLocation || null,
+                assignedRole: assignedRole || null
             }
         });
 

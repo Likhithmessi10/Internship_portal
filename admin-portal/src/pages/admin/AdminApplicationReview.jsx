@@ -47,6 +47,7 @@ const AdminApplicationReview = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [filter, setFilter] = useState('All');
+    const [roleFilter, setRoleFilter] = useState('All Roles');
     const [selected, setSelected] = useState(null);
     const [highlightCollege, setHighlightCollege] = useState('');
     
@@ -164,7 +165,11 @@ const AdminApplicationReview = () => {
             else pool.push({ ...app, nominatedMatch: isNominated, quotaMatch: isTopUniv && !isNominated });
         });
 
-        const filterFn = a => filter === 'All' ? true : a.status === filter;
+        const filterFn = a => {
+            const statusMatch = filter === 'All' ? true : a.status === filter;
+            const roleMatch = roleFilter === 'All Roles' ? true : a.assignedRole === roleFilter;
+            return statusMatch && roleMatch;
+        };
         const roleHiredStats = {};
         applications.forEach(a => { if (a.status === 'HIRED' && a.assignedRole) roleHiredStats[a.assignedRole] = (roleHiredStats[a.assignedRole] || 0) + 1; });
 
@@ -289,11 +294,28 @@ const AdminApplicationReview = () => {
                         ))}
                     </div>
                     
-                    <div className="relative w-full md:w-80">
-                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
-                         <input list="college-list" value={highlightCollege} onChange={e => setHighlightCollege(e.target.value)} 
-                            placeholder="College filter..." className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary placeholder:text-outline/40" />
-                         <datalist id="college-list">{uniqueColleges.map((c, i) => <option key={i} value={c} />)}</datalist>
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <div className="relative w-full md:w-64">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">work</span>
+                            <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
+                                className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary appearance-none">
+                                <option>All Roles</option>
+                                {internship?.rolesData?.map(r => (
+                                    <option key={r.name} value={r.name}>{r.name}</option>
+                                ))}
+                                {(!internship?.rolesData && internship?.roles) && internship.roles.split(',').map(r => (
+                                    <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
+                                ))}
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">expand_more</span>
+                        </div>
+
+                        <div className="relative w-full md:w-64">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+                            <input list="college-list" value={highlightCollege} onChange={e => setHighlightCollege(e.target.value)} 
+                                placeholder="College filter..." className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary placeholder:text-outline/40" />
+                            <datalist id="college-list">{uniqueColleges.map((c, i) => <option key={i} value={c} />)}</datalist>
+                        </div>
                     </div>
                 </div>
 

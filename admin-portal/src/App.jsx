@@ -56,7 +56,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Admin Routes */}
-          <Route path="/" element={<AdminLanding />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/landing" element={<AdminLanding />} />
           <Route path="/login" element={<AdminLogin />} />
           <Route path="/register" element={<AdminRegister />} />

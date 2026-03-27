@@ -15,8 +15,9 @@ const HodCommittees = () => {
         setLoading(true);
         try {
             const res = await api.get('/admin/internships');
+            const data = res?.data?.data || [];
             // HodDashboard filters internships by department, we do the same here if not already handled by backend
-            setInternships(res.data.data.filter(i => i.isActive));
+            setInternships(data.filter(i => i.isActive));
         } catch (err) {
             console.error('Failed to fetch internships for committees');
         } finally {

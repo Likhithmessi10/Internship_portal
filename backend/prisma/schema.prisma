@@ -118,7 +118,7 @@ model Internship {
   rolesData            Json?
   requirements         String?
   expectations         String?
-  location             String
+  location             String?
   duration             String
   openingsCount        Int
   isActive             Boolean   @default(true)
@@ -141,9 +141,11 @@ model Application {
   internshipId    String
   status          ApplicationStatus   @default(SUBMITTED)
   score           Int?                @default(0)
-  assignedRole    String?
-  preferredCircle String?
-  duration        String?
+  assignedRole     String?
+  preferredCircle  String?
+  preferredLocation String?  // User requirement for explicit preferred location
+  sop              String?  // User requirement for Statement of Purpose
+  duration         String?
   startDate       DateTime?
   joiningDate     DateTime?
   endDate         DateTime?

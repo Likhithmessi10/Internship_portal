@@ -15,18 +15,18 @@ const HodMeetings = () => {
         setLoading(true);
         try {
             const intRes = await api.get('/admin/internships');
-            const deptInternships = intRes.data.data;
+            const deptInternships = intRes?.data?.data || [];
             
             const committeePromises = deptInternships.map(i => api.get(`/admin/internships/${i.id}/committee`));
             const committeeResults = await Promise.all(committeePromises);
             
             const allMeetings = committeeResults
                 .map((r, idx) => ({ 
-                    ...r.data.data, 
-                    internshipTitle: deptInternships[idx].title,
-                    internshipId: deptInternships[idx].id 
+                    ...(r?.data?.data || {}), 
+                    internshipTitle: deptInternships[idx]?.title || 'Untitled Program',
+                    internshipId: deptInternships[idx]?.id 
                 }))
-                .filter(m => m.meetingDate); // Only those with a date set
+                .filter(m => m.meetingDate);
             
             // Sort by date soonest first
             setMeetings(allMeetings.sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate)));
