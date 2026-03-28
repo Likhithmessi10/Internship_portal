@@ -74,6 +74,7 @@ model User {
 
   studentProfile StudentProfile?
   mentoredApps   Application[]   @relation("MentorApps")
+  workAssignments WorkAssignment[] @relation("MentorWork")
 }
 
 model StudentProfile {
@@ -107,6 +108,7 @@ model StudentProfile {
   updatedAt         DateTime        @updatedAt
 
   applications Application[]
+  workAssignments WorkAssignment[] @relation("InternWork")
 }
 
 model Internship {
@@ -163,6 +165,7 @@ model Application {
   shortlist  Shortlist?
   stipend    Stipend?
   attendance Attendance?
+  workAssignments WorkAssignment[]
 
   @@unique([studentId, internshipId])
 }
@@ -287,4 +290,21 @@ model AuditLog {
   details   String?
   target    String?
   createdAt DateTime @default(now())
+}
+
+model WorkAssignment {
+  id            String   @id @default(uuid())
+  applicationId String
+  mentorId      String
+  studentId     String
+  title         String
+  description   String
+  dueDate       DateTime?
+  status        String   @default("PENDING") // PENDING, COMPLETED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  mentor        User        @relation("MentorWork", fields: [mentorId], references: [id])
+  student       StudentProfile @relation("InternWork", fields: [studentId], references: [id])
 }

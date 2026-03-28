@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles, Send, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles, Send, Users, Landmark, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
 
 const getMediaUrl = (url) => {
     if (!url) return null;
@@ -93,12 +94,32 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     const [joiningDate, setJoiningDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [mentorIdInput, setMentorIdInput] = useState('');
+    const [mentors, setMentors] = useState([]);
+    const [loadingMentors, setLoadingMentors] = useState(false);
     const [interviewScore, setInterviewScore] = useState('');
     
     // Instructor Schema fields
     const [member1Score, setMember1Score] = useState('');
     const [member2Score, setMember2Score] = useState('');
     const [member3Score, setMember3Score] = useState('');
+
+    useEffect(() => {
+        if (status === 'SUBMITTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role)) {
+            fetchMentors();
+        }
+    }, [status, user?.role]);
+
+    const fetchMentors = async () => {
+        setLoadingMentors(true);
+        try {
+            const res = await api.get(`/admin/users?role=MENTOR&department=${encodeURIComponent(internship.department)}`);
+            setMentors(res.data.data || []);
+        } catch (err) {
+            console.error('Failed to fetch mentors', err);
+        } finally {
+            setLoadingMentors(false);
+        }
+    };
 
     if (!application) return null;
     const { student, documents, status, trackingId, createdAt } = application;
@@ -289,9 +310,27 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                         <span className="material-symbols-outlined text-primary text-lg">forward_to_inbox</span>
                                         <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Assignment Control</h4>
                                     </div>
-                                    <div className="space-y-2 mb-8">
-                                        <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocate Mentor (ID or Full Name)</label>
-                                        <input type="text" value={mentorIdInput} onChange={e => setMentorIdInput(e.target.value)} placeholder="e.g. MENTOR-102" className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary placeholder:text-outline/30" />
+                                    <div className="space-y-2 mb-8 uppercase">
+                                        <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocate Registered Mentor</label>
+                                        <div className="relative group">
+                                            <select 
+                                                value={mentorIdInput} 
+                                                onChange={e => setMentorIdInput(e.target.value)}
+                                                className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary appearance-none cursor-pointer"
+                                                disabled={loadingMentors}
+                                            >
+                                                <option value="">{loadingMentors ? 'Syncing Mentor Registry...' : 'Select Mentor from Database'}</option>
+                                                {mentors.map(m => (
+                                                    <option key={m.id} value={m.id}>
+                                                        {m.name} ({m.department || 'General'})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/40 pointer-events-none group-focus-within:text-primary transition-colors" />
+                                        </div>
+                                        {mentors.length === 0 && !loadingMentors && (
+                                            <p className="text-[9px] text-error font-bold mt-1 tracking-tight italic">Warning: No registered mentors found in the database.</p>
+                                        )}
                                     </div>
                                     <div className="flex gap-4">
                                         <button onClick={handleForwardCommittee} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">

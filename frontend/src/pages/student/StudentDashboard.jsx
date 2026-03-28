@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { Link } from 'react-router-dom';
-import { FileText, Briefcase, GraduationCap, MapPin, AlertCircle, CheckCircle, Clock, ShieldCheck, Zap, Award, BookOpen, User, X, Landmark, CreditCard, Shield, Star } from 'lucide-react';
+import { FileText, Briefcase, GraduationCap, MapPin, AlertCircle, CheckCircle, Clock, ShieldCheck, Zap, Award, BookOpen, User, X, Landmark, CreditCard, Shield, Star, ClipboardList } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 const StudentDashboard = () => {
@@ -11,6 +11,7 @@ const StudentDashboard = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [stipendModalApp, setStipendModalApp] = useState(null);
+    const [assignments, setAssignments] = useState([]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -18,6 +19,12 @@ const StudentDashboard = () => {
                 const res = await api.get('/students/profile');
                 console.log('>>> FETCHED PROFILE (Dashboard):', res.data.data);
                 setProfile(res.data.data);
+
+                // Fetch work assignments if hired
+                if (res.data.data.applications?.some(app => app.status === 'HIRED')) {
+                    const workRes = await api.get('/admin/work/assignments');
+                    setAssignments(workRes.data.data);
+                }
             } catch (error) {
                 console.log("No profile yet", error);
             } finally {
@@ -238,6 +245,41 @@ const StudentDashboard = () => {
                     </div>
                 </div>
             </div>
+            {/* Work Assignments Section */}
+            {assignments.length > 0 && (
+                <div className="mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <h2 className="text-2xl font-black font-rajdhani mb-6 flex items-center gap-3 text-gray-900 dark:text-white uppercase tracking-wider">
+                        <ClipboardList className="text-indigo-600 dark:text-indigo-400 w-7 h-7" /> {t('dashboard.workAssignments') || 'Work Assignments'}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {assignments.map(work => (
+                            <div key={work.id} className="glass-card bg-white dark:bg-slate-900/40 border border-indigo-100/50 dark:border-white/5 rounded-[2rem] p-8 shadow-xl hover:shadow-2xl transition-all group">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                                        <Briefcase size={20} />
+                                    </div>
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
+                                        ${work.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}
+                                    `}>
+                                        {work.status}
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 leading-tight">{work.title}</h3>
+                                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">{work.description}</p>
+                                <div className="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-white/5">
+                                    <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        <Calendar size={14} /> Due: {work.dueDate ? new Date(work.dueDate).toLocaleDateString() : 'N/A'}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest">
+                                        <User size={14} /> Mentor: {work.mentor?.name}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Stipend Modal */}
             {stipendModalApp && (
                 <StipendModal 

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { LogOut, LayoutDashboard, Briefcase, User, GitCommit, Moon, Sun, Globe } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import api from '../utils/api';
 
 const StudentLayout = ({ children }) => {
     const { user, logout } = useAuth();

@@ -8,7 +8,6 @@ const {
     getRejectedApplications,
     updateApplicationStatus,
     exportApplications,
-    exportAdvanced,
     extendDeadline,
     getPortalConfig,
     updatePortalConfig,
@@ -19,7 +18,11 @@ const {
     getStipendDetails,
     updateStipendDetails,
     getAllInterns,
-    getMeetings
+    getMeetings,
+    getMentorInterns,
+    assignWork,
+    getWorkAssignments,
+    getUsersByRole
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
@@ -52,7 +55,6 @@ router.put('/internships/:id/committee', updateCommitteeDetails);
 // Application Management
 router.get('/internships/:id/applications', authorize('ADMIN', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), getApplications);
 router.get('/internships/:id/export', exportApplications);
-router.get('/applications/export/advanced', exportAdvanced);
 router.get('/applications/rejected', authorize('ADMIN', 'HOD'), getRejectedApplications);
 router.put('/applications/:id', authorize('ADMIN', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), updateApplicationStatus);
 
@@ -72,5 +74,10 @@ router.put('/users/:id/role', authorize('ADMIN', 'CE_PRTI'), updateUserRole);
 // Infrastructure & Diagnostics
 router.get('/audit-logs', authorize('ADMIN', 'CE_PRTI'), getAuditLogs);
 router.get('/system/health', authorize('ADMIN', 'CE_PRTI'), getSystemHealth);
+
+// Mentor & Work Assignments
+router.get('/mentor/interns', getMentorInterns);
+router.post('/work/assign', assignWork);
+router.get('/work/assignments', getWorkAssignments);
 
 module.exports = router;
