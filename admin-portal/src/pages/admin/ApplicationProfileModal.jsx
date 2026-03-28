@@ -112,11 +112,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     const fetchMentors = async () => {
         setLoadingMentors(true);
         try {
-            let url = '/admin/users?role=MENTOR';
-            if (user?.role === 'HOD' && user?.department) {
-                url += `&department=${encodeURIComponent(user.department)}`;
-            }
-            const res = await api.get(url);
+            const res = await api.get(`/admin/users?role=MENTOR&department=${encodeURIComponent(internship.department)}`);
             setMentors(res.data.data || []);
         } catch (err) {
             console.error('Failed to fetch mentors', err);

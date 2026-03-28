@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const xl = require('exceljs');
 const { allocateApplicants } = require('../services/allocationService');
 const { createAuditLog } = require('../utils/auditLogger');
+const { notifyMentorAssignment, notifyWorkAssignment } = require('../services/mailService');
 
 /**
  * @desc    Create Internship
@@ -210,7 +211,8 @@ const updateApplicationStatus = async (req, res) => {
                 const mentorUser = await prisma.user.findFirst({
                     where: {
                         OR: [{ id: mentorId }, { email: mentorId }, { name: { contains: mentorId, mode: 'insensitive' } }],
-                        role: 'MENTOR'
+                        role: 'MENTOR',
+                        department: internship.department // Force same department
                     }
                 });
                 if (!mentorUser) {
@@ -220,6 +222,9 @@ const updateApplicationStatus = async (req, res) => {
                     where: { id: applicationId },
                     data: { mentorId: mentorUser.id }
                 });
+
+                // Notify Mentor
+                await notifyMentorAssignment(mentorUser, s, internship);
             }
         }
 
@@ -469,6 +474,20 @@ const getCommitteeDetails = async (req, res) => {
 const updateCommitteeDetails = async (req, res) => {
     try {
         const { meetLink, interviewDate, membersData } = req.body;
+        
+        // Security Check: If mentor is being assigned, verify department
+        if (membersData?.mentorId) {
+            const internship = await prisma.internship.findUnique({ where: { id: req.params.id } });
+            const mentor = await prisma.user.findUnique({ where: { id: membersData.mentorId } });
+            
+            if (mentor && internship && mentor.department !== internship.department) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Mentor department mismatch. Selected mentor is from ${mentor.department}, but internship is in ${internship.department}.` 
+                });
+            }
+        }
+
         const committee = await prisma.committee.upsert({
             where: { internshipId: req.params.id },
             update: { meetLink, interviewDate: interviewDate ? new Date(interviewDate) : null, membersData },
@@ -491,7 +510,13 @@ const getUsersByRole = async (req, res) => {
         const { role, department } = req.query;
         const whereClause = {};
         if (role) whereClause.role = role;
-        if (department) whereClause.department = department;
+        
+        // If HOD, force their department
+        if (req.user.role === 'HOD' && req.user.department) {
+            whereClause.department = req.user.department;
+        } else if (department) {
+            whereClause.department = department;
+        }
 
         const users = await prisma.user.findMany({
             where: whereClause,
@@ -600,6 +625,122 @@ const getMeetings = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Get Interns for Mentor (Dashboard)
+ */
+const getMentorInterns = async (req, res) => {
+    try {
+        const mentorId = req.user.id;
+        const interns = await prisma.application.findMany({
+            where: { mentorId, status: { in: ['HIRED', 'ONGOING', 'COMPLETED'] } },
+            include: {
+                student: true,
+                internship: { select: { title: true, department: true } },
+                attendance: true,
+                workAssignments: { orderBy: { createdAt: 'desc' } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // Group by Internship
+        const groupedByInternship = interns.reduce((acc, current) => {
+            const intTitle = current.internship.title;
+            if (!acc[intTitle]) {
+                acc[intTitle] = {
+                    title: intTitle,
+                    id: current.internshipId,
+                    interns: []
+                };
+            }
+            acc[intTitle].interns.push(current);
+            return acc;
+        }, {});
+
+        res.status(200).json({ success: true, data: Object.values(groupedByInternship) });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Assign Work to Intern
+ */
+const assignWork = async (req, res) => {
+    try {
+        const { applicationId, title, description, dueDate } = req.body;
+        const mentorId = req.user.id;
+
+        const application = await prisma.application.findUnique({
+            where: { id: applicationId },
+            include: { student: { include: { user: true } } }
+        });
+
+        if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
+        if (application.mentorId !== mentorId && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const work = await prisma.workAssignment.create({
+            data: {
+                applicationId,
+                mentorId,
+                studentId: application.studentId,
+                title,
+                description,
+                dueDate: dueDate ? new Date(dueDate) : null
+            }
+        });
+
+        // Notify Intern
+        const student = application.student;
+        await notifyWorkAssignment(
+            student.user.email,
+            student.fullName,
+            req.user.name || 'Your Mentor',
+            title,
+            description
+        );
+
+        res.status(201).json({ success: true, data: work });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Get Work Assignments
+ */
+const getWorkAssignments = async (req, res) => {
+    try {
+        const { applicationId } = req.query;
+        let whereClause = {};
+
+        if (applicationId) {
+            whereClause.applicationId = applicationId;
+        } else if (req.user.role === 'MENTOR') {
+            whereClause.mentorId = req.user.id;
+        } else if (req.user.role === 'STUDENT') {
+            whereClause.studentId = req.user.studentProfileId; // Check this based on how student profile is handled
+        }
+
+        const assignments = await prisma.workAssignment.findMany({
+            where: whereClause,
+            include: {
+                student: { select: { fullName: true } },
+                mentor: { select: { name: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        res.status(200).json({ success: true, data: assignments });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -620,5 +761,8 @@ module.exports = {
     getStipendDetails,
     updateStipendDetails,
     getAllInterns,
-    getMeetings
+    getMeetings,
+    getMentorInterns,
+    assignWork,
+    getWorkAssignments
 };
