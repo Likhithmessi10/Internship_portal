@@ -21,6 +21,7 @@ import PrtiReports from './pages/admin/prti/PrtiReports';
 import PrtiPermissions from './pages/admin/prti/PrtiPermissions';
 import PrtiHealth from './pages/admin/prti/PrtiHealth';
 import PrtiAuditLogs from './pages/admin/prti/PrtiAuditLogs';
+import PRTICommitteeDashboard from './pages/admin/prti/PRTICommitteeDashboard';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
@@ -90,6 +91,11 @@ function App() {
           <Route path="/prti/audit-logs" element={
             <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
               <AdminLayout><PrtiAuditLogs /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/committee" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'COMMITTEE_MEMBER', 'ADMIN']}>
+              <AdminLayout><PRTICommitteeDashboard /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/hod/dashboard" element={

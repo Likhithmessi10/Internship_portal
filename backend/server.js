@@ -92,6 +92,7 @@ const internshipRoutes = require('./routes/internshipRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const collegeRoutes = require('./routes/colleges');
+const prtiRoutes = require('./routes/prtiRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 app.use('/api/v1/auth', authRoutes);
@@ -100,6 +101,7 @@ app.use('/api/v1/internships', internshipRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/colleges', collegeRoutes);
+app.use('/api/v1/prti', prtiRoutes);
 
 // Health check endpoint (no auth required)
 app.get('/health', (req, res) => {
@@ -129,7 +131,7 @@ const startServer = async () => {
     try {
         await prisma.$connect();
         console.log('✅ Connected to PostgreSQL Database via Prisma');
-        
+
         app.listen(PORT, () => {
             console.log(`🚀 Server listening on port ${PORT}`);
             console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);

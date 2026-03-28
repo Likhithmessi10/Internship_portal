@@ -25,6 +25,11 @@ const {
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
+const {
+    markAttendance,
+    getAttendance,
+    bulkMarkAttendance
+} = require('../controllers/attendanceController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -43,7 +48,7 @@ router.get('/internships', getAllInternships);
 router.get('/interns/all', authorize('ADMIN', 'CE_PRTI'), getAllInterns);
 router.get('/meetings', authorize('ADMIN', 'CE_PRTI', 'HOD'), getMeetings);
 router.post('/internships', createInternship);
-router.delete('/internships/:id', deleteInternship);
+router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI'), deleteInternship);
 router.put('/internships/:id/toggle', toggleInternship);
 router.put('/internships/:id/deadline', extendDeadline);
 
@@ -78,5 +83,10 @@ router.get('/system/health', authorize('ADMIN', 'CE_PRTI'), getSystemHealth);
 router.get('/mentor/interns', getMentorInterns);
 router.post('/work/assign', assignWork);
 router.get('/work/assignments', getWorkAssignments);
+
+// Attendance Management
+router.post('/attendance/mark', markAttendance);
+router.get('/attendance', getAttendance);
+router.post('/attendance/bulk', bulkMarkAttendance);
 
 module.exports = router;

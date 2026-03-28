@@ -5,7 +5,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { 
     TrendingUp, Users, Briefcase, AlertCircle, 
     RefreshCw, CheckCircle, ChevronRight, Filter,
-    Activity, ShieldCheck, Terminal, Database, Shield
+    Activity, ShieldCheck, Terminal, Database, Shield, Trash2,
+    AlertTriangle
 } from 'lucide-react';
 
 const PrtiDashboard = () => {
@@ -47,6 +48,25 @@ const PrtiDashboard = () => {
         };
         fetchData();
     }, []);
+
+    const handleDelete = async (id, title) => {
+        if (!window.confirm(`Are you sure you want to delete "${title}"? This will delete all applications and related data. This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await api.delete(`/admin/internships/${id}`);
+            setInternships(prev => prev.filter(i => i.id !== id));
+            // Update stats
+            setStats(prev => ({
+                ...prev,
+                activePrograms: prev.activePrograms - 1
+            }));
+        } catch (err) {
+            console.error('Failed to delete internship', err);
+            alert(err.response?.data?.message || 'Failed to delete internship');
+        }
+    };
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
@@ -178,6 +198,13 @@ const PrtiDashboard = () => {
                                                        <Users size={12} /> Committee
                                                     </button>
                                                     <button className="p-1.5 hover:bg-surface-container-high rounded-lg text-outline transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
+                                                    <button 
+                                                        onClick={() => handleDelete(int.id, int.title)}
+                                                        className="p-1.5 hover:bg-error/10 rounded-lg text-outline hover:text-error transition-colors"
+                                                        title="Delete Internship"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>

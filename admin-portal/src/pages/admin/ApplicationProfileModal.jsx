@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles, Send, Users, Landmark, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
+import Select from '../../components/ui/Select';
 
 const getMediaUrl = (url) => {
     if (!url) return null;
@@ -116,10 +117,21 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     const fetchMentors = async () => {
         setLoadingMentors(true);
         try {
+            // Fetch mentors from the SAME DEPARTMENT as the internship
             const res = await api.get(`/admin/users?role=MENTOR&department=${encodeURIComponent(internship.department)}`);
-            setMentors(res.data.data || []);
+            const allMentors = res.data.data || [];
+
+            // Filter to ensure only same-department mentors are shown
+            const sameDeptMentors = allMentors.filter(m => m.department === internship.department);
+
+            setMentors(sameDeptMentors);
+
+            if (sameDeptMentors.length === 0) {
+                alert(`Warning: No mentors found from ${internship.department} department. HOD must assign a mentor from the same department.`);
+            }
         } catch (err) {
             console.error('Failed to fetch mentors', err);
+            setMentors([]);
         } finally {
             setLoadingMentors(false);
         }
@@ -311,26 +323,37 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                         <span className="material-symbols-outlined text-primary text-lg">forward_to_inbox</span>
                                         <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Assignment Control</h4>
                                     </div>
+
+                                    {/* Department Constraint Notice */}
+                                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-sm">info</span>
+                                            Department Constraint
+                                        </p>
+                                        <p className="text-[9px] text-amber-700 mt-1">
+                                            HOD must assign a mentor from <strong>{internship.department}</strong> department. This is enforced by the system.
+                                        </p>
+                                    </div>
+
                                     <div className="space-y-2 mb-8 uppercase">
                                         <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocate Registered Mentor</label>
-                                        <div className="relative group">
-                                            <select
-                                                value={mentorIdInput}
-                                                onChange={e => setMentorIdInput(e.target.value)}
-                                                className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary appearance-none cursor-pointer"
-                                                disabled={loadingMentors}
-                                            >
-                                                <option value="">{loadingMentors ? 'Syncing Mentor Registry...' : 'Select Mentor from Database'}</option>
-                                                {mentors.map(m => (
-                                                    <option key={m.id} value={m.id}>
-                                                        {m.name} ({m.department || 'General'})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/40 pointer-events-none group-focus-within:text-primary transition-colors" />
-                                        </div>
+                                        <Select
+                                            value={mentorIdInput}
+                                            onChange={setMentorIdInput}
+                                            options={mentors.map(m => ({ value: m.id, label: `${m.name} (${m.department || 'General'})` }))}
+                                            placeholder={loadingMentors ? 'Syncing Mentor Registry...' : 'Select Mentor from Database'}
+                                            disabled={loadingMentors}
+                                            size="lg"
+                                        />
                                         {mentors.length === 0 && !loadingMentors && (
-                                            <p className="text-[9px] text-error font-bold mt-1 tracking-tight italic">Warning: No registered mentors found in the database.</p>
+                                            <p className="text-[9px] text-error font-bold mt-1 tracking-tight italic">
+                                                Warning: No registered mentors found in {internship.department} department.
+                                            </p>
+                                        )}
+                                        {mentors.length > 0 && (
+                                            <p className="text-[9px] text-emerald-600 font-bold mt-1 tracking-tight">
+                                                ✓ {mentors.length} mentor(s) available from {internship.department} department
+                                            </p>
                                         )}
                                     </div>
                                     <div className="flex gap-4">
@@ -362,32 +385,50 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                             <p className="text-[9px] font-bold text-outline uppercase tracking-[0.2em] mb-2 text-center">— Statutory Member Criteria —</p>
 
                                             <div className="grid grid-cols-3 gap-4">
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1">Member 1 (HOD)</label>
-                                                    <select value={member1Score} onChange={e => setMember1Score(e.target.value)} className="w-full border border-outline-variant/20 rounded px-2 py-2 text-[10px] font-bold text-primary bg-surface-container-lowest">
-                                                        <option value="">Select</option>
-                                                        <option value="ACADEMIC_MERIT">Academic</option>
-                                                        <option value="SOP_QUALITY">SOP</option>
-                                                        <option value="DISCIPLINE_RELEVANCE">Discipline</option>
-                                                    </select>
+                                                <div>
+                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1 mb-1">Member 1 (HOD)</label>
+                                                    <Select
+                                                        value={member1Score}
+                                                        onChange={setMember1Score}
+                                                        options={[
+                                                            { value: '', label: 'Select' },
+                                                            { value: 'ACADEMIC_MERIT', label: 'Academic' },
+                                                            { value: 'SOP_QUALITY', label: 'SOP' },
+                                                            { value: 'DISCIPLINE_RELEVANCE', label: 'Discipline' }
+                                                        ]}
+                                                        placeholder="Select"
+                                                        size="sm"
+                                                    />
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1">Member 2 (Mentor)</label>
-                                                    <select value={member2Score} onChange={e => setMember2Score(e.target.value)} className="w-full border border-outline-variant/20 rounded px-2 py-2 text-[10px] font-bold text-primary bg-surface-container-lowest">
-                                                        <option value="">Select</option>
-                                                        <option value="ACADEMIC_MERIT">Academic</option>
-                                                        <option value="SOP_QUALITY">SOP</option>
-                                                        <option value="DISCIPLINE_RELEVANCE">Discipline</option>
-                                                    </select>
+                                                <div>
+                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1 mb-1">Member 2 (Mentor)</label>
+                                                    <Select
+                                                        value={member2Score}
+                                                        onChange={setMember2Score}
+                                                        options={[
+                                                            { value: '', label: 'Select' },
+                                                            { value: 'ACADEMIC_MERIT', label: 'Academic' },
+                                                            { value: 'SOP_QUALITY', label: 'SOP' },
+                                                            { value: 'DISCIPLINE_RELEVANCE', label: 'Discipline' }
+                                                        ]}
+                                                        placeholder="Select"
+                                                        size="sm"
+                                                    />
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1">Member 3 (PRTI)</label>
-                                                    <select value={member3Score} onChange={e => setMember3Score(e.target.value)} className="w-full border border-outline-variant/20 rounded px-2 py-2 text-[10px] font-bold text-primary bg-surface-container-lowest">
-                                                        <option value="">Select</option>
-                                                        <option value="ACADEMIC_MERIT">Academic</option>
-                                                        <option value="SOP_QUALITY">SOP</option>
-                                                        <option value="DISCIPLINE_RELEVANCE">Discipline</option>
-                                                    </select>
+                                                <div>
+                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1 mb-1">Member 3 (PRTI)</label>
+                                                    <Select
+                                                        value={member3Score}
+                                                        onChange={setMember3Score}
+                                                        options={[
+                                                            { value: '', label: 'Select' },
+                                                            { value: 'ACADEMIC_MERIT', label: 'Academic' },
+                                                            { value: 'SOP_QUALITY', label: 'SOP' },
+                                                            { value: 'DISCIPLINE_RELEVANCE', label: 'Discipline' }
+                                                        ]}
+                                                        placeholder="Select"
+                                                        size="sm"
+                                                    />
                                                 </div>
                                             </div>
                                         </div>

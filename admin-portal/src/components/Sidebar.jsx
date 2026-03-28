@@ -11,31 +11,38 @@ const Sidebar = () => {
     const isPRTI = user?.role === 'CE_PRTI';
 
     const menuItems = [
-        { 
-            label: 'Dashboard', 
-            icon: 'dashboard', 
-            path: isAdmin ? '/admin/dashboard' : (isPRTI ? '/prti/dashboard' : `/${user?.role?.toLowerCase()}/dashboard`) 
+        {
+            label: 'Dashboard',
+            icon: 'dashboard',
+            path: isAdmin ? '/admin/dashboard' : (isPRTI ? '/prti/dashboard' : `/${user?.role?.toLowerCase()}/dashboard`)
         },
-        ...(isAdmin || isPRTI ? [{ 
-            label: 'Intern Management', 
-            icon: 'group', 
-            path: isPRTI ? '/prti/interns' : '/admin/interns' 
+        ...(isAdmin || isPRTI ? [{
+            label: 'Intern Management',
+            icon: 'group',
+            path: isPRTI ? '/prti/interns' : '/admin/interns'
         }] : []),
         ...(!isPRTI ? [{ label: 'Applications', icon: 'description', path: isHOD ? '/hod/applications' : '/internships/past' }] : []),
-        { 
-            label: 'Committees', 
-            icon: 'account_tree', 
-            path: isHOD ? '/hod/committees' : '/committees' 
+        // PRTI Committee Evaluation (special for PRTI members)
+        ...(isPRTI ? [{
+            label: 'Committee Evaluation',
+            icon: 'fact_check',
+            path: '/prti/committee',
+            highlight: true
+        }] : []),
+        {
+            label: 'Committees',
+            icon: 'account_tree',
+            path: isHOD ? '/hod/committees' : '/committees'
         },
-        { 
-            label: 'Meetings', 
-            icon: 'event_available', 
-            path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : '/meetings') 
+        {
+            label: 'Meetings',
+            icon: 'event_available',
+            path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : '/meetings')
         },
-        { 
-            label: 'Reports', 
-            icon: 'assessment', 
-            path: isPRTI ? '/prti/reports' : (isHOD ? '/hod/reports' : '/reports') 
+        {
+            label: 'Reports',
+            icon: 'assessment',
+            path: isPRTI ? '/prti/reports' : (isHOD ? '/hod/reports' : '/reports')
         },
     ];
 
@@ -58,11 +65,10 @@ const Sidebar = () => {
                     <NavLink
                         key={item.path}
                         to={item.path}
-                        className={({ isActive }) => 
-                            `flex items-center gap-4 h-12 transition-all duration-200 ${
-                                isActive 
-                                    ? 'text-sky-900 dark:text-sky-400 font-semibold border-l-4 border-sky-900 dark:border-sky-400 pl-4 bg-white/50 dark:bg-white/5 opacity-90' 
-                                    : 'text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800'
+                        className={({ isActive }) =>
+                            `flex items-center gap-4 h-12 transition-all duration-200 ${isActive || item.highlight
+                                ? 'text-sky-900 dark:text-sky-400 font-semibold border-l-4 border-sky-900 dark:border-sky-400 pl-4 bg-white/50 dark:bg-white/5 opacity-90'
+                                : 'text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800'
                             }`
                         }
                     >

@@ -6,6 +6,7 @@ import {
     Briefcase, Download, Trash2, ToggleLeft, ToggleRight,
     Users, CheckCircle, ChevronRight, BarChart2, Calendar, ArrowLeft, History
 } from 'lucide-react';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 
 const StatCard = ({ icon: Icon, label, value, color, subtext }) => (
     <div className={`glass-card bg-white/50 dark:bg-indigo-950/40 border-l-4 ${color} dark:border-white/5 premium-shadow rounded-3xl p-6 hover:-translate-y-1 transition-all duration-300 group`}>
@@ -35,7 +36,13 @@ const AdminPastInternships = () => {
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(null);
     const [toggling, setToggling] = useState(null);
-    const [exporting, setExporting] = useState(null);
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        internshipId: null,
+        title: '',
+        warning: '',
+        message: ''
+    });
 
     useEffect(() => { fetchData(); }, []);
 
@@ -44,7 +51,7 @@ const AdminPastInternships = () => {
         try {
             const res = await api.get('/admin/internships');
             // Filter only INACTIVE or EXPIRED internships
-            const past = res.data.data.filter(i => 
+            const past = res.data.data.filter(i =>
                 !i.isActive || (i.applicationDeadline && new Date(i.applicationDeadline) < new Date())
             );
             setInternships(past);
@@ -55,14 +62,35 @@ const AdminPastInternships = () => {
         }
     };
 
-    const handleDelete = async (id, title) => {
-        if (!confirm(`Delete internship "${title}"? This will remove all associated applications.`)) return;
-        setDeleting(id);
+    const handleDeleteClick = async (internship) => {
+        // Check if there are active applications
+        if (internship.applicationsCount > 0) {
+            setDeleteModal({
+                isOpen: true,
+                internshipId: internship.id,
+                title: internship.title,
+                warning: `This internship has ${internship.applicationsCount} application(s). Deleting will remove all applications permanently.`,
+                message: `Are you sure you want to delete "${internship.title}"? This action cannot be undone.`
+            });
+        } else {
+            setDeleteModal({
+                isOpen: true,
+                internshipId: internship.id,
+                title: internship.title,
+                warning: '',
+                message: `Are you sure you want to delete "${internship.title}"? This action cannot be undone.`
+            });
+        }
+    };
+
+    const handleDeleteConfirm = async () => {
+        setDeleting(deleteModal.internshipId);
         try {
-            await api.delete(`/admin/internships/${id}`);
-            setInternships(prev => prev.filter(i => i.id !== id));
-        } catch {
-            alert('Failed to delete');
+            await api.delete(`/admin/internships/${deleteModal.internshipId}`);
+            setInternships(prev => prev.filter(i => i.id !== deleteModal.internshipId));
+            setDeleteModal({ isOpen: false, internshipId: null, title: '', warning: '', message: '' });
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to delete internship');
         } finally {
             setDeleting(null);
         }
@@ -92,7 +120,6 @@ const AdminPastInternships = () => {
     const handleExport = async (id, title) => {
         setExporting(id);
         try {
-            const res = await api.get(`/admin/internships/${id}/export`, { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -102,7 +129,6 @@ const AdminPastInternships = () => {
             link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
         } catch {
-            alert('Failed to export applications.');
         } finally {
             setExporting(null);
         }
@@ -168,18 +194,18 @@ const AdminPastInternships = () => {
                         <p className="text-gray-500 font-medium">No past internships found yet.</p>
                     </div>
                 ) : (
-                <div className="overflow-x-auto px-8 pb-8">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-gray-100 dark:border-white/5">
-                                <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Internship</th>
-                                <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Status</th>
-                                <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Applications</th>
-                                <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Final Hiring</th>
-                                <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50 dark:divide-white/5">
+                    <div className="overflow-x-auto px-8 pb-8">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-gray-100 dark:border-white/5">
+                                    <th className="py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Internship</th>
+                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Status</th>
+                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Applications</th>
+                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Final Hiring</th>
+                                    <th className="py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                                 {internships.map(int => (
                                     <tr key={int.id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all group font-medium">
                                         <td className="py-5 pr-6">
@@ -213,7 +239,6 @@ const AdminPastInternships = () => {
                                                 )}
                                                 <button
                                                     onClick={() => handleExport(int.id, int.title)}
-                                                    disabled={exporting === int.id}
                                                     className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
                                                     title="Export Excel"
                                                 >
@@ -228,7 +253,7 @@ const AdminPastInternships = () => {
                                                     <ToggleLeft size={15} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(int.id, int.title)}
+                                                    onClick={() => handleDeleteClick(int)}
                                                     disabled={deleting === int.id}
                                                     className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                     title="Delete permanently"
@@ -244,6 +269,18 @@ const AdminPastInternships = () => {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, internshipId: null, title: '', warning: '', message: '' })}
+                onConfirm={handleDeleteConfirm}
+                title="Internship"
+                message={deleteModal.message}
+                warning={deleteModal.warning}
+                loading={deleting === deleteModal.internshipId}
+                confirmText="Delete Internship"
+            />
         </div>
     );
 };

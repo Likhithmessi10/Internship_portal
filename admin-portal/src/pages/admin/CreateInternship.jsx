@@ -77,11 +77,12 @@ const CreateInternshipForm = () => {
     const [locationInput, setLocationInput] = useState('');
 
     const [requiredDocs, setRequiredDocs] = useState([
-        { id: 'RESUME', label: 'Resume / CV', type: 'PDF' },
-        { id: 'PASSPORT_PHOTO', label: 'Passport Size Photo', type: 'IMAGE' }
+        { id: 'RESUME', label: 'Resume / CV', type: 'PDF', mandatory: true },
+        { id: 'PASSPORT_PHOTO', label: 'Passport Size Photo', type: 'IMAGE', mandatory: true }
     ]);
     const [docNameInput, setDocNameInput] = useState('');
     const [docTypeInput, setDocTypeInput] = useState('PDF');
+    const [docMandatoryInput, setDocMandatoryInput] = useState(true);
 
     const totalOpenings = roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0;
 
@@ -107,8 +108,9 @@ const CreateInternshipForm = () => {
     const addDoc = () => {
         if (docNameInput.trim()) {
             const id = docNameInput.toUpperCase().replace(/\s+/g, '_') + '_' + Date.now();
-            setRequiredDocs([...requiredDocs, { id, label: docNameInput, type: docTypeInput }]);
+            setRequiredDocs([...requiredDocs, { id, label: docNameInput, type: docTypeInput, mandatory: docMandatoryInput }]);
             setDocNameInput('');
+            setDocMandatoryInput(true);
         }
     };
 
@@ -454,13 +456,23 @@ const CreateInternshipForm = () => {
                                         placeholder="Enter document name..." className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
                                 </InputField>
                             </div>
-                            <div className="w-56">
-                                <InputField label="Acceptable Format">
+                            <div className="w-56 flex items-end gap-6">
+                                <InputField label="Format">
                                     <select value={docTypeInput} onChange={e => setDocTypeInput(e.target.value)} className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30">
                                         <option value="PDF">📑 PDF Only</option>
                                         <option value="IMAGE">🖼️ Image (JPG/PNG)</option>
                                     </select>
                                 </InputField>
+                                <div className="mb-2 flex items-center gap-2">
+                                    <input 
+                                        type="checkbox" 
+                                        id="mandatory-doc"
+                                        checked={docMandatoryInput} 
+                                        onChange={e => setDocMandatoryInput(e.target.checked)}
+                                        className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"
+                                    />
+                                    <label htmlFor="mandatory-doc" className="text-[10px] font-bold text-outline uppercase tracking-widest cursor-pointer">Mandatory</label>
+                                </div>
                             </div>
                             <div className="flex items-end">
                                 <button type="button" onClick={addDoc} className="h-[46px] px-6 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md shadow-primary/10">
@@ -477,8 +489,10 @@ const CreateInternshipForm = () => {
                                             <span className="material-symbols-outlined text-lg">{doc.type === 'PDF' ? 'description' : 'image'}</span>
                                         </div>
                                         <div>
-                                            <p className="font-bold text-primary tracking-tight text-sm uppercase">{doc.label}</p>
-                                            <p className="text-[10px] text-outline font-bold uppercase tracking-widest leading-none mt-1">{doc.type} FORMAT</p>
+                                            <p className="font-bold text-primary tracking-tight text-sm uppercase">{doc.label} {doc.mandatory && <span className="text-error">*</span>}</p>
+                                            <p className="text-[10px] text-outline font-bold uppercase tracking-widest leading-none mt-1">
+                                                {doc.type} FORMAT • {doc.mandatory ? 'Mandatory' : 'Optional'}
+                                            </p>
                                         </div>
                                     </div>
                                     <button onClick={() => setRequiredDocs(requiredDocs.filter((_, idx) => idx !== i))} 

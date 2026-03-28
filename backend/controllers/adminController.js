@@ -93,12 +93,34 @@ const getAllInternships = async (req, res) => {
 /**
  * @desc    Delete Internship
  * @route   DELETE /api/v1/admin/internships/:id
- * @access  Private (Admin)
+ * @access  Private (Admin, CE_PRTI)
  */
 const deleteInternship = async (req, res) => {
     try {
-        await prisma.internship.delete({ where: { id: req.params.id } });
-        res.status(200).json({ success: true, message: 'Internship deleted' });
+        const { id } = req.params;
+
+        // Find the internship first
+        const internship = await prisma.internship.findUnique({
+            where: { id }
+        });
+
+        if (!internship) {
+            return res.status(404).json({
+                success: false,
+                message: 'Internship not found'
+            });
+        }
+
+        // Delete the internship (Cascade should handle related records in Prisma)
+        await prisma.internship.delete({ where: { id } });
+
+        // Audit Log
+        await createAuditLog('DELETE_INTERNSHIP', req.user.email, `Deleted internship: ${internship.title}`, id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Internship deleted successfully'
+        });
     } catch (error) {
         console.error('Delete internship error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -189,11 +211,12 @@ const getRejectedApplications = async (req, res) => {
  */
 const updateApplicationStatus = async (req, res) => {
     try {
-        const { 
+        const {
             status, assignedRole, rollNumber, joiningDate, endDate, mentorId, committeeId, score,
             member1Id, member1Score, member2Id, member2Score, member3Id, member3Score
         } = req.body;
         const applicationId = req.params.id;
+        const userRole = req.user.role;
 
         const application = await prisma.application.findUnique({
             where: { id: applicationId },
@@ -205,18 +228,29 @@ const updateApplicationStatus = async (req, res) => {
         const s = application.student;
         const internship = application.internship;
 
-        // HOD assigning Mentor and Shortlisting
+        // HOD assigning Mentor and Forwarding to Committee
         if (status === 'COMMITTEE_EVALUATION') {
+            // HOD must assign mentor from SAME department
+            if (!mentorId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'HOD must assign a mentor from the same department before forwarding to committee.'
+                });
+            }
+
             if (mentorId) {
                 const mentorUser = await prisma.user.findFirst({
                     where: {
-                        OR: [{ id: mentorId }, { email: mentorId }, { name: { contains: mentorId, mode: 'insensitive' } }],
+                        id: mentorId,
                         role: 'MENTOR',
-                        department: internship.department // Force same department
+                        department: internship.department // ENFORCE same department
                     }
                 });
                 if (!mentorUser) {
-                    return res.status(400).json({ success: false, message: 'Invalid Mentor ID or Name. Mentor not found.' });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Invalid Mentor. Mentor must be from the same department as the internship.'
+                    });
                 }
                 await prisma.application.update({
                     where: { id: applicationId },
@@ -226,24 +260,43 @@ const updateApplicationStatus = async (req, res) => {
                 // Notify Mentor
                 await notifyMentorAssignment(mentorUser, s, internship);
             }
+
+            // Auto-create committee with 3 members: PRTI + HOD + Mentor
+            // Committee will be created/updated when scores are submitted
         }
 
-        // Committee Evaluating and Selecting
+        // Committee Evaluating (All 3 members submit scores)
         if (status === 'CA_APPROVED') {
             if (score) {
                 await prisma.shortlist.upsert({
                     where: { applicationId },
-                    update: { evaluationScore: parseInt(score), committeeMemberId: req.user.id },
-                    create: { applicationId, evaluationScore: parseInt(score), committeeMemberId: req.user.id }
+                    update: {
+                        score: parseInt(score),
+                        evaluatedAt: new Date()
+                    },
+                    create: {
+                        applicationId,
+                        score: parseInt(score),
+                        evaluatedAt: new Date()
+                    }
                 });
             }
         }
-        
+
+        // PRTI Member (Committee Head) gives FINAL APPROVAL
         if (status === 'HIRED') {
+            // Only PRTI Member or ADMIN can give final approval
+            if (userRole !== 'CE_PRTI' && userRole !== 'ADMIN' && userRole !== 'HOD') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Only PRTI Member, Admin, or HOD can give final approval.'
+                });
+            }
+
             if (!assignedRole) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Role is mandatory for hiring/approval.' 
+                return res.status(400).json({
+                    success: false,
+                    message: 'Role is mandatory for hiring/approval.'
                 });
             }
 
@@ -264,7 +317,7 @@ const updateApplicationStatus = async (req, res) => {
             if (assignedRole && internship.rolesData) {
                 const rolesArray = Array.isArray(internship.rolesData) ? internship.rolesData : [];
                 const roleInfo = rolesArray.find(r => r.name === assignedRole);
-                
+
                 if (roleInfo) {
                     const hiredRoleCount = await prisma.application.count({
                         where: {
@@ -275,9 +328,9 @@ const updateApplicationStatus = async (req, res) => {
                     });
                     const roleLimit = roleInfo.openings || 0;
                     if (hiredRoleCount >= roleLimit && application.status !== 'HIRED' && application.status !== 'CA_APPROVED') {
-                        return res.status(400).json({ 
-                            success: false, 
-                            message: `Role Full: Already hired ${hiredRoleCount} students for '${assignedRole}' (Limit: ${roleLimit}).` 
+                        return res.status(400).json({
+                            success: false,
+                            message: `Role Full: Already hired ${hiredRoleCount} students for '${assignedRole}' (Limit: ${roleLimit}).`
                         });
                     }
                 }
@@ -474,16 +527,16 @@ const getCommitteeDetails = async (req, res) => {
 const updateCommitteeDetails = async (req, res) => {
     try {
         const { meetLink, interviewDate, membersData } = req.body;
-        
+
         // Security Check: If mentor is being assigned, verify department
         if (membersData?.mentorId) {
             const internship = await prisma.internship.findUnique({ where: { id: req.params.id } });
             const mentor = await prisma.user.findUnique({ where: { id: membersData.mentorId } });
-            
+
             if (mentor && internship && mentor.department !== internship.department) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: `Mentor department mismatch. Selected mentor is from ${mentor.department}, but internship is in ${internship.department}.` 
+                return res.status(400).json({
+                    success: false,
+                    message: `Mentor department mismatch. Selected mentor is from ${mentor.department}, but internship is in ${internship.department}.`
                 });
             }
         }
@@ -510,7 +563,7 @@ const getUsersByRole = async (req, res) => {
         const { role, department } = req.query;
         const whereClause = {};
         if (role) whereClause.role = role;
-        
+
         // If HOD, force their department
         if (req.user.role === 'HOD' && req.user.department) {
             whereClause.department = req.user.department;

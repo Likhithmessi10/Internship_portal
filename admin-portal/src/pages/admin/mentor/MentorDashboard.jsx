@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../utils/api';
-import { 
-    Network, Users, BookOpen, Clock, Activity, 
+import {
+    Network, Users, BookOpen, Clock, Activity,
     Briefcase, ClipboardList, Send, FileText, Download,
-    ChevronDown, ChevronUp, User, Mail, Calendar
+    ChevronDown, ChevronUp, User, Mail, Calendar, CheckCircle, XCircle
 } from 'lucide-react';
 import WorkAssignmentModal from './WorkAssignmentModal';
+import AttendanceModal from './AttendanceModal';
 
 const MentorDashboard = () => {
     const { user } = useAuth();
@@ -14,16 +15,43 @@ const MentorDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [selectedIntern, setSelectedIntern] = useState(null);
     const [showWorkModal, setShowWorkModal] = useState(false);
+    const [showAttendanceModal, setShowAttendanceModal] = useState(false);
     const [expandedInternships, setExpandedInternships] = useState({});
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const res = await api.get('/admin/mentor/interns');
-            setInternships(res.data.data);
+            const internshipsData = res.data.data;
+
+            // Fetch attendance for all interns
+            const attendanceRes = await api.get('/admin/attendance');
+            const attendanceData = attendanceRes.data.data || [];
+
+            // Merge attendance data with internships
+            const mergedData = internshipsData.map(internship => ({
+                ...internship,
+                interns: internship.interns.map(intern => {
+                    const attendance = attendanceData.find(a => a.applicationId === intern.id);
+                    return {
+                        ...intern,
+                        attendance: attendance ? {
+                            daysAttended: attendance.daysAttended,
+                            totalDays: attendance.totalDays,
+                            meetsMinimum: attendance.meetsMinimum,
+                            percentage: attendance.totalDays > 0
+                                ? Math.round((attendance.daysAttended / attendance.totalDays) * 100)
+                                : 0
+                        } : null
+                    };
+                })
+            }));
+
+            setInternships(mergedData);
+
             // Default expand the first one if exists
-            if (res.data.data.length > 0) {
-                setExpandedInternships({ [res.data.data[0].id]: true });
+            if (mergedData.length > 0) {
+                setExpandedInternships({ [mergedData[0].id]: true });
             }
         } catch (err) {
             console.error('Failed to fetch mentor dashboard data');
@@ -45,6 +73,11 @@ const MentorDashboard = () => {
         setShowWorkModal(true);
     };
 
+    const handleMarkAttendance = (intern) => {
+        setSelectedIntern(intern);
+        setShowAttendanceModal(true);
+    };
+
     const generateReport = (internship) => {
         // Simple CSV generation for now
         const headers = ["Name", "Roll Number", "College", "Task Count", "Status"];
@@ -56,7 +89,7 @@ const MentorDashboard = () => {
             i.status
         ]);
 
-        let csvContent = "data:text/csv;charset=utf-8," 
+        let csvContent = "data:text/csv;charset=utf-8,"
             + headers.join(",") + "\n"
             + rows.map(e => e.join(",")).join("\n");
 
@@ -80,6 +113,14 @@ const MentorDashboard = () => {
 
     const totalInterns = internships.reduce((sum, int) => sum + int.interns.length, 0);
 
+    // Calculate average attendance
+    const avgAttendance = internships.reduce((sum, int) => {
+        const internSum = int.interns.reduce((iSum, intern) => {
+            return iSum + (intern.attendance?.percentage || 0);
+        }, 0);
+        return sum + internSum;
+    }, 0) / (totalInterns || 1);
+
     return (
         <div className="max-w-7xl mx-auto space-y-12 animate-fade-in relative z-10 pb-32 pt-8">
             {/* Stitch-style Header Section */}
@@ -100,26 +141,26 @@ const MentorDashboard = () => {
 
             {/* Bento Grid Stats */}
             <section className="grid grid-cols-12 gap-6">
-                <StatCard 
-                    label="Active Interns" 
-                    value={totalInterns} 
-                    icon="group" 
-                    color="sky" 
-                    sub="Assigned Students" 
+                <StatCard
+                    label="Active Interns"
+                    value={totalInterns}
+                    icon="group"
+                    color="sky"
+                    sub="Assigned Students"
                 />
-                <StatCard 
-                    label="Avg Attendance" 
-                    value="--%" 
-                    icon="timeline" 
-                    color="emerald" 
-                    sub="Engagement Score" 
+                <StatCard
+                    label="Avg Attendance"
+                    value={`${Math.round(avgAttendance)}%`}
+                    icon="timeline"
+                    color="emerald"
+                    sub="Engagement Score"
                 />
-                <StatCard 
-                    label="Pending Tasks" 
-                    value={internships.reduce((sum, int) => sum + int.interns.reduce((s, i) => s + (i.workAssignments?.filter(w => w.status === 'PENDING').length || 0), 0), 0)} 
-                    icon="history_edu" 
-                    color="amber" 
-                    sub="Requires Review" 
+                <StatCard
+                    label="Pending Tasks"
+                    value={internships.reduce((sum, int) => sum + int.interns.reduce((s, i) => s + (i.workAssignments?.filter(w => w.status === 'PENDING').length || 0), 0), 0)}
+                    icon="history_edu"
+                    color="amber"
+                    sub="Requires Review"
                 />
             </section>
 
@@ -128,7 +169,7 @@ const MentorDashboard = () => {
                 {internships.map(int => (
                     <div key={int.id} className="bg-white rounded-[2rem] overflow-hidden border border-outline-variant/20 shadow-xl shadow-primary/5 transition-all duration-300">
                         {/* Group Header */}
-                        <div 
+                        <div
                             onClick={() => toggleInternship(int.id)}
                             className="p-8 flex items-center justify-between cursor-pointer hover:bg-surface-container-low transition-colors select-none"
                         >
@@ -148,7 +189,7 @@ const MentorDashboard = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <button 
+                                <button
                                     onClick={(e) => { e.stopPropagation(); generateReport(int); }}
                                     className="p-3 bg-primary/10 text-primary border border-primary/20 rounded-2xl hover:bg-primary hover:text-white transition-all duration-300 group"
                                     title="Generate Internship Report"
@@ -170,6 +211,7 @@ const MentorDashboard = () => {
                                             <tr className="bg-surface-container-low">
                                                 <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-[0.2em]">Intern Identity</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-[0.2em]">Contact & College</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-[0.2em]">Attendance</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-[0.2em]">Task Progress</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-[0.2em] text-right">Actions</th>
                                             </tr>
@@ -204,25 +246,67 @@ const MentorDashboard = () => {
                                                     </td>
                                                     <td className="px-6 py-6">
                                                         <div className="flex flex-col gap-2">
+                                                            {intern.attendance ? (
+                                                                <>
+                                                                    <div className="flex justify-between items-end mb-1">
+                                                                        <span className="text-[10px] font-black text-outline uppercase tracking-tighter">
+                                                                            {intern.attendance.meetsMinimum ? (
+                                                                                <span className="text-emerald-600 flex items-center gap-1">
+                                                                                    <CheckCircle size={10} /> On Track
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-amber-600 flex items-center gap-1">
+                                                                                    <Clock size={10} /> Needs Attention
+                                                                                </span>
+                                                                            )}
+                                                                        </span>
+                                                                        <span className="text-[10px] font-black text-primary uppercase">{intern.attendance.percentage}%</span>
+                                                                    </div>
+                                                                    <div className="w-32 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className={`h-full transition-all duration-1000 ${intern.attendance.meetsMinimum ? 'bg-emerald-500' : 'bg-amber-500'
+                                                                                }`}
+                                                                            style={{ width: `${intern.attendance.percentage}%` }}
+                                                                        />
+                                                                    </div>
+                                                                    <p className="text-[9px] text-outline font-bold">
+                                                                        {intern.attendance.daysAttended}/{intern.attendance.totalDays} days
+                                                                    </p>
+                                                                </>
+                                                            ) : (
+                                                                <p className="text-[10px] text-outline/40 font-bold uppercase">No records</p>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-6">
+                                                        <div className="flex flex-col gap-2">
                                                             <div className="flex justify-between items-end mb-1">
                                                                 <span className="text-[10px] font-black text-outline uppercase tracking-tighter">Tasks completed: {intern.workAssignments?.filter(w => w.status === 'COMPLETED').length || 0}</span>
                                                                 <span className="text-[10px] font-black text-primary uppercase">{intern.workAssignments?.length > 0 ? Math.round((intern.workAssignments?.filter(w => w.status === 'COMPLETED').length / intern.workAssignments?.length) * 100) : 0}%</span>
                                                             </div>
                                                             <div className="w-48 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
-                                                                <div 
-                                                                    className="h-full bg-primary transition-all duration-1000" 
+                                                                <div
+                                                                    className="h-full bg-primary transition-all duration-1000"
                                                                     style={{ width: `${intern.workAssignments?.length > 0 ? (intern.workAssignments?.filter(w => w.status === 'COMPLETED').length / intern.workAssignments?.length) * 100 : 0}%` }}
                                                                 />
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-6 text-right">
-                                                        <button 
-                                                            onClick={() => handleAssignWork(intern)}
-                                                            className="px-5 py-2.5 bg-primary text-white text-[10px] font-black rounded-xl hover:scale-105 transition-all shadow-lg shadow-primary/20 inline-flex items-center gap-2 uppercase tracking-widest"
-                                                        >
-                                                            <ClipboardList size={14} /> Assign Task
-                                                        </button>
+                                                        <div className="flex items-center gap-2 justify-end">
+                                                            <button
+                                                                onClick={() => handleMarkAttendance(intern)}
+                                                                className="px-5 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-black rounded-xl hover:bg-emerald-100 transition-all shadow-sm inline-flex items-center gap-2 uppercase tracking-widest"
+                                                            >
+                                                                <CheckCircle size={14} /> Attendance
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleAssignWork(intern)}
+                                                                className="px-5 py-2.5 bg-primary text-white text-[10px] font-black rounded-xl hover:scale-105 transition-all shadow-lg shadow-primary/20 inline-flex items-center gap-2 uppercase tracking-widest"
+                                                            >
+                                                                <ClipboardList size={14} /> Assign Task
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -246,12 +330,12 @@ const MentorDashboard = () => {
             </div>
 
             {showWorkModal && selectedIntern && (
-                <WorkAssignmentModal 
-                    application={selectedIntern} 
+                <WorkAssignmentModal
+                    application={selectedIntern}
                     onClose={(success) => {
                         setShowWorkModal(false);
                         if (success) fetchData();
-                    }} 
+                    }}
                 />
             )}
         </div>

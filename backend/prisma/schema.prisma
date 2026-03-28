@@ -222,8 +222,10 @@ model Attendance {
   applicationId String  @unique
   daysAttended  Int     @default(0)
   totalDays     Int     @default(0)
+  attendanceLog Json?   // [{date: "2026-03-15", present: true, hours: 8, markedAt: "..."}]
   mentorReview  String?
   meetsMinimum  Boolean @default(false)
+  minimumDays   Int     @default(20)
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
@@ -250,6 +252,12 @@ model OtpVerification {
   otp        String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+}
+
+model DocumentConfiguration {
+  id        String @id @default("singleton")
+  documents Json   // [{id, label, type, mandatory}]
+  updatedAt DateTime @updatedAt
 }
 
 model Committee {
@@ -307,4 +315,29 @@ model WorkAssignment {
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   mentor        User        @relation("MentorWork", fields: [mentorId], references: [id])
   student       StudentProfile @relation("InternWork", fields: [studentId], references: [id])
+  submissions   TaskSubmission[]
+}
+
+model TaskSubmission {
+  id              String   @id @default(uuid())
+  workAssignmentId String
+  workAssignment  WorkAssignment @relation(fields: [workAssignmentId], references: [id], onDelete: Cascade)
+  
+  studentId       String
+  submissionDate  DateTime @default(now())
+  submissionText  String?
+  attachmentUrl   String?
+  attachmentType  String?  // PDF, DOC, ZIP, etc.
+  
+  status          String   @default("SUBMITTED") // SUBMITTED, REVIEWED, REVISION_REQUESTED
+  mentorFeedback  String?
+  mentorRating    Int?     // 1-5 scale
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  
+  createdAt       DateTime @updatedAt
+  updatedAt       DateTime @updatedAt
+
+  @@index([workAssignmentId])
+  @@index([studentId])
 }
