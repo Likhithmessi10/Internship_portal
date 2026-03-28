@@ -1,4 +1,5 @@
-const fs = require('fs');
+const fs = require('fs').promises;
+const path = require('path');
 
 const fileValidator = async (req, res, next) => {
     try {
@@ -16,11 +17,10 @@ const fileValidator = async (req, res, next) => {
             const type = await fileTypeFromFile(file.path);
 
             if (!type || !allowedExtensions.includes(type.ext) || !allowedMimeTypes.includes(type.mime)) {
-
                 // Cleanup invalid files
                 for (const f of req.files) {
-                    if (fs.existsSync(f.path)) {
-                        fs.unlinkSync(f.path);
+                    if (await fs.access(f.path).then(() => true).catch(() => false)) {
+                        await fs.unlink(f.path);
                     }
                 }
 
@@ -31,15 +31,24 @@ const fileValidator = async (req, res, next) => {
             }
         }
 
+        // Pass to ClamAV malware scanner (if enabled)
+        // The actual scanning happens in malwareScanMiddleware
+        // This is just a placeholder for the flow
+        if (process.env.CLAMAV_ENABLED === 'true') {
+            req.clamavReady = true;
+        }
+
         next();
     } catch (error) {
-        console.error('File Validation Error:', error);
+        console.error('File Validation Error:', error.message);
 
         // Cleanup on error
         if (req.files) {
             for (const f of req.files) {
-                if (fs.existsSync(f.path)) {
-                    fs.unlinkSync(f.path);
+                try {
+                    await fs.unlink(f.path);
+                } catch (unlinkError) {
+                    console.error('Failed to delete file:', unlinkError.message);
                 }
             }
         }

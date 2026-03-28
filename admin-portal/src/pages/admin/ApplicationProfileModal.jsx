@@ -71,7 +71,7 @@ const Badge = ({ yes, label }) => (
 const DocRow = ({ doc, label, onView }) => (
     <div className="flex items-center justify-between p-4 rounded-lg bg-surface-container-high/40 border border-outline-variant/10">
         <div className="flex items-center gap-3">
-             <span className={`material-symbols-outlined text-lg ${doc ? 'text-primary' : 'text-outline/30'}`}>description</span>
+            <span className={`material-symbols-outlined text-lg ${doc ? 'text-primary' : 'text-outline/30'}`}>description</span>
             <span className={`text-[10px] font-bold uppercase tracking-widest ${doc ? 'text-primary' : 'text-outline/30'}`}>{label}</span>
         </div>
         {doc ? (
@@ -97,11 +97,15 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     const [mentors, setMentors] = useState([]);
     const [loadingMentors, setLoadingMentors] = useState(false);
     const [interviewScore, setInterviewScore] = useState('');
-    
+
     // Instructor Schema fields
     const [member1Score, setMember1Score] = useState('');
     const [member2Score, setMember2Score] = useState('');
     const [member3Score, setMember3Score] = useState('');
+
+    // Destructure application properties early to avoid "cannot access before initialization"
+    if (!application) return null;
+    const { student, documents, status, trackingId, createdAt } = application;
 
     useEffect(() => {
         if (status === 'SUBMITTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role)) {
@@ -120,9 +124,6 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
             setLoadingMentors(false);
         }
     };
-
-    if (!application) return null;
-    const { student, documents, status, trackingId, createdAt } = application;
 
     const getDoc = (type, label) => documents?.find(d => d.type === type || d.type === label);
     const resumeDoc = getDoc('RESUME', 'Resume / CV');
@@ -144,8 +145,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
 
     const handleCommitteeSelect = () => {
         if (!interviewScore) return alert('Enter an interview score (1-100).');
-        updateStatus('CA_APPROVED', { 
-            score: interviewScore, 
+        updateStatus('CA_APPROVED', {
+            score: interviewScore,
             committeeId: internship.committee?.id || user.id,
             member1Score: member1Score || undefined,
             member2Score: member2Score || undefined,
@@ -210,8 +211,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             {/* Personal */}
                             <section>
                                 <div className="flex items-center gap-2 mb-4">
-                                     <span className="material-symbols-outlined text-primary text-xl">person</span>
-                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Personal Details</h3>
+                                    <span className="material-symbols-outlined text-primary text-xl">person</span>
+                                    <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Personal Details</h3>
                                 </div>
                                 <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10">
                                     <InfoRow label="Phone" value={student?.phone} />
@@ -224,8 +225,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             {/* Academic */}
                             <section>
                                 <div className="flex items-center gap-2 mb-4">
-                                     <span className="material-symbols-outlined text-primary text-xl">school</span>
-                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Academic Profile</h3>
+                                    <span className="material-symbols-outlined text-primary text-xl">school</span>
+                                    <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Academic Profile</h3>
                                 </div>
                                 <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10">
                                     <InfoRow label="College" value={student?.collegeName} />
@@ -243,8 +244,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                         {application?.sop && (
                             <section>
                                 <div className="flex items-center gap-2 mb-4">
-                                     <span className="material-symbols-outlined text-primary text-xl">article</span>
-                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Statement of Purpose</h3>
+                                    <span className="material-symbols-outlined text-primary text-xl">article</span>
+                                    <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Statement of Purpose</h3>
                                 </div>
                                 <div className="bg-primary/5 p-6 rounded-lg border border-primary/10">
                                     <p className="text-xs font-medium text-primary/80 leading-relaxed whitespace-pre-wrap italic">
@@ -257,8 +258,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                         {/* Full Width Sections */}
                         <section>
                             <div className="flex items-center gap-2 mb-4">
-                                 <span className="material-symbols-outlined text-primary text-xl">description</span>
-                                 <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Documentation Pool</h3>
+                                <span className="material-symbols-outlined text-primary text-xl">description</span>
+                                <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Documentation Pool</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {internship?.requiredDocuments && internship.requiredDocuments.length > 0 ? (
@@ -313,8 +314,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                     <div className="space-y-2 mb-8 uppercase">
                                         <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocate Registered Mentor</label>
                                         <div className="relative group">
-                                            <select 
-                                                value={mentorIdInput} 
+                                            <select
+                                                value={mentorIdInput}
                                                 onChange={e => setMentorIdInput(e.target.value)}
                                                 className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary appearance-none cursor-pointer"
                                                 disabled={loadingMentors}
@@ -359,7 +360,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
 
                                         <div className="bg-white p-6 rounded-lg border border-outline-variant/10 space-y-5">
                                             <p className="text-[9px] font-bold text-outline uppercase tracking-[0.2em] mb-2 text-center">— Statutory Member Criteria —</p>
-                                            
+
                                             <div className="grid grid-cols-3 gap-4">
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-outline uppercase block ml-1">Member 1 (HOD)</label>
@@ -406,9 +407,9 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                         {status === 'CA_APPROVED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
                             <div className="pt-8 mt-4 border-t border-outline-variant/10">
                                 <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm relative overflow-hidden">
-                                     {/* Accent bar for confirmation */}
-                                     <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/50"></div>
-                                    
+                                    {/* Accent bar for confirmation */}
+                                    <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/50"></div>
+
                                     <div className="flex items-center gap-2 mb-6">
                                         <span className="material-symbols-outlined text-emerald-600 text-lg">verified</span>
                                         <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em]">Institutional Onboarding</h4>

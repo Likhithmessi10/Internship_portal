@@ -10,7 +10,6 @@ const crypto = require('crypto');
  */
 const upsertProfile = async (req, res) => {
     try {
-        console.log('>>> UPSERT PROFILE REQUEST:', req.body);
         let {
             fullName, collegeRollNumber, phone, dob, address, aadhar,
             collegeName, university, degree, branch,
@@ -67,16 +66,16 @@ const upsertProfile = async (req, res) => {
             }
         });
 
-        console.log('>>> UPSERT SUCCESS! Profile Roll Number:', profile.rollNumber);
         res.status(200).json({ success: true, data: profile });
     } catch (error) {
-        console.error('>>> UPSERT ERROR:', error);
+        // Don't log sensitive data
+        console.error('Profile upsert error:', error.message);
 
         // Handle unique constraint violations with specifics
         if (error.code === 'P2002') {
             const field = error.meta?.target?.[0] || 'Aadhar or Roll Number';
-            return res.status(400).json({ 
-                success: false, 
+            return res.status(400).json({
+                success: false,
                 message: `Setup failed: A student with this ${field} already exists in the system.`
             });
         }

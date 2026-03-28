@@ -1,7 +1,7 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
+const upload = require('../middleware/uploadMiddleware');
 const fileValidator = require('../middleware/fileValidator');
+const { uploadLimiter } = require('../middleware/rateLimiter');
 const {
     submitApplication,
     trackStatus,
@@ -12,31 +12,12 @@ const {
 
 const router = express.Router();
 
-// Multer Config for Public Uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
-});
-
-const upload = multer({
-    storage,
-    fileFilter: (req, file, cb) => {
-        const filetypes = /pdf|jpg|jpeg|png/;
-        const extnameMatch = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetypeMatch = filetypes.test(file.mimetype);
-        if (extnameMatch && mimetypeMatch) return cb(null, true);
-        cb(new Error('Only PDF and image files are allowed!'));
-    }
-});
-
 router.post('/otp/generate', generateOtp);
 router.post('/otp/verify', verifyOtp);
 router.get('/internships', getPublicInternships);
 router.get('/track/:trackingId', trackStatus);
-router.post('/apply', upload.any(), fileValidator, submitApplication);
+
+// Public application upload with rate limiting, file validation, and malware scan
+router.post('/apply', uploadLimiter, upload.any(), fileValidator, submitApplication);
 
 module.exports = router;

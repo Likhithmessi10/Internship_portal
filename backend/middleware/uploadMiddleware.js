@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const { malwareScanMiddleware } = require('./clamav');
 
 // Configure Local Storage to `uploads/` folder
 const storage = multer.diskStorage({
@@ -19,7 +20,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
     // allow PDF and common image types
     const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-    
+
     if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
@@ -35,4 +36,16 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-module.exports = upload;
+/**
+ * Upload middleware with malware scanning
+ * Use this instead of upload.any() directly
+ * Usage: upload.fields([...]), malwareScan
+ */
+const uploadWithScan = {
+    any: () => [upload.any(), malwareScanMiddleware],
+    fields: (fields) => [upload.fields(fields), malwareScanMiddleware],
+    single: (name) => [upload.single(name), malwareScanMiddleware],
+    array: (name, maxCount) => [upload.array(name, maxCount), malwareScanMiddleware]
+};
+
+module.exports = uploadWithScan;

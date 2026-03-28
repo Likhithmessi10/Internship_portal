@@ -29,14 +29,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         const res = await api.post('/auth/login', { email, password });
-        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('token', res.data.accessToken);
         setUser(res.data.user);
         return res.data.user;
     };
 
     const register = async (email, password) => {
         const res = await api.post('/auth/register', { email, password });
-        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('token', res.data.accessToken);
         setUser(res.data.user);
         return res.data.user;
     };
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setUser(null);
         // Redirect to login (assuming root or /login exists)
-        window.location.href = '/'; 
+        window.location.href = '/';
     };
 
     return (

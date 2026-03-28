@@ -48,7 +48,7 @@ const createInternship = async (req, res) => {
         // Audit Log
         await createAuditLog('CREATE_INTERNSHIP', req.user.email, `Created: ${title}`, internship.id);
     } catch (error) {
-        console.error(error);
+        console.error('Create internship error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -85,7 +85,7 @@ const getAllInternships = async (req, res) => {
 
         res.status(200).json({ success: true, data: result });
     } catch (error) {
-        console.error(error);
+        console.error('Get internships error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -100,7 +100,7 @@ const deleteInternship = async (req, res) => {
         await prisma.internship.delete({ where: { id: req.params.id } });
         res.status(200).json({ success: true, message: 'Internship deleted' });
     } catch (error) {
-        console.error(error);
+        console.error('Delete internship error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -122,7 +122,7 @@ const toggleInternship = async (req, res) => {
 
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -155,7 +155,7 @@ const getApplications = async (req, res) => {
         });
         res.status(200).json({ success: true, data: applications });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -177,7 +177,7 @@ const getRejectedApplications = async (req, res) => {
         });
         res.status(200).json({ success: true, data: applications });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -328,7 +328,7 @@ const updateApplicationStatus = async (req, res) => {
         // Audit Log
         await createAuditLog('UPDATE_APPLICATION', req.user.email, `Status changed to ${status}`, applicationId);
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -399,7 +399,7 @@ const extendDeadline = async (req, res) => {
         });
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -413,7 +413,7 @@ const getPortalConfig = async (req, res) => {
         const config = await prisma.portalConfiguration.findUnique({ where: { id: 'singleton' } });
         res.status(200).json({ success: true, data: config });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -432,7 +432,7 @@ const updatePortalConfig = async (req, res) => {
         });
         res.status(200).json({ success: true, data: config });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -463,7 +463,7 @@ const getCommitteeDetails = async (req, res) => {
         const committee = await prisma.committee.findUnique({ where: { internshipId: req.params.id } });
         res.status(200).json({ success: true, data: committee });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -495,7 +495,7 @@ const updateCommitteeDetails = async (req, res) => {
         });
         res.status(200).json({ success: true, data: committee });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -525,7 +525,7 @@ const getUsersByRole = async (req, res) => {
         });
         res.status(200).json({ success: true, data: users });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -552,7 +552,7 @@ const updateUserRole = async (req, res) => {
         await createAuditLog('UPDATE_USER_ROLE', req.user.email, `Changed ${targetUser.email} role to ${role}`, targetId);
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -565,7 +565,7 @@ const getStipendDetails = async (req, res) => {
         const stipend = await prisma.stipend.findUnique({ where: { applicationId: req.params.id } });
         res.status(200).json({ success: true, data: stipend });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -583,7 +583,7 @@ const updateStipendDetails = async (req, res) => {
         });
         res.status(200).json({ success: true, data: stipend });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -604,7 +604,7 @@ const getAllInterns = async (req, res) => {
         });
         res.status(200).json({ success: true, data: interns });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -620,7 +620,7 @@ const getMeetings = async (req, res) => {
         });
         res.status(200).json({ success: true, data: committees });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -658,7 +658,7 @@ const getMentorInterns = async (req, res) => {
 
         res.status(200).json({ success: true, data: Object.values(groupedByInternship) });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -704,7 +704,7 @@ const assignWork = async (req, res) => {
 
         res.status(201).json({ success: true, data: work });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -736,7 +736,7 @@ const getWorkAssignments = async (req, res) => {
 
         res.status(200).json({ success: true, data: assignments });
     } catch (error) {
-        console.error(error);
+        console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
