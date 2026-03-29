@@ -21,8 +21,7 @@ const {
     getMeetings,
     getMentorInterns,
     assignWork,
-    getWorkAssignments,
-    getUsersByRole
+    getWorkAssignments
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
