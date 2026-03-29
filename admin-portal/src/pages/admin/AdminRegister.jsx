@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link, useSearchParams, Navigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { Home } from 'lucide-react';
 
 const AdminRegister = () => {
     const { registerAdmin, user } = useAuth();
@@ -75,9 +76,9 @@ const AdminRegister = () => {
 
             <div className="w-full max-w-[480px]">
                 <div className="text-center mb-12">
-                     <div className="text-primary font-bold text-xs uppercase tracking-[0.3em] mb-4">Institutional Portal</div>
-                     <h1 className="text-4xl font-extrabold text-primary tracking-tighter uppercase mb-2">APTRANSCO</h1>
-                     <div className="h-1 w-12 bg-primary mx-auto rounded-full"></div>
+                    <div className="text-primary font-bold text-xs uppercase tracking-[0.3em] mb-4">Institutional Portal</div>
+                    <h1 className="text-4xl font-extrabold text-primary tracking-tighter uppercase mb-2">APTRANSCO</h1>
+                    <div className="h-1 w-12 bg-primary mx-auto rounded-full"></div>
                 </div>
 
 
@@ -125,9 +126,9 @@ const AdminRegister = () => {
                                 <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
                                     Department
                                 </label>
-                                <select 
+                                <select
                                     className="w-full bg-white border border-outline-variant/20 text-primary font-bold rounded-lg px-4 py-3 text-xs focus:outline-primary shadow-sm"
-                                    value={department} 
+                                    value={department}
                                     onChange={e => setDepartment(e.target.value)}
                                     required
                                 >
@@ -180,8 +181,15 @@ const AdminRegister = () => {
 
                     <div className="mt-10 pt-8 border-t border-outline-variant/10 text-center">
                         <p className="text-[10px] text-outline font-bold uppercase tracking-widest">
-                            Authorized personnel only · <Link to="/login" className="text-primary hover:underline">Sign In</Link>
+                            Authorized personnel only
                         </p>
+                        <div className="flex items-center justify-center gap-2 mt-2">
+                            <Link to="/" className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline flex items-center gap-1">
+                                <Home size={12} /> All Roles
+                            </Link>
+                            <span className="text-outline/40">•</span>
+                            <Link to="/login" className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline">Sign In</Link>
+                        </div>
                     </div>
                 </div>
             </div>

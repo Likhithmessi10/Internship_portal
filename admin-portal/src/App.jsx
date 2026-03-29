@@ -22,6 +22,7 @@ import PrtiPermissions from './pages/admin/prti/PrtiPermissions';
 import PrtiHealth from './pages/admin/prti/PrtiHealth';
 import PrtiAuditLogs from './pages/admin/prti/PrtiAuditLogs';
 import PRTICommitteeDashboard from './pages/admin/prti/PRTICommitteeDashboard';
+import PRTICommitteeManagement from './pages/admin/prti/PRTICommitteeManagement';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
@@ -98,6 +99,11 @@ function App() {
               <AdminLayout><PRTICommitteeDashboard /></AdminLayout>
             </ProtectedRoute>
           } />
+          <Route path="/prti/committees/manage" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PRTICommitteeManagement /></AdminLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/hod/dashboard" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
               <AdminLayout><HodDashboard /></AdminLayout>
@@ -109,7 +115,12 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/hod/committees" element={
-            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
+              <AdminLayout><HodCommittees /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/committees" element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
               <AdminLayout><HodCommittees /></AdminLayout>
             </ProtectedRoute>
           } />

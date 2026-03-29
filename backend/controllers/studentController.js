@@ -15,7 +15,8 @@ const upsertProfile = async (req, res) => {
             collegeName, university, degree, branch,
             yearOfStudy, cgpa, collegeCategory, nirfRanking,
             hasExperience, hasProjects, hasCertifications,
-            experienceDesc, projectsDesc, skills, photoUrl
+            experienceDesc, projectsDesc, skills, photoUrl,
+            linkedinUrl, githubUrl
         } = req.body;
 
         const userId = req.user.id;
@@ -54,7 +55,9 @@ const upsertProfile = async (req, res) => {
             experienceDesc: experienceDesc || null,
             projectsDesc: projectsDesc || null,
             skills: skills || null,
-            photoUrl: photoUrl || null
+            photoUrl: photoUrl || null,
+            linkedinUrl: linkedinUrl || null,
+            githubUrl: githubUrl || null
         };
 
         const profile = await prisma.studentProfile.upsert({
@@ -93,13 +96,13 @@ const getProfile = async (req, res) => {
     try {
         const profile = await prisma.studentProfile.findUnique({
             where: { userId: req.user.id },
-            include: { 
+            include: {
                 applications: {
                     include: {
                         internship: true,
                         stipend: true
                     }
-                } 
+                }
             }
         });
 

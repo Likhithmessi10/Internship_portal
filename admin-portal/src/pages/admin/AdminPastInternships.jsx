@@ -120,6 +120,9 @@ const AdminPastInternships = () => {
     const handleExport = async (id, title) => {
         setExporting(id);
         try {
+            const res = await api.get(`/admin/internships/${id}/export`, {
+                responseType: 'blob'
+            });
             const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -128,7 +131,9 @@ const AdminPastInternships = () => {
             link.click();
             link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
-        } catch {
+        } catch (err) {
+            console.error('Export error:', err);
+            alert('Failed to export applications');
         } finally {
             setExporting(null);
         }

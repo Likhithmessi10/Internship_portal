@@ -104,6 +104,8 @@ model StudentProfile {
   projectsDesc      String?
   skills            String?
   photoUrl          String?
+  linkedinUrl       String?
+  githubUrl         String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -129,6 +131,8 @@ model Internship {
   priorityCollege      String?
   priorityCollegeQuota Int?      @default(0)
   requiredDocuments    Json?
+  stipendType          String?   @default("NON_COLLABORATIVE") // COLLABORATIVE or NON_COLLABORATIVE
+  stipendAmount        Float?    // Amount in INR (optional, for collaborative)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -187,16 +191,21 @@ model Document {
 model Shortlist {
   id            String   @id @default(uuid())
   applicationId String   @unique
-  committeeId   String
+
+  // Committee evaluation scores (3 members)
+  // Member 1: HOD (Permanent)
+  hodId         String?
+  hodScore      ScoreCriteria?
   
-  // Instructor requirements for 3-member tracking
-  member1Id     String?
-  member1Score  ScoreCriteria?
-  member2Id     String?
-  member2Score  ScoreCriteria?
-  member3Id     String?
-  member3Score  ScoreCriteria?
+  // Member 2: Assigned Mentor
+  mentorId      String?
+  mentorScore   ScoreCriteria?
   
+  // Member 3: PRTI Representative (Editable)
+  prtiMemberId  String?
+  prtiScore     ScoreCriteria?
+  
+  // Aggregate score and decision
   score         Int      @default(0)
   decision      String
   evaluatedAt   DateTime @default(now())
@@ -265,7 +274,17 @@ model Committee {
   internshipId  String    @unique
   meetLink      String?
   interviewDate DateTime?
-  membersData   Json?     // store array of role+userIds or unstructured {hodId, mentorIds}
+  
+  // Committee structure:
+  // Member 1 (Permanent): HOD of the department
+  // Member 2 (Assigned): Mentor (assigned by HOD, same department)
+  // Member 3 (Editable): PRTI Representative (selected by PRTI member)
+  hodId         String?   // Permanent - HOD of department
+  mentorId      String?   // Assigned by HOD
+  prtiMemberId  String?   // Editable by PRTI
+  
+  membersData   Json?     // Store additional member details
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

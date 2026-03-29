@@ -227,6 +227,26 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Personal Details</h3>
                                 </div>
                                 <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10">
+                                    <div className="flex items-center gap-4 mb-4 pb-4 border-b border-outline-variant/10">
+                                        {photoDoc || student?.photoUrl ? (
+                                            <img
+                                                src={getMediaUrl(photoDoc ? photoDoc.url : student.photoUrl)}
+                                                alt="Student"
+                                                className="w-20 h-20 rounded-full object-cover ring-2 ring-primary/20 shadow-lg cursor-pointer hover:scale-105 transition-transform"
+                                                onClick={() => openViewer(photoDoc ? photoDoc.url : student.photoUrl, 'Passport Photo')}
+                                            />
+                                        ) : (
+                                            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-3xl">
+                                                {student?.fullName?.charAt(0)}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="text-[9px] font-bold text-outline uppercase tracking-widest">Profile Photo</p>
+                                            <p className="text-xs font-bold text-primary">
+                                                {photoDoc ? 'Uploaded Passport Photo' : student?.photoUrl ? 'Profile Picture' : 'No Photo'}
+                                            </p>
+                                        </div>
+                                    </div>
                                     <InfoRow label="Phone" value={student?.phone} />
                                     <InfoRow label="Date of Birth" value={student?.dob ? new Date(student.dob).toLocaleDateString() : null} />
                                     <InfoRow label="Aadhaar" value={student?.aadhar ? `XXXX XXXX ${student.aadhar.slice(-4)}` : null} />
@@ -250,6 +270,44 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                     <InfoRow label="Pref. Location" value={application?.preferredLocation} />
                                 </div>
                             </section>
+
+                            {/* Social URLs Section */}
+                            {(student?.linkedinUrl || student?.githubUrl) && (
+                                <section>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="material-symbols-outlined text-primary text-xl">share</span>
+                                        <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Professional Profiles</h3>
+                                    </div>
+                                    <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10 space-y-3">
+                                        {student?.linkedinUrl && (
+                                            <div className="flex items-center gap-3 p-3 bg-[#0077b5]/5 rounded-lg border border-[#0077b5]/20">
+                                                <div className="w-8 h-8 rounded-lg bg-[#0077b5]/10 flex items-center justify-center">
+                                                    <span className="material-symbols-outlined text-[#0077b5] text-lg">link</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-[9px] font-bold text-[#0077b5] uppercase tracking-widest">LinkedIn</p>
+                                                    <a href={student.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary hover:underline truncate block">
+                                                        {student.linkedinUrl}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {student?.githubUrl && (
+                                            <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg border border-gray-200">
+                                                <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center">
+                                                    <span className="material-symbols-outlined text-gray-700 text-lg">code</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">GitHub</p>
+                                                    <a href={student.githubUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary hover:underline truncate block">
+                                                        {student.githubUrl}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+                            )}
                         </div>
 
                         {/* Statement of Purpose */}
@@ -375,6 +433,26 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                         <span className="material-symbols-outlined text-primary text-lg">fact_check</span>
                                         <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Committee Evaluation Session</h4>
                                     </div>
+
+                                    {/* Committee Structure Info */}
+                                    <div className="mb-6 p-4 bg-primary/5 border border-primary/10 rounded-xl">
+                                        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-3">Committee Structure</p>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="p-3 bg-white rounded-lg border border-primary/10">
+                                                <p className="text-[9px] font-bold text-outline uppercase">Member 1</p>
+                                                <p className="text-sm font-black text-primary">HOD (Permanent)</p>
+                                            </div>
+                                            <div className="p-3 bg-white rounded-lg border border-primary/10">
+                                                <p className="text-[9px] font-bold text-outline uppercase">Member 2</p>
+                                                <p className="text-sm font-black text-primary">Mentor (Assigned)</p>
+                                            </div>
+                                            <div className="p-3 bg-white rounded-lg border border-primary/10">
+                                                <p className="text-[9px] font-bold text-outline uppercase">Member 3</p>
+                                                <p className="text-sm font-black text-primary">PRTI Rep (Editable)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="grid grid-cols-1 gap-6 mb-8">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Assessment Merit (1-100)</label>
@@ -382,7 +460,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                         </div>
 
                                         <div className="bg-white p-6 rounded-lg border border-outline-variant/10 space-y-5">
-                                            <p className="text-[9px] font-bold text-outline uppercase tracking-[0.2em] mb-2 text-center">— Statutory Member Criteria —</p>
+                                            <p className="text-[9px] font-bold text-outline uppercase tracking-[0.2em] mb-2 text-center">— Member Evaluation Criteria —</p>
 
                                             <div className="grid grid-cols-3 gap-4">
                                                 <div>

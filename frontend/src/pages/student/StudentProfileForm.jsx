@@ -5,7 +5,7 @@ import CreatableSelect from 'react-select/creatable';
 import AsyncCreatableSelect from 'react-select/async-creatable';
 import api from '../../utils/api';
 import { collegesData } from '../../data/colleges';
-import { User, GraduationCap, Briefcase, Camera, CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Zap } from 'lucide-react';
+import { User, GraduationCap, Briefcase, Camera, CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Zap, Linkedin, Github } from 'lucide-react';
 
 const StudentProfileForm = () => {
     const navigate = useNavigate();
@@ -22,7 +22,8 @@ const StudentProfileForm = () => {
         collegeName: '', manualCollegeName: '', university: '', degree: '', branch: '', yearOfStudy: 1,
         cgpa: '', collegeCategory: 'OTHER', nirfRanking: '',
         hasExperience: false, hasProjects: false, hasCertifications: false,
-        experienceDesc: '', projectsDesc: '', skills: ''
+        experienceDesc: '', projectsDesc: '', skills: '',
+        linkedinUrl: '', githubUrl: ''
     });
 
     useEffect(() => {
@@ -35,10 +36,10 @@ const StudentProfileForm = () => {
                     setInitialProfile(d); // Store original for comparison
                     // Format date for inputs
                     const dDob = d.dob ? new Date(d.dob).toISOString().split('T')[0] : '';
-                    setFormData(prev => ({ 
-                        ...prev, 
-                        ...d, 
-                        dob: dDob, 
+                    setFormData(prev => ({
+                        ...prev,
+                        ...d,
+                        dob: dDob,
                         aadhaarNumber: d.aadhaarNumber || d.aadhar || '',
                         id: d.id // Ensure ID is present for checking Update vs Submit
                     }));
@@ -80,10 +81,10 @@ const StudentProfileForm = () => {
     // Filter and limit options for better performance
     const filterColleges = (inputValue) => {
         if (!inputValue) return collegesData.slice(0, 50);
-        
+
         const lowerInput = inputValue.toLowerCase();
         const filtered = [];
-        
+
         for (let i = 0; i < collegesData.length; i++) {
             if (collegesData[i].label.toLowerCase().includes(lowerInput)) {
                 filtered.push(collegesData[i]);
@@ -146,7 +147,7 @@ const StudentProfileForm = () => {
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
-        
+
         // Final validation of all required fields before submission
         const allRequiredFields = [
             'fullName', 'collegeRollNumber', 'aadhaarNumber', 'phone', 'dob', 'address',
@@ -171,11 +172,11 @@ const StudentProfileForm = () => {
         setLoading(true);
         setError('');
 
-        const submissionData = { 
-            ...formData, 
+        const submissionData = {
+            ...formData,
             aadhar: formData.aadhaarNumber,
-            collegeName: formData.collegeName === "Other Recognized University / College" 
-                ? formData.manualCollegeName 
+            collegeName: formData.collegeName === "Other Recognized University / College"
+                ? formData.manualCollegeName
                 : formData.collegeName,
             nirfRanking: (formData.nirfRanking && formData.nirfRanking !== 'N/A') ? parseInt(formData.nirfRanking) : null,
             cgpa: parseFloat(formData.cgpa) || 0
@@ -211,7 +212,7 @@ const StudentProfileForm = () => {
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
             e.preventDefault();
-            if (activeTab < 3) {
+            if (activeTab < 4) {
                 if (validate()) nextTab();
             } else {
                 handleSubmit();
@@ -219,7 +220,7 @@ const StudentProfileForm = () => {
         }
     };
 
-    const nextTab = () => setActiveTab(prev => Math.min(prev + 1, 3));
+    const nextTab = () => setActiveTab(prev => Math.min(prev + 1, 4));
     const prevTab = () => setActiveTab(prev => Math.max(prev - 1, 1));
 
     if (fetching) {
@@ -233,7 +234,8 @@ const StudentProfileForm = () => {
     const tabs = [
         { id: 1, title: "Personal Info", icon: <User className="w-5 h-5" /> },
         { id: 2, title: "Academics", icon: <GraduationCap className="w-5 h-5" /> },
-        { id: 3, title: "Experience", icon: <Briefcase className="w-5 h-5" /> }
+        { id: 3, title: "Experience", icon: <Briefcase className="w-5 h-5" /> },
+        { id: 4, title: "Social URLs", icon: <Linkedin className="w-5 h-5" /> }
     ];
 
     return (
@@ -272,11 +274,11 @@ const StudentProfileForm = () => {
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center border-4 transition-all duration-300 shadow-sm
                                 ${activeTab === tab.id
-                                    ? 'bg-indigo-600 border-indigo-400 text-white shadow-indigo-500/30 shadow-2xl scale-110'
-                                    : activeTab > tab.id
-                                        ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/20'
-                                        : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 text-gray-400 dark:text-slate-600 hover:border-indigo-400 hover:text-indigo-400'
-                                }`}
+                                        ? 'bg-indigo-600 border-indigo-400 text-white shadow-indigo-500/30 shadow-2xl scale-110'
+                                        : activeTab > tab.id
+                                            ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/20'
+                                            : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 text-gray-400 dark:text-slate-600 hover:border-indigo-400 hover:text-indigo-400'
+                                    }`}
                             >
                                 {activeTab > tab.id ? <CheckCircle className="w-6 h-6" /> : tab.icon}
                             </button>
@@ -290,7 +292,7 @@ const StudentProfileForm = () => {
             </div>
 
             <div className="glass-card bg-white dark:bg-slate-900 border-black/5 dark:border-white/10 rounded-[2.5rem] premium-shadow relative transition-all duration-500">
-                
+
                 {/* Decorative background element */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
@@ -302,15 +304,15 @@ const StudentProfileForm = () => {
                 )}
 
                 <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="relative z-10">
-                    
+
                     {/* TAB 1: PERSONAL INFO */}
                     <div className={activeTab === 1 ? 'block' : 'hidden'}>
                         <div className="p-6 sm:p-10 pb-32">
                             <div className="mb-8 flex items-center gap-6 pb-8 border-b border-gray-100">
                                 <div className="relative group cursor-pointer">
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
+                                    <input
+                                        type="file"
+                                        accept="image/*"
                                         onChange={handlePhotoUpload}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
@@ -382,7 +384,7 @@ const StudentProfileForm = () => {
                                     placeholder="Search for your college/institute..."
                                     isSearchable
                                     formatCreateLabel={(inputValue) => `Not listed? Add "${inputValue}" manually`}
-                                    noOptionsMessage={({ inputValue }) => 
+                                    noOptionsMessage={({ inputValue }) =>
                                         !inputValue ? "Start typing to search..." : "No matches found. You can add it manually by pressing Enter."
                                     }
                                     styles={{
@@ -407,11 +409,11 @@ const StudentProfileForm = () => {
                                         }),
                                         option: (base, state) => ({
                                             ...base,
-                                            backgroundColor: state.isFocused 
-                                                ? 'rgba(99, 102, 241, 0.1)' 
+                                            backgroundColor: state.isFocused
+                                                ? 'rgba(99, 102, 241, 0.1)'
                                                 : 'transparent',
-                                            color: state.isFocused 
-                                                ? '#6366f1' 
+                                            color: state.isFocused
+                                                ? '#6366f1'
                                                 : document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155',
                                             padding: '12px 16px',
                                             borderRadius: '0.75rem',
@@ -437,13 +439,13 @@ const StudentProfileForm = () => {
                                 {formData.collegeName && formData.collegeName === "Other Recognized University / College" && (
                                     <div className="mt-6">
                                         <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Manually Enter College Name</label>
-                                        <input 
-                                            type="text" 
-                                            name="manualCollegeName" 
-                                            className="input-field border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-500/10" 
-                                            placeholder="Full name of your institution..." 
-                                            value={formData.manualCollegeName} 
-                                            onChange={handleChange} 
+                                        <input
+                                            type="text"
+                                            name="manualCollegeName"
+                                            className="input-field border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-500/10"
+                                            placeholder="Full name of your institution..."
+                                            value={formData.manualCollegeName}
+                                            onChange={handleChange}
                                         />
                                     </div>
                                 )}
@@ -461,48 +463,48 @@ const StudentProfileForm = () => {
                                     </div>
                                 </div>
 
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">University Affiliation</label>
+                                    <input type="text" name="university" className="input-field" value={formData.university} onChange={handleChange} placeholder="e.g. JNTU Kakinada" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Degree</label>
+                                    <input type="text" name="degree" placeholder="e.g. B.Tech / M.Tech" className="input-field" value={formData.degree} onChange={handleChange} />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Branch / Specialization</label>
+                                    <input type="text" name="branch" placeholder="e.g. Electrical & Electronics" className="input-field" value={formData.branch} onChange={handleChange} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">University Affiliation</label>
-                                        <input type="text" name="university" className="input-field" value={formData.university} onChange={handleChange} placeholder="e.g. JNTU Kakinada" />
+                                        <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Year</label>
+                                        <select name="yearOfStudy" className="input-field py-3.5" value={formData.yearOfStudy} onChange={handleChange}>
+                                            <option value="1">1st Year</option>
+                                            <option value="2">2nd Year</option>
+                                            <option value="3">3rd Year</option>
+                                            <option value="4">4th Year</option>
+                                            <option value="5">5th Year (Dual)</option>
+                                        </select>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Degree</label>
-                                        <input type="text" name="degree" placeholder="e.g. B.Tech / M.Tech" className="input-field" value={formData.degree} onChange={handleChange} />
+                                        <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">CGPA (Out of 10)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="10"
+                                            name="cgpa"
+                                            className="input-field"
+                                            value={formData.cgpa}
+                                            onChange={(e) => {
+                                                const val = parseFloat(e.target.value);
+                                                if (val > 10) return; // Prevent typing > 10
+                                                handleChange(e);
+                                            }}
+                                            placeholder="e.g. 8.5"
+                                        />
                                     </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Branch / Specialization</label>
-                                        <input type="text" name="branch" placeholder="e.g. Electrical & Electronics" className="input-field" value={formData.branch} onChange={handleChange} />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Year</label>
-                                            <select name="yearOfStudy" className="input-field py-3.5" value={formData.yearOfStudy} onChange={handleChange}>
-                                                <option value="1">1st Year</option>
-                                                <option value="2">2nd Year</option>
-                                                <option value="3">3rd Year</option>
-                                                <option value="4">4th Year</option>
-                                                <option value="5">5th Year (Dual)</option>
-                                            </select>
-                                        </div>
-                                         <div>
-                                             <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">CGPA (Out of 10)</label>
-                                             <input 
-                                                type="number" 
-                                                step="0.01" 
-                                                min="0" 
-                                                max="10" 
-                                                name="cgpa" 
-                                                className="input-field" 
-                                                value={formData.cgpa} 
-                                                onChange={(e) => {
-                                                    const val = parseFloat(e.target.value);
-                                                    if (val > 10) return; // Prevent typing > 10
-                                                    handleChange(e);
-                                                }} 
-                                                placeholder="e.g. 8.5" 
-                                             />
-                                         </div>
-                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -547,20 +549,87 @@ const StudentProfileForm = () => {
                         </div>
                     </div>
 
+                    {/* TAB 4: SOCIAL URLs */}
+                    <div className={activeTab === 4 ? 'block' : 'hidden'}>
+                        <div className="p-8 sm:p-10 pb-32">
+                            <div className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-6 mb-10 flex gap-4 shadow-lg shadow-indigo-500/5">
+                                <Linkedin className="w-6 h-6 text-indigo-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <h4 className="font-black text-indigo-900 dark:text-indigo-200 mb-1 text-sm uppercase tracking-wider font-rajdhani">Professional Online Presence</h4>
+                                    <p className="text-xs font-bold text-indigo-800/80 dark:text-indigo-400/60 leading-relaxed uppercase tracking-tighter">Share your LinkedIn and GitHub profiles to showcase your professional network and technical projects to HODs and mentors.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6 px-1">
+                                <div className="border border-gray-100 dark:border-white/5 rounded-2xl p-6 hover:border-[#0077b5]/30 dark:hover:border-[#0077b5]/30 transition-all bg-gray-50/30 dark:bg-slate-900/40">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 rounded-xl bg-[#0077b5]/10 flex items-center justify-center">
+                                            <Linkedin className="w-5 h-5 text-[#0077b5]" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="linkedinUrl" className="font-black text-gray-900 dark:text-white uppercase tracking-widest cursor-pointer font-rajdhani">LinkedIn Profile URL</label>
+                                            <p className="text-[9px] text-gray-500 dark:text-slate-400 font-bold uppercase tracking-tighter mt-0.5">Optional - Share your professional profile</p>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="url"
+                                        id="linkedinUrl"
+                                        name="linkedinUrl"
+                                        className="input-field bg-white dark:bg-slate-900/60"
+                                        placeholder="https://www.linkedin.com/in/your-name"
+                                        value={formData.linkedinUrl}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+
+                                <div className="border border-gray-100 dark:border-white/5 rounded-2xl p-6 hover:border-gray-700/30 dark:hover:border-gray-600/30 transition-all bg-gray-50/30 dark:bg-slate-900/40">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 rounded-xl bg-gray-700/10 dark:bg-gray-600/10 flex items-center justify-center">
+                                            <Github className="w-5 h-5 text-gray-700 dark:text-gray-400" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="githubUrl" className="font-black text-gray-900 dark:text-white uppercase tracking-widest cursor-pointer font-rajdhani">GitHub Profile URL</label>
+                                            <p className="text-[9px] text-gray-500 dark:text-slate-400 font-bold uppercase tracking-tighter mt-0.5">Optional - Showcase your coding projects</p>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="url"
+                                        id="githubUrl"
+                                        name="githubUrl"
+                                        className="input-field bg-white dark:bg-slate-900/60"
+                                        placeholder="https://github.com/your-username"
+                                        value={formData.githubUrl}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+
+                                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl p-4">
+                                    <p className="text-[10px] font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wider flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4" />
+                                        Visibility Note
+                                    </p>
+                                    <p className="text-[9px] text-amber-700 dark:text-amber-300 mt-1 leading-relaxed">
+                                        These URLs will be visible to HODs and PRTI members when reviewing your application. Keep them professional and up-to-date.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Bottom Action Bar */}
                     <div className="bg-gray-50/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 p-8 flex items-center justify-between sticky bottom-0 z-20">
-                        <button 
-                            type="button" 
-                            onClick={activeTab === 1 ? () => navigate('/student/dashboard') : prevTab} 
+                        <button
+                            type="button"
+                            onClick={activeTab === 1 ? () => navigate('/student/dashboard') : prevTab}
                             className="text-gray-500 dark:text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] hover:text-indigo-600 dark:hover:text-amber-400 transition-all flex items-center gap-2 group"
                         >
                             {activeTab === 1 ? 'Cancel' : <><ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back</>}
                         </button>
-                        
-                        {activeTab < 3 ? (
-                            <button 
-                                type="button" 
-                                onClick={() => validate() && nextTab()} 
+
+                        {activeTab < 4 ? (
+                            <button
+                                type="button"
+                                onClick={() => validate() && nextTab()}
                                 className="bg-indigo-950 dark:bg-white hover:bg-black dark:hover:bg-indigo-50 text-white dark:text-indigo-950 font-black py-4 px-10 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3 uppercase tracking-widest text-xs group/btn"
                             >
                                 Check Next <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

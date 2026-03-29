@@ -93,12 +93,14 @@ npm run dev
 
 ## 💻 Portal Access URLs
 
-| Portal | URL | Default Admin Credentials |
+| Portal | URL | Access |
 | :--- | :--- | :--- |
-| **Landing Page** | `http://localhost:5173/` | N/A |
-| **Student Registration** | `http://localhost:5173/student/register` | Register manually |
-| **Student Login** | `http://localhost:5173/login` | Register manually |
-| **Admin Portal** | `http://localhost:5174/login` | `admin@aptransco.gov.in` / `admin123` |
+| **Landing Page** | `http://localhost:5173/` | Public |
+| **Student Registration** | `http://localhost:5173/student/register` | Open Registration |
+| **Student Login** | `http://localhost:5173/login` | Registered Students |
+| **Admin Portal** | `http://localhost:5174/login` | Authorized Staff Only |
+
+**Note:** Admin portal accounts must be created by PRTI Admin. Contact your system administrator for credentials.
 
 ---
 
@@ -115,6 +117,6 @@ npm run dev
 ## 🛠 Common Commands
 
 - `npm run dev`: Start all services (Backend, Student, Admin).
-- `cd backend && node seed.js`: Re-seed the admin account.
 - `cd backend && npx prisma db push`: Sync database schema.
+- `cd backend && npx prisma studio`: Open Prisma Studio (Database GUI).
 

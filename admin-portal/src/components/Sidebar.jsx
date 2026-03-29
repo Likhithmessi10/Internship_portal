@@ -48,14 +48,12 @@ const Sidebar = () => {
 
     return (
         <aside className="h-screen w-64 fixed left-0 top-0 border-r-0 bg-slate-100 dark:bg-slate-900 font-inter antialiased tracking-tight flex flex-col py-8 z-50">
-            <div className="px-8 mb-10">
+            <div className="px-6 mb-8">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary-container shadow-lg">
-                        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance</span>
-                    </div>
-                    <div>
-                        <h1 className="text-lg font-bold tracking-widest uppercase text-sky-950 dark:text-sky-50 leading-tight">AP Transco</h1>
-                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">Scholaris Prime Portal</p>
+                    <img src="/aptransco-logo.svg" alt="AP TRANSCO" className="w-14 h-16 object-contain" />
+                    <div className="pl-1">
+                        <h1 className="text-base font-black tracking-widest uppercase text-sky-950 dark:text-sky-50 leading-tight">AP Transco</h1>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Internship Portal</p>
                     </div>
                 </div>
             </div>

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
-import { 
-    Plus, X, ArrowLeft, Briefcase, Users, FileText, 
-    MapPin, Clock, Star, Trash2, Check, Info, 
-    ChevronRight, AlertTriangle, Lightbulb, FileCheck 
+import {
+    Plus, X, ArrowLeft, Briefcase, Users, FileText,
+    MapPin, Clock, Star, Trash2, Check, Info,
+    ChevronRight, AlertTriangle, Lightbulb, FileCheck
 } from 'lucide-react';
 import { collegesData } from '../../data/colleges';
+import Select from '../../components/ui/Select';
 
 const PRESET_LOCATIONS = [
     'ANY', 'Vijayawada HQ', 'Visakhapatnam', 'Tirupati', 'Guntur', 'Kurnool',
@@ -39,15 +40,41 @@ const CreateInternshipForm = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [step, setStep] = useState(1);
-    const [departments, setDepartments] = useState([]);
+
+    // Default departments as fallback - AP TRANSCO Official Departments
+    const DEFAULT_DEPARTMENTS = [
+        'PRTI',
+        'SLDC',
+        'TRANSMISSION',
+        'PLANNING AND POWER SYSTEMS',
+        'PROJECTS',
+        'APPCC AND LEGAL',
+        'COMMERCIAL AND CO ORDINATION LMC',
+        'HRD',
+        'ZONE/VIJAYAWADA',
+        'ZONE/VISAKHAPATNAM',
+        'APPCC',
+        'ZONE/KADAPA',
+        'CIVIL',
+        'TELECOM AND IT',
+        'ADDITIONAL SECRETARY',
+        'CGM/FINANCE'
+    ];
+
+    const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
 
     React.useEffect(() => {
         const fetchConfig = async () => {
             try {
                 const res = await api.get('/admin/config');
-                setDepartments(res.data.data.departments || []);
+                const configDepartments = res.data.data?.departments || [];
+                // Use config departments if available, otherwise keep defaults
+                if (configDepartments.length > 0) {
+                    setDepartments(configDepartments);
+                }
             } catch (err) {
-                console.error(err);
+                console.error('Config fetch failed, using defaults');
+                // Keep default departments
             }
         };
         fetchConfig();
@@ -62,6 +89,8 @@ const CreateInternshipForm = () => {
         expectations: '',
         duration: '',
         applicationDeadline: '',
+        stipendType: 'NON_COLLABORATIVE', // COLLABORATIVE or NON_COLLABORATIVE
+        stipendAmount: '',
         topUniversityQuota: 50, // Default 50%
         priorityCollege: '',
         priorityCollegeQuota: 10, // Default 10%
@@ -72,7 +101,7 @@ const CreateInternshipForm = () => {
     const [roles, setRoles] = useState([]);
     const [roleNameInput, setRoleNameInput] = useState('');
     const [roleOpeningsInput, setRoleOpeningsInput] = useState(1);
-    
+
     const [locations, setLocations] = useState([]);
     const [locationInput, setLocationInput] = useState('');
 
@@ -154,7 +183,7 @@ const CreateInternshipForm = () => {
     const pPct = parseInt(formData.priorityCollegeQuota) || 0;
     const tPct = parseInt(formData.topUniversityQuota) || 0;
     const gPct = Math.max(0, 100 - pPct - tPct);
-    
+
     const pSeats = Math.round((totalOpenings * pPct) / 100);
     const tSeats = Math.round((totalOpenings * tPct) / 100);
     const gSeats = Math.max(0, totalOpenings - pSeats - tSeats);
@@ -210,53 +239,99 @@ const CreateInternshipForm = () => {
                             </InputField>
 
                             <InputField label="Target Department" required>
-                                <select name="department" required value={formData.department} onChange={handleChange} className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30">
-                                    <option value="">-- Select Department --</option>
-                                    {departments.map(d => (
-                                        <option key={d} value={d}>{d}</option>
-                                    ))}
-                                </select>
+                                <Select
+                                    value={formData.department}
+                                    onChange={(value) => {
+                                        handleChange({ target: { name: 'department', value } });
+                                    }}
+                                    options={[
+                                        { value: '', label: '-- Select Department --' },
+                                        ...departments.map(d => ({ value: d, label: d }))
+                                    ]}
+                                    placeholder="Select Department"
+                                    size="lg"
+                                />
                             </InputField>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <InputField label="Internship Duration" required hint="Standard engagement period">
-                                <select name="duration" required value={formData.duration} onChange={handleChange} className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30">
-                                    <option value="">-- Select Duration --</option>
-                                    <option>4 Weeks</option><option>6 Weeks</option><option>8 Weeks</option>
-                                    <option>3 Months</option><option>6 Months</option>
-                                </select>
+                                <Select
+                                    value={formData.duration}
+                                    onChange={(value) => {
+                                        handleChange({ target: { name: 'duration', value } });
+                                    }}
+                                    options={[
+                                        { value: '', label: '-- Select Duration --' },
+                                        { value: '4 Weeks', label: '4 Weeks' },
+                                        { value: '6 Weeks', label: '6 Weeks' },
+                                        { value: '8 Weeks', label: '8 Weeks' },
+                                        { value: '3 Months', label: '3 Months' },
+                                        { value: '6 Months', label: '6 Months' }
+                                    ]}
+                                    placeholder="Select Duration"
+                                    size="lg"
+                                />
                             </InputField>
+
+                            <InputField label="Internship Type" required hint="Select whether this is a paid or unpaid internship">
+                                <Select
+                                    value={formData.stipendType}
+                                    onChange={(value) => {
+                                        handleChange({ target: { name: 'stipendType', value } });
+                                    }}
+                                    options={[
+                                        { value: 'NON_COLLABORATIVE', label: 'Non-Collaborative (No Stipend)' },
+                                        { value: 'COLLABORATIVE', label: 'Collaborative (With Stipend)' }
+                                    ]}
+                                    placeholder="Select Type"
+                                    size="lg"
+                                />
+                            </InputField>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {formData.stipendType === 'COLLABORATIVE' && (
+                                <InputField label="Stipend Amount (₹)" hint="Monthly stipend amount in INR">
+                                    <input type="number" name="stipendAmount" value={formData.stipendAmount} onChange={handleChange}
+                                        placeholder="e.g. 10000" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                </InputField>
+                            )}
 
                             <InputField label="Application Deadline" hint="Leave empty for no deadline">
                                 <input type="date" name="applicationDeadline" value={formData.applicationDeadline} onChange={handleChange}
                                     className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
                             </InputField>
-
-                            <InputField label="Deployment Location" tooltip="Specify where the interns will be stationed. Leave empty if optional.">
-                                <div className="space-y-3">
-                                    <div className="flex gap-2">
-                                        <input list="locations-list" value={locationInput} onChange={e => setLocationInput(e.target.value)}
-                                            placeholder="e.g. CSR HQ, Gachibowli" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 flex-1" />
-                                        <button type="button" onClick={() => addLocation()} className="px-4 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest hover:opacity-90">Add</button>
-                                        <datalist id="locations-list">
-                                            {PRESET_LOCATIONS.map(l => <option key={l} value={l} />)}
-                                        </datalist>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {locations.length === 0 && <span className="text-[10px] text-outline/50 font-bold uppercase italic">No specific location set (Optional)</span>}
-                                        {locations.map(l => (
-                                            <span key={l} className="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 text-primary rounded-lg border border-primary/10 text-[10px] font-bold uppercase tracking-wider">
-                                                <span className="material-symbols-outlined text-xs">location_on</span> {l}
-                                                <button onClick={() => setLocations(locations.filter(x => x !== l))} className="hover:text-error transition-colors">
-                                                    <span className="material-symbols-outlined text-[14px]">close</span>
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </InputField>
                         </div>
+
+                        <InputField label="Deployment Location" tooltip="Specify where the interns will be stationed. Leave empty if optional.">
+                            <div className="space-y-3">
+                                <div className="flex gap-2">
+                                    <Select
+                                        value={locationInput}
+                                        onChange={setLocationInput}
+                                        options={[
+                                            { value: '', label: 'Select Location...' },
+                                            ...PRESET_LOCATIONS.map(l => ({ value: l, label: l }))
+                                        ]}
+                                        placeholder="e.g. CSR HQ, Gachibowli"
+                                        size="lg"
+                                    />
+                                    <button type="button" onClick={() => addLocation()} className="px-4 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest hover:opacity-90">Add</button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {locations.length === 0 && <span className="text-[10px] text-outline/50 font-bold uppercase italic">No specific location set (Optional)</span>}
+                                    {locations.map(l => (
+                                        <span key={l} className="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 text-primary rounded-lg border border-primary/10 text-[10px] font-bold uppercase tracking-wider">
+                                            <span className="material-symbols-outlined text-xs">location_on</span> {l}
+                                            <button onClick={() => setLocations(locations.filter(x => x !== l))} className="hover:text-error transition-colors">
+                                                <span className="material-symbols-outlined text-[14px]">close</span>
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </InputField>
 
                         <InputField label="Detailed Description" required hint="Explain what the program is about">
                             <textarea name="description" required value={formData.description} onChange={handleChange}
@@ -282,13 +357,13 @@ const CreateInternshipForm = () => {
                         <div className="p-8 bg-white border border-outline-variant/10 rounded-xl">
                             <InputField label="Total Available Seats" required hint="Total number of students you can accommodate">
                                 <div className="flex items-center gap-6">
-                                    <input 
-                                        type="number" 
-                                        name="manualOpenings" 
-                                        value={formData.manualOpenings} 
+                                    <input
+                                        type="number"
+                                        name="manualOpenings"
+                                        value={formData.manualOpenings}
                                         onChange={handleChange}
-                                        placeholder="000" 
-                                        className="admin-input text-3xl font-black text-primary w-40 border-outline-variant/20 focus:border-primary/30" 
+                                        placeholder="000"
+                                        className="admin-input text-3xl font-black text-primary w-40 border-outline-variant/20 focus:border-primary/30"
                                     />
                                     <div className="flex-1 p-4 bg-primary/5 rounded-lg border border-primary/10 text-[10px] font-bold text-primary/70 leading-relaxed uppercase tracking-wide">
                                         <div className="flex items-center gap-2 mb-1 text-primary">
@@ -305,11 +380,21 @@ const CreateInternshipForm = () => {
                             <div className="space-y-6">
                                 <InputField label="Preferred College" tooltip="Students from this specific institution will be selected first.">
                                     <div className="relative">
-                                        <input list="colleges-list" name="priorityCollege" value={formData.priorityCollege} onChange={handleChange}
-                                            placeholder="Search & Select College..." className="admin-input pl-12 font-bold border-outline-variant/20 focus:border-primary/30" />
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-sky-500">grade</span>
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none z-10">
+                                            <span className="material-symbols-outlined text-lg">grade</span>
+                                        </div>
+                                        <input
+                                            list="colleges-list"
+                                            name="priorityCollege"
+                                            value={formData.priorityCollege}
+                                            onChange={handleChange}
+                                            placeholder="Search & Select College..."
+                                            className="admin-input pl-12 font-bold border-outline-variant/20 focus:border-primary/30"
+                                        />
                                         <datalist id="colleges-list">
-                                            {collegesData.slice(0, 500).map((c, idx) => <option key={idx} value={c.label} />)}
+                                            {collegesData.slice(0, 200).map((c, idx) => (
+                                                <option key={idx} value={c.label} />
+                                            ))}
                                         </datalist>
                                     </div>
                                 </InputField>
@@ -358,15 +443,15 @@ const CreateInternshipForm = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                                 <div className="space-y-1">
                                     <p className="text-sky-300 text-3xl font-black">{pSeats}</p>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">Institutional<br/>Preference</p>
+                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">Institutional<br />Preference</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-white text-3xl font-black">{tSeats}</p>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">National Tier<br/>Reserved</p>
+                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">National Tier<br />Reserved</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-white/70 text-3xl font-black">{gSeats}</p>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">General Merit<br/>Unrestricted</p>
+                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">General Merit<br />Unrestricted</p>
                                 </div>
                             </div>
                         </div>
@@ -418,7 +503,7 @@ const CreateInternshipForm = () => {
                                 roles.map((r, i) => (
                                     <div key={i} className="flex items-center justify-between p-4 bg-white border border-outline-variant/10 rounded-xl shadow-sm hover:border-primary/20 transition-all group">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary font-bold text-xs">R{i+1}</div>
+                                            <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary font-bold text-xs">R{i + 1}</div>
                                             <div>
                                                 <p className="font-bold text-primary tracking-tight text-sm uppercase">{r.name}</p>
                                                 <p className="text-[10px] text-outline font-bold uppercase tracking-widest">{r.openings} Positions available</p>
@@ -458,16 +543,21 @@ const CreateInternshipForm = () => {
                             </div>
                             <div className="w-56 flex items-end gap-6">
                                 <InputField label="Format">
-                                    <select value={docTypeInput} onChange={e => setDocTypeInput(e.target.value)} className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30">
-                                        <option value="PDF">📑 PDF Only</option>
-                                        <option value="IMAGE">🖼️ Image (JPG/PNG)</option>
-                                    </select>
+                                    <Select
+                                        value={docTypeInput}
+                                        onChange={setDocTypeInput}
+                                        options={[
+                                            { value: 'PDF', label: '📑 PDF Only' },
+                                            { value: 'IMAGE', label: '🖼️ Image (JPG/PNG)' }
+                                        ]}
+                                        size="md"
+                                    />
                                 </InputField>
                                 <div className="mb-2 flex items-center gap-2">
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         id="mandatory-doc"
-                                        checked={docMandatoryInput} 
+                                        checked={docMandatoryInput}
                                         onChange={e => setDocMandatoryInput(e.target.checked)}
                                         className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"
                                     />
@@ -495,7 +585,7 @@ const CreateInternshipForm = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setRequiredDocs(requiredDocs.filter((_, idx) => idx !== i))} 
+                                    <button onClick={() => setRequiredDocs(requiredDocs.filter((_, idx) => idx !== i))}
                                         className="p-2 text-outline/40 hover:text-error transition-colors opacity-0 group-hover:opacity-100">
                                         <span className="material-symbols-outlined text-lg">delete</span>
                                     </button>
@@ -522,7 +612,7 @@ const CreateInternshipForm = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <InputField label="Candidate Requirements" required hint="Qualities, Skills, Academic criteria">
-                                <textarea name="requirements" required value={formData.requirements} onChange={handleChange} 
+                                <textarea name="requirements" required value={formData.requirements} onChange={handleChange}
                                     rows={4} placeholder="• Minimum 7.0 CGPA&#10;• Final year students preferred..." className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 resize-none" />
                             </InputField>
                             <InputField label="Learn & Do (Job Description)" required hint="What the intern will actually do">
@@ -560,7 +650,7 @@ const CreateInternshipForm = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -110,6 +110,7 @@ const CommitteeCard = ({ internship, onManage }) => {
 
             <div className="p-6 space-y-4 flex-1">
                 <MemberRow label="Assigned Mentor" name={committee?.membersData?.mentorName || 'Pending assignment'} icon="person" active={!!committee?.membersData?.mentorId} />
+                <MemberRow label="PRTI Member" name={committee?.membersData?.prtiMemberName || 'Pending assignment'} icon="shield" active={!!committee?.membersData?.prtiMemberId} />
                 <button 
                     onClick={onManage}
                     className="w-full mt-4 flex items-center justify-center gap-2 py-2 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary/90 transition-colors"
@@ -134,29 +135,35 @@ const CommitteeCard = ({ internship, onManage }) => {
 };
 
 const CommitteeModal = ({ internship, onClose }) => {
+    const { user } = useAuth();
     const [mentors, setMentors] = useState([]);
+    const [prtis, setPrtis] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
         interviewDate: '',
         meetLink: '',
-        mentorId: ''
+        mentorId: '',
+        prtiMemberId: ''
     });
 
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [mentorsRes, committeeRes] = await Promise.all([
+                const [mentorsRes, prtisRes, committeeRes] = await Promise.all([
                     api.get(`/admin/users?role=MENTOR&department=${encodeURIComponent(internship.department)}`),
+                    api.get(`/admin/users?role=CE_PRTI`),
                     api.get(`/admin/internships/${internship.id}/committee`)
                 ]);
                 setMentors(mentorsRes.data.data);
+                setPrtis(prtisRes.data.data);
                 if (committeeRes.data.data) {
                     const c = committeeRes.data.data;
                     setFormData({
                         interviewDate: c.interviewDate ? new Date(c.interviewDate).toISOString().split('T')[0] : '',
                         meetLink: c.meetLink || '',
-                        mentorId: c.membersData?.mentorId || ''
+                        mentorId: c.membersData?.mentorId || '',
+                        prtiMemberId: c.membersData?.prtiMemberId || ''
                     });
                 }
             } catch (err) {
@@ -173,12 +180,15 @@ const CommitteeModal = ({ internship, onClose }) => {
         setSaving(true);
         try {
             const selectedMentor = mentors.find(m => m.id === formData.mentorId);
+            const selectedPrti = prtis.find(p => p.id === formData.prtiMemberId);
             await api.put(`/admin/internships/${internship.id}/committee`, {
                 interviewDate: formData.interviewDate,
                 meetLink: formData.meetLink,
                 membersData: {
                     mentorId: formData.mentorId,
-                    mentorName: selectedMentor?.name || ''
+                    mentorName: selectedMentor?.name || '',
+                    prtiMemberId: formData.prtiMemberId,
+                    prtiMemberName: selectedPrti?.name || ''
                 }
             });
             onClose();
@@ -203,18 +213,37 @@ const CommitteeModal = ({ internship, onClose }) => {
                 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline">Assigned Mentor</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline">Assigned Mentor (HOD Action)</label>
                         <select 
-                            required
+                            required={user?.role === 'HOD'}
+                            disabled={user?.role === 'CE_PRTI'}
                             value={formData.mentorId}
                             onChange={(e) => setFormData({...formData, mentorId: e.target.value})}
-                            className="w-full p-3 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            className={`w-full p-3 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 ${user?.role === 'CE_PRTI' ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                         >
                             <option value="">Select a Mentor</option>
                             {mentors.map(m => (
                                 <option key={m.id} value={m.id}>{m.name} ({m.department})</option>
                             ))}
                         </select>
+                        {user?.role === 'CE_PRTI' && <p className="text-[8px] text-amber-600 font-bold ml-1 uppercase">Selection reserved for HOD</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline">PRTI Member (PRTI Action)</label>
+                        <select 
+                            required={user?.role === 'CE_PRTI'}
+                            disabled={user?.role === 'HOD'}
+                            value={formData.prtiMemberId}
+                            onChange={(e) => setFormData({...formData, prtiMemberId: e.target.value})}
+                            className={`w-full p-3 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 ${user?.role === 'HOD' ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                        >
+                            <option value="">Select a PRTI Member</option>
+                            {prtis.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                        {user?.role === 'HOD' && <p className="text-[8px] text-amber-600 font-bold ml-1 uppercase">Selection reserved for PRTI</p>}
                     </div>
 
                     <div className="space-y-2">

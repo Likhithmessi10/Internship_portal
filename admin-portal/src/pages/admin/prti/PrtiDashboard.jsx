@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
-import { 
-    TrendingUp, Users, Briefcase, AlertCircle, 
+import {
+    TrendingUp, Users, Briefcase, AlertCircle,
     RefreshCw, CheckCircle, ChevronRight, Filter,
     Activity, ShieldCheck, Terminal, Database, Shield, Trash2,
     AlertTriangle
@@ -32,7 +32,7 @@ const PrtiDashboard = () => {
                 const allInts = intRes.data.data || [];
                 const liveInts = allInts.filter(i => i.isActive);
                 const allInterns = internsRes.data.data || [];
-                
+
                 setInternships(allInts);
                 setStats({
                     totalDepts: 16, // Based on config
@@ -94,46 +94,46 @@ const PrtiDashboard = () => {
 
             {/* Metrics Bento Grid */}
             <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-md transition-all group">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-md transition-all group">
                     <div>
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-outline block mb-2">Total Departments</span>
-                        <h2 className="text-4xl font-black text-primary tracking-tighter">{stats.totalDepts}</h2>
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Total Departments</span>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.totalDepts}</h2>
                     </div>
                     <div className="mt-4 flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
                         <TrendingUp size={12} className="mr-1" />
                         <span>Corporate Structure</span>
                     </div>
                 </div>
-                <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-md transition-all group">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-md transition-all group">
                     <div>
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-outline block mb-2">Active Interns</span>
-                        <h2 className="text-4xl font-black text-primary tracking-tighter">{stats.activeInterns}</h2>
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Active Interns</span>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.activeInterns}</h2>
                     </div>
-                    <div className="mt-4 flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+                    <div className="mt-4 flex items-center text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
                         <CheckCircle size={12} className="mr-1" />
                         <span>Onboarded Talent</span>
                     </div>
                 </div>
-                <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-md transition-all group">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-md transition-all group">
                     <div>
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-outline block mb-2">Active Programs</span>
-                        <h2 className="text-4xl font-black text-primary tracking-tighter">{stats.activePrograms}</h2>
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Active Programs</span>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.activePrograms}</h2>
                     </div>
-                    <div className="mt-4 flex items-center text-[10px] text-sky-600 font-bold uppercase tracking-wider">
+                    <div className="mt-4 flex items-center text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase tracking-wider">
                         <Activity size={12} className="mr-1" />
                         <span>Running Cycles</span>
                     </div>
                 </div>
-                <div className="bg-primary/5 p-6 rounded-2xl border-2 border-primary/10 flex flex-col justify-between relative overflow-hidden group">
+                <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-2xl border-2 border-primary/10 dark:border-primary/20 flex flex-col justify-between relative overflow-hidden group">
                     <div className="relative z-10">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-primary/60 block mb-2">Pending Pool</span>
-                        <h2 className="text-4xl font-black text-primary tracking-tighter">{stats.pendingApps}</h2>
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-primary/60 dark:text-primary/40 block mb-2">Pending Pool</span>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.pendingApps}</h2>
                     </div>
-                    <div className="relative z-10 mt-4 flex items-center text-[10px] text-primary font-bold uppercase tracking-wider">
+                    <div className="relative z-10 mt-4 flex items-center text-[10px] text-primary dark:text-primary/60 font-bold uppercase tracking-wider">
                         <AlertCircle size={12} className="mr-1" />
                         <span>Needs HOD Review</span>
                     </div>
-                    <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-primary/5 rounded-full blur-xl group-hover:scale-125 transition-transform" />
+                    <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-primary/5 dark:bg-primary/10 rounded-full blur-xl group-hover:scale-125 transition-transform" />
                 </div>
             </section>
 
@@ -142,19 +142,19 @@ const PrtiDashboard = () => {
                 <section className="lg:col-span-2 space-y-6">
                     <div className="flex justify-between items-end mb-2">
                         <div>
-                            <h3 className="text-xl font-black text-primary tracking-tight">Master Internship Directory</h3>
-                            <p className="text-xs font-medium text-outline">Overseeing {internships.length} Institutional recruitment cycles</p>
+                            <h3 className="text-xl font-black text-primary dark:text-white tracking-tight">Master Internship Directory</h3>
+                            <p className="text-xs font-medium text-outline dark:text-slate-400">Overseeing {internships.length} Institutional recruitment cycles</p>
                         </div>
-                        <button className="text-outline hover:text-primary transition-colors">
+                        <button className="text-outline hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
                             <Filter size={18} />
                         </button>
                     </div>
 
-                    <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10 dark:border-white/5">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-surface-container-low border-b border-outline-variant/20">
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Program Details</th>
+                                <tr className="bg-surface-container-low dark:bg-slate-700 border-b border-outline-variant/20 dark:border-white/5">
+                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-300">Program Details</th>
                                     <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-center">Applicants</th>
                                     <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-center">Fill Rate</th>
                                     <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-right">Coordination</th>
@@ -194,11 +194,14 @@ const PrtiDashboard = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-low hover:bg-surface-container-high text-[10px] font-bold text-primary rounded-lg transition-all uppercase tracking-widest">
-                                                       <Users size={12} /> Committee
-                                                    </button>
+                                                    <Link
+                                                        to="/committees"
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-low hover:bg-surface-container-high text-[10px] font-bold text-primary rounded-lg transition-all uppercase tracking-widest no-underline"
+                                                    >
+                                                        <Users size={12} /> Committee
+                                                    </Link>
                                                     <button className="p-1.5 hover:bg-surface-container-high rounded-lg text-outline transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleDelete(int.id, int.title)}
                                                         className="p-1.5 hover:bg-error/10 rounded-lg text-outline hover:text-error transition-colors"
                                                         title="Delete Internship"
@@ -227,23 +230,23 @@ const PrtiDashboard = () => {
                     <div>
                         <h3 className="text-xl font-black text-primary tracking-tight mb-6">Portal Infrastructure</h3>
                         <div className="space-y-4">
-                            <Link to="/prti/permissions" className="p-4 bg-surface-container-low rounded-2xl hover:shadow-md transition-all group cursor-pointer border border-transparent hover:border-outline-variant/30 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-white border border-outline-variant/10 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
+                            <Link to="/prti/permissions" className="p-4 bg-white dark:bg-slate-800 rounded-2xl hover:shadow-md transition-all group cursor-pointer border border-outline-variant/10 dark:border-white/5 hover:border-outline-variant/30 flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 border border-outline-variant/10 dark:border-white/5 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
                                     <Shield size={20} />
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-primary">Role Permissions</h4>
-                                    <p className="text-[10px] text-outline font-medium leading-tight opacity-60">Modify hierarchy and access tokens for PRTI Admin roles.</p>
+                                    <h4 className="text-sm font-bold text-primary dark:text-white">Role Permissions</h4>
+                                    <p className="text-[10px] text-outline dark:text-slate-400 font-medium leading-tight opacity-60">Modify hierarchy and access tokens for PRTI Admin roles.</p>
                                 </div>
                                 <ChevronRight size={14} className="text-outline/30 group-hover:translate-x-1 transition-transform" />
                             </Link>
-                            <Link to="/prti/health" className="p-4 bg-surface-container-low rounded-2xl hover:shadow-md transition-all group cursor-pointer border border-transparent hover:border-outline-variant/30 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-white border border-outline-variant/10 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
+                            <Link to="/prti/health" className="p-4 bg-white dark:bg-slate-800 rounded-2xl hover:shadow-md transition-all group cursor-pointer border border-outline-variant/10 dark:border-white/5 hover:border-outline-variant/30 flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 border border-outline-variant/10 dark:border-white/5 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
                                     <Terminal size={20} />
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-primary">System Health</h4>
-                                    <p className="text-[10px] text-outline font-medium leading-tight opacity-60">Run automated checks and monitor backend synchronization.</p>
+                                    <h4 className="text-sm font-bold text-primary dark:text-white">System Health</h4>
+                                    <p className="text-[10px] text-outline dark:text-slate-400 font-medium leading-tight opacity-60">Run automated checks and monitor backend synchronization.</p>
                                 </div>
                                 <ChevronRight size={14} className="text-outline/30 group-hover:translate-x-1 transition-transform" />
                             </Link>

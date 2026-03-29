@@ -11,6 +11,11 @@ const {
     getInternshipDocuments,
     setInternshipDocuments
 } = require('../controllers/documentConfigController');
+const {
+    getCommittee,
+    updatePRTIMember,
+    getAvailablePRTIMembers
+} = require('../controllers/prtiCommitteeController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -24,6 +29,11 @@ router.get('/committees/applications', getCommitteeApplications);
 router.post('/committees/evaluate', submitEvaluation);
 router.post('/committees/approve', giveFinalApproval);
 router.get('/committees/:internshipId/status', getCommitteeStatus);
+
+// Committee Member Management (PRTI Representative)
+router.get('/committees/:internshipId', getCommittee);
+router.put('/committees/:internshipId/member', updatePRTIMember);
+router.get('/committees/members/available', getAvailablePRTIMembers);
 
 // Document Configuration
 router.get('/config/documents', getDocumentConfig);

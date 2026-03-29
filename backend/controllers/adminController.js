@@ -15,7 +15,8 @@ const createInternship = async (req, res) => {
         const {
             title, department, description, roles, rolesData, requirements,
             expectations, location, duration, openingsCount, applicationDeadline,
-            requiredDocuments, quotaPercentages, priorityCollege, priorityCollegeQuota
+            requiredDocuments, quotaPercentages, priorityCollege, priorityCollegeQuota,
+            stipendType, stipendAmount
         } = req.body;
 
         let targetDepartment = department;
@@ -40,6 +41,8 @@ const createInternship = async (req, res) => {
                 quotaPercentages: quotaPercentages || null,
                 priorityCollege: priorityCollege || null,
                 priorityCollegeQuota: parseInt(priorityCollegeQuota) || 0,
+                stipendType: stipendType || 'NON_COLLABORATIVE',
+                stipendAmount: stipendAmount ? parseFloat(stipendAmount) : null
             }
         });
 
@@ -213,7 +216,7 @@ const updateApplicationStatus = async (req, res) => {
     try {
         const {
             status, assignedRole, rollNumber, joiningDate, endDate, mentorId, committeeId, score,
-            member1Id, member1Score, member2Id, member2Score, member3Id, member3Score
+            hodScore, mentorScore, prtiScore
         } = req.body;
         const applicationId = req.params.id;
         const userRole = req.user.role;
@@ -257,12 +260,38 @@ const updateApplicationStatus = async (req, res) => {
                     data: { mentorId: mentorUser.id }
                 });
 
+                // Find HOD of the same department (permanent committee member)
+                const hodUser = await prisma.user.findFirst({
+                    where: {
+                        role: 'HOD',
+                        department: internship.department
+                    }
+                });
+
+                // Auto-create committee with HOD as permanent member
+                await prisma.committee.upsert({
+                    where: { internshipId: internship.id },
+                    update: {
+                        mentorId: mentorUser.id,
+                        hodId: hodUser?.id || null
+                    },
+                    create: {
+                        internshipId: internship.id,
+                        mentorId: mentorUser.id,
+                        hodId: hodUser?.id || null,
+                        membersData: {
+                            structure: {
+                                member1: 'HOD (Permanent)',
+                                member2: 'Mentor (Assigned by HOD)',
+                                member3: 'PRTI Representative (Editable)'
+                            }
+                        }
+                    }
+                });
+
                 // Notify Mentor
                 await notifyMentorAssignment(mentorUser, s, internship);
             }
-
-            // Auto-create committee with 3 members: PRTI + HOD + Mentor
-            // Committee will be created/updated when scores are submitted
         }
 
         // Committee Evaluating (All 3 members submit scores)
@@ -389,7 +418,7 @@ const updateApplicationStatus = async (req, res) => {
 /**
  * @desc    Export applications to Excel
  * @route   GET /api/v1/admin/internships/:id/export
- * @access  Private (Admin)
+ * @access  Private (Admin, CE_PRTI, HOD, MENTOR)
  */
 const exportApplications = async (req, res) => {
     try {
@@ -402,18 +431,38 @@ const exportApplications = async (req, res) => {
             orderBy: { createdAt: 'desc' }
         });
 
+        if (!internship) {
+            return res.status(404).json({ success: false, message: 'Internship not found' });
+        }
+
         const workbook = new xl.Workbook();
         const worksheet = workbook.addWorksheet('Applications');
 
         worksheet.columns = [
             { header: '#', key: 'no', width: 5 },
             { header: 'Tracking ID', key: 'trackingId', width: 22 },
-            { header: 'Full Name', key: 'name', width: 26 },
-            { header: 'Phone', key: 'phone', width: 14 },
-            { header: 'College', key: 'college', width: 35 },
-            { header: 'Status', key: 'status', width: 14 },
-            { header: 'Applied On', key: 'applied', width: 18 },
+            { header: 'Full Name', key: 'name', width: 30 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Phone', key: 'phone', width: 15 },
+            { header: 'College', key: 'college', width: 40 },
+            { header: 'Branch', key: 'branch', width: 20 },
+            { header: 'Year', key: 'year', width: 8 },
+            { header: 'CGPA', key: 'cgpa', width: 8 },
+            { header: 'Status', key: 'status', width: 20 },
+            { header: 'Applied On', key: 'applied', width: 20 },
+            { header: 'SOP', key: 'sop', width: 50 },
+            { header: 'Preferred Location', key: 'location', width: 25 },
+            { header: 'Assigned Role', key: 'role', width: 25 }
         ];
+
+        // Style header row
+        worksheet.getRow(1).font = { bold: true, size: 12 };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF003087' }
+        };
+        worksheet.getRow(1).font = { color: { argb: 'FFFFFFFF' }, bold: true };
 
         applications.forEach((app, idx) => {
             const s = app.student;
@@ -421,20 +470,37 @@ const exportApplications = async (req, res) => {
                 no: idx + 1,
                 trackingId: app.trackingId,
                 name: s?.fullName || '',
+                email: s?.email || '',
                 phone: s?.phone || '',
                 college: s?.collegeName || '',
+                branch: s?.branch || '',
+                year: s?.yearOfStudy || '',
+                cgpa: s?.cgpa || '',
                 status: app.status,
                 applied: new Date(app.createdAt).toLocaleString('en-IN'),
+                sop: app.sop ? app.sop.substring(0, 100) : '',
+                location: app.preferredLocation || '',
+                role: app.assignedRole || ''
             });
         });
 
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `${internship.title.replace(/[^a-z0-9]/gi, '_')}_Applications_${timestamp}.xlsx`;
+
         const buffer = await workbook.xlsx.writeBuffer();
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename="applications.xlsx"`);
-        res.end(buffer);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.send(buffer);
     } catch (error) {
         console.error('Export error:', error);
-        res.status(500).json({ success: false, message: 'Export failed' });
+        res.status(500).json({
+            success: false,
+            message: 'Export failed',
+            error: error.message
+        });
     }
 };
 

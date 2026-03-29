@@ -71,22 +71,26 @@ const StudentLayout = ({ children }) => {
                             </div>
 
                             <div className="hidden md:flex items-center gap-3 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl pl-4 pr-5 py-2 border border-black/5 dark:border-white/5 backdrop-blur-md">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-inner font-bold text-xs uppercase">
-                                     {profile?.fullName?.charAt(0) || user?.email?.charAt(0)}
-                                 </div>
-                                 <div className="text-left">
-                                     <p className="text-xs font-black text-indigo-900 dark:text-white leading-tight truncate max-w-[150px]">
-                                         {profile?.fullName || user?.email?.split('@')[0] || t('nav.student')}
-                                     </p>
-                                     <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-widest leading-tight">{t('nav.applicant')}</p>
-                                 </div>
-                             </div>
-                            
-                            <button 
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-inner font-bold text-xs uppercase overflow-hidden">
+                                    {profile?.photoUrl ? (
+                                        <img src={profile.photoUrl} alt={profile.fullName} className="w-full h-full object-cover" />
+                                    ) : (
+                                        profile?.fullName?.charAt(0) || user?.email?.charAt(0)
+                                    )}
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-xs font-black text-indigo-900 dark:text-white leading-tight truncate max-w-[150px]">
+                                        {profile?.fullName || user?.email?.split('@')[0] || t('nav.student')}
+                                    </p>
+                                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-widest leading-tight">{t('nav.applicant')}</p>
+                                </div>
+                            </div>
+
+                            <button
                                 onClick={logout}
                                 className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 text-xs font-black uppercase tracking-wider"
                             >
-                                <LogOut className="w-4 h-4" /> 
+                                <LogOut className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t('nav.logout')}</span>
                             </button>
                         </div>
@@ -104,9 +108,9 @@ const StudentLayout = ({ children }) => {
                                 key={tab.name}
                                 to={tab.path}
                                 className={`px-8 py-5 border-b-2 text-xs uppercase tracking-[0.2em] font-rajdhani transition-all flex items-center gap-2 whitespace-nowrap 
-                                ${isActive 
-                                    ? 'border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 font-black' 
-                                    : 'border-transparent text-gray-500 dark:text-gray-400 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+                                ${isActive
+                                        ? 'border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 font-black'
+                                        : 'border-transparent text-gray-500 dark:text-gray-400 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                             >
                                 {tab.icon} {tab.name}
                             </Link>
