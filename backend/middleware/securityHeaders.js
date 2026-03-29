@@ -14,16 +14,15 @@ const securityHeaders = helmet({
             imgSrc: ["'self'", 'data:', 'https:'],
             scriptSrc: ["'self'"],
             connectSrc: ["'self'"],
-            frameSrc: ["'none'"],
+            frameSrc: ["'self'"],
+            frameAncestors: ["'self'", 'http://localhost:5173', 'http://localhost:5174'],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: [],
         },
     },
     
-    // Prevent clickjacking attacks
-    frameguard: {
-        action: 'deny'
-    },
+    // Prevent clickjacking attacks (superseded by frame-ancestors but kept for safety)
+    frameguard: false,
     
     // Prevent MIME type sniffing
     noSniff: true,
@@ -55,7 +54,7 @@ const securityHeaders = helmet({
     ieNoOpen: true,
     
     // Permitted Cross-Origin Policies
-    crossOriginEmbedderPolicy: true,
+    crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: true,
     crossOriginResourcePolicy: { policy: 'cross-origin' }
 });

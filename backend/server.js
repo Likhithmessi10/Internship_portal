@@ -79,9 +79,8 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../aptransco_portal.html'));
 });
 
-// Serve Uploaded Files (SECURED - requires authentication)
-const { protect } = require('./middleware/authMiddleware');
-app.use('/uploads', protect, express.static(path.join(__dirname, 'uploads')));
+// Serve Uploaded Files (Publicly accessible for browser PDF viewers)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ============================================
 // API ROUTES
