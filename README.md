@@ -104,7 +104,19 @@ npm run dev
 | **Student Login** | `http://localhost:5173/login` | Registered Students |
 | **Admin Portal** | `http://localhost:5174/login` | Authorized Staff Only |
 
-**Note:** Admin portal accounts must be created by PRTI Admin. Contact your system administrator for credentials.
+### 🔑 Test / Seed Credentials
+If you populated the database using the internal `seed-accounts.js` script, you can log in to the **Admin Portal** immediately with the following default credentials.
+
+**Password for ALL accounts:** `password123`
+
+| Role | Email |
+| :--- | :--- |
+| **System Admin** | `admin@transco.com` |
+| **PRTI Member** | `prti@transco.com` |
+| **HOD (Example)** | `hod.transmission@transco.com` |
+| **Mentor (Example)** | `mentor.transmission@transco.com` |
+
+*(Note: Every department in the portal config has an automatically generated HOD and Mentor account in the format `hod.[department-slug]@transco.com` and `mentor.[department-slug]@transco.com`.)*
 
 ---
 
