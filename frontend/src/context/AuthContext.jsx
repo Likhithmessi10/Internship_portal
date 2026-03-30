@@ -10,21 +10,27 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let mounted = true;
         const checkLoggedIn = async () => {
             const token = localStorage.getItem('token');
             if (token) {
                 try {
                     const res = await api.get('/auth/me');
-                    setUser(res.data.data);
+                    if (mounted) {
+                        setUser(res.data.data);
+                    }
                 } catch (error) {
                     console.error("Session expired or invalid token", error);
                     localStorage.removeItem('token');
                 }
             }
-            setLoading(false);
+            if (mounted) {
+                setLoading(false);
+            }
         };
 
         checkLoggedIn();
+        return () => { mounted = false; };
     }, []);
 
     const login = async (email, password) => {

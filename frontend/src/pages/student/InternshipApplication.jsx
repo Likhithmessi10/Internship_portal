@@ -43,10 +43,12 @@ const InternshipApplication = () => {
                     if (profRes.data.data) {
                         setProfileComplete(true);
 
-                        // Check if already applied
-                        const alreadyApplied = profRes.data.data.applications.some(a => a.internshipId === id);
+                        // Check if already applied to THIS ROLE in this internship
+                        const alreadyApplied = profRes.data.data.applications.some(
+                            a => a.internshipId === id && a.assignedRole === initialRole
+                        );
                         if (alreadyApplied) {
-                            setError('You have already applied to this internship.');
+                            setError(`You have already applied for the role "${initialRole}" in this internship.`);
                         }
                     }
                 } catch {
@@ -60,7 +62,7 @@ const InternshipApplication = () => {
             }
         };
         fetchData();
-    }, [id]);
+    }, [id, initialRole]);
 
     const handleFileChange = (e, doc) => {
         const file = e.target.files[0];
@@ -90,14 +92,24 @@ const InternshipApplication = () => {
 
         const formData = new FormData();
 
-        // Append all required files that were selected
+        // Validate all required documents are uploaded
         const reqDocs = internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }];
+        const missingDocs = [];
+
         reqDocs.forEach(doc => {
             const file = files[doc.id];
-            if (file) {
-                formData.append(doc.id, file); // Use the doc ID as the field name
+            if (!file) {
+                missingDocs.push(doc.label);
+            } else {
+                formData.append(doc.id, file);
             }
         });
+
+        // Block submission if required documents are missing
+        if (missingDocs.length > 0) {
+            setError(`Missing required documents: ${missingDocs.join(', ')}. Please upload all required documents before submitting.`);
+            return;
+        }
 
         // Append new text fields
         formData.append('assignedRole', assignedRole);
@@ -350,9 +362,9 @@ const InternshipApplication = () => {
             {showJobDescription && internship && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setShowJobDescription(false)} />
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden animate-in fade-in zoom-in duration-300">
+                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
                         {/* Header */}
-                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white">
+                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white shrink-0">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h2 className="text-2xl font-black font-rajdhani mb-2">{internship.title}</h2>
@@ -369,7 +381,7 @@ const InternshipApplication = () => {
                         </div>
 
                         {/* Content */}
-                        <div className="p-8 overflow-y-auto max-h-[60vh] space-y-8">
+                        <div className="p-8 overflow-y-auto flex-1 space-y-8">
                             {/* Description */}
                             <div>
                                 <h3 className="text-lg font-black text-gray-900 flex items-center gap-2 mb-4">
@@ -468,7 +480,7 @@ const InternshipApplication = () => {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
                             <p className="text-sm text-gray-500 font-medium">
                                 Review all details before submitting your application
                             </p>

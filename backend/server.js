@@ -23,6 +23,7 @@ const DEV_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
+    'https://terrence-pseudoaggressive-undewily.ngrok-free.dev'
 ];
 
 const allowedOrigins = process.env.CORS_ORIGINS

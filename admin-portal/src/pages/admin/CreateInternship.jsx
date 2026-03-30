@@ -7,6 +7,7 @@ import {
     ChevronRight, AlertTriangle, Lightbulb, FileCheck
 } from 'lucide-react';
 import { collegesData } from '../../data/colleges';
+import departmentsData from '../../data/departments.json';
 import Select from '../../components/ui/Select';
 
 const PRESET_LOCATIONS = [
@@ -41,40 +42,30 @@ const CreateInternshipForm = () => {
     const [error, setError] = useState('');
     const [step, setStep] = useState(1);
 
-    // Default departments as fallback - AP TRANSCO Official Departments
-    const DEFAULT_DEPARTMENTS = [
-        'PRTI',
-        'SLDC',
-        'TRANSMISSION',
-        'PLANNING AND POWER SYSTEMS',
-        'PROJECTS',
-        'APPCC AND LEGAL',
-        'COMMERCIAL AND CO ORDINATION LMC',
-        'HRD',
-        'ZONE/VIJAYAWADA',
-        'ZONE/VISAKHAPATNAM',
-        'APPCC',
-        'ZONE/KADAPA',
-        'CIVIL',
-        'TELECOM AND IT',
-        'ADDITIONAL SECRETARY',
-        'CGM/FINANCE'
-    ];
-
-    const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
+    // Use departments from JSON file as default
+    const [departments, setDepartments] = useState(departmentsData.departments);
 
     React.useEffect(() => {
         const fetchConfig = async () => {
             try {
                 const res = await api.get('/admin/config');
                 const configDepartments = res.data.data?.departments || [];
-                // Use config departments if available, otherwise keep defaults
-                if (configDepartments.length > 0) {
+                console.log('Config departments:', configDepartments);
+                console.log('JSON departments:', departmentsData.departments);
+                // Use config departments if available and not empty, otherwise use JSON
+                if (configDepartments && configDepartments.length > 0) {
+                    console.log('Using config departments');
                     setDepartments(configDepartments);
+                } else {
+                    // Config exists but departments is empty, use JSON
+                    console.log('Using JSON departments (config empty)');
+                    setDepartments(departmentsData.departments);
                 }
             } catch (err) {
-                console.error('Config fetch failed, using defaults');
-                // Keep default departments
+                console.error('Config fetch failed, using departments.json');
+                // API failed, use JSON
+                console.log('Using JSON departments (API error)');
+                setDepartments(departmentsData.departments);
             }
         };
         fetchConfig();

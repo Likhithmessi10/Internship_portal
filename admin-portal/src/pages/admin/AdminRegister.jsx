@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link, useSearchParams, Navigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { Home } from 'lucide-react';
+import departmentsData from '../../data/departments.json';
 
 const AdminRegister = () => {
     const { registerAdmin, user } = useAuth();
@@ -36,9 +37,11 @@ const AdminRegister = () => {
         const fetchConfig = async () => {
             try {
                 const res = await api.get('/admin/config');
-                setDepartments(res.data.data.departments || []);
+                setDepartments(res.data.data?.departments || departmentsData.departments);
             } catch (err) {
-                console.error(err);
+                console.error('Failed to fetch departments:', err);
+                // Fallback to departments.json if API fails
+                setDepartments(departmentsData.departments);
             }
         };
         fetchConfig();
@@ -146,11 +149,25 @@ const AdminRegister = () => {
                             <input
                                 type="password"
                                 required
+                                minLength={6}
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
                                 className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
                             />
+                            <div className="mt-2 p-3 bg-surface-container-low rounded-lg border border-outline-variant/20">
+                                <p className="text-[9px] font-bold text-primary/70 uppercase tracking-wider mb-1">Password Requirements:</p>
+                                <ul className="text-[9px] text-outline space-y-0.5">
+                                    <li className="flex items-center gap-1.5">
+                                        <span className={`w-1 h-1 rounded-full ${password.length >= 6 ? 'bg-emerald-500' : 'bg-outline'}`}></span>
+                                        Minimum 6 characters
+                                    </li>
+                                    <li className="flex items-center gap-1.5">
+                                        <span className={`w-1 h-1 rounded-full ${password.length >= 8 ? 'bg-emerald-500' : 'bg-outline'}`}></span>
+                                        8+ characters recommended
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
@@ -159,6 +176,7 @@ const AdminRegister = () => {
                             <input
                                 type="password"
                                 required
+                                minLength={6}
                                 placeholder="••••••••"
                                 value={confirmPassword}
                                 onChange={e => setConfirmPassword(e.target.value)}

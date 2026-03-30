@@ -38,11 +38,27 @@ const applyForInternship = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please complete your student profile before applying' });
         }
 
-        // 4. Create Application
+        const { sop, preferredLocation, assignedRole } = req.body;
+
+        // 4. Check if student already applied to THIS ROLE in this internship
+        const existingApplication = await prisma.application.findFirst({
+            where: {
+                studentId: profile.id,
+                internshipId: internshipId,
+                assignedRole: assignedRole || null
+            }
+        });
+
+        if (existingApplication) {
+            return res.status(400).json({
+                success: false,
+                message: `You have already applied for the role "${assignedRole}" in this internship. You can only submit one application per role.`
+            });
+        }
+
+        // 5. Create Application
         const identifier = profile.rollNumber || profile.aadhar || 'UNKNOWN';
         const trackingId = `APT-${Date.now()}-${identifier.slice(-4)}`.toUpperCase();
-        
-        const { sop, preferredLocation, assignedRole } = req.body;
 
         const application = await prisma.application.create({
             data: {
@@ -56,15 +72,31 @@ const applyForInternship = async (req, res) => {
             }
         });
 
-        // 5. Handle File Uploads (Expect files from multer via any())
+        // 5. Validate Required Documents
+        const requiredDocs = internship.requiredDocuments || [];
+        const uploadedDocTypes = new Set(req.files?.map(f => f.fieldname) || []);
+        const missingDocs = requiredDocs.filter(doc => !uploadedDocTypes.has(doc.id));
+
+        if (missingDocs.length > 0) {
+            // Delete the application since we're returning an error
+            await prisma.application.delete({ where: { id: application.id } });
+
+            const missingLabels = missingDocs.map(d => d.label).join(', ');
+            return res.status(400).json({
+                success: false,
+                message: `Missing required documents: ${missingLabels}. Please upload all required documents before submitting.`
+            });
+        }
+
+        // 6. Handle File Uploads (Expect files from multer via any())
         if (req.files && req.files.length > 0) {
             const documents = req.files.map(file => {
                 // Try to find the document label from internship config
                 const docMeta = (internship.requiredDocuments || []).find(d => d.id === file.fieldname);
-                
+
                 return {
                     applicationId: application.id,
-                    type: file.fieldname, 
+                    type: file.fieldname,
                     url: file.path
                 };
             });

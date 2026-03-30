@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import ApplicationProfileModal from './ApplicationProfileModal';
-import { 
-    ArrowLeft, Download, Users, CheckCircle, Clock, XCircle, 
+import {
+    ArrowLeft, Download, Users, CheckCircle, Clock, XCircle,
     Eye, TrendingUp, Star, ChevronDown, ChevronRight, Sparkles,
     Shield, Briefcase, GraduationCap, Award, Info, MapPin
 } from 'lucide-react';
@@ -50,14 +50,14 @@ const AdminApplicationReview = () => {
     const [roleFilter, setRoleFilter] = useState('All Roles');
     const [selected, setSelected] = useState(null);
     const [highlightCollege, setHighlightCollege] = useState('');
-    
+
     // AI Allocation states removed
 
     const [collapsed, setCollapsed] = useState({
         nominated: false,
         quota: false,
         highlighted: false,
-        standard: true 
+        standard: true
     });
 
     const toggleSection = (s) => setCollapsed(prev => ({ ...prev, [s]: !prev[s] }));
@@ -88,16 +88,16 @@ const AdminApplicationReview = () => {
             if (assignedRole) payload.assignedRole = assignedRole;
             if (dates.rollNumber) payload.rollNumber = dates.rollNumber;
             await api.put(`/admin/applications/${appId}`, payload);
-            setApplications(prev => prev.map(a => a.id === appId ? { 
-                ...a, 
-                status: newStatus, 
+            setApplications(prev => prev.map(a => a.id === appId ? {
+                ...a,
+                status: newStatus,
                 assignedRole,
                 joiningDate: dates.joiningDate || a.joiningDate,
                 endDate: dates.endDate || a.endDate
             } : a));
-            if (selected?.id === appId) setSelected(prev => ({ 
-                ...prev, 
-                status: newStatus, 
+            if (selected?.id === appId) setSelected(prev => ({
+                ...prev,
+                status: newStatus,
                 assignedRole,
                 joiningDate: dates.joiningDate || prev.joiningDate,
                 endDate: dates.endDate || prev.endDate
@@ -139,7 +139,7 @@ const AdminApplicationReview = () => {
 
     const { nominatedApps, highlightedApps, quotaApps, standardApps, uniqueColleges, nominatedHired, quotaHired, roleHiredStats } = (() => {
         const sortedFull = [...applications].sort((a, b) => (b.student?.cgpa || 0) - (a.student?.cgpa || 0));
-        
+
         const nominated = [];
         const highlighted = [];
         const quota = [];
@@ -154,11 +154,11 @@ const AdminApplicationReview = () => {
             const collegeName = clean(collegeNameRaw);
             const pCollege = clean(priorityCollegeName || '');
             const hCollege = clean(highlightCollege);
-            
+
             const isNominated = pCollege.length > 0 && (collegeName.includes(pCollege) || pCollege.includes(collegeName));
             const isTopUniv = isTopUniversity(app.student);
             const isHighlighted = hCollege.length > 0 && (collegeName.includes(hCollege) || hCollege.includes(collegeName));
-            
+
             if (isNominated) nominated.push({ ...app, nominatedMatch: true });
             else if (isTopUniv) quota.push({ ...app, quotaMatch: true });
             else if (isHighlighted) highlighted.push({ ...app, highlightMatch: true });
@@ -228,7 +228,7 @@ const AdminApplicationReview = () => {
                             <div className="text-[9px] font-bold text-outline uppercase tracking-wider mt-1">Status: {fillPct >= 100 ? 'FULFILLED' : 'OPEN'}</div>
                         </div>
                     </div>
-                    
+
                     <div className="w-full bg-surface-container-high h-2.5 rounded-full overflow-hidden mb-8">
                         <div className="bg-primary h-full transition-all duration-1000 shadow-[0_0_15px_rgba(79,70,229,0.3)]" style={{ width: `${fillPct}%` }} />
                     </div>
@@ -260,8 +260,8 @@ const AdminApplicationReview = () => {
 
                 <div className="col-span-12 lg:col-span-4 bg-primary-container p-8 rounded-xl text-on-primary-container flex flex-col justify-between">
                     <div>
-                         <span className="text-[10px] font-bold tracking-widest uppercase opacity-70">Decision Pipeline</span>
-                         <div className="space-y-4 mt-6">
+                        <span className="text-[10px] font-bold tracking-widest uppercase opacity-70">Decision Pipeline</span>
+                        <div className="space-y-4 mt-6">
                             <div className="flex justify-between items-center text-xs font-bold text-white">
                                 <span className="opacity-60 uppercase">In Review</span>
                                 <span>{stats.pending}</span>
@@ -274,7 +274,7 @@ const AdminApplicationReview = () => {
                                 <span className="opacity-60 uppercase">Rejected</span>
                                 <span>{stats.rejected}</span>
                             </div>
-                         </div>
+                        </div>
                     </div>
                     <div className="mt-8 pt-6 border-t border-white/10 uppercase font-bold text-[10px] tracking-widest opacity-60">
                         Admin Approval Required
@@ -293,7 +293,7 @@ const AdminApplicationReview = () => {
                             </button>
                         ))}
                     </div>
-                    
+
                     <div className="flex gap-4 w-full md:w-auto">
                         <div className="relative w-full md:w-64">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">work</span>
@@ -312,7 +312,7 @@ const AdminApplicationReview = () => {
 
                         <div className="relative w-full md:w-64">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
-                            <input list="college-list" value={highlightCollege} onChange={e => setHighlightCollege(e.target.value)} 
+                            <input list="college-list" value={highlightCollege} onChange={e => setHighlightCollege(e.target.value)}
                                 placeholder="College filter..." className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary placeholder:text-outline/40" />
                             <datalist id="college-list">{uniqueColleges.map((c, i) => <option key={i} value={c} />)}</datalist>
                         </div>
@@ -324,7 +324,6 @@ const AdminApplicationReview = () => {
                         <thead>
                             <tr className="bg-surface-container-high/30">
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Candidate Info</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Identification</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">College Profile</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">CGPA</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Status</th>
@@ -332,15 +331,15 @@ const AdminApplicationReview = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/5">
-                            <GroupingHeader label="Preferred College Students" icon={<span className="material-symbols-outlined text-[12px] fill">grade</span>} active={nominatedApps.length > 0} 
+                            <GroupingHeader label="Preferred College Students" icon={<span className="material-symbols-outlined text-[12px] fill">grade</span>} active={nominatedApps.length > 0}
                                 collapsed={collapsed.nominated} onToggle={() => toggleSection('nominated')} count={nominatedApps.length} hired={nominatedHired} cap={priorityMetricCap} color="amber" />
                             {!collapsed.nominated && nominatedApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
 
-                            <GroupingHeader label="Top Tier Institute Students" icon={<span className="material-symbols-outlined text-[12px]">school</span>} active={quotaApps.length > 0} 
+                            <GroupingHeader label="Top Tier Institute Students" icon={<span className="material-symbols-outlined text-[12px]">school</span>} active={quotaApps.length > 0}
                                 collapsed={collapsed.quota} onToggle={() => toggleSection('quota')} count={quotaApps.length} hired={quotaHired} cap={quotaCap} color="indigo" />
                             {!collapsed.quota && quotaApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
-                            
-                            <GroupingHeader label="Other Applicants (General Merit)" icon={<span className="material-symbols-outlined text-[12px]">groups</span>} active={standardApps.length > 0} 
+
+                            <GroupingHeader label="Other Applicants (General Merit)" icon={<span className="material-symbols-outlined text-[12px]">groups</span>} active={standardApps.length > 0}
                                 collapsed={collapsed.standard} onToggle={() => toggleSection('standard')} count={standardApps.length} color="slate" />
                             {!collapsed.standard && standardApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
                         </tbody>
@@ -374,7 +373,7 @@ const GroupingHeader = ({ label, icon, active, collapsed, onToggle, count, hired
     };
     return (
         <tr className={`${colors[color]} cursor-pointer hover:opacity-80 transition-all group`} onClick={onToggle}>
-            <td colSpan="6" className="py-4 px-10">
+            <td colSpan="5" className="py-4 px-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="w-8 h-8 rounded-xl bg-white/50 backdrop-blur-md flex items-center justify-center shadow-sm">
@@ -391,7 +390,7 @@ const GroupingHeader = ({ label, icon, active, collapsed, onToggle, count, hired
                         <div className="bg-white/40 px-4 py-1.5 rounded-full flex items-center gap-4 border border-white/40">
                             <span className="text-[10px] font-black uppercase tracking-widest">{hired} / {cap} Seats Occupied</span>
                             <div className="w-20 h-1.5 bg-black/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, (hired/cap)*100)}%` }} />
+                                <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, (hired / cap) * 100)}%` }} />
                             </div>
                         </div>
                     )}
@@ -416,27 +415,18 @@ const SummaryCard = ({ label, val, total, color }) => {
 };
 
 const ApplicationRow = ({ app, updateStatus, setSelected }) => {
-    const fullPhotoUrl = getMediaUrl(app.student?.photoUrl);
     return (
         <tr className="hover:bg-primary/5 transition-colors group">
             <td className="px-6 py-5">
                 <div className="flex items-center gap-4">
-                    {fullPhotoUrl ? (
-                         <img src={fullPhotoUrl} className="w-10 h-10 rounded-lg object-cover bg-surface-container-high" alt="" />
-                    ) : (
-                         <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-outline font-bold text-sm uppercase">
-                            {app.student?.fullName?.charAt(0)}
-                         </div>
-                    )}
+                    <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-outline font-bold text-sm uppercase">
+                        {app.student?.fullName?.charAt(0)}
+                    </div>
                     <div>
                         <p className="text-sm font-bold text-primary">{app.student?.fullName}</p>
                         <p className="text-[10px] text-outline font-medium tracking-tighter uppercase mt-0.5">ID: {app.trackingId.slice(-6)}</p>
                     </div>
                 </div>
-            </td>
-            <td className="px-6 py-5">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-tight">{app.student?.rollNumber || 'PENDING'}</p>
-                <p className="text-[9px] text-outline font-medium uppercase mt-0.5">{app.student?.collegeRollNumber || 'N/A'}</p>
             </td>
             <td className="px-6 py-5">
                 <p className="text-[10px] font-bold text-primary uppercase tracking-tight max-w-[180px] truncate">{app.student?.collegeName}</p>
@@ -448,7 +438,7 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
             <td className="px-6 py-5 text-center">
                 <span className="text-lg font-bold text-primary">{app.student?.cgpa}</span>
                 <div className="w-8 bg-surface-container-high h-0.5 mt-0.5 mx-auto rounded-full overflow-hidden">
-                    <div className="bg-primary h-full" style={{ width: `${(app.student?.cgpa/10)*100}%` }}></div>
+                    <div className="bg-primary h-full" style={{ width: `${(app.student?.cgpa / 10) * 100}%` }}></div>
                 </div>
             </td>
             <td className="px-6 py-5 text-center">

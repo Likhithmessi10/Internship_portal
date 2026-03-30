@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { useState } from 'react';
 
 // Admin Pages
 import AdminLanding from './pages/admin/AdminLanding';
@@ -29,15 +29,18 @@ import HodCommittees from './pages/admin/hod/HodCommittees';
 import HodMeetings from './pages/admin/hod/HodMeetings';
 import MentorDashboard from './pages/admin/mentor/MentorDashboard';
 
-const AdminLayout = ({ children }) => (
-  <div className="min-h-screen bg-surface dark:bg-slate-950 transition-colors duration-500 font-inter">
-    <Sidebar />
-    <Navbar />
-    <main className="ml-64 pt-24 px-8 pb-12 min-h-screen">
-      {children}
-    </main>
-  </div>
-);
+const AdminLayout = ({ children }) => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-surface dark:bg-slate-950 transition-colors duration-500 font-inter">
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={setIsSidebarCollapsed} />
+      <main className={`px-8 py-8 min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'ml-24' : 'ml-64'}`}>
+        {children}
+      </main>
+    </div>
+  );
+};
 
 const APTRANSCO_ROLES = ['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
 

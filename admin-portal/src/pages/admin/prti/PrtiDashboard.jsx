@@ -4,9 +4,7 @@ import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
 import {
     TrendingUp, Users, Briefcase, AlertCircle,
-    RefreshCw, CheckCircle, ChevronRight, Filter,
-    Activity, ShieldCheck, Terminal, Database, Shield, Trash2,
-    AlertTriangle
+    Filter, Activity, Trash2, CheckCircle
 } from 'lucide-react';
 
 const PrtiDashboard = () => {
@@ -138,148 +136,91 @@ const PrtiDashboard = () => {
             </section>
 
             {/* Main Content Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <section className="lg:col-span-2 space-y-6">
-                    <div className="flex justify-between items-end mb-2">
-                        <div>
-                            <h3 className="text-xl font-black text-primary dark:text-white tracking-tight">Master Internship Directory</h3>
-                            <p className="text-xs font-medium text-outline dark:text-slate-400">Overseeing {internships.length} Institutional recruitment cycles</p>
-                        </div>
-                        <button className="text-outline hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
-                            <Filter size={18} />
-                        </button>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10 dark:border-white/5">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-surface-container-low dark:bg-slate-700 border-b border-outline-variant/20 dark:border-white/5">
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-300">Program Details</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-center">Applicants</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-center">Fill Rate</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-right">Coordination</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-outline-variant/10">
-                                {internships.slice(0, 5).map(int => {
-                                    const fillRate = int.openingsCount > 0 ? (int.hiredCount / int.openingsCount) * 100 : 0;
-                                    return (
-                                        <tr key={int.id} className="hover:bg-surface-container-lowest/50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
-                                                        <span className="material-symbols-outlined">account_balance</span>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-primary text-sm">{int.title}</p>
-                                                        <p className="text-[10px] text-outline font-bold uppercase tracking-tighter">{int.location || 'VARIOUS LOCATIONS'}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-primary">{int.applicationsCount}</span>
-                                                    <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Pool Size</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="w-24 mx-auto">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <span className="text-[10px] font-bold text-primary">{Math.round(fillRate)}%</span>
-                                                    </div>
-                                                    <div className="w-full bg-surface-container-high h-1 rounded-full overflow-hidden">
-                                                        <div className="bg-primary h-full transition-all duration-1000" style={{ width: `${fillRate}%` }} />
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Link
-                                                        to="/committees"
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-low hover:bg-surface-container-high text-[10px] font-bold text-primary rounded-lg transition-all uppercase tracking-widest no-underline"
-                                                    >
-                                                        <Users size={12} /> Committee
-                                                    </Link>
-                                                    <button className="p-1.5 hover:bg-surface-container-high rounded-lg text-outline transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
-                                                    <button
-                                                        onClick={() => handleDelete(int.id, int.title)}
-                                                        className="p-1.5 hover:bg-error/10 rounded-lg text-outline hover:text-error transition-colors"
-                                                        title="Delete Internship"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                        <div className="px-6 py-4 bg-surface-container-low flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Showing {Math.min(5, internships.length)} of {internships.length} Cycles</span>
-                            <div className="flex gap-4">
-                                <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Previous</button>
-                                <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Next</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Sidebar Cards */}
-                <aside className="space-y-8">
+            <section className="space-y-6">
+                <div className="flex justify-between items-end mb-2">
                     <div>
-                        <h3 className="text-xl font-black text-primary tracking-tight mb-6">Portal Infrastructure</h3>
-                        <div className="space-y-4">
-                            <Link to="/prti/permissions" className="p-4 bg-white dark:bg-slate-800 rounded-2xl hover:shadow-md transition-all group cursor-pointer border border-outline-variant/10 dark:border-white/5 hover:border-outline-variant/30 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 border border-outline-variant/10 dark:border-white/5 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
-                                    <Shield size={20} />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-primary dark:text-white">Role Permissions</h4>
-                                    <p className="text-[10px] text-outline dark:text-slate-400 font-medium leading-tight opacity-60">Modify hierarchy and access tokens for PRTI Admin roles.</p>
-                                </div>
-                                <ChevronRight size={14} className="text-outline/30 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                            <Link to="/prti/health" className="p-4 bg-white dark:bg-slate-800 rounded-2xl hover:shadow-md transition-all group cursor-pointer border border-outline-variant/10 dark:border-white/5 hover:border-outline-variant/30 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 border border-outline-variant/10 dark:border-white/5 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
-                                    <Terminal size={20} />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-primary dark:text-white">System Health</h4>
-                                    <p className="text-[10px] text-outline dark:text-slate-400 font-medium leading-tight opacity-60">Run automated checks and monitor backend synchronization.</p>
-                                </div>
-                                <ChevronRight size={14} className="text-outline/30 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                            <Link to="/prti/audit-logs" className="p-4 bg-surface-container-low rounded-2xl hover:shadow-md transition-all group cursor-pointer border border-transparent hover:border-outline-variant/30 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-white border border-outline-variant/10 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
-                                    <Database size={20} />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-primary">Audit Logs</h4>
-                                    <p className="text-[10px] text-outline font-medium leading-tight opacity-60">Full traceability of all administrative actions and events.</p>
-                                </div>
-                                <ChevronRight size={14} className="text-outline/30 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                        </div>
+                        <h3 className="text-xl font-black text-primary dark:text-white tracking-tight">Master Internship Directory</h3>
+                        <p className="text-xs font-medium text-outline dark:text-slate-400">Overseeing {internships.length} Institutional recruitment cycles</p>
                     </div>
+                    <button className="text-outline hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
+                        <Filter size={18} />
+                    </button>
+                </div>
 
-                    <div className="bg-primary p-6 rounded-2xl text-white relative overflow-hidden shadow-lg">
-                        <div className="relative z-10">
-                            <h4 className="text-lg font-black mb-2 flex items-center gap-2">
-                                <CheckCircle size={20} className="text-emerald-400" /> System Optimal
-                            </h4>
-                            <div className="w-full bg-white/10 h-1 rounded-full mb-4">
-                                <div className="bg-emerald-400 h-full w-[98%] rounded-full shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
-                            </div>
-                            <p className="text-[10px] font-medium text-white/70 mb-4 leading-relaxed italic">Last server synchronization was successful. Global services are operational.</p>
-                            <button className="w-full py-2 bg-white/10 border border-white/20 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white hover:text-primary transition-all">
-                                Diagnostics Panel
-                            </button>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10 dark:border-white/5">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-surface-container-low dark:bg-slate-700 border-b border-outline-variant/20 dark:border-white/5">
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-300">Program Details</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-center">Applicants</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-center">Fill Rate</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-right">Coordination</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant/10">
+                            {internships.slice(0, 5).map(int => {
+                                const fillRate = int.openingsCount > 0 ? (int.hiredCount / int.openingsCount) * 100 : 0;
+                                return (
+                                    <tr key={int.id} className="hover:bg-surface-container-lowest/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
+                                                    <span className="material-symbols-outlined">account_balance</span>
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-primary text-sm">{int.title}</p>
+                                                    <p className="text-[10px] text-outline font-bold uppercase tracking-tighter">{int.location || 'VARIOUS LOCATIONS'}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-primary">{int.applicationsCount}</span>
+                                                <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Pool Size</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="w-24 mx-auto">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[10px] font-bold text-primary">{Math.round(fillRate)}%</span>
+                                                </div>
+                                                <div className="w-full bg-surface-container-high h-1 rounded-full overflow-hidden">
+                                                    <div className="bg-primary h-full transition-all duration-1000" style={{ width: `${fillRate}%` }} />
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Link
+                                                    to="/committees"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-low hover:bg-surface-container-high text-[10px] font-bold text-primary rounded-lg transition-all uppercase tracking-widest no-underline"
+                                                >
+                                                    <Users size={12} /> Committee
+                                                </Link>
+                                                <button className="p-1.5 hover:bg-surface-container-high rounded-lg text-outline transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
+                                                <button
+                                                    onClick={() => handleDelete(int.id, int.title)}
+                                                    className="p-1.5 hover:bg-error/10 rounded-lg text-outline hover:text-error transition-colors"
+                                                    title="Delete Internship"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                    <div className="px-6 py-4 bg-surface-container-low flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Showing {Math.min(5, internships.length)} of {internships.length} Cycles</span>
+                        <div className="flex gap-4">
+                            <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Previous</button>
+                            <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Next</button>
                         </div>
-                        <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
                     </div>
-                </aside>
-            </div>
+                </div>
+            </section>
         </div>
     );
 };

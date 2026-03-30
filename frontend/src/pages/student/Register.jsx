@@ -37,8 +37,8 @@ const Register = () => {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 transition-colors duration-200">
             {/* Theme Toggle Top Right */}
-            <button 
-                onClick={toggleTheme} 
+            <button
+                onClick={toggleTheme}
                 className="absolute top-6 right-6 p-2 px-4 rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-700 transition-all font-bold text-xs flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 z-50"
             >
                 {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
@@ -46,12 +46,12 @@ const Register = () => {
             </button>
 
             <div className="max-w-5xl w-full bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row-reverse border border-gray-100 dark:border-slate-700 transition-colors duration-200">
-                
+
                 {/* Right Side: Branding (Reversed for variation) */}
                 <div className="md:w-1/2 bg-[#00266b] dark:bg-[#090e17] p-10 lg:p-14 text-white flex flex-col justify-between relative overflow-hidden transition-colors duration-200">
                     <div className="absolute top-0 left-0 w-64 h-64 bg-[#0044bb] dark:bg-blue-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 -translate-x-1/2"></div>
                     <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#D4A017] dark:bg-yellow-600/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-y-1/2 translate-x-1/2"></div>
-                    
+
                     <div className="relative z-10 flex items-center gap-4 mb-12 justify-end">
                         <div className="text-right">
                             <h2 className="font-rajdhani font-bold text-2xl tracking-wide text-white">APTRANSCO</h2>
@@ -128,6 +128,19 @@ const Register = () => {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                     />
+                                </div>
+                                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                                    <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider mb-1">Password Requirements:</p>
+                                    <ul className="text-[10px] text-blue-600 dark:text-blue-400 space-y-0.5">
+                                        <li className="flex items-center gap-1.5">
+                                            <span className={`w-1 h-1 rounded-full ${password.length >= 6 ? 'bg-green-500' : 'bg-blue-400'}`}></span>
+                                            Minimum 6 characters
+                                        </li>
+                                        <li className="flex items-center gap-1.5">
+                                            <span className={`w-1 h-1 rounded-full ${password.length >= 8 ? 'bg-green-500' : 'bg-blue-400'}`}></span>
+                                            8+ characters recommended for security
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
 

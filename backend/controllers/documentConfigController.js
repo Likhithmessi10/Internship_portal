@@ -42,9 +42,9 @@ const updateDocumentConfig = async (req, res) => {
         const { documents } = req.body;
 
         if (!Array.isArray(documents)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Documents must be an array' 
+            return res.status(400).json({
+                success: false,
+                message: 'Documents must be an array'
             });
         }
 
@@ -65,10 +65,10 @@ const updateDocumentConfig = async (req, res) => {
             }
         });
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             message: 'Document configuration updated successfully',
-            data: config 
+            data: config
         });
     } catch (error) {
         console.error('Update document config error:', error);
@@ -96,23 +96,23 @@ const getInternshipDocuments = async (req, res) => {
         // If internship has custom documents, return them
         // Otherwise return global config
         if (internship.requiredDocuments && internship.requiredDocuments.length > 0) {
-            res.status(200).json({ 
-                success: true, 
-                data: { 
+            res.status(200).json({
+                success: true,
+                data: {
                     documents: internship.requiredDocuments,
                     source: 'internship'
-                } 
+                }
             });
         } else {
             const globalConfig = await prisma.documentConfiguration.findUnique({
                 where: { id: 'singleton' }
             });
-            res.status(200).json({ 
-                success: true, 
-                data: { 
+            res.status(200).json({
+                success: true,
+                data: {
                     documents: globalConfig?.documents || [],
                     source: 'global'
-                } 
+                }
             });
         }
     } catch (error) {
@@ -161,10 +161,10 @@ const setInternshipDocuments = async (req, res) => {
             });
         }
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             message: 'Internship documents updated successfully',
-            data: updatedInternship 
+            data: updatedInternship
         });
     } catch (error) {
         console.error('Set internship documents error:', error);

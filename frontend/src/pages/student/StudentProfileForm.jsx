@@ -5,7 +5,7 @@ import CreatableSelect from 'react-select/creatable';
 import AsyncCreatableSelect from 'react-select/async-creatable';
 import api from '../../utils/api';
 import { collegesData } from '../../data/colleges';
-import { User, GraduationCap, Briefcase, Camera, CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Zap, Linkedin, Github } from 'lucide-react';
+import { User, GraduationCap, Briefcase, CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Zap, Linkedin, Github } from 'lucide-react';
 
 const StudentProfileForm = () => {
     const navigate = useNavigate();
@@ -18,7 +18,7 @@ const StudentProfileForm = () => {
 
     // Initial empty state
     const [formData, setFormData] = useState({
-        fullName: '', rollNumber: '', collegeRollNumber: '', phone: '', dob: '', address: '', aadhar: '', aadhaarNumber: '', photoUrl: '',
+        fullName: '', rollNumber: '', collegeRollNumber: '', phone: '', dob: '', address: '', aadhar: '', aadhaarNumber: '',
         collegeName: '', manualCollegeName: '', university: '', degree: '', branch: '', yearOfStudy: 1,
         cgpa: '', collegeCategory: 'OTHER', nirfRanking: '',
         hasExperience: false, hasProjects: false, hasCertifications: false,
@@ -100,17 +100,6 @@ const StudentProfileForm = () => {
         callback(results);
     };
 
-    const handlePhotoUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData({ ...formData, photoUrl: reader.result });
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const validate = () => {
         const requiredFields = {
             1: ['fullName', 'collegeRollNumber', 'aadhaarNumber', 'phone', 'dob', 'address'],
@@ -189,12 +178,9 @@ const StudentProfileForm = () => {
 
             // Determine specific alert message
             let msg = 'Profile updated successfully!';
-            const photoChanged = formData.photoUrl !== (initialProfile?.photoUrl || '');
             const rollChanged = formData.collegeRollNumber !== (initialProfile?.collegeRollNumber || '');
 
-            if (photoChanged && rollChanged) msg = 'profile picture edited and roll number changed';
-            else if (photoChanged) msg = 'profile picture edited';
-            else if (rollChanged) msg = 'roll number changed';
+            if (rollChanged) msg = 'roll number changed';
             else if (updatedProfile.rollNumber && !initialProfile?.rollNumber) {
                 msg = `Profile verified! Your APTRANSCO Roll Number is: ${updatedProfile.rollNumber}`;
             }
@@ -308,34 +294,9 @@ const StudentProfileForm = () => {
                     {/* TAB 1: PERSONAL INFO */}
                     <div className={activeTab === 1 ? 'block' : 'hidden'}>
                         <div className="p-6 sm:p-10 pb-32">
-                            <div className="mb-8 flex items-center gap-6 pb-8 border-b border-gray-100">
-                                <div className="relative group cursor-pointer">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handlePhotoUpload}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                    />
-                                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-white/10 shadow-lg bg-gray-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden relative group-hover:scale-105 transition-transform duration-500">
-                                        {formData.photoUrl ? (
-                                            <img src={formData.photoUrl} alt="Preview" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <User className="w-12 h-12 text-gray-300 dark:text-slate-600" />
-                                        )}
-                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Camera className="w-8 h-8 text-white" />
-                                        </div>
-                                    </div>
-                                    {!formData.photoUrl && (
-                                        <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white rounded-full p-2 border-2 border-white shadow-sm">
-                                            <Camera className="w-4 h-4" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1 uppercase tracking-wider font-rajdhani">Profile Picture</h3>
-                                    <p className="text-[10px] text-gray-500 dark:text-indigo-400/60 font-black uppercase tracking-[0.2em]">Upload a professional photo. Max 2MB.</p>
-                                </div>
+                            <div className="mb-8 border-b border-gray-100 dark:border-white/5 pb-6">
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-wider font-rajdhani">Personal Information</h3>
+                                <p className="text-[10px] text-gray-500 dark:text-indigo-400/60 font-black uppercase tracking-[0.2em] mt-1">Enter your personal details</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

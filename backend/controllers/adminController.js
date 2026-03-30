@@ -169,7 +169,11 @@ const getApplications = async (req, res) => {
         const applications = await prisma.application.findMany({
             where: whereClause,
             include: {
-                student: true,
+                student: {
+                    include: {
+                        user: { select: { email: true, name: true } }
+                    }
+                },
                 documents: true,
                 mentor: { select: { name: true, email: true } },
                 shortlist: true,
@@ -529,7 +533,36 @@ const extendDeadline = async (req, res) => {
  */
 const getPortalConfig = async (req, res) => {
     try {
-        const config = await prisma.portalConfiguration.findUnique({ where: { id: 'singleton' } });
+        let config = await prisma.portalConfiguration.findUnique({ where: { id: 'singleton' } });
+
+        // If no config exists, create default config with departments
+        if (!config) {
+            const defaultDepartments = [
+                'TRANSMISSION',
+                'PLANNING AND POWER SYSTEMS',
+                'SLDC',
+                'PROJECTS',
+                'APPCC AND LEGAL',
+                'COMMERCIAL AND COORDINATION LMC',
+                'HRD',
+                'ZONE VIJAYAWADA',
+                'ZONE VISHAKAPATNAM',
+                'APPCC',
+                'ZONE KADAPA',
+                'CIVIL',
+                'TELECOM AND IT',
+                'ADDITIONAL SECRETARY',
+                'CGM AND FINANCE'
+            ];
+            config = await prisma.portalConfiguration.create({
+                data: {
+                    id: 'singleton',
+                    authorizedTotal: 100,
+                    departments: defaultDepartments
+                }
+            });
+        }
+
         res.status(200).json({ success: true, data: config });
     } catch (error) {
         console.error('Admin controller error:', error.message);

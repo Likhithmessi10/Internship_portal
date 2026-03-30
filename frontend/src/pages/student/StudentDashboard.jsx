@@ -52,16 +52,12 @@ const StudentDashboard = () => {
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-[#0044bb] dark:bg-blue-900/40 opacity-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#D4A017] dark:bg-yellow-600/30 opacity-30 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-                
+
                 <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
                     <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-6">
-                        {profile?.photoUrl ? (
-                            <img src={profile.photoUrl} alt="Profile" className="w-[100px] h-[100px] rounded-full border-4 border-white/20 shadow-xl object-cover shrink-0" />
-                        ) : (
-                            <div className="w-[100px] h-[100px] rounded-full bg-white/10 border-4 border-white/20 flex items-center justify-center backdrop-blur-sm shrink-0">
-                                <span className="text-4xl font-black">{profile?.fullName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}</span>
-                            </div>
-                        )}
+                        <div className="w-[100px] h-[100px] rounded-full bg-white/10 border-4 border-white/20 flex items-center justify-center backdrop-blur-sm shrink-0">
+                            <span className="text-4xl font-black">{profile?.fullName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}</span>
+                        </div>
                         <div>
                             <h1 className="text-4xl lg:text-5xl font-black font-rajdhani mb-2 text-white flex items-center justify-center sm:justify-start gap-3 tracking-tight">
                                 {t('dashboard.welcome')} <span className="text-[#D4A017] dark:text-yellow-400">{profile ? profile.fullName.split(' ')[0] : t('nav.student')}</span>! 👋
@@ -99,8 +95,8 @@ const StudentDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 {/* Left Column (Activities & Tracking) */}
                 <div className="lg:col-span-2 space-y-10">
-                    
-                     {/* APTRANSCO Privileges */}
+
+                    {/* APTRANSCO Privileges */}
                     <div>
                         <h2 className="text-2xl font-black font-rajdhani mb-6 flex items-center gap-3 text-gray-900 dark:text-white uppercase tracking-wide">
                             <ShieldCheck className="text-[#003087] dark:text-blue-500 w-7 h-7" /> {t('dashboard.privileges')}
@@ -130,7 +126,7 @@ const StudentDashboard = () => {
                         </div>
                     </div>
 
-                     {/* Application Tracking */}
+                    {/* Application Tracking */}
                     <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-8 shadow-sm transition-colors duration-300">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-2xl font-black font-rajdhani flex items-center gap-3 text-gray-900 dark:text-white uppercase tracking-wide">
@@ -174,7 +170,7 @@ const StudentDashboard = () => {
                                                     ${app.stipend ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' : 'bg-[#003087] dark:bg-blue-600 text-white hover:bg-[#00266b] dark:hover:bg-blue-700 border border-transparent'}
                                                 `}
                                             >
-                                                {app.stipend ? <><CheckCircle size={15}/> Bank Details Added</> : <><Landmark size={15}/> Complete Stipend Profile</>}
+                                                {app.stipend ? <><CheckCircle size={15} /> Bank Details Added</> : <><Landmark size={15} /> Complete Stipend Profile</>}
                                             </button>
                                         )}
                                     </div>
@@ -399,35 +395,35 @@ const StipendModal = ({ application, onClose, onSuccess }) => {
                             <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">PAN Card Number</label>
                             <div className="relative">
                                 <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                <input type="text" value={data.panNumber} onChange={e => setData({...data, panNumber: e.target.value.toUpperCase()})} placeholder="ABCDE1234F" className="admin-input pl-12 w-full font-mono font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                                <input type="text" value={data.panNumber} onChange={e => setData({ ...data, panNumber: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" className="admin-input pl-12 w-full font-mono font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
                             </div>
                         </div>
                         <div className="space-y-1.5 md:col-span-2">
                             <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Bank Name</label>
                             <div className="relative">
                                 <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                <input type="text" value={data.bankName} onChange={e => setData({...data, bankName: e.target.value})} placeholder="e.g. State Bank of India" className="admin-input pl-12 w-full font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                                <input type="text" value={data.bankName} onChange={e => setData({ ...data, bankName: e.target.value })} placeholder="e.g. State Bank of India" className="admin-input pl-12 w-full font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
                             </div>
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">IFS Code</label>
-                            <input type="text" value={data.ifscCode} onChange={e => setData({...data, ifscCode: e.target.value.toUpperCase()})} placeholder="SBIN0001234" className="admin-input w-full font-mono font-bold px-4 transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                            <input type="text" value={data.ifscCode} onChange={e => setData({ ...data, ifscCode: e.target.value.toUpperCase() })} placeholder="SBIN0001234" className="admin-input w-full font-mono font-bold px-4 transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Bank Branch</label>
-                            <input type="text" value={data.bankBranch} onChange={e => setData({...data, bankBranch: e.target.value})} placeholder="Main Branch" className="admin-input w-full font-bold px-4 transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                            <input type="text" value={data.bankBranch} onChange={e => setData({ ...data, bankBranch: e.target.value })} placeholder="Main Branch" className="admin-input w-full font-bold px-4 transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
                         </div>
                         <div className="space-y-1.5 md:col-span-2">
                             <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Account Number</label>
                             <div className="relative">
                                 <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                <input type="text" value={data.bankAccount} onChange={e => setData({...data, bankAccount: e.target.value})} placeholder="300012345678" className="admin-input pl-12 w-full font-mono font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                                <input type="text" value={data.bankAccount} onChange={e => setData({ ...data, bankAccount: e.target.value })} placeholder="300012345678" className="admin-input pl-12 w-full font-mono font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
                             </div>
                         </div>
                     </div>
-                    
+
                     <button type="submit" disabled={loading} className="w-full py-4 bg-[#D4A017] dark:bg-yellow-500 hover:bg-[#b88c14] dark:hover:bg-yellow-600 text-[#00266b] dark:text-slate-900 font-black rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-xs mt-4">
-                        {loading ? <div className="animate-spin w-5 h-5 border-2 border-[#00266b]/20 border-t-[#00266b] dark:border-slate-900/20 dark:border-t-slate-900 rounded-full"></div> : <><CheckCircle size={16}/> Save Banking Details</>}
+                        {loading ? <div className="animate-spin w-5 h-5 border-2 border-[#00266b]/20 border-t-[#00266b] dark:border-slate-900/20 dark:border-t-slate-900 rounded-full"></div> : <><CheckCircle size={16} /> Save Banking Details</>}
                     </button>
                 </form>
             </div>
