@@ -2,7 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { Link } from 'react-router-dom';
-import { FileText, Briefcase, GraduationCap, MapPin, AlertCircle, CheckCircle, Clock, ShieldCheck, Zap, Award, BookOpen, User, X, Landmark, CreditCard, Shield, Star, ClipboardList, Upload, Calendar } from 'lucide-react';
+import {
+    FileText, Briefcase, GraduationCap, MapPin, AlertCircle,
+    CheckCircle, Clock, ShieldCheck, Zap, Award, BookOpen,
+    User, X, Landmark, CreditCard, Shield, Star, ClipboardList,
+    Upload, Calendar, ChevronRight, Mail, Phone, ExternalLink
+} from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import WorkSubmissionModal from './WorkSubmissionModal';
 
@@ -20,11 +25,10 @@ const StudentDashboard = () => {
         const fetchProfile = async () => {
             try {
                 const res = await api.get('/students/profile');
-                console.log('>>> FETCHED PROFILE (Dashboard):', res.data.data);
                 setProfile(res.data.data);
 
                 // Fetch work assignments if hired
-                if (res.data.data.applications?.some(app => app.status === 'HIRED' || app.status === 'CA_APPROVED')) {
+                if (res.data.data.applications?.some(app => ['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status))) {
                     const workRes = await api.get('/students/work');
                     setAssignments(workRes.data.data || []);
                 }
@@ -37,6 +41,9 @@ const StudentDashboard = () => {
         fetchProfile();
     }, []);
 
+    const hiredApp = profile?.applications?.find(app => ['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status));
+    const isHired = !!hiredApp;
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -47,132 +54,195 @@ const StudentDashboard = () => {
 
     return (
         <div className="w-full transition-colors duration-300">
-            {/* Welcome Banner */}
-            <div className="bg-[#00266b] dark:bg-[#090e17] rounded-[2.5rem] p-8 lg:p-12 mb-10 text-white shadow-2xl relative overflow-hidden group border border-transparent dark:border-slate-800 transition-colors duration-300">
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-[#0044bb] dark:bg-blue-900/40 opacity-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#D4A017] dark:bg-yellow-600/30 opacity-30 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
+            {/* Conditional Welcome Banner */}
+            {isHired ? (
+                <div className="bg-gradient-to-br from-[#001c4d] via-[#003087] to-[#004dc7] dark:from-[#090e17] dark:via-[#0c1421] dark:to-[#1a2b4d] rounded-[3rem] p-10 lg:p-16 mb-12 text-white shadow-[0_20px_50px_rgba(0,48,135,0.3)] relative overflow-hidden group border border-blue-400/20">
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
+                    <div className="absolute bottom-0 left-0 w-80 h-80 bg-yellow-400/5 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2"></div>
 
-                <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
-                    <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-6">
-                        <div className="w-[100px] h-[100px] rounded-full bg-white/10 border-4 border-white/20 flex items-center justify-center backdrop-blur-sm shrink-0">
-                            <span className="text-4xl font-black">{profile?.fullName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}</span>
+                    <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-10 text-center xl:text-left">
+                        <div className="flex flex-col xl:flex-row items-center gap-8">
+                            <div className="relative">
+                                <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-[2.5rem] bg-white p-1.5 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                                    <div className="w-full h-full rounded-[2rem] bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-4xl font-black text-white">
+                                        {profile?.fullName?.charAt(0)}
+                                    </div>
+                                </div>
+                                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-2 rounded-xl shadow-lg border-4 border-[#003087] dark:border-[#0c1421]">
+                                    <ShieldCheck size={20} />
+                                </div>
+                            </div>
+
+                            <div>
+                                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-white/80">
+                                    <Zap size={12} className="text-yellow-400" /> Professional Internship Program
+                                </div>
+                                <h1 className="text-5xl lg:text-6xl font-black font-rajdhani mb-4 tracking-tighter leading-none">
+                                    Congratulations, <span className="text-yellow-400">{profile?.fullName.split(' ')[0]}</span>!
+                                </h1>
+                                <p className="text-blue-100/70 font-medium text-lg lg:max-w-2xl leading-relaxed">
+                                    You are now an official intern at <span className="text-white font-bold">APTRANSCO</span>. Your journey to excellence in the power sector begins here.
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-4xl lg:text-5xl font-black font-rajdhani mb-2 text-white flex items-center justify-center sm:justify-start gap-3 tracking-tight">
-                                {t('dashboard.welcome')} <span className="text-[#D4A017] dark:text-yellow-400">{profile ? profile.fullName.split(' ')[0] : t('nav.student')}</span>! 👋
-                            </h1>
-                            <p className="text-[#aac4e8] dark:text-slate-400 font-medium text-lg lg:max-w-xl">
-                                Ready to charge up your career with the prestigious <span className="text-white font-bold">APTRANSCO</span>?
-                            </p>
+
+                        <div className="flex flex-col gap-4 min-w-[240px]">
+                            <div className="bg-white/10 backdrop-blur-xl p-6 rounded-3xl border border-white/20 shadow-inner">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#aac4e8] mb-1">Assigned Role</p>
+                                <p className="text-xl font-black text-white uppercase">{hiredApp?.assignedRole || 'Associate Intern'}</p>
+                            </div>
+                            <div className="bg-emerald-500/20 backdrop-blur-xl p-6 rounded-3xl border border-emerald-500/30 shadow-inner flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1">Status</p>
+                                    <p className="text-xl font-black text-white uppercase">Active</p>
+                                </div>
+                                <CheckCircle className="text-emerald-400" size={32} />
+                            </div>
                         </div>
                     </div>
-                    <div className="w-full xl:w-auto">
+                </div>
+            ) : (
+                <div className="bg-[#00266b] dark:bg-[#090e17] rounded-[2.5rem] p-8 lg:p-12 mb-10 text-white shadow-2xl relative overflow-hidden group border border-transparent dark:border-slate-800">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-[#0044bb] dark:bg-blue-900/40 opacity-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+                    <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
+                        <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-6">
+                            <div className="w-[100px] h-[100px] rounded-full bg-white/10 border-4 border-white/20 flex items-center justify-center backdrop-blur-sm shrink-0">
+                                <span className="text-4xl font-black">{profile?.fullName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <div>
+                                <h1 className="text-4xl lg:text-5xl font-black font-rajdhani mb-2 text-white flex items-center justify-center sm:justify-start gap-3 tracking-tight">
+                                    {t('dashboard.welcome')} <span className="text-[#D4A017] dark:text-yellow-400">{profile ? profile.fullName.split(' ')[0] : t('nav.student')}</span>! 👋
+                                </h1>
+                                <p className="text-[#aac4e8] dark:text-slate-400 font-medium text-lg lg:max-w-xl">Ready to charge up your career with the prestigious <span className="text-white font-bold">APTRANSCO</span>?</p>
+                            </div>
+                        </div>
                         {!profile ? (
-                            <Link to="/student/profile/edit" className="w-full sm:w-auto justify-center bg-[#D4A017] dark:bg-yellow-500 hover:bg-[#b88c14] dark:hover:bg-yellow-600 text-[#00266b] dark:text-slate-900 font-extrabold py-3.5 px-8 rounded-2xl transition-all shadow-xl hover:shadow-yellow-500/20 active:scale-95 flex items-center gap-2">
+                            <Link to="/student/profile/edit" className="bg-[#D4A017] dark:bg-yellow-500 hover:bg-[#b88c14] dark:hover:bg-yellow-600 text-[#00266b] dark:text-slate-900 font-extrabold py-3.5 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-2">
                                 <Zap className="w-5 h-5" /> {t('profile.update')}
                             </Link>
                         ) : (
-                            <Link to="/student/internships" className="w-full sm:w-auto justify-center bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-[#003087] dark:text-white font-black py-4 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3 group/btn">
-                                <Briefcase className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" /> {t('dashboard.browse')}
+                            <Link to="/student/internships" className="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-[#003087] dark:text-white font-black py-4 px-8 rounded-2xl transition-all shadow-xl active:scale-95 flex items-center gap-3">
+                                <Briefcase className="w-5 h-5" /> {t('dashboard.browse')}
                             </Link>
                         )}
                     </div>
                 </div>
-            </div>
-
-            {!profile && (
-                <div className="bg-[#fff9e6] dark:bg-yellow-500/10 border border-[#f5d787] dark:border-yellow-500/20 rounded-2xl p-6 mb-10 flex items-start gap-4 shadow-sm transition-colors duration-300">
-                    <AlertCircle className="text-[#b88c14] dark:text-yellow-500 w-6 h-6 shrink-0 mt-0.5" />
-                    <div>
-                        <h3 className="text-[#8a680b] dark:text-yellow-400 font-bold text-lg mb-1">{t('dashboard.actionRequired')}</h3>
-                        <p className="text-[#a37e13] dark:text-yellow-200/70 text-sm mb-4">{t('dashboard.actionDesc')}</p>
-                        <Link to="/student/profile/edit" className="bg-[#D4A017] dark:bg-yellow-500 hover:bg-[#b88c14] dark:hover:bg-yellow-600 text-[#00266b] dark:text-slate-900 font-bold py-2 px-5 rounded-xl shadow-none inline-flex transition-colors">{t('dashboard.setupNow')}</Link>
-                    </div>
-                </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-12">
                 {/* Left Column (Activities & Tracking) */}
                 <div className="lg:col-span-2 space-y-10">
 
-                    {/* APTRANSCO Privileges */}
-                    <div>
-                        <h2 className="text-2xl font-black font-rajdhani mb-6 flex items-center gap-3 text-gray-900 dark:text-white uppercase tracking-wide">
-                            <ShieldCheck className="text-[#003087] dark:text-blue-500 w-7 h-7" /> {t('dashboard.privileges')}
-                        </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                <div className="w-12 h-12 bg-[#eff4ff] dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-5">
-                                    <Award className="w-6 h-6 text-[#003087] dark:text-blue-400" />
+                    {isHired && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-4 duration-700">
+                            {/* Attendance Component */}
+                            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-[2.5rem] p-8 shadow-sm group">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-sm font-black uppercase tracking-widest text-[#003087] dark:text-blue-400">Attendance Tracker</h3>
+                                    <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500"><Calendar size={20} /></div>
                                 </div>
-                                <h3 className="font-extrabold text-gray-900 dark:text-white text-base mb-2">{t('dashboard.certTitle')}</h3>
-                                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium leading-relaxed">{t('dashboard.certDesc')}</p>
-                            </div>
-                            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                <div className="w-12 h-12 bg-[#fffced] dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-5">
-                                    <Zap className="w-6 h-6 text-[#D4A017] dark:text-yellow-400" />
+                                <div className="flex items-end justify-between mb-4">
+                                    <div className="text-4xl font-black text-slate-900 dark:text-white font-rajdhani">
+                                        {hiredApp.attendance?.daysAttended || 0} <span className="text-lg text-slate-400">/ {hiredApp.attendance?.totalDays || 0} Days</span>
+                                    </div>
+                                    <div className="text-emerald-500 font-bold text-sm bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                                        {hiredApp.attendance?.totalDays > 0 ? Math.round((hiredApp.attendance.daysAttended / hiredApp.attendance.totalDays) * 100) : 0}% Present
+                                    </div>
                                 </div>
-                                <h3 className="font-extrabold text-gray-900 dark:text-white text-base mb-2">{t('dashboard.projectsTitle')}</h3>
-                                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium leading-relaxed">{t('dashboard.projectsDesc')}</p>
-                            </div>
-                            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                <div className="w-12 h-12 bg-[#eff4ff] dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-5">
-                                    <BookOpen className="w-6 h-6 text-[#003087] dark:text-blue-400" />
+                                <div className="w-full h-3 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden mb-6 border border-slate-200 dark:border-slate-700">
+                                    <div
+                                        className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000"
+                                        style={{ width: `${hiredApp.attendance?.totalDays > 0 ? (hiredApp.attendance.daysAttended / hiredApp.attendance.totalDays) * 100 : 0}%` }}
+                                    ></div>
                                 </div>
-                                <h3 className="font-extrabold text-gray-900 dark:text-white text-base mb-2">{t('dashboard.mentorsTitle')}</h3>
-                                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium leading-relaxed">{t('dashboard.mentorsDesc')}</p>
+                                <Link
+                                    to="/student/attendance"
+                                    className="w-full py-3 border-2 border-slate-100 dark:border-slate-700 hover:border-[#003087]/30 dark:hover:border-blue-500/30 text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    View Full History <ChevronRight size={14} />
+                                </Link>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Application Tracking */}
-                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-8 shadow-sm transition-colors duration-300">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-2xl font-black font-rajdhani flex items-center gap-3 text-gray-900 dark:text-white uppercase tracking-wide">
-                                <Clock className="text-[#003087] dark:text-blue-500 w-7 h-7" /> {t('dashboard.journey')}
-                            </h2>
+                            {/* Work Completion Component */}
+                            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-[2.5rem] p-8 shadow-sm group">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-sm font-black uppercase tracking-widest text-[#003087] dark:text-blue-400">Task Completion</h3>
+                                    <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500"><ClipboardList size={20} /></div>
+                                </div>
+                                <div className="flex items-end justify-between mb-4">
+                                    <div className="text-4xl font-black text-slate-900 dark:text-white font-rajdhani">
+                                        {assignments.filter(a => a.status === 'COMPLETED').length} <span className="text-lg text-slate-400">/ {assignments.length} Tasks</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-1.5 mb-6">
+                                    {[...Array(Math.max(5, assignments.length))].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className={`h-2 flex-1 rounded-full transition-all duration-500 ${i < assignments.filter(a => a.status === 'COMPLETED').length ? 'bg-blue-500' : 'bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700'}`}
+                                        ></div>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => document.getElementById('work-section')?.scrollIntoView({ behavior: 'smooth' })}
+                                    className="w-full py-3 border-2 border-slate-100 dark:border-slate-700 hover:border-[#003087]/30 dark:hover:border-blue-500/30 text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    Submit New Work <ChevronRight size={14} />
+                                </button>
+                            </div>
                         </div>
+                    )}
+
+                    {/* Journeys/Applications Tracking */}
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-[2.5rem] p-10 shadow-sm">
+                        <h2 className="text-2xl font-black font-rajdhani flex items-center gap-3 text-slate-900 dark:text-white uppercase tracking-wide mb-8">
+                            <Clock className="text-[#003087] dark:text-blue-500 w-7 h-7" /> {isHired ? 'Active Internship' : t('dashboard.journey')}
+                        </h2>
 
                         {!profile?.applications || profile.applications.length === 0 ? (
-                            <div className="text-center py-10 px-4 bg-gray-50 dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
-                                <FileText className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
-                                <p className="text-gray-500 dark:text-slate-400 font-medium">{t('dashboard.noApps')}</p>
-                                <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">{t('dashboard.visitInternships')}</p>
+                            <div className="text-center py-16 px-6 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                                <FileText className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-6" />
+                                <p className="text-slate-500 dark:text-slate-400 font-bold text-lg mb-2">{t('dashboard.noApps')}</p>
+                                <p className="text-slate-400 dark:text-slate-500 text-sm">{t('dashboard.visitInternships')}</p>
                             </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {profile.applications.map(app => (
-                                    <div key={app.id} className="p-6 border border-gray-100 dark:border-slate-700 rounded-2xl hover:border-[#003087]/30 dark:hover:border-blue-500/50 hover:bg-[#eff4ff]/30 dark:hover:bg-slate-700/50 transition-all flex flex-col sm:flex-row justify-between sm:items-center gap-5 group">
-                                        <div>
-                                            <div className="flex flex-wrap items-center gap-3 mb-2">
-                                                <h4 className="font-extrabold text-lg text-gray-900 dark:text-white">{app.internship?.title || 'Internship Position'}</h4>
-                                                <span className="text-[10px] bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-md font-mono font-bold tracking-widest uppercase">
-                                                    #{app.trackingId.substring(0, 8)}
-                                                </span>
-                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
-                                                    ${app.status === 'PENDING' ? 'bg-[#fffced] dark:bg-yellow-500/10 text-[#a37e13] dark:text-yellow-400 border border-[#f5d787] dark:border-yellow-500/20' :
-                                                        app.status === 'SHORTLISTED' ? 'bg-[#eff4ff] dark:bg-blue-500/10 text-[#003087] dark:text-blue-400 border border-[#b3cfff] dark:border-blue-500/20' :
-                                                            app.status === 'HIRED' || app.status === 'CA_APPROVED' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' :
-                                                                'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20'
-                                                    }`}>
-                                                    {app.status === 'CA_APPROVED' ? 'SELECTED' : app.status}
-                                                </span>
+                                    <div key={app.id} className={`p-8 border rounded-[2rem] transition-all flex flex-col md:flex-row justify-between md:items-center gap-8 group hover:shadow-xl hover:-translate-y-1
+                                        ${['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status)
+                                            ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50 hover:border-blue-300 dark:hover:border-blue-700'
+                                            : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-500/20'}`}>
+
+                                        <div className="flex flex-col sm:flex-row items-center gap-6">
+                                            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-md group-hover:scale-110 transition-transform">
+                                                <Briefcase className={['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} size={28} />
                                             </div>
-                                            <p className="text-sm text-gray-500 dark:text-slate-400 font-medium flex items-center gap-1.5 mt-2">
-                                                <MapPin className="w-4 h-4 text-gray-400 dark:text-slate-500" /> {app.internship?.location || 'APTRANSCO'} • <span className="text-gray-400 dark:text-slate-500 mx-1">|</span> Applied on {new Date(app.createdAt).toLocaleDateString()}
-                                            </p>
+                                            <div className="text-center sm:text-left">
+                                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-2">
+                                                    <h4 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">{app.internship?.title}</h4>
+                                                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm
+                                                        ${app.status === 'PENDING' ? 'bg-[#fffced] text-[#a37e13] border-[#f5d787]' :
+                                                            ['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status) ? 'bg-emerald-500 text-white border-emerald-400' :
+                                                                'bg-red-50 text-red-700 border-red-200'}`}>
+                                                        {app.status === 'CA_APPROVED' || app.status === 'HIRED' || app.status === 'ONGOING' ? 'SELECTED' : app.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-slate-500 dark:text-slate-400 font-bold flex items-center justify-center sm:justify-start gap-2 text-sm">
+                                                    <MapPin size={16} className="text-slate-400" /> {app.internship?.location || 'APTRANSCO'} <span className="text-slate-300 mx-1">|</span> Applied on {new Date(app.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
                                         </div>
-                                        {['HIRED', 'CA_APPROVED'].includes(app.status) && (
-                                            <button
-                                                onClick={() => setStipendModalApp(app)}
-                                                className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto mt-4 sm:mt-0
-                                                    ${app.stipend ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' : 'bg-[#003087] dark:bg-blue-600 text-white hover:bg-[#00266b] dark:hover:bg-blue-700 border border-transparent'}
-                                                `}
-                                            >
-                                                {app.stipend ? <><CheckCircle size={15} /> Bank Details Added</> : <><Landmark size={15} /> Complete Stipend Profile</>}
-                                            </button>
-                                        )}
+
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            {['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status) && (
+                                                <button
+                                                    onClick={() => setStipendModalApp(app)}
+                                                    className={`px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2
+                                                        ${app.stipend ? 'bg-white dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                                >
+                                                    {app.stipend ? <><CheckCircle size={15} /> Banking Active</> : <><Landmark size={15} /> Banking Setup</>}
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -180,109 +250,130 @@ const StudentDashboard = () => {
                     </div>
                 </div>
 
-                {/* Right Column (Application Analytics) */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-8 shadow-sm transition-colors duration-300 sticky top-28">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-2xl font-black font-rajdhani flex items-center gap-3 text-gray-900 dark:text-white uppercase tracking-wide">
-                                <Award className="text-[#003087] dark:text-blue-500 w-7 h-7" /> My Analytics
+                {/* Right Column (Mentor & Resources) */}
+                <div className="lg:col-span-1 space-y-10">
+                    {/* Mentor Card */}
+                    {isHired && hiredApp.mentor && (
+                        <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-[2.5rem] p-10 shadow-xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+
+                            <h2 className="text-xl font-black font-rajdhani flex items-center gap-3 text-slate-900 dark:text-white uppercase tracking-wide mb-8">
+                                <User className="text-blue-500 w-6 h-6" /> Assigned Mentor
                             </h2>
+
+                            <div className="flex flex-col items-center text-center mb-10">
+                                <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-tr from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 border-2 border-white dark:border-slate-600 shadow-2xl flex items-center justify-center mb-6 overflow-hidden">
+                                    <span className="text-3xl font-black text-blue-600 dark:text-blue-400">{hiredApp.mentor.name?.charAt(0)}</span>
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{hiredApp.mentor.name}</h3>
+                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-6">APTRANSCO Expert Mentor</p>
+
+                                <div className="w-full h-px bg-slate-200 dark:bg-slate-700 mb-8"></div>
+
+                                <div className="w-full space-y-4">
+                                    <div className="flex items-center gap-4 p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 transition-all cursor-pointer">
+                                        <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400"><Mail size={18} /></div>
+                                        <div className="text-left overflow-hidden">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Email Address</p>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate w-full">{hiredApp.mentor.email}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-emerald-500/30 transition-all cursor-pointer">
+                                        <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400"><ExternalLink size={18} /></div>
+                                        <div className="text-left">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Quick Action</p>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Request Meeting</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="text-[10px] text-center text-slate-400 font-bold italic leading-relaxed px-4">
+                                "Connect with your mentor for technical guidance and program requirements."
+                            </p>
                         </div>
+                    )}
 
-                        {profile ? (
-                            <div className="space-y-4">
-                                {/* Total Applied */}
-                                <div className="bg-[#eff4ff] dark:bg-blue-500/10 p-5 rounded-2xl border border-[#b3cfff] dark:border-blue-500/20 flex items-center justify-between transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-white dark:bg-blue-900/50 p-2.5 rounded-xl shadow-sm">
-                                            <Briefcase className="w-5 h-5 text-[#003087] dark:text-blue-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-[#003087] dark:text-blue-400 uppercase tracking-widest">Total Applied</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-0.5">All applications</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-rajdhani text-4xl font-black text-[#003087] dark:text-blue-400">{profile.applications?.length || 0}</span>
-                                </div>
+                    {/* Resources & Analytics */}
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-[2.5rem] p-10 shadow-sm sticky top-28">
+                        <h2 className="text-xl font-black font-rajdhani flex items-center gap-3 text-slate-900 dark:text-white uppercase tracking-wide mb-8">
+                            <Zap className="text-yellow-500 w-6 h-6" /> Program Tools
+                        </h2>
 
-                                {/* Shortlisted */}
-                                <div className="bg-[#fffced] dark:bg-yellow-500/10 p-5 rounded-2xl border border-[#f5d787] dark:border-yellow-500/20 flex items-center justify-between transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-white dark:bg-yellow-900/40 p-2.5 rounded-xl shadow-sm">
-                                            <Star className="w-5 h-5 text-[#D4A017] dark:text-yellow-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-[#a37e13] dark:text-yellow-400 uppercase tracking-widest">Shortlisted</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-0.5">In consideration</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-rajdhani text-4xl font-black text-[#a37e13] dark:text-yellow-400">{profile.applications?.filter(a => a.status === 'SHORTLISTED').length || 0}</span>
-                                </div>
-
-                                {/* Selected */}
-                                <div className="bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-2xl border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-white dark:bg-emerald-900/40 p-2.5 rounded-xl shadow-sm">
-                                            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Selected</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-0.5">Hired for internship</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-rajdhani text-4xl font-black text-emerald-700 dark:text-emerald-400">{profile.applications?.filter(a => ['HIRED', 'CA_APPROVED'].includes(a.status)).length || 0}</span>
-                                </div>
+                        <div className="space-y-4">
+                            <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800 group hover:border-yellow-500/30 transition-all">
+                                <h4 className="font-black text-slate-900 dark:text-white mb-2 uppercase text-sm tracking-tight">Guidelines</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-4">Review the mandatory safety and operational standards.</p>
+                                <button className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                                    Download PDF <ChevronRight size={14} />
+                                </button>
                             </div>
-                        ) : (
-                            <div className="text-center py-10">
-                                <div className="w-16 h-16 bg-gray-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-gray-200 dark:border-slate-700">
-                                    <FileText className="w-8 h-8 text-gray-300 dark:text-slate-600" />
-                                </div>
-                                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium px-4">Complete your profile to unlock analytics.</p>
+                            <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800 group hover:border-blue-500/30 transition-all">
+                                <h4 className="font-black text-slate-900 dark:text-white mb-2 uppercase text-sm tracking-tight">Community</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-4">Connect with other batchmates on the portal.</p>
+                                <button className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                                    Join Discussions <ChevronRight size={14} />
+                                </button>
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Work Assignments Section */}
-            {assignments.length > 0 && (
-                <div className="mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                    <h2 className="text-2xl font-black font-rajdhani mb-6 flex items-center gap-3 text-gray-900 dark:text-white uppercase tracking-wider">
-                        <ClipboardList className="text-[#003087] dark:text-blue-500 w-7 h-7" /> {t('dashboard.workAssignments') || 'Work Assignments'}
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Work Assignments Detailed Section */}
+            {(isHired && assignments.length > 0) && (
+                <div id="work-section" className="mt-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                        <div>
+                            <h2 className="text-3xl font-black font-rajdhani flex items-center gap-4 text-slate-900 dark:text-white uppercase tracking-tighter">
+                                <ClipboardList className="text-[#003087] dark:text-blue-500 w-8 h-8" /> Internship Tasks
+                            </h2>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium ml-12">Submit and track your weekly internship tasks</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <span className="px-5 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500">Filters: All Work</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {assignments.map(work => (
-                            <div key={work.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all group">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="p-3 bg-[#eff4ff] dark:bg-slate-700 rounded-2xl text-[#003087] dark:text-blue-400 group-hover:scale-110 transition-transform">
-                                        <Briefcase size={20} />
+                            <div key={work.id} className="bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700/50 rounded-[3rem] p-10 shadow-sm hover:shadow-2xl transition-all group relative overflow-hidden">
+                                {work.status === 'COMPLETED' && (
+                                    <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 blur-2xl -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
+                                )}
+
+                                <div className="flex justify-between items-start mb-8">
+                                    <div className={`p-4 rounded-2xl shadow-lg transition-transform group-hover:scale-110 duration-500 ${work.status === 'COMPLETED' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-blue-600 text-white shadow-blue-600/20'}`}>
+                                        <Briefcase size={24} />
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
-                                        ${work.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-[#fffced] text-[#a37e13] border border-[#f5d787]'}
-                                    `}>
+                                    <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm animate-in zoom-in duration-500
+                                        ${work.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
                                         {work.status}
                                     </span>
                                 </div>
-                                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 leading-tight">{work.title}</h3>
-                                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">{work.description}</p>
 
-                                {/* Submission Display */}
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 uppercase tracking-tight leading-none">{work.title}</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-10 leading-relaxed line-clamp-2">{work.description}</p>
+
                                 {work.submission ? (
-                                    <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-500/20">
-                                        <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 mb-2">
-                                            <CheckCircle size={16} />
-                                            <span className="text-xs font-black uppercase tracking-widest">Submitted</span>
+                                    <div className="mb-10 p-6 bg-slate-50 dark:bg-slate-950/50 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                                        <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 mb-4">
+                                            <CheckCircle size={18} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Submission Completed</span>
                                         </div>
-                                        <p className="text-sm text-gray-700 dark:text-slate-300 mb-3 line-clamp-2">{work.submission.submissionText}</p>
+                                        <p className="text-sm text-slate-700 dark:text-slate-300 mb-6 italic leading-relaxed">"{work.submission.submissionText}"</p>
+
                                         {work.submission.mentorFeedback && (
-                                            <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700">
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Mentor Feedback</p>
-                                                <p className="text-sm text-gray-700 dark:text-slate-300">{work.submission.mentorFeedback}</p>
+                                            <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border border-blue-500/10 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-1.5 h-6 bg-blue-500 rounded-full"></div>
+                                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Mentor's Verdict</p>
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4">{work.submission.mentorFeedback}</p>
                                                 {work.submission.mentorRating && (
-                                                    <div className="mt-2 flex items-center gap-1">
-                                                        <span className="text-[10px] font-bold text-gray-400 uppercase">Rating:</span>
-                                                        <span className="text-sm">{'⭐'.repeat(work.submission.mentorRating)}</span>
+                                                    <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/10 px-4 py-2 rounded-xl w-fit">
+                                                        <Star className="text-yellow-500 fill-yellow-500" size={14} />
+                                                        <span className="text-[11px] font-black text-blue-700 dark:text-blue-300">Rating: {work.submission.mentorRating}/5</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -294,18 +385,19 @@ const StudentDashboard = () => {
                                             setSelectedAssignment(work);
                                             setShowSubmissionModal(true);
                                         }}
-                                        className="w-full mb-6 py-3 bg-[#003087] dark:bg-blue-600 hover:bg-[#00266b] dark:hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                                        className="w-full mb-10 py-4 bg-slate-900 dark:bg-blue-600 text-white font-black rounded-2xl transition-all shadow-xl hover:shadow-blue-500/20 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest text-[11px]"
                                     >
-                                        <Upload size={18} /> Submit Work
+                                        <Upload size={18} /> Upload Progress Report
                                     </button>
                                 )}
 
-                                <div className="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-slate-700">
-                                    <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                        <Calendar size={14} /> Due: {work.dueDate ? new Date(work.dueDate).toLocaleDateString() : 'N/A'}
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-100 dark:border-slate-700/50">
+                                    <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
+                                        <Calendar size={16} className="text-blue-500/40" />
+                                        Deadline: {work.dueDate ? new Date(work.dueDate).toLocaleDateString() : 'Continuous'}
                                     </div>
-                                    <div className="flex items-center gap-2 text-[10px] font-black text-[#003087] dark:text-blue-400 uppercase tracking-widest">
-                                        <User size={14} /> Mentor: {work.mentor?.name}
+                                    <div className="flex items-center gap-3 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.15em] bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-full">
+                                        <User size={14} className="opacity-50" /> {work.mentor?.name}
                                     </div>
                                 </div>
                             </div>
@@ -314,7 +406,7 @@ const StudentDashboard = () => {
                 </div>
             )}
 
-            {/* Stipend Modal */}
+            {/* Modals */}
             {stipendModalApp && (
                 <StipendModal
                     application={stipendModalApp}
@@ -331,17 +423,13 @@ const StudentDashboard = () => {
                 />
             )}
 
-            {/* Work Submission Modal */}
             {showSubmissionModal && selectedAssignment && (
                 <WorkSubmissionModal
                     assignment={selectedAssignment}
                     onClose={(success) => {
                         setShowSubmissionModal(false);
                         if (success) {
-                            // Refresh assignments
-                            api.get('/students/work').then(res => {
-                                setAssignments(res.data.data || []);
-                            });
+                            api.get('/students/work').then(res => setAssignments(res.data.data || []));
                         }
                     }}
                 />
@@ -365,7 +453,6 @@ const StipendModal = ({ application, onClose, onSuccess }) => {
         setLoading(true);
         try {
             const res = await api.post(`/students/applications/${application.id}/stipend`, data);
-            alert('Stipend details saved successfully!');
             onSuccess(res.data.data);
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to save stipend details');
@@ -375,55 +462,55 @@ const StipendModal = ({ application, onClose, onSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-700">
-                <div className="bg-[#00266b] dark:bg-slate-900 p-8 text-white border-b border-white/10 dark:border-slate-700">
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                            <Landmark size={24} className="text-[#D4A017] dark:text-yellow-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
+            <div className="relative bg-white dark:bg-slate-900 rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.5)] w-full max-w-xl overflow-hidden border border-white/20 animate-in zoom-in-95 duration-500 my-auto">
+                <div className="bg-[#00266b] dark:bg-black/40 p-10 lg:p-14 text-white border-b border-white/5">
+                    <div className="flex justify-between items-center mb-8">
+                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 rotate-3">
+                            <Landmark size={32} className="text-yellow-400" />
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors"><X size={20} /></button>
+                        <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-2xl transition-colors"><X size={24} /></button>
                     </div>
-                    <h3 className="text-2xl font-black uppercase tracking-wide font-rajdhani">Stipend Profile</h3>
-                    <p className="text-[#aac4e8] dark:text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Provide your banking details for processing</p>
+                    <h3 className="text-4xl font-black uppercase tracking-tighter font-rajdhani">Banking Portal</h3>
+                    <p className="text-[#aac4e8] dark:text-slate-400 text-xs font-black uppercase tracking-[0.2em] mt-3">Secure verification for stipend disbursement</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">PAN Card Number</label>
-                            <div className="relative">
-                                <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                <input type="text" value={data.panNumber} onChange={e => setData({ ...data, panNumber: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" className="admin-input pl-12 w-full font-mono font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                <form onSubmit={handleSubmit} className="p-10 lg:p-14 space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="md:col-span-2 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Permanent Account Number (PAN)</label>
+                            <div className="relative group">
+                                <Shield className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                                <input type="text" value={data.panNumber} onChange={e => setData({ ...data, panNumber: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl text-lg font-black tracking-widest focus:border-blue-500 focus:outline-none transition-all" required />
                             </div>
                         </div>
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Bank Name</label>
-                            <div className="relative">
-                                <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                <input type="text" value={data.bankName} onChange={e => setData({ ...data, bankName: e.target.value })} placeholder="e.g. State Bank of India" className="admin-input pl-12 w-full font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                        <div className="md:col-span-2 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Financial Institution (Bank Name)</label>
+                            <div className="relative group">
+                                <Landmark className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                                <input type="text" value={data.bankName} onChange={e => setData({ ...data, bankName: e.target.value })} placeholder="e.g. State Bank of India" className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl font-black focus:border-blue-500 focus:outline-none transition-all" required />
                             </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">IFS Code</label>
-                            <input type="text" value={data.ifscCode} onChange={e => setData({ ...data, ifscCode: e.target.value.toUpperCase() })} placeholder="SBIN0001234" className="admin-input w-full font-mono font-bold px-4 transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">IFSC Code</label>
+                            <input type="text" value={data.ifscCode} onChange={e => setData({ ...data, ifscCode: e.target.value.toUpperCase() })} placeholder="SBIN0001234" className="w-full px-6 py-5 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl font-black tracking-widest focus:border-blue-500 focus:outline-none transition-all" required />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Bank Branch</label>
-                            <input type="text" value={data.bankBranch} onChange={e => setData({ ...data, bankBranch: e.target.value })} placeholder="Main Branch" className="admin-input w-full font-bold px-4 transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Bank Branch</label>
+                            <input type="text" value={data.bankBranch} onChange={e => setData({ ...data, bankBranch: e.target.value })} placeholder="Main Branch" className="w-full px-6 py-5 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl font-black focus:border-blue-500 focus:outline-none transition-all" required />
                         </div>
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Account Number</label>
-                            <div className="relative">
-                                <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                <input type="text" value={data.bankAccount} onChange={e => setData({ ...data, bankAccount: e.target.value })} placeholder="300012345678" className="admin-input pl-12 w-full font-mono font-bold transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-[#003087] dark:focus:ring-blue-500 py-3" required />
+                        <div className="md:col-span-2 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Account Number</label>
+                            <div className="relative group">
+                                <CreditCard className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                                <input type="text" value={data.bankAccount} onChange={e => setData({ ...data, bankAccount: e.target.value })} placeholder="300012345678" className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl text-lg font-black tracking-widest focus:border-blue-500 focus:outline-none transition-all" required />
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" disabled={loading} className="w-full py-4 bg-[#D4A017] dark:bg-yellow-500 hover:bg-[#b88c14] dark:hover:bg-yellow-600 text-[#00266b] dark:text-slate-900 font-black rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-xs mt-4">
-                        {loading ? <div className="animate-spin w-5 h-5 border-2 border-[#00266b]/20 border-t-[#00266b] dark:border-slate-900/20 dark:border-t-slate-900 rounded-full"></div> : <><CheckCircle size={16} /> Save Banking Details</>}
+                    <button type="submit" disabled={loading} className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-[0.2em] text-xs">
+                        {loading ? <div className="animate-spin w-6 h-6 border-4 border-white/20 border-t-white rounded-full"></div> : <><CheckCircle size={20} /> Authorize Banking Details</>}
                     </button>
                 </form>
             </div>

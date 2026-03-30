@@ -1,9 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const emailService = require('../services/email/emailService');
 const xl = require('exceljs');
 const { allocateApplicants } = require('../services/allocationService');
 const { createAuditLog } = require('../utils/auditLogger');
 const { notifyMentorAssignment, notifyWorkAssignment } = require('../services/mailService');
+
 
 /**
  * @desc    Create Internship
@@ -20,8 +22,24 @@ const createInternship = async (req, res) => {
         } = req.body;
 
         let targetDepartment = department;
-        if (req.user.role !== 'ADMIN' && req.user.department) {
+
+        // Only force department for HOD and MENTOR (they can only create for their own dept)
+        // ADMIN and CE_PRTI can create for ANY department
+        if ((req.user.role === 'HOD' || req.user.role === 'MENTOR') && req.user.department) {
             targetDepartment = req.user.department;
+        }
+
+        // If no department provided and user is HOD/MENTOR, use their department
+        if (!targetDepartment && (req.user.role === 'HOD' || req.user.role === 'MENTOR') && req.user.department) {
+            targetDepartment = req.user.department;
+        }
+
+        // Validate department is provided
+        if (!targetDepartment) {
+            return res.status(400).json({
+                success: false,
+                message: 'Department is required'
+            });
         }
 
         const internship = await prisma.internship.create({
@@ -80,8 +98,8 @@ const getAllInternships = async (req, res) => {
         const result = internships.map(i => ({
             ...i,
             applicationsCount: i._count.applications,
-            hiredCount: i.applications.filter(a => ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
-            remainingOpenings: Math.max(0, i.openingsCount - i.applications.filter(a => ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length),
+            hiredCount: i.applications.filter(a => ['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
+            remainingOpenings: Math.max(0, i.openingsCount - i.applications.filter(a => ['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(a.status)).length),
             applications: undefined,
             _count: undefined
         }));
@@ -227,7 +245,7 @@ const updateApplicationStatus = async (req, res) => {
 
         const application = await prisma.application.findUnique({
             where: { id: applicationId },
-            include: { student: true, internship: true }
+            include: { student: { include: { user: true } }, internship: true }
         });
 
         if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
@@ -300,20 +318,21 @@ const updateApplicationStatus = async (req, res) => {
 
         // Committee Evaluating (All 3 members submit scores)
         if (status === 'CA_APPROVED') {
-            if (score) {
-                await prisma.shortlist.upsert({
-                    where: { applicationId },
-                    update: {
-                        score: parseInt(score),
-                        evaluatedAt: new Date()
-                    },
-                    create: {
-                        applicationId,
-                        score: parseInt(score),
-                        evaluatedAt: new Date()
-                    }
-                });
-            }
+            const { member1Score, member2Score, member3Score } = req.body;
+            const shortlistData = {
+                score: parseInt(score) || 0,
+                decision: status,
+                hodScore: hodScore || member1Score || undefined,
+                mentorScore: mentorScore || member2Score || undefined,
+                prtiScore: prtiScore || member3Score || undefined,
+                evaluatedAt: new Date()
+            };
+
+            await prisma.shortlist.upsert({
+                where: { applicationId },
+                update: shortlistData,
+                create: { ...shortlistData, applicationId }
+            });
         }
 
         // PRTI Member (Committee Head) gives FINAL APPROVAL
@@ -388,28 +407,22 @@ const updateApplicationStatus = async (req, res) => {
             data: updateData
         });
 
-        // Add to Shortlist if committeeId is provided
-        if (committeeId) {
-            const shortlistData = {
-                committeeId,
-                score: parseInt(score) || 0,
-                decision: status,
-                member1Id: member1Id || undefined,
-                member1Score: member1Score || undefined,
-                member2Id: member2Id || undefined,
-                member2Score: member2Score || undefined,
-                member3Id: member3Id || undefined,
-                member3Score: member3Score || undefined
-            };
 
-            await prisma.shortlist.upsert({
-                where: { applicationId },
-                update: shortlistData,
-                create: { ...shortlistData, applicationId }
-            });
-        }
 
         res.status(200).json({ success: true, data: app });
+
+        // --- EMAIL TRIGGERS (Async) ---
+        const studentEmail = application.student.user?.email;
+        if (studentEmail && !studentEmail.endsWith('@aptransco.portal')) {
+            const studentName = application.student.fullName;
+            if (status === 'COMMITTEE_EVALUATION') {
+                emailService.sendStatusUpdate(studentEmail, studentName, 'Forwarded to Committee', 'Your application has been reviewed by the HOD and forwarded to the PRTI Committee for final evaluation.');
+            } else if (status === 'REJECTED') {
+                emailService.sendStatusUpdate(studentEmail, studentName, 'Rejected', 'We regret to inform you that your application was not selected for this internship following the institutional review.');
+            } else if (status === 'HIRED') {
+                emailService.sendInterviewPass(studentEmail, studentName);
+            }
+        }
 
         // Audit Log
         await createAuditLog('UPDATE_APPLICATION', req.user.email, `Status changed to ${status}`, applicationId);
@@ -640,12 +653,29 @@ const updateCommitteeDetails = async (req, res) => {
             }
         }
 
-        const committee = await prisma.committee.upsert({
-            where: { internshipId: req.params.id },
-            update: { meetLink, interviewDate: interviewDate ? new Date(interviewDate) : null, membersData },
-            create: { internshipId: req.params.id, meetLink, interviewDate: interviewDate ? new Date(interviewDate) : null, membersData }
-        });
         res.status(200).json({ success: true, data: committee });
+
+        // --- EMAIL TRIGGER: Notify Applicants of Interview (Async) ---
+        if (meetLink && interviewDate) {
+            const applicants = await prisma.application.findMany({
+                where: { 
+                    internshipId: req.params.id,
+                    status: 'COMMITTEE_EVALUATION'
+                },
+                include: { student: { include: { user: true } } }
+            });
+
+            applicants.forEach(app => {
+                const email = app.student.user?.email;
+                if (email && !email.endsWith('@aptransco.portal')) {
+                    const dateStr = new Date(interviewDate).toLocaleDateString();
+                    const timeStr = new Date(interviewDate).toLocaleTimeString();
+                    emailService.sendInterviewScheduled(email, app.student.fullName, dateStr, timeStr, meetLink).catch(err => {
+                        console.error(`Failed to send interview email to ${email}:`, err.message);
+                    });
+                }
+            });
+        }
     } catch (error) {
         console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -746,7 +776,7 @@ const updateStipendDetails = async (req, res) => {
 const getAllInterns = async (req, res) => {
     try {
         const interns = await prisma.application.findMany({
-            where: { status: { in: ['HIRED', 'ONGOING', 'COMPLETED'] } },
+            where: { status: { in: ['CA_APPROVED', 'ONGOING', 'COMPLETED'] } },
             include: {
                 student: true,
                 internship: { select: { title: true, department: true, location: true } },
@@ -783,16 +813,41 @@ const getMeetings = async (req, res) => {
 const getMentorInterns = async (req, res) => {
     try {
         const mentorId = req.user.id;
+        const userRole = req.user.role;
+
+        console.log('=== MENTOR INTERNS QUERY ===');
+        console.log('Mentor ID:', mentorId);
+        console.log('User Role:', userRole);
+        console.log('User Email:', req.user.email);
+
+        // Show interns with HIRED, CA_APPROVED, ONGOING, or COMPLETED status
         const interns = await prisma.application.findMany({
-            where: { mentorId, status: { in: ['HIRED', 'ONGOING', 'COMPLETED'] } },
+            where: {
+                mentorId,
+                status: { in: ['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'] }
+            },
             include: {
-                student: true,
+                student: {
+                    include: {
+                        user: { select: { email: true } }
+                    }
+                },
                 internship: { select: { title: true, department: true } },
                 attendance: true,
                 workAssignments: { orderBy: { createdAt: 'desc' } }
             },
             orderBy: { createdAt: 'desc' }
         });
+
+        console.log('Found interns:', interns.length);
+        if (interns.length > 0) {
+            console.log('Interns:', interns.map(i => ({
+                student: i.student.fullName,
+                status: i.status,
+                mentorId: i.mentorId,
+                internship: i.internship.title
+            })));
+        }
 
         // Group by Internship
         const groupedByInternship = interns.reduce((acc, current) => {
@@ -893,6 +948,55 @@ const getWorkAssignments = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Get Meetings for Mentor/HOD/PRTI
+ * @route   GET /api/v1/admin/meetings/my
+ * @access  Private
+ */
+const getMentorMeetings = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const role = req.user.role;
+
+        let whereClause = {};
+
+        if (role === 'HOD') {
+            whereClause.hodId = userId;
+        } else if (role === 'MENTOR') {
+            whereClause.mentorId = userId;
+        } else if (role === 'CE_PRTI') {
+            whereClause.prtiMemberId = userId;
+        } else if (role !== 'ADMIN') {
+            // Other roles might be part of committee membersData
+            whereClause.OR = [
+                { hodId: userId },
+                { mentorId: userId },
+                { prtiMemberId: userId }
+            ];
+        }
+
+        const committees = await prisma.committee.findMany({
+            where: whereClause,
+            include: {
+                internship: {
+                    select: {
+                        id: true,
+                        title: true,
+                        department: true,
+                        location: true
+                    }
+                }
+            },
+            orderBy: { interviewDate: 'asc' }
+        });
+
+        res.status(200).json({ success: true, data: committees });
+    } catch (error) {
+        console.error('Admin controller error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -914,6 +1018,7 @@ module.exports = {
     updateStipendDetails,
     getAllInterns,
     getMeetings,
+    getMentorMeetings,
     getMentorInterns,
     assignWork,
     getWorkAssignments

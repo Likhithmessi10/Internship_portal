@@ -3,6 +3,7 @@ import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import Select from '../../components/ui/Select';
+import WarningCard from '../../components/ui/WarningCard';
 
 const getMediaUrl = (url) => {
     if (!url) return null;
@@ -103,6 +104,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     const [member1Score, setMember1Score] = useState('');
     const [member2Score, setMember2Score] = useState('');
     const [member3Score, setMember3Score] = useState('');
+    const [warning, setWarning] = useState(null);
 
     // Destructure application properties early to avoid "cannot access before initialization"
     if (!application) return null;
@@ -127,7 +129,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
             setMentors(sameDeptMentors);
 
             if (sameDeptMentors.length === 0) {
-                alert(`Warning: No mentors found from ${internship.department} department. HOD must assign a mentor from the same department.`);
+                setWarning(`No mentors found from ${internship.department} department. HOD must assign a mentor from the same department.`);
             }
         } catch (err) {
             console.error('Failed to fetch mentors', err);
@@ -149,17 +151,16 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
 
     const handleForwardCommittee = () => {
         if (!mentorIdInput) {
-            alert('Please assign a Mentor ID or Name before forwarding to the Committee.');
+            setWarning('Please assign a Mentor ID or Name before forwarding to the Committee.');
             return;
         }
         updateStatus('COMMITTEE_EVALUATION', { mentorId: mentorIdInput });
     };
 
     const handleCommitteeSelect = () => {
-        if (!interviewScore) return alert('Enter an interview score (1-100).');
+        if (!interviewScore) return setWarning('Enter an interview score (1-100).');
         updateStatus('CA_APPROVED', {
             score: interviewScore,
-            committeeId: internship.committee?.id || user.id,
             member1Score: member1Score || undefined,
             member2Score: member2Score || undefined,
             member3Score: member3Score || undefined
@@ -167,9 +168,9 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     };
 
     const handleHire = () => {
-        if (!selectedRole && internship?.rolesData?.length > 0) return alert('Assign a role.');
-        if (!manualRollNumber) return alert('Assign an internal Roll Number.');
-        if (!joiningDate || !endDate) return alert('Specify Joining and End dates.');
+        if (!selectedRole && internship?.rolesData?.length > 0) return setWarning('Assign a role.');
+        if (!manualRollNumber) return setWarning('Assign an internal Roll Number.');
+        if (!joiningDate || !endDate) return setWarning('Specify Joining and End dates.');
         updateStatus('HIRED', { rollNumber: manualRollNumber, joiningDate, endDate, assignedRole: selectedRole });
     };
 
@@ -184,6 +185,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
 
     return (
         <>
+            {warning && <WarningCard message={warning} onClose={() => setWarning(null)} />}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-secondary/20 backdrop-blur-md" onClick={onClose} />
                 <div className="relative bg-surface-container-low rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden z-10 border border-outline-variant/10">
@@ -562,7 +564,7 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                             <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Institutional ID / Roll Number</label>
                                             <input
                                                 type="text"
-                                                placeholder="e.g. TR-2024-001"
+                                                placeholder={`e.g. TR-${new Date().getFullYear()}-001`}
                                                 value={manualRollNumber}
                                                 onChange={e => setManualRollNumber(e.target.value)}
                                                 className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary placeholder:text-outline/30 focus:outline-emerald-500"

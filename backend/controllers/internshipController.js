@@ -73,7 +73,17 @@ const applyForInternship = async (req, res) => {
         });
 
         // 5. Validate Required Documents
-        const requiredDocs = internship.requiredDocuments || [];
+        const originalRequiredDocs = internship.requiredDocuments || [];
+        const requiredDocs = [...originalRequiredDocs];
+
+        // Ensure NOC and Undertaking are always mandatory
+        if (!requiredDocs.some(d => d.id === 'NOC')) {
+            requiredDocs.push({ id: 'NOC', label: 'No Objection Certificate (NOC)' });
+        }
+        if (!requiredDocs.some(d => d.id === 'UNDERTAKING')) {
+            requiredDocs.push({ id: 'UNDERTAKING', label: 'Undertaking Form' });
+        }
+
         const uploadedDocTypes = new Set(req.files?.map(f => f.fieldname) || []);
         const missingDocs = requiredDocs.filter(doc => !uploadedDocTypes.has(doc.id));
 
@@ -91,8 +101,8 @@ const applyForInternship = async (req, res) => {
         // 6. Handle File Uploads (Expect files from multer via any())
         if (req.files && req.files.length > 0) {
             const documents = req.files.map(file => {
-                // Try to find the document label from internship config
-                const docMeta = (internship.requiredDocuments || []).find(d => d.id === file.fieldname);
+                // Try to find the document label from internship config or mandatory defaults
+                const docMeta = requiredDocs.find(d => d.id === file.fieldname);
 
                 return {
                     applicationId: application.id,
@@ -109,7 +119,7 @@ const applyForInternship = async (req, res) => {
 
             // Sync Passport Photo URL if provided
             const passportFile = req.files.find(f => {
-                const meta = (internship.requiredDocuments || []).find(d => d.id === f.fieldname);
+                const meta = requiredDocs.find(d => d.id === f.fieldname);
                 return meta?.id === 'PASSPORT_PHOTO' || meta?.label?.toLowerCase().includes('passport');
             });
 

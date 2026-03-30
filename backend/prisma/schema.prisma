@@ -339,7 +339,7 @@ model WorkAssignment {
 
 model TaskSubmission {
   id              String   @id @default(uuid())
-  workAssignmentId String
+  workAssignmentId String @unique
   workAssignment  WorkAssignment @relation(fields: [workAssignmentId], references: [id], onDelete: Cascade)
   
   studentId       String

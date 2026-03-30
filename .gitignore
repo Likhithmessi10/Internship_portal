@@ -53,3 +53,11 @@ temp/
 
 # Qwen files
 .qwen/
+
+# Exclude generated UI/template testing framework
+stitch/
+stitch-*
+
+# EXPLICITLY TRACK THESE DIRECTORIES (Do NOT ignore)
+!doc_templates/
+!email_service/

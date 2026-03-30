@@ -29,7 +29,7 @@ const WorkAssignmentModal = ({ application, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300 border border-slate-200 dark:border-slate-800">
                 <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-gradient-to-r from-primary to-primary/80 text-white">
                     <div>
                         <h3 className="text-xl font-bold flex items-center gap-2">
@@ -53,7 +53,7 @@ const WorkAssignmentModal = ({ application, onClose }) => {
                             placeholder="e.g., Network Configuration Analysis"
                             value={formData.title}
                             onChange={(e) => setFormData({...formData, title: e.target.value})}
-                            className="w-full p-4 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm font-bold placeholder:text-outline/40 placeholder:font-medium focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-blue-500/10 focus:border-primary transition-all"
                         />
                     </div>
 
@@ -65,7 +65,7 @@ const WorkAssignmentModal = ({ application, onClose }) => {
                             placeholder="Detail the objectives and expected outcomes..."
                             value={formData.description}
                             onChange={(e) => setFormData({...formData, description: e.target.value})}
-                            className="w-full p-4 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm font-bold placeholder:text-outline/40 placeholder:font-medium focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all resize-none"
+                            className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-blue-500/10 focus:border-primary transition-all resize-none"
                         />
                     </div>
 
@@ -77,7 +77,7 @@ const WorkAssignmentModal = ({ application, onClose }) => {
                                 type="date"
                                 value={formData.dueDate}
                                 onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                                className="w-full p-4 pl-12 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                                className="w-full p-4 pl-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-blue-500/10 focus:border-primary transition-all"
                             />
                         </div>
                     </div>

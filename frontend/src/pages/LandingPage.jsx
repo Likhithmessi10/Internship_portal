@@ -47,7 +47,7 @@ const LandingPage = () => {
           <div className="header-text">
             <div className="dept">Government of Andhra Pradesh — Energy Department</div>
             <h1>Andhra Pradesh Transmission Corporation Limited</h1>
-            <div className="sub">APTRANSCO &nbsp;·&nbsp; Student Internship Management Portal &nbsp;·&nbsp; 2024–25</div>
+            <div className="sub">APTRANSCO &nbsp;·&nbsp; Student Internship Management Portal &nbsp;·&nbsp; {new Date().getFullYear()}–{(new Date().getFullYear() + 1).toString().slice(2)}</div>
           </div>
           <div className="header-contact">
             <strong>Helpdesk</strong>
@@ -82,7 +82,7 @@ const LandingPage = () => {
 
       <div className="hero">
         <div className="hero-content">
-          <div className="hero-badge"><Zap size={14} style={{ marginRight: '6px' }} /> APTRANSCO Student Internship Programme 2024–25</div>
+          <div className="hero-badge"><Zap size={14} style={{ marginRight: '6px' }} /> APTRANSCO Student Internship Programme {new Date().getFullYear()}–{(new Date().getFullYear() + 1).toString().slice(2)}</div>
           <h2>Power Your Future with<br /><span>APTRANSCO Internship</span></h2>
           <p>Gain hands-on experience in India's leading power transmission utility. Work alongside expert engineers in substations, control rooms, and planning divisions across Andhra Pradesh.</p>
           <button className="btn-hero-primary" onClick={() => navigate('/student/register')}>

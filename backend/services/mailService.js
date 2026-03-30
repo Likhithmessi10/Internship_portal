@@ -1,7 +1,7 @@
 const axios = require('axios');
 
-const NO_REPLY_URL = 'https://aptrservice.aptransco.gov.in/api/noreply';
-const NO_REPLY_ATTACHMENT_URL = 'https://aptrservice.aptransco.gov.in/api/noreplyattachment';
+const NO_REPLY_URL = process.env.EMAIL_SERVICE_URL || 'https://aptrservice.aptransco.gov.in/api/noreply';
+const NO_REPLY_ATTACHMENT_URL = process.env.EMAIL_SERVICE_ATTACHMENT_URL || 'https://aptrservice.aptransco.gov.in/api/noreplyattachment';
 
 /**
  * Send a simple email using APTRANSCO API

@@ -28,6 +28,11 @@ import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
 import HodMeetings from './pages/admin/hod/HodMeetings';
 import MentorDashboard from './pages/admin/mentor/MentorDashboard';
+import MentorApplications from './pages/admin/mentor/MentorApplications';
+import MentorCommittees from './pages/admin/mentor/MentorCommittees';
+import MentorMeetings from './pages/admin/mentor/MentorMeetings';
+import MentorReports from './pages/admin/mentor/MentorReports';
+import Profile from './pages/admin/Profile';
 
 const AdminLayout = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -137,8 +142,28 @@ function App() {
               <AdminLayout><MentorDashboard /></AdminLayout>
             </ProtectedRoute>
           } />
+          <Route path="/mentor/applications" element={
+            <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
+              <AdminLayout><MentorApplications /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mentor/committees" element={
+            <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
+              <AdminLayout><MentorCommittees /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mentor/meetings" element={
+            <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
+              <AdminLayout><MentorMeetings /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mentor/reports" element={
+            <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
+              <AdminLayout><MentorReports /></AdminLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/internships/new" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI', 'HOD']}>
               <AdminLayout><CreateInternshipForm /></AdminLayout>
             </ProtectedRoute>
           } />
@@ -155,6 +180,11 @@ function App() {
           <Route path="/internships/past" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminLayout><AdminPastInternships /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER']}>
+              <AdminLayout><Profile /></AdminLayout>
             </ProtectedRoute>
           } />
 

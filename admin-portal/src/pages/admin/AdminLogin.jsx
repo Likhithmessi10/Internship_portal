@@ -126,7 +126,7 @@ const AdminLogin = () => {
                 </div>
 
                 <div className="text-center mt-12 text-[10px] font-bold text-outline uppercase tracking-[0.2em] opacity-50">
-                    &copy; 2024 Transco Systems
+                    &copy; {new Date().getFullYear()} Transco Systems
                 </div>
             </div>
         </div>

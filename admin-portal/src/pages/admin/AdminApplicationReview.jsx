@@ -84,23 +84,23 @@ const AdminApplicationReview = () => {
 
     const updateStatus = async (appId, newStatus, assignedRole = null, dates = {}) => {
         try {
-            const payload = { status: newStatus, ...dates };
+            const payload = { status: newStatus, ...(dates || {}) };
             if (assignedRole) payload.assignedRole = assignedRole;
-            if (dates.rollNumber) payload.rollNumber = dates.rollNumber;
+            if (dates?.rollNumber) payload.rollNumber = dates.rollNumber;
             await api.put(`/admin/applications/${appId}`, payload);
             setApplications(prev => prev.map(a => a.id === appId ? {
                 ...a,
                 status: newStatus,
                 assignedRole,
-                joiningDate: dates.joiningDate || a.joiningDate,
-                endDate: dates.endDate || a.endDate
+                joiningDate: dates?.joiningDate || a.joiningDate,
+                endDate: dates?.endDate || a.endDate
             } : a));
             if (selected?.id === appId) setSelected(prev => ({
                 ...prev,
                 status: newStatus,
                 assignedRole,
-                joiningDate: dates.joiningDate || prev.joiningDate,
-                endDate: dates.endDate || prev.endDate
+                joiningDate: dates?.joiningDate || prev?.joiningDate,
+                endDate: dates?.endDate || prev?.endDate
             }));
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to update status');

@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
 import {
-    Briefcase, Users, CheckCircle, ChevronRight, Star
+    Briefcase, Users, CheckCircle, ChevronRight, Star, Activity, AlertCircle
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
+import StatsDetailModal from '../../../components/ui/StatsDetailModal';
+import CreateMentorModal from './CreateMentorModal';
+import { UserPlus } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, color, subtext }) => (
     <div className={`glass-card bg-white/50 dark:bg-indigo-950/40 border-l-4 ${color} dark:border-white/5 premium-shadow rounded-3xl p-6 hover:-translate-y-1 transition-all duration-300 group`}>
@@ -26,22 +29,55 @@ const HodDashboard = () => {
     const { user } = useAuth();
     const { t } = useLanguage();
     const [internships, setInternships] = useState([]);
+    const [hiredInterns, setHiredInterns] = useState([]);
+    const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedStat, setSelectedStat] = useState(null);
+    const [showCreateMentor, setShowCreateMentor] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const res = await api.get('/admin/internships');
-                // Filter only LIVE and belonging to HOD department
-                const live = (res.data.data || []).filter(i => 
-                    i.isActive && (!i.applicationDeadline || new Date(i.applicationDeadline) >= new Date())
+                // Get all internships first
+                const intRes = await api.get('/admin/internships');
+
+                // Filter internships belonging to HOD department
+                const dept = user?.department?.toUpperCase().trim();
+                const allInts = intRes.data.data || [];
+
+                const filteredInts = user?.role === 'ADMIN'
+                    ? allInts
+                    : allInts.filter(i => i.department?.toUpperCase().trim() === dept);
+
+                const liveInts = filteredInts.filter(i => i.isActive && (!i.applicationDeadline || new Date(i.applicationDeadline) >= new Date()));
+
+                // Fetch applications for each internship in the department
+                const appsPromises = liveInts.map(internship =>
+                    api.get(`/admin/internships/${internship.id}/applications`)
                 );
-                // IF HOD has a department set in their user profile, filter by it. Or show all if ADMIN.
-                const filtered = user?.role === 'ADMIN' ? live : live.filter(i => i.department?.toUpperCase() === user?.department?.toUpperCase());
-                setInternships(filtered || []);
-            } catch {
-                console.error('Failed to fetch data');
+                const appsResults = await Promise.allSettled(appsPromises);
+                const allApps = appsResults
+                    .filter(result => result.status === 'fulfilled')
+                    .flatMap(result => result.value.data.data || []);
+
+                // Fetch all interns and filter (HODs can only see their department's interns)
+                try {
+                    const internsRes = await api.get('/admin/interns/all');
+                    const allInterns = internsRes.data.data || [];
+                    const filteredInterns = allInterns.filter(i =>
+                        i.internship?.department?.toUpperCase().trim() === dept
+                    );
+                    setHiredInterns(filteredInterns);
+                } catch (err) {
+                    // HODs might not have permission to fetch all interns, that's OK
+                    setHiredInterns([]);
+                }
+
+                setInternships(liveInts);
+                setApplications(allApps);
+            } catch (err) {
+                console.error('Failed to fetch HOD dashboard data', err);
             } finally {
                 setLoading(false);
             }
@@ -58,7 +94,7 @@ const HodDashboard = () => {
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
-             <div className="animate-spin w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto" />
+            <div className="animate-spin w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto" />
         </div>
     );
 
@@ -71,10 +107,17 @@ const HodDashboard = () => {
                     <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Departmental Oversight</span>
                     <h2 className="text-3xl font-bold text-primary tracking-tight">{user?.department} Dashboard</h2>
                 </div>
-                <div className="flex gap-3 text-right">
+                <div className="flex gap-4 items-center text-right">
+                    <button 
+                        onClick={() => setShowCreateMentor(true)}
+                        className="flex items-center gap-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:hover:bg-emerald-800/50 dark:text-emerald-300 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                    >
+                        <UserPlus size={16} /> Create Mentor
+                    </button>
+                    <div className="border-l border-outline-variant/30 h-8"></div>
                     <div>
                         <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Academic Year</p>
-                        <p className="text-sm font-bold text-primary">2023 - 2024</p>
+                        <p className="text-sm font-bold text-primary">{new Date().getFullYear() - 1} - {new Date().getFullYear()}</p>
                     </div>
                 </div>
             </section>
@@ -82,28 +125,41 @@ const HodDashboard = () => {
             {/* Stats */}
             {/* Bento Grid Stats */}
             <section className="grid grid-cols-12 gap-6">
-                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                <button
+                    onClick={() => setSelectedStat({ title: 'Active Programs', type: 'PROGRAMS', data: internships })}
+                    className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm hover:shadow-xl hover:border-primary/20 hover:-translate-y-1 transition-all text-left group"
+                >
                     <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Active Programs</span>
-                    <div className="text-4xl font-extrabold text-primary mt-2">{internships.length}</div>
+                    <div className="text-4xl font-extrabold text-primary mt-2 group-hover:scale-110 transition-transform origin-left">{internships.length}</div>
                     <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded w-fit uppercase">
-                        <span className="material-symbols-outlined text-xs">trending_up</span> Live Status
+                        <Activity size={12} /> Live Status
                     </div>
-                </div>
-                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                </button>
+
+                <button
+                    onClick={() => setSelectedStat({ title: 'Application Pool', type: 'APPLICATIONS', data: applications })}
+                    className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm hover:shadow-xl hover:border-primary/20 hover:-translate-y-1 transition-all text-left group"
+                >
                     <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Pool Size</span>
-                    <div className="text-4xl font-extrabold text-primary mt-2">{totalApplications}</div>
-                    <div className="mt-4 text-[10px] font-bold text-outline uppercase">Cumulative Applicants</div>
-                </div>
-                <div className="col-span-12 lg:col-span-4 bg-primary-container p-6 rounded-xl shadow-sm">
+                    <div className="text-4xl font-extrabold text-primary mt-2 group-hover:scale-110 transition-transform origin-left">{totalApplications}</div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-outline uppercase">
+                        <Users size={12} /> Cumulative Applicants
+                    </div>
+                </button>
+
+                <button
+                    onClick={() => setSelectedStat({ title: 'Hired Interns', type: 'INTERNS', data: hiredInterns })}
+                    className="col-span-12 lg:col-span-4 bg-primary-container p-6 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left group"
+                >
                     <span className="text-[10px] font-bold text-on-primary-container uppercase tracking-widest opacity-80">Hiring Quota</span>
-                    <div className="flex items-end justify-between mt-2 text-white">
+                    <div className="flex items-end justify-between mt-2 text-white group-hover:translate-x-1 transition-transform">
                         <div className="text-4xl font-extrabold">{totalHired}</div>
                         <div className="text-xl font-medium opacity-50 mb-1">/ {totalAllocated}</div>
                     </div>
                     <div className="w-full bg-white/20 h-1.5 rounded-full mt-4 overflow-hidden">
-                        <div className="bg-white h-full transition-all duration-1000" style={{ width: `${totalAllocated > 0 ? (totalHired/totalAllocated)*100 : 0}%` }}></div>
+                        <div className="bg-white h-full transition-all duration-1000" style={{ width: `${totalAllocated > 0 ? (totalHired / totalAllocated) * 100 : 0}%` }}></div>
                     </div>
-                </div>
+                </button>
             </section>
 
             {/* Internship Table */}
@@ -115,7 +171,7 @@ const HodDashboard = () => {
                         <p className="text-[10px] text-outline font-medium mt-0.5">Recruitment overview for {user?.department}</p>
                     </div>
                     <div className="flex gap-2 text-outline">
-                         <span className="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">filter_list</span>
+                        <span className="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">filter_list</span>
                     </div>
                 </div>
 
@@ -178,6 +234,24 @@ const HodDashboard = () => {
                     </table>
                 </div>
             </div>
+
+            {selectedStat && (
+                <StatsDetailModal
+                    title={selectedStat.title}
+                    type={selectedStat.type}
+                    data={selectedStat.data}
+                    onClose={() => setSelectedStat(null)}
+                />
+            )}
+
+            {showCreateMentor && (
+                <CreateMentorModal onClose={(success) => {
+                    setShowCreateMentor(false);
+                    if (success) {
+                        alert('Mentor credentials created successfully!');
+                    }
+                }} />
+            )}
         </div>
     );
 };

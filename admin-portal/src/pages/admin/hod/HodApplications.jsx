@@ -6,6 +6,7 @@ import {
     Search, Filter, Download, ChevronRight, ChevronDown,
     GraduationCap, Award, Info, MapPin, Eye, CheckCircle
 } from 'lucide-react';
+import WarningCard from '../../../components/ui/WarningCard';
 
 const HodApplications = () => {
     const { user } = useAuth();
@@ -14,6 +15,7 @@ const HodApplications = () => {
     const [selected, setSelected] = useState(null);
     const [filter, setFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [error, setError] = useState(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -30,6 +32,7 @@ const HodApplications = () => {
             setApplications(flattened);
         } catch (err) {
             console.error('Failed to fetch departmental applications');
+            setError('Failed to sync departmental applications. Please check your connection.');
             setApplications([]);
         } finally {
             setLoading(false);
@@ -54,7 +57,8 @@ const HodApplications = () => {
     );
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8 text-slate-800">
+            {error && <WarningCard message={error} onClose={() => setError(null)} />}
             <section className="flex justify-between items-end mb-8">
                 <div>
                     <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-1 block">Recruitment Oversight</span>
@@ -65,7 +69,7 @@ const HodApplications = () => {
             <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
                 <div className="p-6 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
                     <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
-                        {['All', 'SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION', 'HIRED', 'REJECTED'].map(f => (
+                        {['All', 'SUBMITTED', 'COMMITTEE_EVALUATION', 'HIRED', 'REJECTED'].map(f => (
                             <button key={f} onClick={() => setFilter(f)}
                                 className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${filter === f ? 'bg-primary text-white shadow-md' : 'bg-surface-container-high text-outline hover:bg-surface-variant'}`}>
                                 {f.replace(/_/g, ' ')}

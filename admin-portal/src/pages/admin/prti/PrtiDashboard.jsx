@@ -4,8 +4,9 @@ import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
 import {
     TrendingUp, Users, Briefcase, AlertCircle,
-    Filter, Activity, Trash2, CheckCircle
+    Filter, Activity, Trash2, CheckCircle, Search
 } from 'lucide-react';
+import StatsDetailModal from '../../../components/ui/StatsDetailModal';
 
 const PrtiDashboard = () => {
     const { user } = useAuth();
@@ -16,25 +17,33 @@ const PrtiDashboard = () => {
         pendingApps: 0
     });
     const [internships, setInternships] = useState([]);
+    const [allInterns, setAllInterns] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedStat, setSelectedStat] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [intRes, internsRes] = await Promise.all([
+                const [intRes, internsRes, configRes] = await Promise.all([
                     api.get('/admin/internships'),
-                    api.get('/admin/interns/all')
+                    api.get('/admin/interns/all'),
+                    api.get('/admin/config')
                 ]);
 
                 const allInts = intRes.data.data || [];
                 const liveInts = allInts.filter(i => i.isActive);
-                const allInterns = internsRes.data.data || [];
+                const internsList = internsRes.data.data || [];
+                const depts = configRes.data.data?.departments || [];
 
                 setInternships(allInts);
+                setAllInterns(internsList);
+                setDepartments(depts);
+                
                 setStats({
-                    totalDepts: 16, // Based on config
-                    activeInterns: allInterns.length,
+                    totalDepts: depts.length || 16,
+                    activeInterns: internsList.length,
                     activePrograms: liveInts.length,
                     pendingApps: allInts.reduce((acc, i) => acc + (i.applicationsCount || 0), 0)
                 });
@@ -92,47 +101,62 @@ const PrtiDashboard = () => {
 
             {/* Metrics Bento Grid */}
             <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-md transition-all group">
+                <button 
+                    onClick={() => setSelectedStat({ title: 'Total Departments', type: 'DEPARTMENTS', data: departments })}
+                    className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-primary/20 hover:-translate-y-1 transition-all group text-left w-full"
+                >
                     <div>
                         <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Total Departments</span>
-                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.totalDepts}</h2>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{stats.totalDepts}</h2>
                     </div>
                     <div className="mt-4 flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
                         <TrendingUp size={12} className="mr-1" />
                         <span>Corporate Structure</span>
                     </div>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-md transition-all group">
+                </button>
+
+                <button 
+                    onClick={() => setSelectedStat({ title: 'Active Interns', type: 'INTERNS', data: allInterns })}
+                    className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-emerald-500/20 hover:-translate-y-1 transition-all group text-left w-full"
+                >
                     <div>
                         <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Active Interns</span>
-                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.activeInterns}</h2>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{stats.activeInterns}</h2>
                     </div>
                     <div className="mt-4 flex items-center text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
                         <CheckCircle size={12} className="mr-1" />
                         <span>Onboarded Talent</span>
                     </div>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-md transition-all group">
+                </button>
+
+                <button 
+                    onClick={() => setSelectedStat({ title: 'Active Programs', type: 'PROGRAMS', data: internships.filter(i => i.isActive) })}
+                    className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-sky-500/20 hover:-translate-y-1 transition-all group text-left w-full"
+                >
                     <div>
                         <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Active Programs</span>
-                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.activePrograms}</h2>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{stats.activePrograms}</h2>
                     </div>
                     <div className="mt-4 flex items-center text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase tracking-wider">
                         <Activity size={12} className="mr-1" />
                         <span>Running Cycles</span>
                     </div>
-                </div>
-                <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-2xl border-2 border-primary/10 dark:border-primary/20 flex flex-col justify-between relative overflow-hidden group">
+                </button>
+
+                <button 
+                    onClick={() => setSelectedStat({ title: 'Pending Pool', type: 'PROGRAMS', data: internships.filter(i => (i.applicationsCount || 0) > 0) })}
+                    className="bg-primary/5 dark:bg-primary/10 p-6 rounded-2xl border-2 border-primary/10 dark:border-primary/20 flex flex-col justify-between relative overflow-hidden group hover:shadow-xl hover:bg-primary/10 hover:-translate-y-1 transition-all text-left w-full"
+                >
                     <div className="relative z-10">
                         <span className="text-[10px] font-bold tracking-widest uppercase text-primary/60 dark:text-primary/40 block mb-2">Pending Pool</span>
-                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter">{stats.pendingApps}</h2>
+                        <h2 className="text-4xl font-black text-primary dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{stats.pendingApps}</h2>
                     </div>
                     <div className="relative z-10 mt-4 flex items-center text-[10px] text-primary dark:text-primary/60 font-bold uppercase tracking-wider">
                         <AlertCircle size={12} className="mr-1" />
                         <span>Needs HOD Review</span>
                     </div>
                     <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-primary/5 dark:bg-primary/10 rounded-full blur-xl group-hover:scale-125 transition-transform" />
-                </div>
+                </button>
             </section>
 
             {/* Main Content Area */}
@@ -221,6 +245,15 @@ const PrtiDashboard = () => {
                     </div>
                 </div>
             </section>
+
+            {selectedStat && (
+                <StatsDetailModal
+                    title={selectedStat.title}
+                    type={selectedStat.type}
+                    data={selectedStat.data}
+                    onClose={() => setSelectedStat(null)}
+                />
+            )}
         </div>
     );
 };

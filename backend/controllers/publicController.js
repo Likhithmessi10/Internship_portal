@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { v4: uuidv4 } = require('uuid');
 const { generateOTP, sendOTP } = require('../utils/otp');
+const emailService = require('../services/email/emailService');
 
 /**
  * @desc    Submit Internship Application (Public)
@@ -154,6 +155,14 @@ const submitApplication = async (req, res, next) => {
             message: 'Application submitted successfully!',
             trackingId: application.trackingId
         });
+
+        // 5. Send Confirmation Email (Async)
+        const recipientEmail = req.body.email || (student.user ? student.user.email : null);
+        if (recipientEmail && !recipientEmail.endsWith('@aptransco.portal')) {
+            emailService.sendApplicationReceived(recipientEmail, fullName).catch(err => {
+                console.error(`Failed to send application confirmation email to ${recipientEmail}:`, err.message);
+            });
+        }
 
     } catch (error) {
         next(error);

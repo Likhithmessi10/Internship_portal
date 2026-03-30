@@ -17,7 +17,7 @@ router.post('/applications/:id/stipend', protect, upsertStipend);
 
 // Student Work Management
 router.get('/work', protect, authorize('STUDENT'), getStudentWork);
-router.post('/work/submit/:assignmentId', protect, authorize('STUDENT'), upload.any(), submitWork);
+router.post('/work/submit/:assignmentId', protect, authorize('STUDENT'), upload.single('file'), submitWork);
 
 // Mentor Submission Review (for mentors)
 router.put('/work/review/:submissionId', protect, authorize('MENTOR', 'ADMIN'), reviewSubmission);

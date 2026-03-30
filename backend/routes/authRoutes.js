@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, registerAdmin, login, refreshToken, getMe } = require('../controllers/authController');
+const { register, registerAdmin, login, refreshToken, getMe, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { authLimiter } = require('../middleware/rateLimiter');
 
@@ -13,5 +13,6 @@ router.post('/admin/register', registerAdmin);
 router.post('/login', login);
 router.post('/refresh', refreshToken);
 router.get('/me', protect, getMe);
+router.put('/reset-password', protect, resetPassword);
 
 module.exports = router;

@@ -17,8 +17,26 @@ const getDocumentConfig = async (req, res) => {
                 data: {
                     documents: [
                         { id: 'RESUME', label: 'Resume / CV', type: 'PDF', mandatory: true },
-                        { id: 'NOC_LETTER', label: 'NOC Letter', type: 'PDF', mandatory: true },
-                        { id: 'HOD_LETTER', label: 'HOD Letter', type: 'PDF', mandatory: true },
+                        { 
+                            id: 'NOC_LETTER', 
+                            label: 'No Objection Certificate', 
+                            type: 'PDF', 
+                            mandatory: true,
+                            templates: [
+                                { label: 'Download PDF', url: '/uploads/templates/No Objection Certificate for APTRANSCO Internship Programme.pdf' },
+                                { label: 'Download DOCX', url: '/uploads/templates/No Objection Certificate for APTRANSCO Internship Programme.docx' }
+                            ]
+                        },
+                        { 
+                            id: 'UNDERTAKING_FORM', 
+                            label: 'Undertaking Form', 
+                            type: 'PDF', 
+                            mandatory: true,
+                            templates: [
+                                { label: 'Download PDF', url: '/uploads/templates/Undertaking Form for APTRANSCO Internship Programme.pdf' },
+                                { label: 'Download DOCX', url: '/uploads/templates/Undertaking Form for APTRANSCO Internship Programme.docx' }
+                            ]
+                        },
                         { id: 'MARKSHEET', label: 'Mark Sheet', type: 'PDF', mandatory: true },
                         { id: 'PASSPORT_PHOTO', label: 'Passport Photo', type: 'IMAGE', mandatory: true }
                     ]

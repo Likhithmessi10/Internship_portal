@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../utils/api';
-import { Upload, FileType, CheckCircle, AlertCircle, ArrowLeft, ShieldCheck, FileText, Check, MapPin, AlignLeft, X, Briefcase, BookOpen, Award, Users, Calendar, ChevronRight } from 'lucide-react';
+import { Upload, FileType, CheckCircle, AlertCircle, ArrowLeft, ShieldCheck, FileText, Check, MapPin, AlignLeft, X, Briefcase, BookOpen, Award, Users, Calendar, ChevronRight, Download } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 const InternshipApplication = () => {
@@ -93,7 +93,16 @@ const InternshipApplication = () => {
         const formData = new FormData();
 
         // Validate all required documents are uploaded
-        const reqDocs = internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }];
+        const originalReqDocs = internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }];
+        const reqDocs = [...originalReqDocs];
+
+        if (!reqDocs.some(d => d.id === 'NOC')) {
+            reqDocs.push({ id: 'NOC', label: 'No Objection Certificate (NOC)', type: 'PDF' });
+        }
+        if (!reqDocs.some(d => d.id === 'UNDERTAKING')) {
+            reqDocs.push({ id: 'UNDERTAKING', label: 'Undertaking Form', type: 'PDF' });
+        }
+
         const missingDocs = [];
 
         reqDocs.forEach(doc => {
@@ -158,9 +167,11 @@ const InternshipApplication = () => {
 
     const FileUploadInput = ({ doc }) => {
         const state = files[doc.id];
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api/v1';
+        const serverBase = apiBase.replace('/api/v1', '');
 
         return (
-            <div className="relative group">
+            <div className="relative group space-y-3">
                 <input
                     type="file"
                     id={doc.id}
@@ -168,6 +179,36 @@ const InternshipApplication = () => {
                     className="hidden"
                     onChange={(e) => handleFileChange(e, doc)}
                 />
+                
+                {doc.templates && doc.templates.length > 0 && (
+                    <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 mb-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                                <FileText className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Required Template</p>
+                                <p className="text-[10px] text-indigo-600 font-bold uppercase">Download, fill, and then upload below</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            {doc.templates.map((template, idx) => (
+                                <a
+                                    key={idx}
+                                    href={`${serverBase}${template.url}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-black hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm active:scale-95"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    {template.label}
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <label
                     htmlFor={doc.id}
                     className={`block w-full p-5 sm:p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-4
@@ -181,7 +222,7 @@ const InternshipApplication = () => {
                     </div>
                     <div className="flex-grow">
                         <h4 className={`font-bold text-sm sm:text-base ${state ? 'text-emerald-900' : 'text-gray-900'}`}>
-                            {doc.label}
+                            {doc.label} {doc.mandatory && <span className="text-red-500 ml-1 font-black text-xs">*</span>}
                         </h4>
                         <p className={`text-xs sm:text-sm font-medium mt-1 ${state ? 'text-emerald-700/70' : 'text-gray-500'}`}>
                             {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {state.name}</span> : `Upload ${doc.type === 'IMAGE' ? 'JPG/PNG' : 'PDF'}`}
@@ -269,9 +310,39 @@ const InternshipApplication = () => {
                                 <p className="text-sm text-gray-500 font-medium mb-6">Upload required authorization letters in PDF format (Max 5MB each).</p>
 
                                 <div className="space-y-4">
-                                    {(internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }]).map(doc => (
-                                        <FileUploadInput key={doc.id} doc={doc} />
-                                    ))}
+                                    {(() => {
+                                        const originalReqDocs = internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }];
+                                        const reqDocs = [...originalReqDocs];
+
+                                        if (!reqDocs.some(d => d.id === 'NOC')) {
+                                            reqDocs.push({
+                                                id: 'NOC',
+                                                label: 'No Objection Certificate (NOC)',
+                                                type: 'PDF',
+                                                mandatory: true,
+                                                templates: [
+                                                    { label: 'Download (PDF)', url: '/doc_templates/No%20Objection%20Certificate%20for%20APTRANSCO%20Internship%20Programme.pdf' },
+                                                    { label: 'Download (DOCX)', url: '/doc_templates/No%20Objection%20Certificate%20for%20APTRANSCO%20Internship%20Programme.docx' }
+                                                ]
+                                            });
+                                        }
+                                        if (!reqDocs.some(d => d.id === 'UNDERTAKING')) {
+                                            reqDocs.push({
+                                                id: 'UNDERTAKING',
+                                                label: 'Undertaking Form',
+                                                type: 'PDF',
+                                                mandatory: true,
+                                                templates: [
+                                                    { label: 'Download (PDF)', url: '/doc_templates/Undertaking%20Form%20for%20APTRANSCO%20Internship%20Programme.pdf' },
+                                                    { label: 'Download (DOCX)', url: '/doc_templates/Undertaking%20Form%20for%20APTRANSCO%20Internship%20Programme.docx' }
+                                                ]
+                                            });
+                                        }
+
+                                        return reqDocs.map(doc => (
+                                            <FileUploadInput key={doc.id} doc={doc} />
+                                        ));
+                                    })()}
                                 </div>
                             </div>
 
@@ -441,17 +512,29 @@ const InternshipApplication = () => {
                                     Required Documents
                                 </h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {(internship.requiredDocuments || []).map((doc, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                                <FileType size={20} className="text-indigo-600" />
+                                    {(() => {
+                                        const originalReqDocs = internship.requiredDocuments || [];
+                                        const reqDocs = [...originalReqDocs];
+                                        
+                                        if (!reqDocs.some(d => d.id === 'NOC')) {
+                                            reqDocs.push({ id: 'NOC', label: 'No Objection Certificate (NOC)', type: 'PDF' });
+                                        }
+                                        if (!reqDocs.some(d => d.id === 'UNDERTAKING')) {
+                                            reqDocs.push({ id: 'UNDERTAKING', label: 'Undertaking Form', type: 'PDF' });
+                                        }
+
+                                        return reqDocs.map((doc, idx) => (
+                                            <div key={idx} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                                    <FileType size={20} className="text-indigo-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-900">{doc.label}</p>
+                                                    <p className="text-xs text-gray-500 font-medium">{doc.type === 'IMAGE' ? 'JPG/PNG' : 'PDF'} (Max 5MB)</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-900">{doc.label}</p>
-                                                <p className="text-xs text-gray-500 font-medium">{doc.type === 'IMAGE' ? 'JPG/PNG' : 'PDF'} (Max 5MB)</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ));
+                                    })()}
                                 </div>
                             </div>
 

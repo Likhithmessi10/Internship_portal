@@ -36,10 +36,14 @@ The APTRANSCO Internship Management Portal is an enterprise-grade solution for m
 ## 📋 Quick Start Guide
 
 ### 1. Initial Installation
-From the **root directory**, install all dependencies for both frontend and backend:
-```bash
-npm install
+From the **root directory**, simply run the automated setup script to install all dependencies and generate your `.env` configuration files:
+
+**Windows**:
+```bat
+setup-all.bat
 ```
+
+*(Manual alternative: Copy `.env.example` to `.env` inside `backend`, `admin-portal`, and `frontend`, then run `npm install` in each directory).*
 
 ### 2. Database Setup
 

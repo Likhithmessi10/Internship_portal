@@ -7,6 +7,7 @@ import {
     Users, TrendingUp, CheckCircle, Clock, ChevronRight, BarChart2, Calendar, Filter, X, FileSpreadsheet, Settings, Building2
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import StatsDetailModal from '../../components/ui/StatsDetailModal';
 
 const StatCard = ({ icon: Icon, label, value, color, subtext, onEdit }) => (
     <div className="bg-surface-container-low border border-outline-variant/10 rounded-xl p-8 shadow-sm transition-all hover:translate-y-[-2px]">
@@ -308,6 +309,10 @@ const AdminDashboard = () => {
     const [authorizedTotal, setAuthorizedTotal] = useState(0);
     const [isEditingTarget, setIsEditingTarget] = useState(false);
     const [newTarget, setNewTarget] = useState(0);
+    const [allInterns, setAllInterns] = useState([]);
+    const [allApps, setAllApps] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [selectedStat, setSelectedStat] = useState(null);
 
     useEffect(() => { fetchData(); fetchConfig(); }, []);
 
@@ -334,14 +339,26 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/internships');
-            // Filter only LIVE (Active AND not Expired)
-            const live = res.data.data.filter(i => 
+            const [intRes, appsRes, internsRes, configRes] = await Promise.all([
+                api.get('/admin/internships'),
+                api.get('/admin/applications'),
+                api.get('/admin/interns/all'),
+                api.get('/admin/config')
+            ]);
+
+            const allInts = intRes.data.data || [];
+            const live = allInts.filter(i => 
                 i.isActive && (!i.applicationDeadline || new Date(i.applicationDeadline) >= new Date())
             );
+            
             setInternships(live);
-        } catch {
-            console.error('Failed to fetch data');
+            setAllApps(appsRes.data.data || []);
+            setAllInterns(internsRes.data.data || []);
+            setDepartments(configRes.data.data?.departments || []);
+            setAuthorizedTotal(configRes.data.data?.authorizedTotal || 0);
+            setNewTarget(configRes.data.data?.authorizedTotal || 0);
+        } catch (err) {
+            console.error('Failed to fetch data', err);
         } finally {
             setLoading(false);
         }
@@ -495,11 +512,18 @@ const AdminDashboard = () => {
                 </div>
                 
                 {/* Secondary Metrics Column */}
-                <div className="col-span-12 lg:col-span-4 space-y-6">
-                    <div className="bg-primary-container p-6 rounded-xl text-on-primary-container flex flex-col justify-between h-full">
+                <div className="col-span-12 lg:col-span-4 space-y-6 flex flex-col">
+                    <button 
+                        onClick={() => setSelectedStat({ 
+                            title: 'Hired Institutional Talent', 
+                            type: 'INTERNS', 
+                            data: allInterns 
+                        })}
+                        className="bg-primary-container p-6 rounded-xl text-on-primary-container flex flex-col justify-between h-full hover:shadow-xl hover:-translate-y-1 transition-all group text-left w-full"
+                    >
                         <div>
                             <span className="text-[10px] font-bold tracking-widest uppercase opacity-70">Total Intake Goal</span>
-                            <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center justify-between mt-1 group-hover:translate-x-1 transition-transform">
                                 <div className="text-4xl font-extrabold text-white">{totalHired}</div>
                                 <div className="text-xl font-medium text-white/50">/ {effectiveTarget}</div>
                             </div>
@@ -512,9 +536,12 @@ const AdminDashboard = () => {
                             <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                                 <div className="bg-white h-full transition-all duration-1000" style={{ width: `${progressPct}%` }}></div>
                             </div>
-                            <p className="text-[9px] mt-2 opacity-60 font-medium">Target based on {authorizedTotal > 0 ? 'Institutional' : 'Project'} caps</p>
+                            <div className="flex justify-between items-center mt-3">
+                                <p className="text-[9px] opacity-60 font-medium uppercase tracking-widest">Global Institutional Target</p>
+                                <span className="material-symbols-outlined text-sm opacity-40 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                            </div>
                         </div>
-                    </div>
+                    </button>
                 </div>
             </section>
 
@@ -639,6 +666,15 @@ const AdminDashboard = () => {
 
             {showAdvancedExport && <AdvancedExportModal onClose={() => setShowAdvancedExport(false)} />}
             {showDepartments && <DepartmentsModal onClose={() => setShowDepartments(false)} />}
+
+            {selectedStat && (
+                <StatsDetailModal
+                    title={selectedStat.title}
+                    type={selectedStat.type}
+                    data={selectedStat.data}
+                    onClose={() => setSelectedStat(null)}
+                />
+            )}
         </div>
     );
 };

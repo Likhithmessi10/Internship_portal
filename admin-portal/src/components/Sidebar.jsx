@@ -14,6 +14,7 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
     const isAdmin = user?.role === 'ADMIN';
     const isHOD = user?.role === 'HOD';
     const isPRTI = user?.role === 'CE_PRTI';
+    const isMentor = user?.role === 'MENTOR';
 
     // Get user display name - prioritize name field, fallback to email prefix
     const getDisplayName = () => {
@@ -30,7 +31,11 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             icon: 'dashboard',
             path: isAdmin ? '/admin/dashboard' : (isPRTI ? '/prti/dashboard' : `/${user?.role?.toLowerCase()}/dashboard`)
         },
-        ...(!isPRTI ? [{ label: 'Applications', icon: 'description', path: isHOD ? '/hod/applications' : '/internships/past' }] : []),
+        ...(!isPRTI ? [{ 
+            label: 'Applications', 
+            icon: 'description', 
+            path: isHOD ? '/hod/applications' : (isMentor ? '/mentor/applications' : '/internships/past') 
+        }] : []),
         // PRTI Committee Evaluation (special for PRTI members)
         ...(isPRTI ? [{
             label: 'Committee Evaluation',
@@ -41,17 +46,17 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
         {
             label: 'Committees',
             icon: 'account_tree',
-            path: isHOD ? '/hod/committees' : '/committees'
+            path: isHOD ? '/hod/committees' : (isMentor ? '/mentor/committees' : '/committees')
         },
         {
             label: 'Meetings',
             icon: 'event_available',
-            path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : '/meetings')
+            path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : (isMentor ? '/mentor/meetings' : '/meetings'))
         },
         {
             label: 'Reports',
             icon: 'assessment',
-            path: isPRTI ? '/prti/reports' : (isHOD ? '/hod/reports' : '/reports')
+            path: isPRTI ? '/prti/reports' : (isHOD ? '/hod/reports' : (isMentor ? '/mentor/reports' : '/reports'))
         },
     ];
 
@@ -100,7 +105,7 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             </nav>
 
             <div className={`px-4 py-4 ${isCollapsed ? 'px-2' : ''}`}>
-                {(isAdmin || isPRTI) && (
+                {(isAdmin || isPRTI || isHOD) && (
                     <NavLink
                         to="/internships/new"
                         className={`bg-primary-container text-white py-3 rounded-lg flex items-center justify-center gap-2 font-medium shadow-md hover:opacity-90 transition-all text-sm no-underline hover:text-white ${isCollapsed ? 'px-2' : ''}`}
@@ -144,6 +149,10 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
                                 <p className="text-sm font-bold text-primary">{displayName}</p>
                                 <p className="text-[9px] text-outline font-medium truncate">{user?.email}</p>
                             </div>
+                            <NavLink to="/profile" className="w-full text-left px-4 py-2.5 text-xs font-bold text-primary hover:bg-primary/5 rounded-xl flex items-center gap-2 transition-colors no-underline">
+                                <span className="material-symbols-outlined text-base">account_circle</span>
+                                My Profile
+                            </NavLink>
                             <button onClick={logout} className="w-full text-left px-4 py-2.5 text-xs font-bold text-error hover:bg-error/5 rounded-xl flex items-center gap-2 transition-colors">
                                 <LogOut size={16} />
                                 Sign Out
@@ -152,18 +161,7 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
                     </div>
                 </div>
 
-                {!isPRTI && (
-                    <>
-                        <NavLink to="/settings" className={`flex items-center gap-4 text-slate-500 dark:text-slate-400 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200 rounded-lg ${isCollapsed ? 'justify-center px-2' : 'pl-5'}`} title={isCollapsed ? 'Settings' : ''}>
-                            <span className="material-symbols-outlined flex-shrink-0">settings</span>
-                            {!isCollapsed && <span className="text-sm">Settings</span>}
-                        </NavLink>
-                        <NavLink to="/support" className={`flex items-center gap-4 text-slate-500 dark:text-slate-400 hover:text-sky-800 dark:hover:text-sky-200 h-12 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200 rounded-lg ${isCollapsed ? 'justify-center px-2' : 'pl-5'}`} title={isCollapsed ? 'Support' : ''}>
-                            <span className="material-symbols-outlined flex-shrink-0">contact_support</span>
-                            {!isCollapsed && <span className="text-sm">Support</span>}
-                        </NavLink>
-                    </>
-                )}
+
             </div>
         </aside>
     );

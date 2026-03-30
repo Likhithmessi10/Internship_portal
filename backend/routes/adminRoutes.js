@@ -19,6 +19,7 @@ const {
     updateStipendDetails,
     getAllInterns,
     getMeetings,
+    getMentorMeetings,
     getMentorInterns,
     assignWork,
     getWorkAssignments
@@ -80,6 +81,7 @@ router.get('/audit-logs', authorize('ADMIN', 'CE_PRTI'), getAuditLogs);
 router.get('/system/health', authorize('ADMIN', 'CE_PRTI'), getSystemHealth);
 
 // Mentor & Work Assignments
+router.get('/meetings/my', getMentorMeetings);
 router.get('/mentor/interns', getMentorInterns);
 router.post('/work/assign', assignWork);
 router.get('/work/assignments', getWorkAssignments);

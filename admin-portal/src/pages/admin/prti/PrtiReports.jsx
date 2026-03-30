@@ -339,7 +339,7 @@ const PrtiReports = () => {
                     </div>
                     <span className="text-[10px] font-black tracking-widest uppercase text-outline block mb-1">Global Applicants</span>
                     <h2 className="text-4xl font-black text-primary tracking-tighter">{stats.totalApplications.toLocaleString()} Total Talent Pool</h2>
-                    <p className="text-[10px] font-medium text-outline mt-2 leading-relaxed italic">Cumulative applications received for 2024 academic year</p>
+                    <p className="text-[10px] font-medium text-outline mt-2 leading-relaxed italic">Cumulative applications received for {new Date().getFullYear()} academic year</p>
                 </div>
                 <div className="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/10 shadow-sm group">
                     <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">

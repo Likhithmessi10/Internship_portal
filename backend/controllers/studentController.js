@@ -100,7 +100,9 @@ const getProfile = async (req, res) => {
                 applications: {
                     include: {
                         internship: true,
-                        stipend: true
+                        stipend: true,
+                        mentor: { select: { name: true, email: true } },
+                        attendance: true
                     }
                 }
             }
@@ -108,6 +110,20 @@ const getProfile = async (req, res) => {
 
         if (!profile) {
             return res.status(404).json({ success: false, message: 'Profile not found' });
+        }
+
+        // Ensure each hired/active application has an attendance object (even if empty)
+        // to prevent frontend "missing property" issues
+        for (const app of profile.applications) {
+            if (['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status) && !app.attendance) {
+                app.attendance = {
+                    daysAttended: 0,
+                    totalDays: 0,
+                    attendanceLog: [],
+                    meetsMinimum: false,
+                    minimumDays: 20
+                };
+            }
         }
 
         res.status(200).json({ success: true, data: profile });

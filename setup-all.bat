@@ -44,5 +44,9 @@ echo ==========================================
 echo IMPORTANT: Please update the newly created .env files 
 echo in backend/, admin-portal/, and frontend/ with your 
 echo actual credentials (DB URL, API Keys, JWT Secrets, etc.)
+echo.
+echo For the API email service, ensure the following are set in backend/.env:
+echo EMAIL_SERVICE_URL
+echo EMAIL_SERVICE_ATTACHMENT_URL
 echo ==========================================
 pause

@@ -46,19 +46,8 @@ const submitWork = async (req, res) => {
         let attachmentType = null;
 
         if (req.file) {
-            const uploadDir = path.join(__dirname, '..', 'uploads', 'submissions');
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
-
-            const ext = path.extname(req.file.originalname);
-            const fileName = `submission-${assignmentId}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-            const filePath = path.join(uploadDir, fileName);
-
-            // Write file
-            fs.writeFileSync(filePath, req.file.buffer);
-
-            attachmentUrl = `/uploads/submissions/${fileName}`;
+            // Multer diskStorage already saved the file to uploads/
+            attachmentUrl = `/uploads/${req.file.filename}`;
             attachmentType = req.file.mimetype;
         }
 
@@ -77,8 +66,8 @@ const submitWork = async (req, res) => {
             },
             update: {
                 submissionText,
-                attachmentUrl,
-                attachmentType,
+                attachmentUrl: attachmentUrl || undefined, // Only update if new file provided
+                attachmentType: attachmentType || undefined,
                 status: 'SUBMITTED',
                 submissionDate: new Date()
             }
@@ -115,7 +104,7 @@ const getStudentWork = async (req, res) => {
             include: {
                 applications: {
                     where: {
-                        status: { in: ['HIRED', 'ONGOING', 'COMPLETED'] }
+                        status: { in: ['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'] }
                     }
                 }
             }

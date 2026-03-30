@@ -1,0 +1,7 @@
+service triggers:
+1. application submitted: template1.html (needs: name)
+2.1 if application forwarded by HOD: template2.html (needs: name, student_dashboard_link)
+2.2 if application not forwarded by HOD: template2.html (needs: name, portal link) (rejected show some quote along with rejection note)
+2.1.1 interview schedule: template3.html (needs: name, interview: date, time, meeting link)
+2.1.1.1 interview passed: template4.html (needs: name, student_dashboard_link)
+2.1.1.2 interview failed: template2.html (needs: name, student_dashboard_link) (rejected show some quote along with rejection note)

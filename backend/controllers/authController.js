@@ -256,7 +256,7 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
-            select: { id: true, email: true, role: true, department: true, createdAt: true }
+            select: { id: true, email: true, role: true, department: true, name: true, createdAt: true }
         });
 
         res.status(200).json({
@@ -269,10 +269,59 @@ const getMe = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Reset password
+ * @route   PUT /api/v1/auth/reset-password
+ * @access  Private
+ */
+const resetPassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Current and new passwords are required' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+        }
+
+        // Validate new password strength
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.valid) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'New password does not meet requirements',
+                errors: passwordValidation.errors
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await prisma.user.update({
+            where: { id: req.user.id },
+            data: { password: hashedPassword }
+        });
+
+        res.status(200).json({ success: true, message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Password reset error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     register,
     registerAdmin,
     login,
     refreshToken,
-    getMe
+    getMe,
+    resetPassword
 };
