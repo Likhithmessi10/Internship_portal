@@ -40,19 +40,18 @@ const applyForInternship = async (req, res) => {
 
         const { sop, preferredLocation, assignedRole } = req.body;
 
-        // 4. Check if student already applied to THIS ROLE in this internship
+        // 4. Check if student already applied in this internship
         const existingApplication = await prisma.application.findFirst({
             where: {
                 studentId: profile.id,
-                internshipId: internshipId,
-                assignedRole: assignedRole || null
+                internshipId: internshipId
             }
         });
 
         if (existingApplication) {
             return res.status(400).json({
                 success: false,
-                message: `You have already applied for the role "${assignedRole}" in this internship. You can only submit one application per role.`
+                message: `You have already applied for this internship. You can only submit one application per internship.`
             });
         }
 
@@ -65,7 +64,7 @@ const applyForInternship = async (req, res) => {
                 trackingId,
                 studentId: profile.id, // Linking to StudentProfile ID
                 internshipId: internship.id,
-                status: 'SUBMITTED',
+                status: 'APPLIED',
                 sop: sop || null,
                 preferredLocation: preferredLocation || null,
                 assignedRole: assignedRole || null
@@ -153,6 +152,10 @@ const applyForInternship = async (req, res) => {
  */
 const getInternships = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         const internships = await prisma.internship.findMany({
             where: {
                 isActive: true,
@@ -161,9 +164,42 @@ const getInternships = async (req, res) => {
                     { applicationDeadline: { gte: new Date() } }
                 ]
             },
-            orderBy: { createdAt: 'desc' }
+            select: {
+                id: true,
+                title: true,
+                department: true,
+                requiredDocuments: true,
+                location: true,
+                duration: true,
+                openingsCount: true,
+                isActive: true,
+                rolesData: true,
+                description: true,
+                stipendType: true
+            },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit
         });
-        res.status(200).json({ success: true, count: internships.length, data: internships });
+
+        const total = await prisma.internship.count({
+            where: {
+                isActive: true,
+                OR: [
+                    { applicationDeadline: null },
+                    { applicationDeadline: { gte: new Date() } }
+                ]
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            count: internships.length,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+            data: internships
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Server Error' });

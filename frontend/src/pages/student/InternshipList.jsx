@@ -8,12 +8,16 @@ const InternshipList = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState('All');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
         const fetchInternships = async () => {
+            setLoading(true);
             try {
-                const res = await api.get('/internships');
+                const res = await api.get(`/internships?page=${page}&limit=10`);
                 setInternships(res.data.data);
+                setTotalPages(res.data.totalPages || 1);
             } catch (error) {
                 console.error("Failed to fetch internships", error);
             } finally {
@@ -21,7 +25,7 @@ const InternshipList = () => {
             }
         };
         fetchInternships();
-    }, []);
+    }, [page]);
 
     const departments = ['All', ...new Set(internships.map(i => i.department))];
 
@@ -232,6 +236,31 @@ const InternshipList = () => {
                             </div>
                         ));
                     })}
+                </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="mt-10 flex justify-center items-center gap-4">
+                    <button 
+                        disabled={page === 1} 
+                        onClick={() => setPage(page - 1)}
+                        className="px-6 py-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 font-bold 
+                        disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                    >
+                        Previous
+                    </button>
+                    <span className="font-bold text-gray-500 dark:text-slate-400">
+                        Page {page} of {totalPages}
+                    </span>
+                    <button 
+                        disabled={page === totalPages} 
+                        onClick={() => setPage(page + 1)}
+                        className="px-6 py-2 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 font-bold 
+                        disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                    >
+                        Next
+                    </button>
                 </div>
             )}
         </div>

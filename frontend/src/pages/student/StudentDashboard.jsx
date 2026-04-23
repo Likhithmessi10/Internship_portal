@@ -28,7 +28,7 @@ const StudentDashboard = () => {
                 setProfile(res.data.data);
 
                 // Fetch work assignments if hired
-                if (res.data.data.applications?.some(app => ['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status))) {
+                if (res.data.data.applications?.some(app => ['APPROVED'].includes(app.status))) {
                     const workRes = await api.get('/students/work');
                     setAssignments(workRes.data.data || []);
                 }
@@ -41,7 +41,7 @@ const StudentDashboard = () => {
         fetchProfile();
     }, []);
 
-    const hiredApp = profile?.applications?.find(app => ['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status));
+    const hiredApp = profile?.applications?.find(app => ['APPROVED'].includes(app.status));
     const isHired = !!hiredApp;
 
     if (loading) {
@@ -208,22 +208,22 @@ const StudentDashboard = () => {
                             <div className="space-y-6">
                                 {profile.applications.map(app => (
                                     <div key={app.id} className={`p-8 border rounded-[2rem] transition-all flex flex-col md:flex-row justify-between md:items-center gap-8 group hover:shadow-xl hover:-translate-y-1
-                                        ${['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status)
+                                        ${['APPROVED'].includes(app.status)
                                             ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50 hover:border-blue-300 dark:hover:border-blue-700'
                                             : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-500/20'}`}>
 
                                         <div className="flex flex-col sm:flex-row items-center gap-6">
                                             <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-md group-hover:scale-110 transition-transform">
-                                                <Briefcase className={['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} size={28} />
+                                                <Briefcase className={['APPROVED'].includes(app.status) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} size={28} />
                                             </div>
                                             <div className="text-center sm:text-left">
                                                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-2">
                                                     <h4 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">{app.internship?.title}</h4>
                                                     <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm
-                                                        ${app.status === 'PENDING' ? 'bg-[#fffced] text-[#a37e13] border-[#f5d787]' :
-                                                            ['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status) ? 'bg-emerald-500 text-white border-emerald-400' :
+                                                        ${app.status === 'APPLIED' ? 'bg-[#fffced] text-[#a37e13] border-[#f5d787]' :
+                                                            ['APPROVED'].includes(app.status) ? 'bg-emerald-500 text-white border-emerald-400' :
                                                                 'bg-red-50 text-red-700 border-red-200'}`}>
-                                                        {app.status === 'CA_APPROVED' || app.status === 'HIRED' || app.status === 'ONGOING' ? 'SELECTED' : app.status}
+                                                        {app.status === 'APPROVED' ? 'APPROVED' : app.status}
                                                     </span>
                                                 </div>
                                                 <p className="text-slate-500 dark:text-slate-400 font-bold flex items-center justify-center sm:justify-start gap-2 text-sm">
@@ -233,7 +233,7 @@ const StudentDashboard = () => {
                                         </div>
 
                                         <div className="flex flex-col sm:flex-row gap-3">
-                                            {['HIRED', 'CA_APPROVED', 'ONGOING'].includes(app.status) && (
+                                            {['APPROVED'].includes(app.status) && (
                                                 <button
                                                     onClick={() => setStipendModalApp(app)}
                                                     className={`px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2

@@ -45,7 +45,7 @@ async function seedAccounts() {
             const deptSlug = dept.toLowerCase().replace(/[^a-z0-9]/g, '.');
             
             // Seed HOD
-            const hodEmail = `hod.${deptSlug}@transco.com`;
+            const hodEmail = `hod.${deptSlug}@aptransco.com`;
             await prisma.user.upsert({
                 where: { email: hodEmail },
                 update: {}, // Don't change if exists
@@ -60,7 +60,7 @@ async function seedAccounts() {
             console.log(`HOD    | ${dept.padEnd(30)} | ${hodEmail.padEnd(35)} | password123`);
 
             // Seed Mentor
-            const mentorEmail = `mentor.${deptSlug}@transco.com`;
+            const mentorEmail = `mentor.${deptSlug}@aptransco.com`;
             await prisma.user.upsert({
                 where: { email: mentorEmail },
                 update: {},
@@ -76,7 +76,7 @@ async function seedAccounts() {
         }
 
         // 2. Seed CE_PRTI (PRTI Central) account
-        const prtiEmail = 'prti@transco.com';
+        const prtiEmail = 'prti@aptransco.com';
         await prisma.user.upsert({
             where: { email: prtiEmail },
             update: {},
@@ -90,7 +90,7 @@ async function seedAccounts() {
         console.log(`PRTI   | ALL                            | ${prtiEmail.padEnd(35)} | password123`);
 
         // 3. Seed a default PRTI Admin for good measure if doesn't exist
-        const adminEmail = 'admin@transco.com';
+        const adminEmail = 'admin@aptransco.com';
         await prisma.user.upsert({
             where: { email: adminEmail },
             update: {},

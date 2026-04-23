@@ -60,9 +60,9 @@ const CreateMentorModal = ({ onClose }) => {
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline ml-1">Full Name</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline dark:text-slate-500 ml-1">Full Name</label>
                             <div className="relative">
-                                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50" />
+                                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 dark:text-slate-600" />
                                 <input 
                                     required
                                     type="text"
@@ -75,9 +75,9 @@ const CreateMentorModal = ({ onClose }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline ml-1">Email Address</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline dark:text-slate-500 ml-1">Email Address</label>
                             <div className="relative">
-                                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50" />
+                                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 dark:text-slate-600" />
                                 <input 
                                     required
                                     type="email"
@@ -90,9 +90,9 @@ const CreateMentorModal = ({ onClose }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline ml-1">Temporary Password</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline dark:text-slate-500 ml-1">Temporary Password</label>
                             <div className="relative">
-                                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50" />
+                                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 dark:text-slate-600" />
                                 <input 
                                     required
                                     type="text" // using text so HOD can easily see and share the initial password securely over other bounds

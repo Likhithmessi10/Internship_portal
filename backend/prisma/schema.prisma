@@ -21,16 +21,15 @@ enum Role {
 }
 
 enum ApplicationStatus {
-  PENDING
+  APPLIED
   SHORTLISTED
-  HIRED
-  REJECTED
-  SUBMITTED
-  HOD_REVIEW
   COMMITTEE_EVALUATION
   CA_APPROVED
+  HIRED
   ONGOING
   COMPLETED
+  REJECTED
+  APPROVED
 }
 
 enum InternshipCategory {
@@ -111,6 +110,9 @@ model StudentProfile {
 
   applications Application[]
   workAssignments WorkAssignment[] @relation("InternWork")
+
+  @@index([userId])
+  @@index([collegeName])
 }
 
 model Internship {
@@ -135,6 +137,7 @@ model Internship {
   stipendAmount        Float?    // Amount in INR (optional, for collaborative)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  shortlistLimit       Int?      @default(50)
 
   applications Application[]
   committee    Committee?
@@ -145,7 +148,7 @@ model Application {
   trackingId      String              @unique
   studentId       String
   internshipId    String
-  status          ApplicationStatus   @default(SUBMITTED)
+  status          ApplicationStatus   @default(APPLIED)
   score           Int?                @default(0)
   assignedRole     String?
   preferredCircle  String?
@@ -172,6 +175,9 @@ model Application {
   workAssignments WorkAssignment[]
 
   @@unique([studentId, internshipId, assignedRole])
+  @@index([studentId])
+  @@index([internshipId])
+  @@index([status])
 }
 
 model Document {

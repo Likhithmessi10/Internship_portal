@@ -149,9 +149,11 @@ const CreateInternshipForm = () => {
                 priorityCollege: formData.priorityCollege || null,
                 priorityCollegeQuota: parseInt(formData.priorityCollegeQuota) || 0
             });
+            alert('Internship program launched successfully!');
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create internship');
+            alert(err.response?.data?.message || 'Failed to create internship');
         } finally {
             setLoading(false);
         }

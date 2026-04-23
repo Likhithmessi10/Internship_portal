@@ -104,7 +104,7 @@ const getStudentWork = async (req, res) => {
             include: {
                 applications: {
                     where: {
-                        status: { in: ['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'] }
+                        status: 'APPROVED'
                     }
                 }
             }

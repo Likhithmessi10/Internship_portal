@@ -93,9 +93,11 @@ const adminRoutes = require('./routes/adminRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const collegeRoutes = require('./routes/colleges');
 const prtiRoutes = require('./routes/prtiRoutes');
+const commonRoutes = require('./routes/commonRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/common', commonRoutes);
 app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/internships', internshipRoutes);
 app.use('/api/v1/admin', adminRoutes);

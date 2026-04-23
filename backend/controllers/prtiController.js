@@ -9,8 +9,15 @@ const getCommitteeApplications = async (req, res) => {
     try {
         const { status, internshipId } = req.query;
 
+        let targetStatus = status || 'COMMITTEE_EVALUATION';
+        
+        // Map 'PENDING' to 'COMMITTEE_EVALUATION' for the dashboard default
+        if (targetStatus === 'PENDING') {
+            targetStatus = 'COMMITTEE_EVALUATION';
+        }
+
         const whereClause = {
-            status: status || 'COMMITTEE_EVALUATION'
+            status: targetStatus
         };
 
         if (internshipId) {

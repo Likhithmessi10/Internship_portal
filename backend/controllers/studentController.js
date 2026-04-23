@@ -26,6 +26,11 @@ const upsertProfile = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Only students can manage student profiles' });
         }
 
+        // MVP Profile Validation
+        if (!fullName || !collegeName || !branch || !yearOfStudy) {
+            return res.status(400).json({ success: false, message: 'fullName, collegeName, branch, and yearOfStudy are required fields.' });
+        }
+
         const allowedCategories = ['IIT', 'NIT', 'IIIT', 'CENTRAL', 'STATE_UNIV', 'DEEMED', 'AUTONOMOUS', 'COLLEGE', 'INSTITUTE', 'OTHER'];
         const validatedCategory = allowedCategories.includes(collegeCategory) ? collegeCategory : 'OTHER';
 

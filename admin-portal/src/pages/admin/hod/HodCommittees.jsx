@@ -191,9 +191,11 @@ const CommitteeModal = ({ internship, onClose }) => {
                     prtiMemberName: selectedPrti?.name || ''
                 }
             });
+            alert('Committee details updated successfully!');
             onClose();
         } catch (err) {
             console.error('Failed to update committee');
+            alert(err.response?.data?.message || 'Failed to update committee. Please try again.');
         } finally {
             setSaving(false);
         }

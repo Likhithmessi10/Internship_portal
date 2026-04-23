@@ -43,12 +43,12 @@ const InternshipApplication = () => {
                     if (profRes.data.data) {
                         setProfileComplete(true);
 
-                        // Check if already applied to THIS ROLE in this internship
+                        // Check if already applied to this internship
                         const alreadyApplied = profRes.data.data.applications.some(
-                            a => a.internshipId === id && a.assignedRole === initialRole
+                            a => a.internshipId === id
                         );
                         if (alreadyApplied) {
-                            setError(`You have already applied for the role "${initialRole}" in this internship.`);
+                            setError(`You have already applied for this internship.`);
                         }
                     }
                 } catch {
@@ -411,11 +411,11 @@ const InternshipApplication = () => {
                                 <button
                                     type="submit"
                                     className={`w-full sm:w-auto font-bold py-3.5 px-8 rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2 text-lg order-1 sm:order-2
-                                        ${submitting || error === 'You have already applied to this internship.'
+                                        ${submitting || error === 'You have already applied for this internship.'
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
                                             : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 hover:shadow-xl'
                                         }`}
-                                    disabled={submitting || error === 'You have already applied to this internship.'}
+                                    disabled={submitting || error === 'You have already applied for this internship.'}
                                 >
                                     {submitting ? (
                                         <><div className="animate-spin w-5 h-5 border-2 border-gray-500 border-t-white rounded-full"></div> Processing...</>

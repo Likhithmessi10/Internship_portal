@@ -59,48 +59,66 @@ const HodMeetings = () => {
                     const mDate = new Date(m.meetingDate);
                     const isPast = mDate < new Date();
                     return (
-                        <div key={idx} className={`bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-8 ${isPast ? 'opacity-60' : ''}`}>
-                            <div className="flex flex-col items-center text-center px-6 border-r border-outline-variant/10">
-                                <span className="text-[10px] font-bold text-outline uppercase tracking-widest">{mDate.toLocaleString('default', { month: 'short' })}</span>
-                                <span className="text-3xl font-black text-primary leading-none my-1">{mDate.getDate()}</span>
-                                <span className="text-[10px] font-bold text-outline uppercase tracking-widest">{mDate.getFullYear()}</span>
-                            </div>
-                            
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                     <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-bold rounded uppercase tracking-wider">{isPast ? 'CONCLUDED' : 'UPCOMING'}</span>
-                                     <span className="text-outline text-xs">•</span>
-                                     <span className="text-outline text-[10px] font-bold uppercase tracking-widest">{m.internshipTitle}</span>
+                        <div key={idx} className={`bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col gap-6 ${isPast ? 'opacity-60' : ''}`}>
+                            <div className="flex flex-col md:flex-row items-center gap-8">
+                                <div className="flex flex-col items-center text-center px-6 border-r border-outline-variant/10">
+                                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">{mDate.toLocaleString('default', { month: 'short' })}</span>
+                                    <span className="text-3xl font-black text-primary leading-none my-1">{mDate.getDate()}</span>
+                                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">{mDate.getFullYear()}</span>
                                 </div>
-                                <h3 className="text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-outline">video_call</span> {m.meetingLink ? 'Interview Session' : 'Meeting Details'}
-                                </h3>
-                                <div className="flex items-center gap-6 mt-4">
-                                    <div className="flex items-center gap-2 text-outline">
-                                        <span className="material-symbols-outlined text-sm">schedule</span>
-                                        <span className="text-[10px] font-bold uppercase">{mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-bold rounded uppercase tracking-wider">{isPast ? 'CONCLUDED' : 'UPCOMING'}</span>
+                                        <span className="text-outline text-xs">•</span>
+                                        <span className="text-outline text-[10px] font-bold uppercase tracking-widest">{m.internshipTitle}</span>
                                     </div>
-                                    {m.meetingLink && (
-                                        <div className="flex items-center gap-2 text-primary">
-                                            <span className="material-symbols-outlined text-sm">link</span>
-                                            <a href={m.meetingLink} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase hover:underline">Google Meet Access</a>
+                                    <h3 className="text-lg font-bold text-primary mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-outline">video_call</span> {m.meetingLink ? 'Interview Session' : 'Meeting Details'}
+                                    </h3>
+                                    <div className="flex items-center gap-6 mt-4">
+                                        <div className="flex items-center gap-2 text-outline">
+                                            <span className="material-symbols-outlined text-sm">schedule</span>
+                                            <span className="text-[10px] font-bold uppercase">{mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
+                                        {m.meetingLink && (
+                                            <div className="flex items-center gap-2 text-primary">
+                                                <span className="material-symbols-outlined text-sm">link</span>
+                                                <a href={m.meetingLink} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase hover:underline">Google Meet Access</a>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="shrink-0 flex items-center gap-3">
+                                    <div className="flex -space-x-2 mr-4">
+                                        {m.hod && <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary" title="HOD">H</div>}
+                                        {m.mentor && <div className="w-8 h-8 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-indigo-700" title="Mentor">M</div>}
+                                        {m.prtiMember && <div className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-[10px] font-bold text-outline" title="PRTI">P</div>}
+                                    </div>
+                                    {!isPast && m.meetingLink && (
+                                        <a href={m.meetingLink} target="_blank" rel="noreferrer" className="bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] px-6 py-3 rounded-lg hover:opacity-90 shadow-md transition-all flex items-center gap-2">
+                                            Join Session <ArrowUpRight size={14} />
+                                        </a>
                                     )}
                                 </div>
                             </div>
-
-                            <div className="shrink-0 flex items-center gap-3">
-                                <div className="flex -space-x-2 mr-4">
-                                     {m.hod && <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary" title="HOD">H</div>}
-                                     {m.mentor && <div className="w-8 h-8 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-indigo-700" title="Mentor">M</div>}
-                                     {m.prtiMember && <div className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-[10px] font-bold text-outline" title="PRTI">P</div>}
+                            {/* Shortlisted Candidates Display */}
+                            {m.internship?.applications && m.internship.applications.length > 0 && (
+                                <div className="mt-4 pt-4 border-t border-outline-variant/10">
+                                    <p className="text-[10px] font-bold text-outline uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <CheckCircle size={14} className="text-emerald-600" />
+                                        Shortlisted Candidates ({m.internship.applications.length})
+                                    </p>
+                                    <div className="flex flex-wrap gap-2 text-sm text-primary">
+                                        {m.internship.applications.map(app => (
+                                            <span key={app.id} className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold shadow-sm flex items-center gap-1">
+                                                {app.student?.user?.name || app.student?.name || 'Unknown Candidate'}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
-                                {!isPast && m.meetingLink && (
-                                    <a href={m.meetingLink} target="_blank" rel="noreferrer" className="bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] px-6 py-3 rounded-lg hover:opacity-90 shadow-md transition-all flex items-center gap-2">
-                                        Join Session <ArrowUpRight size={14} />
-                                    </a>
-                                )}
-                            </div>
+                            )}
                         </div>
                     );
                 })}

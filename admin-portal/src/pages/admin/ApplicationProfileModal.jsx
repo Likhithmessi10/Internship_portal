@@ -18,31 +18,31 @@ const DocViewer = ({ url, label, onClose }) => {
     const isImage = fullUrl && (url?.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(fullUrl));
 
     return (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-white/95 backdrop-blur-md">
-            <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100 shadow-sm">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+            <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                         <FileText size={20} />
                     </div>
                     <div>
-                        <p className="text-gray-900 font-bold text-base tracking-wide">{label}</p>
-                        <p className="text-gray-500 text-xs">Document Viewer</p>
+                        <p className="text-gray-900 dark:text-white font-bold text-base tracking-wide">{label}</p>
+                        <p className="text-gray-500 dark:text-slate-400 text-xs">Document Viewer</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2 font-bold text-sm">
+                <button onClick={onClose} className="p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-2 font-bold text-sm">
                     <X size={18} /> Close View
                 </button>
             </div>
             <div className="flex-1 overflow-auto flex items-center justify-center p-6 sm:p-12">
                 {!fullUrl ? (
-                    <div className="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100">
-                        <FileText size={48} className="mx-auto text-gray-300 mb-4" />
-                        <p className="text-gray-500 font-medium">Document file is not available.</p>
+                    <div className="text-center p-8 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700">
+                        <FileText size={48} className="mx-auto text-gray-300 dark:text-slate-600 mb-4" />
+                        <p className="text-gray-500 dark:text-slate-400 font-medium">Document file is not available.</p>
                     </div>
                 ) : isImage ? (
-                    <img src={fullUrl} alt={label} className="max-w-full max-h-full object-contain rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-gray-200" />
+                    <img src={fullUrl} alt={label} className="max-w-full max-h-full object-contain rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-gray-200 dark:ring-white/10" />
                 ) : (
-                    <div className="w-full h-full max-w-5xl bg-white rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-gray-200">
+                    <div className="w-full h-full max-w-5xl bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-gray-200 dark:ring-white/10">
                         <iframe
                             src={fullUrl}
                             title={label}
@@ -57,37 +57,37 @@ const DocViewer = ({ url, label, onClose }) => {
 };
 
 const InfoRow = ({ label, value }) => (
-    <div className="flex justify-between py-2 border-b border-outline-variant/5 last:border-0">
-        <span className="text-[10px] text-outline font-bold uppercase tracking-wider">{label}</span>
-        <span className="text-[10px] text-primary font-bold text-right max-w-xs uppercase">{value || '—'}</span>
+    <div className="flex justify-between py-2 border-b border-outline-variant/5 dark:border-slate-800/50 last:border-0">
+        <span className="text-[10px] text-outline dark:text-slate-500 font-bold uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] text-primary dark:text-indigo-400 font-bold text-right max-w-xs uppercase">{value || '—'}</span>
     </div>
 );
 
 const Badge = ({ yes, label }) => (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold
-        ${yes ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
+        ${yes ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500'}`}>
         {yes ? <CheckCircle size={10} /> : <XCircle size={10} />} {label}
     </span>
 );
 
 const DocRow = ({ doc, label, onView }) => (
-    <div className="flex items-center justify-between p-4 rounded-lg bg-surface-container-high/40 border border-outline-variant/10">
+    <div className="flex items-center justify-between p-4 rounded-lg bg-surface-container-high/40 dark:bg-slate-800/40 border border-outline-variant/10 dark:border-slate-800">
         <div className="flex items-center gap-3">
-            <span className={`material-symbols-outlined text-lg ${doc ? 'text-primary' : 'text-outline/30'}`}>description</span>
-            <span className={`text-[10px] font-bold uppercase tracking-widest ${doc ? 'text-primary' : 'text-outline/30'}`}>{label}</span>
+            <span className={`material-symbols-outlined text-lg ${doc ? 'text-primary dark:text-indigo-400' : 'text-outline/30 dark:text-slate-700'}`}>description</span>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${doc ? 'text-primary dark:text-indigo-400' : 'text-outline/30 dark:text-slate-700'}`}>{label}</span>
         </div>
         {doc ? (
             <button onClick={() => onView(doc.url, label)}
-                className="text-[9px] px-3 py-1.5 bg-primary text-white font-bold rounded uppercase tracking-widest hover:opacity-90 transition-all">
+                className="text-[9px] px-3 py-1.5 bg-primary dark:bg-indigo-600 text-white font-bold rounded uppercase tracking-widest hover:opacity-90 transition-all">
                 View File
             </button>
         ) : (
-            <span className="text-[9px] text-outline/30 font-bold uppercase tracking-widest">Missing</span>
+            <span className="text-[9px] text-outline/30 dark:text-slate-700 font-bold uppercase tracking-widest">Missing</span>
         )}
     </div>
 );
 
-const ApplicationProfileModal = ({ application, internship, onClose, updateStatus }) => {
+const ApplicationProfileModal = ({ application, internship, allApplications = [], onClose, updateStatus }) => {
     const { user } = useAuth();
     const [viewerUrl, setViewerUrl] = useState(null);
     const [viewerLabel, setViewerLabel] = useState('');
@@ -150,28 +150,23 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
     const closeViewer = () => { setViewerUrl(null); setViewerLabel(''); };
 
     const handleForwardCommittee = () => {
-        if (!mentorIdInput) {
-            setWarning('Please assign a Mentor ID or Name before forwarding to the Committee.');
-            return;
-        }
-        updateStatus('COMMITTEE_EVALUATION', { mentorId: mentorIdInput });
-    };
+        const shortlistedCount = allApplications.filter(a => a.internshipId === internship.id && a.status === 'SHORTLISTED').length;
+        const limit = internship.shortlistLimit || 50;
 
-    const handleCommitteeSelect = () => {
-        if (!interviewScore) return setWarning('Enter an interview score (1-100).');
-        updateStatus('CA_APPROVED', {
-            score: interviewScore,
-            member1Score: member1Score || undefined,
-            member2Score: member2Score || undefined,
-            member3Score: member3Score || undefined
-        });
+        if (shortlistedCount >= limit) {
+            if (!window.confirm(`Warning: Shortlist limit (${limit}) reached or exceeded (Current: ${shortlistedCount}). Do you want to override and continue shortlisting?`)) {
+                return;
+            }
+        }
+
+        updateStatus('SHORTLISTED');
     };
 
     const handleHire = () => {
         if (!selectedRole && internship?.rolesData?.length > 0) return setWarning('Assign a role.');
         if (!manualRollNumber) return setWarning('Assign an internal Roll Number.');
         if (!joiningDate || !endDate) return setWarning('Specify Joining and End dates.');
-        updateStatus('HIRED', { rollNumber: manualRollNumber, joiningDate, endDate, assignedRole: selectedRole });
+        updateStatus('APPROVED', { rollNumber: manualRollNumber, joiningDate, endDate, assignedRole: selectedRole });
     };
 
     const handleReject = () => updateStatus('REJECTED');
@@ -187,49 +182,49 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
         <>
             {warning && <WarningCard message={warning} onClose={() => setWarning(null)} />}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-secondary/20 backdrop-blur-md" onClick={onClose} />
-                <div className="relative bg-surface-container-low rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden z-10 border border-outline-variant/10">
+                <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md" onClick={onClose} />
+                <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden z-10 border border-outline-variant/10 dark:border-slate-800">
 
                     {/* Stitch-style Header Section */}
-                    <div className="shrink-0 bg-white border-b border-outline-variant/10 px-8 py-6 flex items-center justify-between">
+                    <div className="shrink-0 bg-white dark:bg-slate-900 border-b border-outline-variant/10 dark:border-slate-800 px-8 py-6 flex items-center justify-between">
                         <div className="flex items-center gap-5">
                             {photoDoc || student?.photoUrl ? (
                                 <img
                                     src={getMediaUrl(photoDoc ? photoDoc.url : student.photoUrl)}
                                     alt="Candidate"
-                                    className="w-14 h-14 rounded-lg object-cover ring-2 ring-primary/10 shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                                    className="w-14 h-14 rounded-lg object-cover ring-2 ring-primary/10 dark:ring-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform"
                                     onClick={() => openViewer(photoDoc ? photoDoc.url : student.photoUrl, 'Candidate Photo')}
                                 />
                             ) : (
-                                <div className="w-14 h-14 rounded-lg bg-primary flex items-center justify-center text-white font-extrabold text-2xl uppercase shadow-md">
+                                <div className="w-14 h-14 rounded-lg bg-primary dark:bg-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl uppercase shadow-md">
                                     {student?.fullName?.charAt(0)}
                                 </div>
                             )}
                             <div>
-                                <span className="text-[10px] font-bold tracking-[0.1em] text-outline uppercase mb-0.5 block">Application Profile</span>
-                                <h2 className="text-2xl font-bold text-primary tracking-tight leading-none">{student?.fullName}</h2>
-                                <p className="text-[10px] text-outline font-bold mt-1.5 tracking-wider uppercase">ID: {trackingId} · SUBMITTED {new Date(createdAt).toLocaleDateString()}</p>
+                                <span className="text-[10px] font-bold tracking-[0.1em] text-outline dark:text-indigo-400 uppercase mb-0.5 block">Application Profile</span>
+                                <h2 className="text-2xl font-bold text-primary dark:text-white tracking-tight leading-none">{student?.fullName}</h2>
+                                <p className="text-[10px] text-outline dark:text-slate-500 font-bold mt-1.5 tracking-wider uppercase">ID: {trackingId} · SUBMITTED {new Date(createdAt).toLocaleDateString()}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="px-3 py-1 bg-primary/10 rounded text-[10px] font-bold text-primary uppercase tracking-[0.15em] border border-primary/20">{status}</span>
-                            <button onClick={onClose} className="w-10 h-10 rounded-lg hover:bg-surface-container-high flex items-center justify-center text-outline transition-colors">
+                            <span className="px-3 py-1 bg-primary/10 dark:bg-indigo-900/30 rounded text-[10px] font-bold text-primary dark:text-indigo-300 uppercase tracking-[0.15em] border border-primary/20 dark:border-indigo-800/50">{status}</span>
+                            <button onClick={onClose} className="w-10 h-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-outline dark:text-slate-500 transition-colors">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="p-10 space-y-10 overflow-y-auto flex-1 custom-scrollbar bg-white">
+                    <div className="p-10 space-y-10 overflow-y-auto flex-1 custom-scrollbar bg-white dark:bg-slate-900/40">
                         {/* Section Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             {/* Personal */}
                             <section>
                                 <div className="flex items-center gap-2 mb-4">
-                                    <span className="material-symbols-outlined text-primary text-xl">person</span>
-                                    <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Personal Details</h3>
+                                    <span className="material-symbols-outlined text-primary dark:text-indigo-400 text-xl">person</span>
+                                    <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Personal Details</h3>
                                 </div>
-                                <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10">
-                                    <div className="flex items-center gap-4 mb-4 pb-4 border-b border-outline-variant/10">
+                                <div className="bg-surface-container-lowest dark:bg-slate-800/50 p-5 rounded-lg border border-outline-variant/10 dark:border-slate-800">
+                                    <div className="flex items-center gap-4 mb-4 pb-4 border-b border-outline-variant/10 dark:border-slate-700/50">
                                         {photoDoc || student?.photoUrl ? (
                                             <img
                                                 src={getMediaUrl(photoDoc ? photoDoc.url : student.photoUrl)}
@@ -243,8 +238,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                             </div>
                                         )}
                                         <div>
-                                            <p className="text-[9px] font-bold text-outline uppercase tracking-widest">Profile Photo</p>
-                                            <p className="text-xs font-bold text-primary">
+                                            <p className="text-[9px] font-bold text-outline dark:text-slate-500 uppercase tracking-widest">Profile Photo</p>
+                                            <p className="text-xs font-bold text-primary dark:text-indigo-300">
                                                 {photoDoc ? 'Uploaded Passport Photo' : student?.photoUrl ? 'Profile Picture' : 'No Photo'}
                                             </p>
                                         </div>
@@ -259,10 +254,10 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             {/* Academic */}
                             <section>
                                 <div className="flex items-center gap-2 mb-4">
-                                    <span className="material-symbols-outlined text-primary text-xl">school</span>
-                                    <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Academic Profile</h3>
+                                    <span className="material-symbols-outlined text-primary dark:text-indigo-400 text-xl">school</span>
+                                    <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Academic Profile</h3>
                                 </div>
-                                <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10">
+                                <div className="bg-surface-container-lowest dark:bg-slate-800/50 p-5 rounded-lg border border-outline-variant/10 dark:border-slate-800">
                                     <InfoRow label="College" value={student?.collegeName} />
                                     <InfoRow label="Year of Study" value={student?.yearOfStudy} />
                                     <InfoRow label="CGPA" value={student?.cgpa} />
@@ -277,10 +272,10 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             {(student?.linkedinUrl || student?.githubUrl) && (
                                 <section>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <span className="material-symbols-outlined text-primary text-xl">share</span>
-                                        <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Professional Profiles</h3>
+                                        <span className="material-symbols-outlined text-primary dark:text-indigo-400 text-xl">share</span>
+                                        <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Professional Profiles</h3>
                                     </div>
-                                    <div className="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant/10 space-y-3">
+                                    <div className="bg-surface-container-lowest dark:bg-slate-800/50 p-5 rounded-lg border border-outline-variant/10 dark:border-slate-800 space-y-3">
                                         {student?.linkedinUrl && (
                                             <div className="flex items-center gap-3 p-3 bg-[#0077b5]/5 rounded-lg border border-[#0077b5]/20">
                                                 <div className="w-8 h-8 rounded-lg bg-[#0077b5]/10 flex items-center justify-center">
@@ -319,8 +314,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                     <span className="material-symbols-outlined text-primary text-xl">article</span>
                                     <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Statement of Purpose</h3>
                                 </div>
-                                <div className="bg-primary/5 p-6 rounded-lg border border-primary/10">
-                                    <p className="text-xs font-medium text-primary/80 leading-relaxed whitespace-pre-wrap italic">
+                                <div className="bg-primary/5 dark:bg-indigo-900/20 p-6 rounded-lg border border-primary/10 dark:border-indigo-800/30">
+                                    <p className="text-xs font-medium text-primary/80 dark:text-indigo-300/80 leading-relaxed whitespace-pre-wrap italic">
                                         "{application.sop}"
                                     </p>
                                 </div>
@@ -330,8 +325,8 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                         {/* Full Width Sections */}
                         <section>
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="material-symbols-outlined text-primary text-xl">description</span>
-                                <h3 className="text-xs font-bold text-primary uppercase tracking-widest pt-1">Documentation Pool</h3>
+                                <span className="material-symbols-outlined text-primary dark:text-indigo-400 text-xl">description</span>
+                                <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Documentation Pool</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {internship?.requiredDocuments && internship.requiredDocuments.length > 0 ? (
@@ -357,68 +352,35 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                         {/* Stipend / Bank Details (Instructor Requirement) */}
                         {application.stipend && (
                             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <h3 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                     <Landmark size={14} /> Stipend & Banking Information
                                 </h3>
-                                <div className="bg-emerald-50/30 border border-emerald-100 rounded-2xl p-5 shadow-sm space-y-3">
+                                <div className="bg-emerald-50/30 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/30 rounded-2xl p-5 shadow-sm space-y-3">
                                     <div className="grid grid-cols-2 gap-4">
                                         <InfoRow label="Bank Name" value={application.stipend.bankName} />
                                         <InfoRow label="Bank Branch" value={application.stipend.bankBranch} />
                                         <InfoRow label="IFSC Code" value={application.stipend.ifscCode} />
                                         <InfoRow label="PAN Number" value={application.stipend.panNumber} />
                                     </div>
-                                    <div className="pt-2 border-t border-emerald-100/50">
+                                    <div className="pt-2 border-t border-emerald-100/50 dark:border-emerald-800/50">
                                         <InfoRow label="Account Number" value={application.stipend.bankAccount} />
                                     </div>
-                                    <p className="text-[9px] text-emerald-600/60 font-medium uppercase tracking-tight text-center">Instructor Schema Compliant: `bank_name`, `bank_branch` included</p>
+                                    <p className="text-[9px] text-emerald-600/60 dark:text-emerald-500/60 font-medium uppercase tracking-tight text-center">Instructor Schema Compliant: `bank_name`, `bank_branch` included</p>
                                 </div>
                             </section>
                         )}
 
                         {/* Actions */}
-                        {status === 'SUBMITTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
-                            <div className="pt-8 mt-4 border-t border-outline-variant/10">
-                                <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm">
+                        {status === 'APPLIED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
+                            <div className="pt-8 mt-4 border-t border-outline-variant/10 dark:border-slate-800">
+                                <div className="bg-surface-container-high dark:bg-slate-800/50 p-8 rounded-lg border border-outline-variant/10 dark:border-slate-800 shadow-sm">
                                     <div className="flex items-center gap-2 mb-6">
-                                        <span className="material-symbols-outlined text-primary text-lg">forward_to_inbox</span>
-                                        <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Assignment Control</h4>
-                                    </div>
-
-                                    {/* Department Constraint Notice */}
-                                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-sm">info</span>
-                                            Department Constraint
-                                        </p>
-                                        <p className="text-[9px] text-amber-700 mt-1">
-                                            HOD must assign a mentor from <strong>{internship.department}</strong> department. This is enforced by the system.
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-2 mb-8 uppercase">
-                                        <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocate Registered Mentor</label>
-                                        <Select
-                                            value={mentorIdInput}
-                                            onChange={setMentorIdInput}
-                                            options={mentors.map(m => ({ value: m.id, label: `${m.name} (${m.department || 'General'})` }))}
-                                            placeholder={loadingMentors ? 'Syncing Mentor Registry...' : 'Select Mentor from Database'}
-                                            disabled={loadingMentors}
-                                            size="lg"
-                                        />
-                                        {mentors.length === 0 && !loadingMentors && (
-                                            <p className="text-[9px] text-error font-bold mt-1 tracking-tight italic">
-                                                Warning: No registered mentors found in {internship.department} department.
-                                            </p>
-                                        )}
-                                        {mentors.length > 0 && (
-                                            <p className="text-[9px] text-emerald-600 font-bold mt-1 tracking-tight">
-                                                ✓ {mentors.length} mentor(s) available from {internship.department} department
-                                            </p>
-                                        )}
+                                        <span className="material-symbols-outlined text-primary dark:text-indigo-400 text-lg">fact_check</span>
+                                        <h4 className="text-[10px] font-bold text-primary dark:text-white uppercase tracking-[0.2em]">Application Review</h4>
                                     </div>
                                     <div className="flex gap-4">
                                         <button onClick={handleForwardCommittee} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
-                                            Forward for Review <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                            Shortlist Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
                                         </button>
                                         <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
                                             Reject Candidate
@@ -428,119 +390,22 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             </div>
                         )}
 
-                        {status === 'COMMITTEE_EVALUATION' && ['ADMIN', 'CE_PRTI', 'COMMITTEE_MEMBER', 'HOD'].includes(user?.role) && (
-                            <div className="pt-8 mt-4 border-t border-outline-variant/10">
-                                <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm">
-                                    <div className="flex items-center gap-2 mb-6">
-                                        <span className="material-symbols-outlined text-primary text-lg">fact_check</span>
-                                        <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Committee Evaluation Session</h4>
-                                    </div>
-
-                                    {/* Committee Structure Info */}
-                                    <div className="mb-6 p-4 bg-primary/5 border border-primary/10 rounded-xl">
-                                        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-3">Committee Structure</p>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div className="p-3 bg-white rounded-lg border border-primary/10">
-                                                <p className="text-[9px] font-bold text-outline uppercase">Member 1</p>
-                                                <p className="text-sm font-black text-primary">HOD (Permanent)</p>
-                                            </div>
-                                            <div className="p-3 bg-white rounded-lg border border-primary/10">
-                                                <p className="text-[9px] font-bold text-outline uppercase">Member 2</p>
-                                                <p className="text-sm font-black text-primary">Mentor (Assigned)</p>
-                                            </div>
-                                            <div className="p-3 bg-white rounded-lg border border-primary/10">
-                                                <p className="text-[9px] font-bold text-outline uppercase">Member 3</p>
-                                                <p className="text-sm font-black text-primary">PRTI Rep (Editable)</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-6 mb-8">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Assessment Merit (1-100)</label>
-                                            <input type="number" min="1" max="100" value={interviewScore} onChange={e => setInterviewScore(e.target.value)} placeholder="Aggregate Score" className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary" />
-                                        </div>
-
-                                        <div className="bg-white p-6 rounded-lg border border-outline-variant/10 space-y-5">
-                                            <p className="text-[9px] font-bold text-outline uppercase tracking-[0.2em] mb-2 text-center">— Member Evaluation Criteria —</p>
-
-                                            <div className="grid grid-cols-3 gap-4">
-                                                <div>
-                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1 mb-1">Member 1 (HOD)</label>
-                                                    <Select
-                                                        value={member1Score}
-                                                        onChange={setMember1Score}
-                                                        options={[
-                                                            { value: '', label: 'Select' },
-                                                            { value: 'ACADEMIC_MERIT', label: 'Academic' },
-                                                            { value: 'SOP_QUALITY', label: 'SOP' },
-                                                            { value: 'DISCIPLINE_RELEVANCE', label: 'Discipline' }
-                                                        ]}
-                                                        placeholder="Select"
-                                                        size="sm"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1 mb-1">Member 2 (Mentor)</label>
-                                                    <Select
-                                                        value={member2Score}
-                                                        onChange={setMember2Score}
-                                                        options={[
-                                                            { value: '', label: 'Select' },
-                                                            { value: 'ACADEMIC_MERIT', label: 'Academic' },
-                                                            { value: 'SOP_QUALITY', label: 'SOP' },
-                                                            { value: 'DISCIPLINE_RELEVANCE', label: 'Discipline' }
-                                                        ]}
-                                                        placeholder="Select"
-                                                        size="sm"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-[9px] font-bold text-outline uppercase block ml-1 mb-1">Member 3 (PRTI)</label>
-                                                    <Select
-                                                        value={member3Score}
-                                                        onChange={setMember3Score}
-                                                        options={[
-                                                            { value: '', label: 'Select' },
-                                                            { value: 'ACADEMIC_MERIT', label: 'Academic' },
-                                                            { value: 'SOP_QUALITY', label: 'SOP' },
-                                                            { value: 'DISCIPLINE_RELEVANCE', label: 'Discipline' }
-                                                        ]}
-                                                        placeholder="Select"
-                                                        size="sm"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <button onClick={handleCommitteeSelect} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
-                                            Confirm Shortlist <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
-                                        </button>
-                                        <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
-                                            Reject Candidate
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {status === 'CA_APPROVED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
-                            <div className="pt-8 mt-4 border-t border-outline-variant/10">
-                                <div className="bg-surface-container-high p-8 rounded-lg border border-outline-variant/10 shadow-sm relative overflow-hidden">
+                        {status === 'SHORTLISTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
+                            <div className="pt-8 mt-4 border-t border-outline-variant/10 dark:border-slate-800">
+                                <div className="bg-surface-container-high dark:bg-slate-800/50 p-8 rounded-lg border border-outline-variant/10 dark:border-slate-800 shadow-sm relative overflow-hidden">
                                     {/* Accent bar for confirmation */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/50"></div>
 
                                     <div className="flex items-center gap-2 mb-6">
-                                        <span className="material-symbols-outlined text-emerald-600 text-lg">verified</span>
-                                        <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em]">Institutional Onboarding</h4>
+                                        <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg">verified</span>
+                                        <h4 className="text-[10px] font-bold text-emerald-600 dark:text-white uppercase tracking-[0.2em]">Institutional Onboarding</h4>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Allocated Unit/Position</label>
+                                            <label className="text-[10px] font-bold text-outline dark:text-slate-500 uppercase tracking-widest ml-1">Allocated Unit/Position</label>
                                             <select
-                                                className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-emerald-500"
+                                                className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 dark:border-slate-700 rounded px-4 py-3 text-xs font-bold text-primary dark:text-white focus:outline-emerald-500"
                                                 value={selectedRole}
                                                 onChange={e => setSelectedRole(e.target.value)}
                                             >
@@ -561,25 +426,25 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-outline uppercase tracking-widest ml-1">Institutional ID / Roll Number</label>
+                                            <label className="text-[10px] font-bold text-outline dark:text-slate-500 uppercase tracking-widest ml-1">Institutional ID / Roll Number</label>
                                             <input
                                                 type="text"
                                                 placeholder={`e.g. TR-${new Date().getFullYear()}-001`}
                                                 value={manualRollNumber}
                                                 onChange={e => setManualRollNumber(e.target.value)}
-                                                className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary placeholder:text-outline/30 focus:outline-emerald-500"
+                                                className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 dark:border-slate-700 rounded px-4 py-3 text-xs font-bold text-primary dark:text-white placeholder:text-outline/30 dark:placeholder:text-slate-600 focus:outline-emerald-500"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 mb-8">
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-bold text-outline uppercase block ml-1">Commencement Date</label>
-                                            <input type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)} className="w-full bg-white border border-outline-variant/20 rounded px-4 py-2 text-[11px] font-bold text-primary" />
+                                            <label className="text-[9px] font-bold text-outline dark:text-slate-500 uppercase block ml-1">Commencement Date</label>
+                                            <input type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 dark:border-slate-700 rounded px-4 py-2 text-[11px] font-bold text-primary dark:text-white" />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-bold text-outline uppercase block ml-1">Completion Date</label>
-                                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-white border border-outline-variant/20 rounded px-4 py-2 text-[11px] font-bold text-primary" />
+                                            <label className="text-[9px] font-bold text-outline dark:text-slate-500 uppercase block ml-1">Completion Date</label>
+                                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 dark:border-slate-700 rounded px-4 py-2 text-[11px] font-bold text-primary dark:text-white" />
                                         </div>
                                     </div>
 
@@ -596,34 +461,34 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                                 </div>
                             </div>
                         )}
-                        {status === 'HIRED' && (
-                            <div className="mt-8 pt-8 border-t border-outline-variant/10 flex flex-col gap-6">
-                                <div className="flex items-center gap-4 p-6 bg-emerald-50/50 rounded-lg border border-emerald-100">
-                                    <span className="material-symbols-outlined text-emerald-600 text-2xl">check_circle</span>
+                        {status === 'APPROVED' && (
+                            <div className="mt-8 pt-8 border-t border-outline-variant/10 dark:border-slate-800 flex flex-col gap-6">
+                                <div className="flex items-center gap-4 p-6 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
+                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-2xl">check_circle</span>
                                     <div>
-                                        <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest leading-none">Onboarding Complete</p>
-                                        <p className="text-[10px] text-emerald-600 font-bold mt-1 uppercase opacity-70">Institutional access granted</p>
+                                        <p className="text-xs font-bold text-emerald-900 dark:text-white uppercase tracking-widest leading-none">Onboarding Complete</p>
+                                        <p className="text-[10px] text-emerald-600 dark:text-emerald-500 font-bold mt-1 uppercase opacity-70">Institutional access granted</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {application.assignedRole && (
-                                        <div className="p-4 bg-surface-container-lowest border border-outline-variant/10 rounded-lg">
-                                            <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-outline mb-1">Target Designation</p>
-                                            <p className="text-xs font-bold text-primary">{application.assignedRole}</p>
+                                        <div className="p-4 bg-surface-container-lowest dark:bg-slate-800/50 border border-outline-variant/10 dark:border-slate-700 rounded-lg">
+                                            <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-outline dark:text-slate-500 mb-1">Target Designation</p>
+                                            <p className="text-xs font-bold text-primary dark:text-white">{application.assignedRole}</p>
                                         </div>
                                     )}
                                     {(application.joiningDate || application.endDate) && (
                                         <div className="grid grid-cols-2 gap-2">
                                             {application.joiningDate && (
-                                                <div className="px-3 py-1 bg-white border border-emerald-200 rounded-lg shadow-sm">
+                                                <div className="px-3 py-1 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/30 rounded-lg shadow-sm">
                                                     <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500">Joining</p>
-                                                    <p className="text-xs font-bold text-emerald-900">{new Date(application.joiningDate).toLocaleDateString()}</p>
+                                                    <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400">{new Date(application.joiningDate).toLocaleDateString()}</p>
                                                 </div>
                                             )}
                                             {application.endDate && (
-                                                <div className="px-3 py-1 bg-white border border-emerald-200 rounded-lg shadow-sm">
+                                                <div className="px-3 py-1 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/30 rounded-lg shadow-sm">
                                                     <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500">End Date</p>
-                                                    <p className="text-xs font-bold text-emerald-900">{new Date(application.endDate).toLocaleDateString()}</p>
+                                                    <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400">{new Date(application.endDate).toLocaleDateString()}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -632,13 +497,13 @@ const ApplicationProfileModal = ({ application, internship, onClose, updateStatu
                             </div>
                         )}
                         {status === 'REJECTED' && (
-                            <div className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl border border-red-100 mt-6">
-                                <div className="p-2 bg-red-100 rounded-full text-red-600">
+                            <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-100 dark:border-red-900/30 mt-6">
+                                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full text-red-600 dark:text-red-400">
                                     <XCircle size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-red-800">Application Rejected</p>
-                                    <p className="text-xs text-red-600 mt-0.5">This candidate was not selected for the role.</p>
+                                    <p className="text-sm font-bold text-red-800 dark:text-red-200">Application Rejected</p>
+                                    <p className="text-xs text-red-600 dark:text-red-400/80 mt-0.5">This candidate was not selected for the role.</p>
                                 </div>
                             </div>
                         )}
