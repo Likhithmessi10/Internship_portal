@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 const crypto = require('crypto');
 
@@ -120,7 +119,7 @@ const getProfile = async (req, res) => {
         // Ensure each hired/active application has an attendance object (even if empty)
         // to prevent frontend "missing property" issues
         for (const app of profile.applications) {
-            if (['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status) && !app.attendance) {
+            if (['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status) && !app.attendance) {
                 app.attendance = {
                     daysAttended: 0,
                     totalDays: 0,

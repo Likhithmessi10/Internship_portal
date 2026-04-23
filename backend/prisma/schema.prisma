@@ -21,17 +21,13 @@ enum Role {
 }
 
 enum ApplicationStatus {
-  APPLIED
   SUBMITTED
   SHORTLISTED
-  HOD_REVIEW
-  COMMITTEE_EVALUATION
-  CA_APPROVED
+  APPROVED
+  REJECTED
   HIRED
   ONGOING
   COMPLETED
-  REJECTED
-  APPROVED
 }
 
 enum InternshipCategory {
@@ -155,7 +151,7 @@ model Application {
   trackingId      String              @unique
   studentId       String
   internshipId    String
-  status          ApplicationStatus   @default(APPLIED)
+  status          ApplicationStatus   @default(SUBMITTED)
   score           Float?              @default(0)
   assignedRole     String?
   preferredCircle  String?
@@ -226,7 +222,7 @@ model Shortlist {
   
   // Aggregate score and decision
   score         Float    @default(0)
-  decision      String?  @default("PENDING") // PENDING, APPROVED, REJECTED
+  decision      String?  @default("SUBMITTED") // Map to SUBMITTED
   evaluatedAt   DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -240,7 +236,7 @@ model Stipend {
   ifscCode       String
   bankName       String?
   bankBranch     String?
-  approvalStatus String @default("PENDING")
+  approvalStatus String @default("SUBMITTED")
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
@@ -346,7 +342,7 @@ model WorkAssignment {
   title         String
   description   String
   dueDate       DateTime?
-  status        String   @default("PENDING") // PENDING, COMPLETED
+  status        String   @default("SUBMITTED") // PENDING -> SUBMITTED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -367,7 +363,7 @@ model TaskSubmission {
   attachmentUrl   String?
   attachmentType  String?  // PDF, DOC, ZIP, etc.
   
-  status          String   @default("SUBMITTED") // SUBMITTED, REVIEWED, REVISION_REQUESTED
+  status          String   @default("SUBMITTED") // SUBMITTED
   mentorFeedback  String?
   mentorRating    Int?     // 1-5 scale
   reviewedAt      DateTime?
@@ -398,7 +394,7 @@ model Job {
   error       String?
   attempts    Int       @default(0)
   maxAttempts Int       @default(3)
-  fingerprint String?   @unique // For deduplication (e.g. type + internshipId)
+  fingerprint String?   // Remove @unique to allow repeat runs
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

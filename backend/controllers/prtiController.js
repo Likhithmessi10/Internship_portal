@@ -9,11 +9,11 @@ const getCommitteeApplications = async (req, res) => {
     try {
         const { status, internshipId } = req.query;
 
-        let targetStatus = status || 'COMMITTEE_EVALUATION';
+        let targetStatus = status || 'SHORTLISTED';
         
-        // Map 'PENDING' to 'COMMITTEE_EVALUATION' for the dashboard default
-        if (targetStatus === 'PENDING') {
-            targetStatus = 'COMMITTEE_EVALUATION';
+        // Map 'PENDING' to 'SHORTLISTED' for the dashboard default
+        if (targetStatus === 'PENDING' || targetStatus === 'SUBMITTED') {
+            targetStatus = 'SHORTLISTED';
         }
 
         const whereClause = {
@@ -97,10 +97,10 @@ const submitEvaluation = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Application not found' });
         }
 
-        if (application.status !== 'COMMITTEE_EVALUATION') {
+        if (application.status !== 'SHORTLISTED') {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Application is not in committee evaluation stage' 
+                message: 'Application is not in shortlisting evaluation stage' 
             });
         }
 
@@ -172,7 +172,7 @@ const giveFinalApproval = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Application not found' });
         }
 
-        if (application.status !== 'COMMITTEE_EVALUATION' && application.status !== 'CA_APPROVED') {
+        if (application.status !== 'SHORTLISTED' && application.status !== 'APPROVED') {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Application is not ready for final approval' 
@@ -206,7 +206,7 @@ const giveFinalApproval = async (req, res) => {
                 const totalHiredCount = await tx.application.count({
                     where: {
                         internshipId: application.internshipId,
-                        status: { in: ['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'] }
+                        status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
                     }
                 });
 
@@ -264,7 +264,7 @@ const getCommitteeStatus = async (req, res) => {
         const applications = await prisma.application.findMany({
             where: {
                 internshipId,
-                status: 'COMMITTEE_EVALUATION'
+                status: 'SHORTLISTED'
             },
             include: {
                 student: {

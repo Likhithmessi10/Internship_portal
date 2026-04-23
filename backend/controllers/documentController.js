@@ -22,17 +22,18 @@ const downloadDocument = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Document not found' });
         }
 
-        // 2. Authorization Check
+        // 2. Authorization Check (Least Privilege)
         let isAuthorized = false;
 
         if (user.role === 'ADMIN' || user.role === 'CE_PRTI') {
             isAuthorized = true;
         } else if (user.role === 'HOD' || user.role === 'COMMITTEE_MEMBER' || user.role === 'MENTOR') {
-            // Check department match
+            // Strict Department Scoping
             if (user.department === document.application.internship.department) {
                 isAuthorized = true;
             }
         } else if (user.role === 'STUDENT') {
+            // Ownership check
             const student = await prisma.studentProfile.findUnique({ where: { userId: user.id } });
             if (student && document.application.studentId === student.id) {
                 isAuthorized = true;
@@ -43,19 +44,27 @@ const downloadDocument = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Not authorized to access this document' });
         }
 
-        // 3. Serve file
-        // doc.url might be "uploads/abc.pdf" or just "abc.pdf"
-        const cleanPath = document.url.replace(/^uploads[\\\/]/, '');
-        const filePath = path.resolve(__dirname, '../../uploads', cleanPath);
+        // 3. SECURE FILE ACCESS & PATH VALIDATION
+        const uploadsDir = path.resolve(__dirname, '../../uploads');
+        // Ensure document.url is just the filename or relative path from uploads/
+        const relativePath = document.url.replace(/^uploads[\\\/]/, '');
+        const filePath = path.join(uploadsDir, relativePath);
 
-        if (!fs.existsSync(filePath)) {
+        // PATH TRAVERSAL PROTECTION: Ensure the resolved path is still inside the uploads directory
+        const normalizedPath = path.normalize(filePath);
+        if (!normalizedPath.startsWith(uploadsDir)) {
+            console.warn(`[Security Alert] Potential path traversal attempt by user ${user.email} for ID ${id}`);
+            return res.status(400).json({ success: false, message: 'Invalid file path' });
+        }
+
+        if (!fs.existsSync(normalizedPath)) {
             return res.status(404).json({ success: false, message: 'Physical file not found on server' });
         }
 
-        res.sendFile(filePath);
+        res.sendFile(normalizedPath);
     } catch (error) {
         console.error('[Document Access Error]', error.message);
-        res.status(500).json({ success: false, message: 'Failed to access document' });
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
 

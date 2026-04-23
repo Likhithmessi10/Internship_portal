@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 /**
  * Create an audit log entry
@@ -31,10 +30,6 @@ const createAuditLog = async (action, userEmail, details = null, target = null, 
 
 /**
  * Log security events (failed logins, unauthorized access, etc.)
- * @param {string} eventType - Type of security event
- * @param {string} email - Email involved (if known)
- * @param {string} ipAddress - IP address
- * @param {object} metadata - Additional metadata
  */
 const logSecurityEvent = async (eventType, email, ipAddress, metadata = {}) => {
     try {
@@ -55,23 +50,14 @@ const logSecurityEvent = async (eventType, email, ipAddress, metadata = {}) => {
     }
 };
 
-/**
- * Log failed login attempt
- */
 const logFailedLogin = async (email, ipAddress, reason = 'invalid_credentials') => {
     return logSecurityEvent('FAILED_LOGIN', email, ipAddress, { reason });
 };
 
-/**
- * Log successful login
- */
 const logSuccessfulLogin = async (email, ipAddress) => {
     return logSecurityEvent('LOGIN', email, ipAddress, { status: 'success' });
 };
 
-/**
- * Log unauthorized access attempt
- */
 const logUnauthorizedAccess = async (email, ipAddress, resource, action) => {
     return logSecurityEvent('UNAUTHORIZED_ACCESS', email, ipAddress, { resource, action });
 };

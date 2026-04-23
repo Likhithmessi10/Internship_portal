@@ -8,82 +8,21 @@ dotenv.config();
 
 const { PrismaClient } = require('@prisma/client');
 const app = express();
-const prisma = new PrismaClient();
+const prisma = require('./lib/prisma');
 const PORT = process.env.PORT || 5001;
 
 // ============================================
 // SECURITY MIDDLEWARE
 // ============================================
-
-// Helmet.js Security Headers
-const securityHeaders = require('./middleware/securityHeaders');
-app.use(securityHeaders);
-
-// CORS: Restrict to allowed origins from env (comma-separated list)
-const DEV_ORIGINS = [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:3000',
-    'https://terrence-pseudoaggressive-undewily.ngrok-free.dev'
-];
-
-const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
-    : DEV_ORIGINS;
-
-console.log('[CORS] Allowed origins:', allowedOrigins);
-
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            console.warn(`[CORS] Blocked origin: ${origin}`);
-            callback(new Error(`CORS: Origin ${origin} not allowed`));
-        }
-    },
+    origin: '*', // Adjust as needed for production
     credentials: true
 }));
-
-// Body Parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// XSS Protection (global sanitization) - Moved after body parsing
 const { sanitizeInput } = require('./middleware/sanitizer');
 app.use(sanitizeInput);
-
-// ============================================
-// REQUEST LOGGING (Morgan)
-// ============================================
-const morgan = require('morgan');
-const logFormat = process.env.MORGAN_LOG_FORMAT || 'dev';
-app.use(morgan(logFormat, {
-    skip: (req, res) => {
-        // Skip logging for health checks and static files
-        return req.path === '/health' || req.path.startsWith('/uploads/');
-    }
-}));
-
-// ============================================
-// RATE LIMITING
-// ============================================
-const { generalLimiter } = require('./middleware/rateLimiter');
-app.use('/api/', generalLimiter);
-
-// ============================================
-// STATIC FILES
-// ============================================
-
-// Serve Static Files for the Student Portal (Specific files only)
-// Note: It's better to serve the build directory in production.
-const staticPath = path.join(__dirname, '../public'); // Create a public folder if it doesn't exist
-if (!fs.existsSync(staticPath)) fs.mkdirSync(staticPath, { recursive: true });
-app.use(express.static(staticPath));
-
-// Secure File Route (Redirecting /uploads to our secure API soon)
-// For now, keeping it limited to the exact subfolder
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ============================================
 // API ROUTES

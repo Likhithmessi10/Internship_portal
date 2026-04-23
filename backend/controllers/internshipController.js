@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const { processApplication } = require('../services/shortlistingService');
 
 /**
@@ -65,7 +64,7 @@ const applyForInternship = async (req, res) => {
                 trackingId,
                 studentId: profile.id, // Linking to StudentProfile ID
                 internshipId: internship.id,
-                status: 'APPLIED',
+                status: 'SUBMITTED',
                 sop: sop || null,
                 preferredLocation: preferredLocation || null,
                 assignedRole: assignedRole || null,

@@ -1,64 +1,49 @@
 /**
- * Application Status State Machine
- * Centralized logic for allowed transitions and role-based permissions
+ * Application Status State Machine (Production-Hardened)
+ * 7 Canonical Statuses: SUBMITTED, SHORTLISTED, APPROVED, REJECTED, HIRED, ONGOING, COMPLETED
  */
 
 const STATUS = {
-    APPLIED: 'APPLIED',
     SUBMITTED: 'SUBMITTED',
-    HOD_REVIEW: 'HOD_REVIEW',
-    COMMITTEE_EVALUATION: 'COMMITTEE_EVALUATION',
-    CA_APPROVED: 'CA_APPROVED', // Central Admin / PRTI Head Approved
+    SHORTLISTED: 'SHORTLISTED',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
     HIRED: 'HIRED',
     ONGOING: 'ONGOING',
-    COMPLETED: 'COMPLETED',
-    REJECTED: 'REJECTED'
+    COMPLETED: 'COMPLETED'
 };
 
 const ALLOWED_TRANSITIONS = {
-    [STATUS.APPLIED]: [STATUS.SUBMITTED, STATUS.REJECTED],
-    [STATUS.SUBMITTED]: [STATUS.HOD_REVIEW, STATUS.REJECTED],
-    [STATUS.HOD_REVIEW]: [STATUS.COMMITTEE_EVALUATION, STATUS.REJECTED],
-    [STATUS.COMMITTEE_EVALUATION]: [STATUS.HIRED, STATUS.REJECTED, STATUS.CA_APPROVED],
-    [STATUS.CA_APPROVED]: [STATUS.HIRED, STATUS.REJECTED],
+    [STATUS.SUBMITTED]: [STATUS.SHORTLISTED, STATUS.REJECTED],
+    [STATUS.SHORTLISTED]: [STATUS.APPROVED, STATUS.REJECTED],
+    [STATUS.APPROVED]: [STATUS.HIRED, STATUS.REJECTED],
     [STATUS.HIRED]: [STATUS.ONGOING, STATUS.REJECTED],
     [STATUS.ONGOING]: [STATUS.COMPLETED, STATUS.REJECTED],
     [STATUS.COMPLETED]: [],
-    [STATUS.REJECTED]: [STATUS.HOD_REVIEW] // Allow re-opening if needed by HOD
+    [STATUS.REJECTED]: [STATUS.SUBMITTED]
 };
 
 const ROLE_PERMISSIONS = {
-    ADMIN: Object.values(STATUS), // Can do anything
-    CE_PRTI: [STATUS.CA_APPROVED, STATUS.HIRED, STATUS.REJECTED],
-    HOD: [STATUS.HOD_REVIEW, STATUS.COMMITTEE_EVALUATION, STATUS.REJECTED],
+    ADMIN: Object.values(STATUS),
+    CE_PRTI: [STATUS.APPROVED, STATUS.HIRED, STATUS.REJECTED],
+    HOD: [STATUS.SHORTLISTED, STATUS.APPROVED, STATUS.REJECTED],
     MENTOR: [STATUS.ONGOING, STATUS.COMPLETED],
-    STUDENT: [] // Students cannot change their own status
+    STUDENT: []
 };
 
 /**
  * Validates if a status transition is allowed
- * @param {string} fromStatus Current status
- * @param {string} toStatus Target status
- * @param {string} role User role performing the action
- * @returns {boolean}
  */
 const canTransition = (fromStatus, toStatus, role) => {
-    // 1. Is the transition physically allowed?
-    const validNextStatuses = ALLOWED_TRANSITIONS[fromStatus] || [];
-    if (!validNextStatuses.includes(toStatus) && role !== 'ADMIN') {
-        return false;
-    }
+    if (role === 'ADMIN') return true;
 
-    // 2. Does the role have permission to set the target status?
+    const validNextStatuses = ALLOWED_TRANSITIONS[fromStatus] || [];
+    if (!validNextStatuses.includes(toStatus)) return false;
+
     const allowedForRole = ROLE_PERMISSIONS[role] || [];
-    if (!allowedForRole.includes(toStatus) && role !== 'ADMIN') {
-        return false;
-    }
+    if (!allowedForRole.includes(toStatus)) return false;
 
     return true;
 };
 
-module.exports = {
-    STATUS,
-    canTransition
-};
+module.exports = { STATUS, canTransition };

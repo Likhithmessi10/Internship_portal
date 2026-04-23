@@ -115,38 +115,45 @@ const allocateRole = (applicants, config) => {
  * Main Allocation Engine
  */
 const allocateApplicants = (applicants, internship) => {
-    // 1. Handle Roles
-    // If no roles defined, treat the entire internship as one "GLOBAL" role
     const rolesData = internship.rolesData || [{ name: 'GENERAL', openings: internship.openingsCount }];
     
-    // 2. Default Quotas
+    // Default Quotas
     const pPct = internship.priorityCollegeQuota || 0;
     const tPct = internship.quotaPercentages?.topUniversity || 0;
     const priorityCollegeName = internship.priorityCollege;
 
     let totalAllocation = [];
+    const globalAllocatedIds = new Set(); // Step 4: Prevent duplicates across roles
 
     rolesData.forEach(role => {
-        // Find applicants who applied for this role
-        // Check both assignedRole (if set) and internship.roles in application
+        // Step 4: Proper filtering - match applicant to role
         const roleApplicants = applicants.filter(app => {
-            // Some apps might have preferred role in a field or we check against internship title
-            // For now, let's assume we match the role by string in application metadata if possible
-            // OR we just process everyone if it's one role.
-            return true; // Simple approach for now: process everyone
+            // Check if already allocated to another role
+            if (globalAllocatedIds.has(app.id)) return false;
+
+            // Strict role matching: Check application domain or assignedRole
+            // We favor explicit assignment if it exists, else use domain/preference
+            const appRole = (app.assignedRole || app.domain || '').toUpperCase();
+            const targetRole = role.name.toUpperCase();
+
+            // If it's a GENERAL role and only one role exists, take all
+            if (rolesData.length === 1) return true;
+
+            return appRole.includes(targetRole) || targetRole.includes(appRole);
         });
 
-        // However, if we have multiple roles, we MUST have a way to know which role the student applied for.
-        // Let's check the schema for Application.roles
-        
         const allocation = allocateRole(roleApplicants, {
             capacity: role.openings,
-            pPct: role.topUnivQuota || tPct, // Use per-role quota if exists, else global
+            pPct: role.topUnivQuota || tPct, 
             tPct: tPct,
             priorityCollegeName: priorityCollegeName
         });
 
-        totalAllocation = totalAllocation.concat(allocation);
+        // Add to global set and results
+        allocation.forEach(item => {
+            globalAllocatedIds.add(item.applicationId);
+            totalAllocation.push({ ...item, role: role.name });
+        });
     });
 
     return totalAllocation;

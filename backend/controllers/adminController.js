@@ -5,8 +5,6 @@ const xl = require('exceljs');
 const { allocateApplicants } = require('../services/allocationService');
 const { createAuditLog } = require('../utils/auditLogger');
 const { notifyMentorAssignment, notifyWorkAssignment } = require('../services/mailService');
-const { rankApplications } = require('../utils/rankApplications');
-const { runShortlistingForInternship } = require('../services/shortlistingService');
 
 
 /**
@@ -88,30 +86,43 @@ const createInternship = async (req, res) => {
  */
 const getAllInternships = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         const whereClause = {};
-        if (req.user.role !== 'ADMIN' && req.user.department) {
+        if (req.user.role !== 'ADMIN' && req.user.role !== 'CE_PRTI' && req.user.department) {
             whereClause.department = req.user.department;
         }
 
-        const internships = await prisma.internship.findMany({
-            where: whereClause,
-            orderBy: { createdAt: 'desc' },
-            include: {
-                _count: { select: { applications: true } },
-                applications: { select: { status: true } }
-            }
-        });
+        const [internships, total] = await Promise.all([
+            prisma.internship.findMany({
+                where: whereClause,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+                include: {
+                    _count: { select: { applications: true } },
+                    applications: { select: { status: true } }
+                }
+            }),
+            prisma.internship.count({ where: whereClause })
+        ]);
 
         const result = internships.map(i => ({
             ...i,
             applicationsCount: i._count.applications,
-            hiredCount: i.applications.filter(a => ['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
-            remainingOpenings: Math.max(0, i.openingsCount - i.applications.filter(a => ['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(a.status)).length),
+            hiredCount: i.applications.filter(a => ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
+            remainingOpenings: Math.max(0, i.openingsCount - i.applications.filter(a => ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length),
             applications: undefined,
             _count: undefined
         }));
 
-        res.status(200).json({ success: true, data: result });
+        res.status(200).json({ 
+            success: true, 
+            data: result,
+            pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+        });
     } catch (error) {
         console.error('Get internships error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -184,10 +195,12 @@ const toggleInternship = async (req, res) => {
  */
 const getApplications = async (req, res) => {
     try {
-        const { limit = 50, offset = 0 } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
         
         const internship = await prisma.internship.findUnique({
-             where: { id: req.params.id }
+            where: { id: req.params.id }
         });
         
         if (!internship) {
@@ -197,42 +210,35 @@ const getApplications = async (req, res) => {
         const whereClause = { internshipId: req.params.id };
         if (req.user.role === 'MENTOR') {
             whereClause.mentorId = req.user.id;
-        } else if (req.user.role === 'COMMITTEE_MEMBER') {
-            whereClause.status = { in: ['APPROVED', 'REJECTED'] };
         }
 
-        let applications = await prisma.application.findMany({
-            where: whereClause,
-            include: {
-                student: {
-                    include: {
-                        user: { select: { email: true, name: true } }
-                    }
-                },
-                documents: true,
-                mentor: { select: { name: true, email: true } },
-                shortlist: true,
-                attendance: true,
-                stipend: true
-            }
+        const [applications, total] = await Promise.all([
+            prisma.application.findMany({
+                where: whereClause,
+                skip,
+                take: limit,
+                orderBy: { score: 'desc' },
+                include: {
+                    student: {
+                        include: { user: { select: { email: true, name: true } } }
+                    },
+                    documents: true,
+                    mentor: { select: { name: true, email: true } },
+                    shortlist: true,
+                    attendance: true,
+                    stipend: true
+                }
+            }),
+            prisma.application.count({ where: whereClause })
+        ]);
+
+        res.status(200).json({ 
+            success: true, 
+            data: applications,
+            pagination: { total, page, limit, pages: Math.ceil(total / limit) }
         });
-        
-        // 1. Rank & Sort Server-side 
-        applications = await rankApplications(applications, internship);
-        
-        // 2. Paginate deterministically post-sort
-        const total = applications.length;
-        const numLimit = Number(limit);
-        const numOffset = Number(offset);
-        
-        // Return full array if they didn't ask for pagination, or slice it
-        if (req.query.limit) {
-             applications = applications.slice(numOffset, numOffset + numLimit);
-        }
-
-        res.status(200).json({ success: true, data: applications, total });
     } catch (error) {
-        console.error('Admin controller error:', error.message);
+        console.error('Get applications error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -291,15 +297,15 @@ const getRejectedApplications = async (req, res) => {
  * @route   PUT /api/v1/admin/applications/:id
  * @access  Private (Admin, HOD, MENTOR, COMMITTEE)
  */
-    const updateApplicationStatus = async (req, res) => {
+const updateApplicationStatus = async (req, res) => {
     try {
         const { status, assignedRole, rollNumber, joiningDate, endDate, mentorId } = req.body;
         const applicationId = req.params.id;
-        const userRole = req.user.role;
 
-        // Ensure only valid simplified statuses
-        if (!['APPLIED', 'SHORTLISTED', 'APPROVED', 'REJECTED'].includes(status)) {
-            return res.status(400).json({ success: false, message: 'Invalid status. Use APPLIED, SHORTLISTED, APPROVED, or REJECTED.' });
+        // 1. Strict Enum Enforcement
+        const allowed = ['SUBMITTED', 'SHORTLISTED', 'APPROVED', 'REJECTED', 'HIRED', 'ONGOING', 'COMPLETED'];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${allowed.join(', ')}` });
         }
 
         const application = await prisma.application.findUnique({
@@ -309,74 +315,73 @@ const getRejectedApplications = async (req, res) => {
 
         if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
 
-        const s = application.student;
         const internship = application.internship;
-        
-        let warningPayload = null;
+        const student = application.student;
 
-        if (status === 'SHORTLISTED') {
-             const currentShortlisted = await prisma.application.count({
-                 where: { internshipId: internship.id, status: 'SHORTLISTED' }
-             });
-             const sLimit = internship.shortlistLimit || 50;
-             if (currentShortlisted >= sLimit) {
-                 warningPayload = `Warning: Shortlist limit (${sLimit}) reached or exceeded (Current: ${currentShortlisted}). Application was shortlisted anyway.`;
-             }
-        }
-
-        if (status === 'APPROVED') {
-            const totalHiredCount = await prisma.application.count({
+        // 2. Mentor Verification (if provided)
+        let mentorUser = null;
+        if (mentorId) {
+            mentorUser = await prisma.user.findFirst({
                 where: {
-                    internshipId: internship.id,
-                    status: 'APPROVED'
+                    id: mentorId,
+                    role: 'MENTOR',
+                    department: internship.department
                 }
             });
 
-            if (totalHiredCount >= internship.openingsCount && application.status !== 'APPROVED') {
+            if (!mentorUser) {
                 return res.status(400).json({
                     success: false,
-                    message: `Internship Full: All ${internship.openingsCount} openings have been filled.`
+                    message: 'Invalid Mentor. Mentor must be from the same department as the internship.'
+                });
+            }
+        }
+
+        // 3. Atomic Transaction for Updates
+        const result = await prisma.$transaction(async (tx) => {
+            // Seat Check
+            if (status === 'APPROVED' || status === 'HIRED') {
+                const currentHired = await tx.application.count({
+                    where: {
+                        internshipId: internship.id,
+                        status: { in: ['APPROVED', 'HIRED', 'ONGOING'] }
+                    }
+                });
+
+                if (currentHired >= internship.openingsCount && application.status !== status) {
+                    throw new Error(`Internship Full: All ${internship.openingsCount} openings are filled.`);
+                }
+            }
+
+            // Update student roll number if provided
+            if (rollNumber) {
+                await tx.studentProfile.update({
+                    where: { id: application.studentId },
+                    data: { rollNumber }
                 });
             }
 
-            // Assign mentor if provided
-            if (mentorId) {
-                const mentorUser = await prisma.user.findFirst({
-                    where: {
-                        id: mentorId,
-                        role: 'MENTOR',
-                        department: internship.department // ENFORCE same department
-                    }
-                });
-                
-                if (!mentorUser) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Invalid Mentor. Mentor must be from the same department as the internship.'
-                    });
-                }
+            // Core status and assignment update
+            const updateData = { status };
+            if (assignedRole) updateData.assignedRole = assignedRole;
+            if (joiningDate) updateData.joiningDate = new Date(joiningDate);
+            if (endDate) updateData.endDate = new Date(endDate);
+            if (mentorId) updateData.mentorId = mentorId;
 
-                // Update application with mentor
-                await prisma.application.update({
-                    where: { id: applicationId },
-                    data: { mentorId: mentorUser.id }
+            const updatedApp = await tx.application.update({
+                where: { id: applicationId },
+                data: updateData
+            });
+
+            // Committee Auto-Sync
+            if (mentorUser) {
+                const hodUser = await tx.user.findFirst({
+                    where: { role: 'HOD', department: internship.department }
                 });
 
-                // Find HOD of the same department (permanent committee member)
-                const hodUser = await prisma.user.findFirst({
-                    where: {
-                        role: 'HOD',
-                        department: internship.department
-                    }
-                });
-
-                // Auto-create/update committee
-                await prisma.committee.upsert({
+                await tx.committee.upsert({
                     where: { internshipId: internship.id },
-                    update: {
-                        mentorId: mentorUser.id,
-                        hodId: hodUser?.id || null
-                    },
+                    update: { mentorId: mentorUser.id, hodId: hodUser?.id || null },
                     create: {
                         internshipId: internship.id,
                         mentorId: mentorUser.id,
@@ -390,59 +395,35 @@ const getRejectedApplications = async (req, res) => {
                         }
                     }
                 });
-
-                // Notify Mentor
-                await notifyMentorAssignment(mentorUser, s, internship);
             }
 
-            if (rollNumber) {
-                await prisma.studentProfile.update({
-                    where: { id: application.studentId },
-                    data: { rollNumber }
-                });
-            }
-        }
-
-        const updateData = { status };
-        if (assignedRole) updateData.assignedRole = assignedRole;
-        if (joiningDate) updateData.joiningDate = new Date(joiningDate);
-        if (endDate) updateData.endDate = new Date(endDate);
-        if (mentorId) updateData.mentorId = mentorId;
-
-        const app = await prisma.application.update({
-            where: { id: req.params.id },
-            data: updateData
+            return updatedApp;
         });
 
+        // 4. Notifications & Logs
+        res.status(200).json({ success: true, data: result });
 
-
-        const finalData = { ...app };
-        if (warningPayload) {
-             finalData.warning = 'LIMIT_EXCEEDED';
+        if (mentorUser) {
+            notifyMentorAssignment(mentorUser, student, internship).catch(e => console.error('Mentor notify fail', e));
         }
 
-        res.status(200).json({
-             success: true, 
-             data: finalData,
-             message: warningPayload ? warningPayload : 'Application updated'
-        });
-
-        // --- EMAIL TRIGGERS (Async) ---
-        const studentEmail = application.student.user?.email;
+        const studentEmail = student.user?.email;
         if (studentEmail && !studentEmail.endsWith('@aptransco.portal')) {
-            const studentName = application.student.fullName;
             if (status === 'REJECTED') {
-                emailService.sendStatusUpdate(studentEmail, studentName, 'Rejected', 'We regret to inform you that your application was not selected for this internship following the institutional review.');
-            } else if (status === 'APPROVED') {
-                emailService.sendInterviewPass(studentEmail, studentName);
+                emailService.sendStatusUpdate(studentEmail, student.fullName, 'Rejected', 'Your application was not selected.');
+            } else if (status === 'APPROVED' || status === 'HIRED') {
+                emailService.sendInterviewPass(studentEmail, student.fullName);
             }
         }
 
-        // Audit Log
-        await createAuditLog('UPDATE_APPLICATION', req.user.email, `Status changed to ${status}`, applicationId);
+        await createAuditLog('UPDATE_APPLICATION', req.user.email, `Status -> ${status}`, applicationId);
+
     } catch (error) {
-        console.error('Admin controller error:', error.message);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        console.error('[UpdateStatus Error]', error.message);
+        res.status(error.message.includes('Full') ? 400 : 500).json({ 
+            success: false, 
+            message: error.message || 'Server Error' 
+        });
     }
 };
 
@@ -717,7 +698,7 @@ const updateCommitteeDetails = async (req, res) => {
         const targetApplicants = await prisma.application.findMany({
             where: { 
                 internshipId,
-                status: { in: ['SHORTLISTED', 'COMMITTEE_EVALUATION'] }
+                status: { in: ['SHORTLISTED'] }
             },
             include: { student: { include: { user: true } } }
         });
@@ -884,7 +865,7 @@ const getMentorInterns = async (req, res) => {
         const interns = await prisma.application.findMany({
             where: {
                 mentorId,
-                status: { in: ['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'] }
+                status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
             },
             include: {
                 student: {

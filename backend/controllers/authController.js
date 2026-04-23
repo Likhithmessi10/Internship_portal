@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { validatePassword } = require('../middleware/passwordValidator');
 const { logFailedLogin, logSuccessfulLogin } = require('../utils/auditLogger');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Generate Access Token
 const generateAccessToken = (id, email, role, department) => {
