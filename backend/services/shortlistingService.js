@@ -34,61 +34,73 @@ const normalize = (text) => {
 
 /**
  * Extracts text from a PDF resume (Asynchronous)
+ * Optimized for robustness: handles errors gracefully and returns empty string instead of null
  */
 async function parseResume(filePath) {
     try {
-        const stats = await fs.promises.stat(filePath).catch(() => null);
-        if (!stats) return null;
+        if (!fs.existsSync(filePath)) {
+            console.warn(`[ParseResume] File not found: ${filePath}`);
+            return "";
+        }
         
         const dataBuffer = await fs.promises.readFile(filePath);
+        // Fallback for empty or corrupt buffers
+        if (!dataBuffer || dataBuffer.length === 0) return "";
+
         const data = await pdf(dataBuffer);
         return normalize(data.text);
     } catch (error) {
-        console.error('Error parsing resume:', error);
-        return null;
+        console.error(`[ParseResume] Error: ${error.message}`);
+        return ""; // Fallback to empty string to prevent pipeline crash
     }
 }
 
 /**
  * Extracts skills and projects from resume text and profile
+ * Uses flexible keyword matching without requiring specific prefixes
  */
 async function extractData(profile, resumeText, requirements = '') {
     const skills = new Set();
     const normalizedText = (resumeText || '').toLowerCase();
     
-    // 1. Skill Extraction from Dynamic Requirements
-    const reqList = requirements.toLowerCase().split(/[\s,]+/).filter(s => s.length > 1);
+    // Normalize requirements into tokens
+    const reqTokens = (requirements || '').toLowerCase()
+        .split(/[\s,;]+/)
+        .filter(t => t.length > 1);
     
     const escapeRegex = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    reqList.forEach(s => {
-        const escaped = escapeRegex(s);
-        const regex = new RegExp(`(^|\\s|[,./()])${escaped}($|\\s|[,./()])`, 'i');
+    // 1. Keyword Match against Requirements
+    reqTokens.forEach(token => {
+        const escaped = escapeRegex(token);
+        // Look for word boundaries or non-alphanumeric separators
+        // This avoids matching "java" in "javascript"
+        const regex = new RegExp(`(?<=^|[^a-z0-9])${escaped}(?=[^a-z0-9]|$)`, 'i');
         if (regex.test(normalizedText)) {
-            skills.add(s);
+            skills.add(token);
         }
     });
 
-    // 2. Skill Extraction with Synonym Mapping
-    Object.entries(SYNONYM_MAP).forEach(([s, canonical]) => {
-        const escaped = escapeRegex(s);
-        const regex = new RegExp(`(^|\\s|[,./()])${escaped}($|\\s|[,./()])`, 'i');
+    // 2. Keyword Match using Synonym Map (High accuracy)
+    Object.entries(SYNONYM_MAP).forEach(([keyword, canonical]) => {
+        const escaped = escapeRegex(keyword);
+        const regex = new RegExp(`(?<=^|[^a-z0-9])${escaped}(?=[^a-z0-9]|$)`, 'i');
         if (regex.test(normalizedText)) {
             skills.add(canonical);
         }
     });
 
-    // 3. Project Count (heuristic looking for project indicators)
-    const projectIndicators = ['project', 'github', 'contribution', 'developed', 'built'];
-    let projectWeight = 0;
-    projectIndicators.forEach(ind => {
-        const matches = normalizedText.match(new RegExp(ind, 'gi')) || [];
-        projectWeight += matches.length;
+    // 3. Project Intensity Heuristic
+    const projectKeywords = ['project', 'github', 'built', 'developed', 'implemented', 'designed'];
+    let projectIntensity = 0;
+    projectKeywords.forEach(word => {
+        const matches = normalizedText.match(new RegExp(word, 'gi')) || [];
+        projectIntensity += matches.length;
     });
 
     return {
         skills: Array.from(skills),
-        projectWeight: projectWeight
+        projectWeight: projectIntensity
     };
 }
 
@@ -260,9 +272,9 @@ async function runShortlistingForInternship(internshipId) {
             data: { 
                 status: 'SHORTLISTED',
                 scoreBreakdown: {
-                    ...app.scoreBreakdown,
+                    ...(app.scoreBreakdown || {}),
                     rank: index + 1,
-                    explain: `Ranked #${index+1} deterministically based on score and tie-breaker policy.`
+                    explain: `Ranked #${index+1} deterministically based on score (${app.score}) and tie-breaker policy.`
                 }
             }
         }))

@@ -605,7 +605,7 @@ const allocateApplicantsAction = async (req, res, next) => {
         const internshipId = req.params.id;
         const internship = await prisma.internship.findUnique({ where: { id: internshipId } });
         const applications = await prisma.application.findMany({
-            where: { internshipId, status: { in: ['PENDING', 'SHORTLISTED'] } },
+            where: { internshipId, status: { in: ['SUBMITTED', 'SHORTLISTED'] } },
             include: { student: true }
         });
         const allocation = allocateApplicants(applications, internship);

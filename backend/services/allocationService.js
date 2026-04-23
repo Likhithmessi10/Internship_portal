@@ -22,86 +22,82 @@ const categorize = (student, priorityCollegeName) => {
     const priorityClean = clean(priorityCollegeName);
     const collegeClean = clean(student.collegeName);
 
-    // 1. Check Priority College
+    // 1. Check Preferred College (Direct Match)
     if (priorityClean && collegeClean.includes(priorityClean)) {
-        return 'PRIORITY';
+        return 'PREFERRED';
     }
 
-    // 2. Check Top University
+    // 2. Check Top University (Ranking or Category)
     const nirf = parseInt(student.nirfRanking);
-    const topCats = ['IIT', 'NIT', 'IIIT', 'CENTRAL'];
-    if ((nirf > 0 && nirf <= 100) || topCats.includes(student.collegeCategory)) {
-        return 'TOP_UNIV';
+    const topCategories = ['IIT', 'NIT', 'IIIT', 'CENTRAL'];
+    if ((nirf > 0 && nirf <= 100) || topCategories.includes(student.collegeCategory || '')) {
+        return 'TOP';
     }
 
-    // 3. Else Normal
-    return 'NORMAL';
+    // 3. Fallback to Other
+    return 'OTHER';
 };
 
 /**
- * Allocate applicants for a specific role
+ * Allocate applicants for a specific role following strict quota and cascade rules
  */
 const allocateRole = (applicants, config) => {
     const { capacity, pPct, tPct, priorityCollegeName } = config;
     
-    // Sort all applicants by CGPA descending once
-    const sortedApplicants = [...applicants].sort((a, b) => (b.student.cgpa || 0) - (a.student.cgpa || 0));
+    // 1. Sort by merit (CGPA) for deterministic fairness
+    const sortedApplicants = [...applicants].sort((a, b) => {
+        if ((b.student.cgpa || 0) !== (a.student.cgpa || 0)) return (b.student.cgpa || 0) - (a.student.cgpa || 0);
+        return a.id.localeCompare(b.id); // Tie-breaker
+    });
 
-    // Exclusive buckets
-    const priorityBucket = sortedApplicants.filter(a => categorize(a.student, priorityCollegeName) === 'PRIORITY');
-    const topUnivBucket = sortedApplicants.filter(a => categorize(a.student, priorityCollegeName) === 'TOP_UNIV');
-    const normalBucket = sortedApplicants.filter(a => categorize(a.student, priorityCollegeName) === 'NORMAL');
+    // 2. Mutually Exclusive Buckets
+    const preferredBucket = sortedApplicants.filter(a => categorize(a.student, priorityCollegeName) === 'PREFERRED');
+    const topBucket = sortedApplicants.filter(a => categorize(a.student, priorityCollegeName) === 'TOP');
+    const otherBucket = sortedApplicants.filter(a => categorize(a.student, priorityCollegeName) === 'OTHER');
 
     const selectedIds = new Set();
     const allocationResult = [];
 
-    // Calculated Seat Targets
-    let targetPriority = Math.floor(capacity * (pPct / 100));
-    let targetTopUniv = Math.floor(capacity * (tPct / 100));
+    // 3. Fill Preferred Quota
+    const targetPreferred = Math.floor(capacity * (pPct / 100));
+    const preferredSelected = preferredBucket.slice(0, targetPreferred);
     
-    // --- STAGE 1: PRIORITY SEATS ---
-    const prioritySelected = priorityBucket.slice(0, targetPriority);
-    prioritySelected.forEach(app => {
+    preferredSelected.forEach(app => {
         selectedIds.add(app.id);
         allocationResult.push({ 
             applicationId: app.id, 
-            category: 'PRIORITY',
+            category: 'PREFERRED',
             studentName: app.student.fullName,
             cgpa: app.student.cgpa,
             college: app.student.collegeName 
         });
     });
 
-    // Transfer leftovers to Top Univ
-    const unfilledPriority = targetPriority - prioritySelected.length;
-    targetTopUniv += Math.max(0, unfilledPriority);
-
-    // --- STAGE 2: TOP UNIVERSITY SEATS ---
-    const topUnivSelected = topUnivBucket.slice(0, targetTopUniv);
-    topUnivSelected.forEach(app => {
+    // 4. Fill Top Univ Quota (including transfers)
+    const targetTop = Math.floor(capacity * (tPct / 100));
+    const totalTopCapacity = targetTop + (targetPreferred - preferredSelected.length); // Cascade
+    const topSelected = topBucket.slice(0, totalTopCapacity);
+    
+    topSelected.forEach(app => {
         selectedIds.add(app.id);
         allocationResult.push({ 
             applicationId: app.id, 
-            category: 'TOP_UNIV',
+            category: 'TOP',
             studentName: app.student.fullName,
             cgpa: app.student.cgpa,
             college: app.student.collegeName 
         });
     });
 
-    // Transfer leftovers to Normal/Global Merit
-    const unfilledTopUniv = targetTopUniv - topUnivSelected.length;
-    const remainingCapacity = capacity - (prioritySelected.length + topUnivSelected.length);
-
-    // --- STAGE 3: GLOBAL MERIT (Remaining Pool) ---
-    // The pool is everyone NOT selected yet, sorted by CGPA
+    // 5. Fill Remaining Seats from General Pool (Everyone else sorted by merit)
+    const remainingCapacity = capacity - allocationResult.length;
     const remainingPool = sortedApplicants.filter(a => !selectedIds.has(a.id));
-    const normalSelected = remainingPool.slice(0, remainingCapacity);
+    const finalSelected = remainingPool.slice(0, remainingCapacity);
     
-    normalSelected.forEach(app => {
+    finalSelected.forEach(app => {
         allocationResult.push({ 
             applicationId: app.id, 
-            category: 'NORMAL', // Effectively selected in the Global Merit stage
+            category: 'OTHER',
             studentName: app.student.fullName,
             cgpa: app.student.cgpa,
             college: app.student.collegeName 
