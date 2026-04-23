@@ -47,8 +47,22 @@ const uploadLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// OTP rate limiter
+// 5 requests per 15 minutes (prevent SMS/Email spam and brute force)
+const otpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 mins
+    max: 5, 
+    message: {
+        success: false,
+        message: 'Too many OTP requests from this IP, please try again after 15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 module.exports = {
     generalLimiter,
     authLimiter,
-    uploadLimiter
+    uploadLimiter,
+    otpLimiter
 };

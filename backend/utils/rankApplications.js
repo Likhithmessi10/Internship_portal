@@ -78,21 +78,22 @@ const rankApplications = async (applications, internship) => {
         // Default
         let priority = 3; 
 
-        // Check Priority 1: Preferred College
-        if (normalizedPreferred.length > 0) {
-            // Check if normalized student college includes any preferred college name, or vice versa
-            const isPreferred = normalizedPreferred.some(p => normColName.includes(p) || p.includes(normColName));
-            if (isPreferred) {
-                priority = 1;
+        // IF automated category exists, use it
+        if (app.shortlistCategory === 'PREFERRED') priority = 1;
+        else if (app.shortlistCategory === 'TOP') priority = 2;
+        else if (app.shortlistCategory === 'OTHER') priority = 3;
+        else {
+            // Fallback to legacy logic
+            // Check Priority 1: Preferred College
+            if (normalizedPreferred.length > 0) {
+                const isPreferred = normalizedPreferred.some(p => normColName.includes(p) || p.includes(normColName));
+                if (isPreferred) priority = 1;
             }
-        }
-        
-        // Check Priority 2: NIRF rank handling
-        if (priority === 3) {
-            // Is recognized directly via profile or matches AISHE query exactly
-            const isAishe = aisheQuerySet.has(colName) || student.collegeCategory !== 'OTHER' || student.nirfRanking != null;
-            if (isAishe) {
-                priority = 2;
+            
+            // Check Priority 2: NIRF rank handling
+            if (priority === 3) {
+                const isAishe = aisheQuerySet.has(colName) || student.collegeCategory !== 'OTHER' || student.nirfRanking != null;
+                if (isAishe) priority = 2;
             }
         }
         
@@ -106,7 +107,12 @@ const rankApplications = async (applications, internship) => {
             return a._priority - b._priority; 
         }
         
-        // Second by CGPA descending
+        // Second by automated Score if available
+        if (a.score !== null && b.score !== null && a.score !== undefined && b.score !== undefined) {
+             if (a.score !== b.score) return b.score - a.score;
+        }
+
+        // Third by CGPA descending
         const cgpaA = a.student?.cgpa || 0;
         const cgpaB = b.student?.cgpa || 0;
         
@@ -114,7 +120,7 @@ const rankApplications = async (applications, internship) => {
             return cgpaB - cgpaA;
         }
         
-        // Third by ID for stability
+        // Fourth by ID for stability
         return (a.id || '').localeCompare(b.id || '');
     });
     

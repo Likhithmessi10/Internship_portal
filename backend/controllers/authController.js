@@ -7,21 +7,21 @@ const { logFailedLogin, logSuccessfulLogin } = require('../utils/auditLogger');
 const prisma = new PrismaClient();
 
 // Generate Access Token
-const generateAccessToken = (id, role, department) => {
+const generateAccessToken = (id, email, role, department) => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, role, department }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, email, role, department }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRY || '2h'
     });
 };
 
 // Generate Refresh Token
-const generateRefreshToken = (id, role, department) => {
+const generateRefreshToken = (id, email, role, department) => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, role, department }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, email, role, department }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d'
     });
 };
@@ -67,8 +67,8 @@ const register = async (req, res) => {
         });
 
         // Generate tokens
-        const accessToken = generateAccessToken(user.id, user.role, user.department);
-        const refreshToken = generateRefreshToken(user.id, user.role, user.department);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department);
 
         res.status(201).json({
             success: true,
@@ -128,8 +128,8 @@ const registerAdmin = async (req, res) => {
             }
         });
 
-        const accessToken = generateAccessToken(user.id, user.role, user.department);
-        const refreshToken = generateRefreshToken(user.id, user.role, user.department);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department);
 
         res.status(201).json({
             success: true,
@@ -178,8 +178,8 @@ const login = async (req, res) => {
         }
 
         // Generate tokens
-        const accessToken = generateAccessToken(user.id, user.role, user.department);
-        const refreshToken = generateRefreshToken(user.id, user.role, user.department);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department);
 
         // Log successful login
         await logSuccessfulLogin(email, ipAddress);
@@ -228,7 +228,7 @@ const refreshToken = async (req, res) => {
         }
 
         // Generate new access token
-        const newAccessToken = generateAccessToken(user.id, user.role, user.department);
+        const newAccessToken = generateAccessToken(user.id, user.email, user.role, user.department);
 
         res.status(200).json({
             success: true,

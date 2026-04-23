@@ -85,8 +85,17 @@ const CreateInternshipForm = () => {
         topUniversityQuota: 50, // Default 50%
         priorityCollege: '',
         priorityCollegeQuota: 10, // Default 10%
-        manualOpenings: ''
+        manualOpenings: '',
+        shortlistingRatio: 2,
+        preferredColleges: [],
+        topColleges: [],
+        seatAllocation: { preferred: 33, top: 33, other: 34 },
+        customQuestions: [],
+        requirementTags: []
     });
+
+    const [questionInput, setQuestionInput] = useState('');
+    const [requirementInput, setRequirementInput] = useState('');
 
     // Sub-states
     const [roles, setRoles] = useState([]);
@@ -124,13 +133,22 @@ const CreateInternshipForm = () => {
         if (!next.includes(val)) setLocations([...next, val]);
         setLocationInput('');
     };
-
     const addDoc = () => {
         if (docNameInput.trim()) {
             const id = docNameInput.toUpperCase().replace(/\s+/g, '_') + '_' + Date.now();
             setRequiredDocs([...requiredDocs, { id, label: docNameInput, type: docTypeInput, mandatory: docMandatoryInput }]);
             setDocNameInput('');
             setDocMandatoryInput(true);
+        }
+    };
+
+    const addRequirement = () => {
+        if (requirementInput.trim()) {
+            setFormData({
+                ...formData,
+                requirementTags: [...formData.requirementTags, requirementInput.trim()]
+            });
+            setRequirementInput('');
         }
     };
 
@@ -147,7 +165,13 @@ const CreateInternshipForm = () => {
                 requiredDocuments: requiredDocs,
                 quotaPercentages: { topUniversity: parseInt(formData.topUniversityQuota) },
                 priorityCollege: formData.priorityCollege || null,
-                priorityCollegeQuota: parseInt(formData.priorityCollegeQuota) || 0
+                priorityCollegeQuota: parseInt(formData.priorityCollegeQuota) || 0,
+                shortlistingRatio: parseInt(formData.shortlistingRatio) || 2,
+                preferredColleges: formData.preferredColleges,
+                topColleges: formData.topColleges,
+                seatAllocation: formData.seatAllocation,
+                customQuestions: formData.customQuestions,
+                requirements: formData.requirementTags.join(', ')
             });
             alert('Internship program launched successfully!');
             navigate('/dashboard');
@@ -449,6 +473,69 @@ const CreateInternshipForm = () => {
                             </div>
                         </div>
 
+                        {/* NEW: Automated Shortlisting Config */}
+                        <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="material-symbols-outlined text-primary">auto_awesome</span>
+                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Automated Shortlisting Logic</h3>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <InputField label="Shortlisting Ratio (N:1)" tooltip="How many candidates to shortlist per available seat. e.g. 2 means 2 candidates for every 1 seat.">
+                                    <input type="number" name="shortlistingRatio" value={formData.shortlistingRatio} onChange={handleChange}
+                                        placeholder="e.g. 2" className="admin-input text-sm font-bold border-outline-variant/20" />
+                                </InputField>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                                <InputField label="Preferred Allocation %" hint="Allocation for Preferred Colleges">
+                                    <input type="number" value={formData.seatAllocation.preferred} 
+                                        onChange={(e) => setFormData({...formData, seatAllocation: {...formData.seatAllocation, preferred: parseInt(e.target.value)}})}
+                                        className="admin-input text-sm font-bold" />
+                                </InputField>
+                                <InputField label="Top Tier Allocation %" hint="Allocation for Top Institutes">
+                                    <input type="number" value={formData.seatAllocation.top} 
+                                        onChange={(e) => setFormData({...formData, seatAllocation: {...formData.seatAllocation, top: parseInt(e.target.value)}})}
+                                        className="admin-input text-sm font-bold" />
+                                </InputField>
+                                <InputField label="Other Allocation %" hint="Allocation for General Merit">
+                                    <input type="number" value={formData.seatAllocation.other} 
+                                        onChange={(e) => setFormData({...formData, seatAllocation: {...formData.seatAllocation, other: parseInt(e.target.value)}})}
+                                        className="admin-input text-sm font-bold" />
+                                </InputField>
+                            </div>
+                        </div>
+
+                        {/* NEW: Custom Questions Section */}
+                        <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="material-symbols-outlined text-primary">quiz</span>
+                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Scoring Metrics (Yes/No Questions)</h3>
+                            </div>
+                            <div className="flex gap-4 mb-6">
+                                <div className="flex-1">
+                                    <input type="text" value={questionInput} onChange={e => setQuestionInput(e.target.value)}
+                                        placeholder="Add a Yes/No question for scoring (e.g. Do you have a laptop?)" className="admin-input text-sm font-bold border-outline-variant/20" />
+                                </div>
+                                <button type="button" onClick={() => {
+                                    if(questionInput.trim()){
+                                        setFormData({...formData, customQuestions: [...formData.customQuestions, questionInput.trim()]});
+                                        setQuestionInput('');
+                                    }
+                                }} className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-[10px] uppercase">Add Metric</button>
+                            </div>
+                            <div className="space-y-2">
+                                {formData.customQuestions.map((q, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 bg-white border border-outline-variant/10 rounded-lg">
+                                        <p className="text-xs font-bold text-primary">Q{i+1}: {q}</p>
+                                        <button onClick={() => setFormData({...formData, customQuestions: formData.customQuestions.filter((_, idx) => idx !== i)})} className="text-error">
+                                            <span className="material-symbols-outlined text-sm">delete</span>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
                             <button onClick={() => setStep(1)} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
                             <button onClick={nextStep} disabled={pPct + tPct > 100} className="flex-1 py-4 bg-primary disabled:opacity-50 hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
@@ -604,9 +691,48 @@ const CreateInternshipForm = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <InputField label="Candidate Requirements" required hint="Qualities, Skills, Academic criteria">
-                                <textarea name="requirements" required value={formData.requirements} onChange={handleChange}
-                                    rows={4} placeholder="• Minimum 7.0 CGPA&#10;• Final year students preferred..." className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 resize-none" />
+                            <InputField label="Required Technical Skills / Qualifications" required hint="Add skills one by one (e.g. React, Python, Data Entry)">
+                                <div className="space-y-4">
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            value={requirementInput} 
+                                            onChange={e => setRequirementInput(e.target.value)}
+                                            onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addRequirement())}
+                                            placeholder="Enter a skill and press Enter..." 
+                                            className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" 
+                                        />
+                                        <button 
+                                            type="button" 
+                                            onClick={addRequirement}
+                                            className="px-6 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest hover:opacity-90"
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-surface-container-high/20 rounded-xl border border-dashed border-outline-variant/30">
+                                        {formData.requirementTags.length === 0 && (
+                                            <p className="text-[10px] text-outline/40 font-bold uppercase tracking-widest flex items-center gap-2">
+                                                <Star size={12} /> Add at least 3-5 key skills for best auto-shortlisting results
+                                            </p>
+                                        )}
+                                        {formData.requirementTags.map((tag, i) => (
+                                            <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm animate-in zoom-in-95 duration-200">
+                                                {tag}
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setFormData({
+                                                        ...formData, 
+                                                        requirementTags: formData.requirementTags.filter((_, idx) => idx !== i)
+                                                    })} 
+                                                    className="hover:text-amber-300 transition-colors"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
                             </InputField>
                             <InputField label="Learn & Do (Job Description)" required hint="What the intern will actually do">
                                 <textarea name="expectations" required value={formData.expectations} onChange={handleChange}

@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 /**
  * Get all applications for PRTI Committee evaluation
@@ -30,13 +30,13 @@ const getCommitteeApplications = async (req, res) => {
                 student: {
                     select: {
                         fullName: true,
-                        email: true,
                         phone: true,
                         collegeName: true,
                         cgpa: true,
                         branch: true,
                         yearOfStudy: true,
-                        photoUrl: true
+                        photoUrl: true,
+                        user: { select: { email: true } }
                     }
                 },
                 internship: {
@@ -111,15 +111,15 @@ const submitEvaluation = async (req, res) => {
         };
 
         // Store evaluator-specific data based on role
-        if (evaluatorRole === 'CE_PRTI' || evaluatorRole === 'COMMITTEE_MEMBER') {
-            shortlistData.member1Id = evaluatorId;
-            shortlistData.member1Score = score;
+        if (evaluatorRole === 'CE_PRTI' || evaluatorRole === 'COMMITTEE_MEMBER' || evaluatorRole === 'ADMIN') {
+            shortlistData.prtiMemberId = evaluatorId;
+            shortlistData.prtiScore = score;
         } else if (evaluatorRole === 'HOD') {
-            shortlistData.member2Id = evaluatorId;
-            shortlistData.member2Score = score;
+            shortlistData.hodId = evaluatorId;
+            shortlistData.hodScore = score;
         } else if (evaluatorRole === 'MENTOR') {
-            shortlistData.member3Id = evaluatorId;
-            shortlistData.member3Score = score;
+            shortlistData.mentorId = evaluatorId;
+            shortlistData.mentorScore = score;
         }
 
         await prisma.shortlist.upsert({
@@ -127,7 +127,6 @@ const submitEvaluation = async (req, res) => {
             update: shortlistData,
             create: {
                 applicationId,
-                committeeId: application.internship.id,
                 ...shortlistData
             }
         });
@@ -182,7 +181,7 @@ const giveFinalApproval = async (req, res) => {
 
         // Check if all 3 committee members have submitted scores
         const shortlist = application.shortlist;
-        if (!shortlist || !shortlist.member1Score || !shortlist.member2Score || !shortlist.member3Score) {
+        if (!shortlist || !shortlist.prtiScore || !shortlist.hodScore || !shortlist.mentorScore) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'All 3 committee members must submit scores before final approval' 
@@ -190,69 +189,67 @@ const giveFinalApproval = async (req, res) => {
         }
 
         // Calculate average score
-        const avgScore = (shortlist.member1Score + shortlist.member2Score + shortlist.member3Score) / 3;
+        const avgScore = (shortlist.prtiScore + shortlist.hodScore + shortlist.mentorScore) / 3;
 
-        if (approved) {
-            // Check openings
-            const totalHiredCount = await prisma.application.count({
-                where: {
-                    internshipId: application.internshipId,
-                    status: { in: ['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'] }
-                }
-            });
+        const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
 
-            if (totalHiredCount >= application.internship.openingsCount) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Internship Full: All ${application.internship.openingsCount} openings have been filled.`
-                });
-            }
-
-            if (!assignedRole) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Assigned role is mandatory for approval'
-                });
-            }
-
-            // Update application to HIRED
-            const updatedApplication = await prisma.application.update({
+        const result = await prisma.$transaction(async (tx) => {
+            const application = await tx.application.findUnique({
                 where: { id: applicationId },
-                data: {
-                    status: 'HIRED',
-                    assignedRole,
-                    score: Math.round(avgScore)
-                },
-                include: {
-                    student: true,
-                    internship: true,
-                    mentor: true
-                }
+                include: { internship: true, shortlist: true }
             });
 
-            res.status(200).json({
-                success: true,
-                message: 'Application approved successfully',
-                data: updatedApplication
-            });
-        } else {
-            // Reject application
-            const updatedApplication = await prisma.application.update({
-                where: { id: applicationId },
-                data: {
-                    status: 'REJECTED'
-                }
-            });
+            if (!application) throw new Error('Application not found');
+            
+            if (approved) {
+                // Atomic seat check
+                const totalHiredCount = await tx.application.count({
+                    where: {
+                        internshipId: application.internshipId,
+                        status: { in: ['HIRED', 'CA_APPROVED', 'ONGOING', 'COMPLETED'] }
+                    }
+                });
 
-            res.status(200).json({
-                success: true,
-                message: 'Application rejected',
-                data: updatedApplication
-            });
-        }
+                if (totalHiredCount >= application.internship.openingsCount) {
+                    throw new Error(`Internship Full: All ${application.internship.openingsCount} openings have been filled.`);
+                }
+
+                if (!assignedRole) throw new Error('Assigned role is mandatory for approval');
+
+                // Update application using workflow service logic (but inside this tx)
+                // Since our service uses its own tx, we'll implement it inline or refactor service to accept tx
+                await tx.application.update({
+                    where: { id: applicationId },
+                    data: {
+                        status: 'HIRED',
+                        assignedRole,
+                        score: Math.round(avgScore)
+                    }
+                });
+                
+                await tx.auditLog.create({
+                    data: {
+                        action: 'FINAL_APPROVAL',
+                        userEmail: req.user.email,
+                        details: `Approved application ${application.trackingId} for role ${assignedRole}`,
+                        target: applicationId
+                    }
+                });
+
+                return { success: true, message: 'Application approved successfully' };
+            } else {
+                await tx.application.update({
+                    where: { id: applicationId },
+                    data: { status: 'REJECTED' }
+                });
+                return { success: true, message: 'Application rejected' };
+            }
+        });
+
+        res.status(200).json(result);
     } catch (error) {
-        console.error('Final approval error:', error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        console.error('Final approval error:', error.message);
+        res.status(400).json({ success: false, message: error.message || 'Server Error' });
     }
 };
 
@@ -273,7 +270,7 @@ const getCommitteeStatus = async (req, res) => {
                 student: {
                     select: {
                         fullName: true,
-                        email: true
+                        user: { select: { email: true } }
                     }
                 },
                 mentor: {
@@ -293,15 +290,15 @@ const getCommitteeStatus = async (req, res) => {
                 studentName: app.student.fullName,
                 mentorName: app.mentor?.name || 'Not Assigned',
                 scores: {
-                    member1: shortlist?.member1Score ?? null,
-                    member2: shortlist?.member2Score ?? null,
-                    member3: shortlist?.member3Score ?? null,
+                    prti: shortlist?.prtiScore ?? null,
+                    hod: shortlist?.hodScore ?? null,
+                    mentor: shortlist?.mentorScore ?? null,
                     average: shortlist 
-                        ? Math.round((shortlist.member1Score + shortlist.member2Score + shortlist.member3Score) / 3)
+                        ? Math.round((shortlist.prtiScore + shortlist.hodScore + shortlist.mentorScore) / 3)
                         : null
                 },
-                allScoresSubmitted: !!(shortlist?.member1Score && shortlist?.member2Score && shortlist?.member3Score),
-                readyForApproval: !!(shortlist?.member1Score && shortlist?.member2Score && shortlist?.member3Score)
+                allScoresSubmitted: !!(shortlist?.prtiScore && shortlist?.hodScore && shortlist?.mentorScore),
+                readyForApproval: !!(shortlist?.prtiScore && shortlist?.hodScore && shortlist?.mentorScore)
             };
         });
 

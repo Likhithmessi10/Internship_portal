@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { processApplication } = require('../services/shortlistingService');
 
 /**
  * @desc    Apply to an internship
@@ -38,7 +39,7 @@ const applyForInternship = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please complete your student profile before applying' });
         }
 
-        const { sop, preferredLocation, assignedRole } = req.body;
+        const { sop, preferredLocation, assignedRole, questionAnswers } = req.body;
 
         // 4. Check if student already applied in this internship
         const existingApplication = await prisma.application.findFirst({
@@ -67,7 +68,8 @@ const applyForInternship = async (req, res) => {
                 status: 'APPLIED',
                 sop: sop || null,
                 preferredLocation: preferredLocation || null,
-                assignedRole: assignedRole || null
+                assignedRole: assignedRole || null,
+                questionAnswers: questionAnswers ? JSON.parse(questionAnswers) : null
             }
         });
 
@@ -134,6 +136,12 @@ const applyForInternship = async (req, res) => {
             success: true,
             data: application,
             message: 'Application submitted successfully applied!'
+        });
+
+        // 7. Background Shortlisting Processing (Trigger asynchronously)
+        process.nextTick(() => {
+            processApplication(application.id)
+                .catch(err => console.error(`Background processing failed for application ${application.id}:`, err));
         });
 
     } catch (error) {

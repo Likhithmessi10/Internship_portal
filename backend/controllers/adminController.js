@@ -1,11 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const emailService = require('../services/email/emailService');
 const xl = require('exceljs');
 const { allocateApplicants } = require('../services/allocationService');
 const { createAuditLog } = require('../utils/auditLogger');
 const { notifyMentorAssignment, notifyWorkAssignment } = require('../services/mailService');
 const { rankApplications } = require('../utils/rankApplications');
+const { runShortlistingForInternship } = require('../services/shortlistingService');
 
 
 /**
@@ -19,7 +20,8 @@ const createInternship = async (req, res) => {
             title, department, description, roles, rolesData, requirements,
             expectations, location, duration, openingsCount, applicationDeadline,
             requiredDocuments, quotaPercentages, priorityCollege, priorityCollegeQuota,
-            stipendType, stipendAmount
+            stipendType, stipendAmount, shortlistingRatio, preferredColleges,
+            topColleges, seatAllocation
         } = req.body;
 
         let targetDepartment = department;
@@ -61,7 +63,11 @@ const createInternship = async (req, res) => {
                 priorityCollege: priorityCollege || null,
                 priorityCollegeQuota: parseInt(priorityCollegeQuota) || 0,
                 stipendType: stipendType || 'NON_COLLABORATIVE',
-                stipendAmount: stipendAmount ? parseFloat(stipendAmount) : null
+                stipendAmount: stipendAmount ? parseFloat(stipendAmount) : null,
+                shortlistingRatio: shortlistingRatio ? parseInt(shortlistingRatio) : 2,
+                preferredColleges: preferredColleges || [],
+                topColleges: topColleges || [],
+                seatAllocation: seatAllocation || {}
             }
         });
 
@@ -228,6 +234,33 @@ const getApplications = async (req, res) => {
     } catch (error) {
         console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Run automated shortlisting for internship
+ */
+const runShortlistingAction = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { enqueueJob } = require('../services/jobService');
+        const job = await enqueueJob(
+            'BATCH_SHORTLIST', 
+            { internshipId: id },
+            `shortlist_${id}`
+        );
+        
+        // Audit Log
+        await createAuditLog('RUN_SHORTLISTING', req.user.email, `Enqueued auto-shortlisting for internship ${id}`, id);
+        
+        res.status(202).json({ 
+            success: true, 
+            message: 'Shortlisting process started in the background. It will process all applications deterministically.',
+            jobId: job.id
+        });
+    } catch (error) {
+        console.error('Run shortlisting error:', error.message);
+        res.status(500).json({ success: false, message: error.message || 'Failed to run shortlisting' });
     }
 };
 
@@ -425,7 +458,7 @@ const exportApplications = async (req, res) => {
         const internship = await prisma.internship.findUnique({ where: { id: internshipId } });
         const applications = await prisma.application.findMany({
             where: { internshipId },
-            include: { student: true, documents: true },
+            include: { student: { include: { user: true } }, documents: true },
             orderBy: { createdAt: 'desc' }
         });
 
@@ -468,7 +501,7 @@ const exportApplications = async (req, res) => {
                 no: idx + 1,
                 trackingId: app.trackingId,
                 name: s?.fullName || '',
-                email: s?.email || '',
+                email: s?.user?.email || '',
                 phone: s?.phone || '',
                 college: s?.collegeName || '',
                 branch: s?.branch || '',
@@ -1048,5 +1081,6 @@ module.exports = {
     getMentorMeetings,
     getMentorInterns,
     assignWork,
-    getWorkAssignments
+    getWorkAssignments,
+    runShortlistingAction
 };

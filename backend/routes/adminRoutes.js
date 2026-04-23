@@ -59,6 +59,10 @@ router.put('/internships/:id/committee', updateCommitteeDetails);
 
 // Application Management
 router.get('/internships/:id/applications', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), getApplications);
+router.post('/internships/:id/shortlist', authorize('HOD'), (req, res, next) => {
+    const { runShortlistingAction } = require('../controllers/adminController');
+    runShortlistingAction(req, res, next);
+});
 router.get('/internships/:id/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), exportApplications);
 router.get('/applications/rejected', authorize('ADMIN', 'HOD'), getRejectedApplications);
 router.put('/applications/:id', authorize('ADMIN', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), updateApplicationStatus);

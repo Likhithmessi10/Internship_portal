@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const { v4: uuidv4 } = require('uuid');
 const { generateOTP, sendOTP } = require('../utils/otp');
 const emailService = require('../services/email/emailService');
@@ -192,6 +192,39 @@ const trackStatus = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Application not found. Please check your tracking ID.' });
         }
 
+        // Check for Tracking Token for full access
+        let hasFullAccess = false;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+                if (decoded.trackingId === trackingId) {
+                    hasFullAccess = true;
+                }
+            } catch (err) {
+                // Ignore token errors, just fall back to redacted view
+            }
+        }
+
+        if (!hasFullAccess) {
+            // REDACTED VIEW
+            const redactedData = {
+                trackingId: application.trackingId,
+                status: application.status,
+                internship: application.internship,
+                student: {
+                    fullName: application.student.fullName,
+                    collegeName: application.student.collegeName,
+                    branch: application.student.branch
+                },
+                createdAt: application.createdAt,
+                _redacted: true
+            };
+            return res.status(200).json({ success: true, data: redactedData });
+        }
+
+        // FULL VIEW
         res.status(200).json({ success: true, data: application });
     } catch (error) {
         next(error);
@@ -255,7 +288,29 @@ const verifyOtp = async (req, res, next) => {
         }
 
         await prisma.otpVerification.delete({ where: { rollNumber } });
-        res.status(200).json({ success: true, message: 'OTP verified successfully.' });
+
+        // Find the application for this student to get the trackingId
+        const student = await prisma.studentProfile.findUnique({
+            where: { rollNumber },
+            include: { applications: { orderBy: { createdAt: 'desc' }, take: 1 } }
+        });
+
+        const trackingId = student?.applications[0]?.trackingId;
+
+        // Generate a short-lived tracking token (15 mins)
+        const jwt = require('jsonwebtoken');
+        const token = jwt.sign(
+            { rollNumber, trackingId },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'OTP verified successfully.',
+            trackingToken: token,
+            trackingId
+        });
     } catch (error) {
         next(error);
     }

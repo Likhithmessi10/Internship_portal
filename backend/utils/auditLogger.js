@@ -12,15 +12,16 @@ const prisma = new PrismaClient();
  */
 const createAuditLog = async (action, userEmail, details = null, target = null, ipAddress = null, userAgent = null) => {
     try {
+        let finalDetails = details;
+        if (ipAddress) finalDetails = finalDetails ? `${finalDetails} | IP: ${ipAddress}` : `IP: ${ipAddress}`;
+        if (userAgent) finalDetails = finalDetails ? `${finalDetails} | UA: ${userAgent}` : `UA: ${userAgent}`;
+
         await prisma.auditLog.create({
             data: {
                 action,
-                userEmail,
-                details,
-                target,
-                // Store IP and user agent in details if provided
-                ...(ipAddress && { details: details ? `${details} | IP: ${ipAddress}` : `IP: ${ipAddress}` }),
-                ...(userAgent && { details: (details || '') + ` | UA: ${userAgent}`.trim() })
+                userEmail: userEmail || 'system@aptransco.portal',
+                details: finalDetails,
+                target
             }
         });
     } catch (error) {

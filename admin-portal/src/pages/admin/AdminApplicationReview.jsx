@@ -6,7 +6,7 @@ import ApplicationProfileModal from './ApplicationProfileModal';
 import {
     ArrowLeft, Download, Users, CheckCircle, Clock, XCircle,
     Eye, TrendingUp, Star, ChevronDown, ChevronRight, Sparkles,
-    Shield, Briefcase, GraduationCap, Award, Info, MapPin
+    Shield, Briefcase, GraduationCap, Award, Info, MapPin, Zap
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -123,6 +123,17 @@ const AdminApplicationReview = () => {
         }
     };
 
+    const handleRunShortlisting = async () => {
+        if (!window.confirm('This will automatically calculate scores for all candidates and move the top candidates to HOD Review. Continue?')) return;
+        try {
+            const res = await api.post(`/admin/internships/${id}/shortlist`);
+            alert(res.data.message);
+            fetchData();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to run shortlisting');
+        }
+    };
+
     const isTopUniversity = (student) => {
         if (!student) return false;
         const nirf = parseInt(student.nirfRanking);
@@ -137,7 +148,7 @@ const AdminApplicationReview = () => {
     const priorityMetricCap = Math.round((totalCap * priorityPct) / 100);
     const quotaCap = Math.round((totalCap * quotaPct) / 100);
 
-    const { nominatedApps, highlightedApps, quotaApps, standardApps, uniqueColleges, nominatedHired, quotaHired, roleHiredStats } = (() => {
+    const { nominatedApps, highlightedApps, quotaApps, standardApps, uniqueColleges, nominatedHired, quotaHired, roleHiredStats, categoryStats } = (() => {
         const sortedFull = [...applications].sort((a, b) => (b.student?.cgpa || 0) - (a.student?.cgpa || 0));
 
         const nominated = [];
@@ -147,6 +158,9 @@ const AdminApplicationReview = () => {
         const collegesSet = new Set();
         const priorityCollegeName = internship?.priorityCollege;
         const clean = (s) => (s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        let nominatedHired = 0;
+        let quotaHired = 0;
 
         sortedFull.forEach(app => {
             const collegeNameRaw = (app.student?.collegeName || '').trim();
@@ -159,8 +173,14 @@ const AdminApplicationReview = () => {
             const isTopUniv = isTopUniversity(app.student);
             const isHighlighted = hCollege.length > 0 && (collegeName.includes(hCollege) || hCollege.includes(collegeName));
 
-            if (isNominated) nominated.push({ ...app, nominatedMatch: true });
-            else if (isTopUniv) quota.push({ ...app, quotaMatch: true });
+            if (isNominated) {
+                nominated.push({ ...app, nominatedMatch: true });
+                if (['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status)) nominatedHired++;
+            }
+            else if (isTopUniv) {
+                quota.push({ ...app, quotaMatch: true });
+                if (['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status)) quotaHired++;
+            }
             else if (isHighlighted) highlighted.push({ ...app, highlightMatch: true });
             else pool.push({ ...app, nominatedMatch: isNominated, quotaMatch: isTopUniv && !isNominated });
         });
@@ -178,10 +198,15 @@ const AdminApplicationReview = () => {
             highlightedApps: highlighted.filter(filterFn),
             quotaApps: quota.filter(filterFn),
             standardApps: pool.filter(filterFn),
-            uniqueColleges: Array.from(collegesSet).sort(),
-            nominatedHired: nominated.filter(a => a.status === 'HIRED').length,
-            quotaHired: quota.filter(a => a.status === 'HIRED').length,
-            roleHiredStats
+            uniqueColleges: Array.from(collegesSet),
+            nominatedHired,
+            quotaHired,
+            roleHiredStats,
+            categoryStats: {
+                PREFERRED: applications.filter(a => a.shortlistCategory === 'PREFERRED').length,
+                TOP: applications.filter(a => a.shortlistCategory === 'TOP').length,
+                OTHER: applications.filter(a => a.shortlistCategory === 'OTHER').length
+            }
         };
     })();
 
@@ -209,6 +234,11 @@ const AdminApplicationReview = () => {
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    {user?.role === 'HOD' && (
+                        <button onClick={handleRunShortlisting} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
+                            <Zap size={14} className="fill-white" /> Run Auto-Shortlisting
+                        </button>
+                    )}
                     <button onClick={handleExport} className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors">
                         <span className="material-symbols-outlined text-lg">download</span> Export Pool
                     </button>
@@ -235,24 +265,24 @@ const AdminApplicationReview = () => {
 
                     <div className="grid grid-cols-3 gap-6">
                         <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
-                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Preferred</p>
+                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Preferred Dept.</p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold text-primary">{nominatedHired}</span>
-                                <span className="text-[10px] text-outline">/ {priorityMetricCap}</span>
+                                <span className="text-xl font-bold text-primary">{categoryStats.PREFERRED}</span>
+                                <span className="text-[10px] text-outline">Applicants</span>
                             </div>
                         </div>
                         <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
                             <p className="text-[10px] font-bold text-outline uppercase mb-1">Top Tier</p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold text-primary">{quotaHired}</span>
-                                <span className="text-[10px] text-outline">/ {quotaCap}</span>
+                                <span className="text-xl font-bold text-primary">{categoryStats.TOP}</span>
+                                <span className="text-[10px] text-outline">Applicants</span>
                             </div>
                         </div>
                         <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
-                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Total Pool</p>
+                            <p className="text-[10px] font-bold text-outline uppercase mb-1">General Pool</p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold text-primary">{stats.total}</span>
-                                <span className="text-[10px] text-outline underline decoration-outline-variant">LIFETIME</span>
+                                <span className="text-xl font-bold text-primary">{categoryStats.OTHER}</span>
+                                <span className="text-[10px] text-outline">Applicants</span>
                             </div>
                         </div>
                     </div>
@@ -325,6 +355,7 @@ const AdminApplicationReview = () => {
                             <tr className="bg-surface-container-high/30">
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Candidate Info</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">College Profile</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Score</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">CGPA</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Status</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Action</th>
@@ -434,6 +465,10 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
                     <span className="text-[8px] font-bold px-1 py-0.5 bg-primary/10 text-primary rounded-sm uppercase tracking-widest">NIRF #{app.student?.nirfRanking || 'N/A'}</span>
                     <span className="text-[8px] font-bold px-1 py-0.5 bg-surface-container-high text-outline rounded-sm uppercase tracking-widest">{app.student?.collegeCategory}</span>
                 </div>
+            </td>
+            <td className="px-6 py-5 text-center">
+                <span className="text-sm font-black text-primary bg-primary/5 px-2 py-1 rounded">{app.score || '0.0'}</span>
+                <p className="text-[8px] font-bold text-outline/50 uppercase mt-1">Weighted</p>
             </td>
             <td className="px-6 py-5 text-center">
                 <span className="text-lg font-bold text-primary">{app.student?.cgpa}</span>

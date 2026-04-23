@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -74,13 +75,14 @@ app.use('/api/', generalLimiter);
 // STATIC FILES
 // ============================================
 
-// Serve Static Portal (Student Side)
-app.use(express.static(path.join(__dirname, '../')));
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../aptransco_portal.html'));
-});
+// Serve Static Files for the Student Portal (Specific files only)
+// Note: It's better to serve the build directory in production.
+const staticPath = path.join(__dirname, '../public'); // Create a public folder if it doesn't exist
+if (!fs.existsSync(staticPath)) fs.mkdirSync(staticPath, { recursive: true });
+app.use(express.static(staticPath));
 
-// Serve Uploaded Files (Publicly accessible for browser PDF viewers)
+// Secure File Route (Redirecting /uploads to our secure API soon)
+// For now, keeping it limited to the exact subfolder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ============================================
@@ -133,6 +135,9 @@ const startServer = async () => {
     try {
         await prisma.$connect();
         console.log('✅ Connected to PostgreSQL Database via Prisma');
+
+        const { workerLoop } = require('./jobs/worker');
+        workerLoop(); // Start background worker loop (no await as it's a daemon)
 
         app.listen(PORT, () => {
             console.log(`🚀 Server listening on port ${PORT}`);

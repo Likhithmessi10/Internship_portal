@@ -262,11 +262,65 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                     <InfoRow label="Year of Study" value={student?.yearOfStudy} />
                                     <InfoRow label="CGPA" value={student?.cgpa} />
                                     <InfoRow label="Tier" value={student?.collegeCategory} />
-                                    <InfoRow label="NIRF Rank" value={student?.nirfRanking ? `#${student.nirfRanking}` : 'N/A'} />
-                                    <InfoRow label="Assigned ID" value={student?.rollNumber} />
+                                    <InfoRow label="NIRF Rank" value={student.nirfRanking ? `#${student.nirfRanking}` : 'N/A'} />
+                                    <InfoRow label="Assigned ID" value={student.rollNumber} />
                                     <InfoRow label="Pref. Location" value={application?.preferredLocation} />
                                 </div>
                             </section>
+
+                            {/* Scoring Breakdown */}
+                            <section className="col-span-1 md:col-span-2">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Sparkles size={18} className="text-primary dark:text-indigo-400" />
+                                    <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Automated Shortlisting Score</h3>
+                                </div>
+                                <div className="bg-primary/5 dark:bg-indigo-900/10 p-6 rounded-2xl border border-primary/20 dark:border-indigo-800/40 relative overflow-hidden">
+                                     <div className="absolute top-0 right-0 p-4">
+                                         <div className="text-right">
+                                             <p className="text-4xl font-black text-primary dark:text-indigo-400">{application.score || '0.0'}</p>
+                                             <p className="text-[10px] font-bold text-outline dark:text-indigo-300/60 uppercase tracking-widest">Total Weight</p>
+                                         </div>
+                                     </div>
+                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pr-24">
+                                         <div>
+                                             <p className="text-[9px] font-bold text-outline dark:text-slate-500 uppercase mb-1">Skills (40%)</p>
+                                             <p className="text-lg font-bold text-primary dark:text-white">{application.scoreBreakdown?.skillsMatch || '0.0'}</p>
+                                         </div>
+                                         <div>
+                                             <p className="text-[9px] font-bold text-outline dark:text-slate-500 uppercase mb-1">Exp (30%)</p>
+                                             <p className="text-lg font-bold text-primary dark:text-white">{application.scoreBreakdown?.experienceScore || '0.0'}</p>
+                                         </div>
+                                         <div>
+                                             <p className="text-[9px] font-bold text-outline dark:text-slate-500 uppercase mb-1">Projects (20%)</p>
+                                             <p className="text-lg font-bold text-primary dark:text-white">{application.scoreBreakdown?.projectScore || '0.0'}</p>
+                                         </div>
+                                         <div>
+                                             <p className="text-[9px] font-bold text-outline dark:text-slate-500 uppercase mb-1">CGPA (10%)</p>
+                                             <p className="text-lg font-bold text-primary dark:text-white">{application.scoreBreakdown?.cgpaScore || '0.0'}</p>
+                                         </div>
+                                     </div>
+                                </div>
+                            </section>
+
+                            {/* Custom Question Answers */}
+                            {internship?.customQuestions?.length > 0 && (
+                                <section className="col-span-1 md:col-span-2">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="material-symbols-outlined text-primary dark:text-indigo-400 text-xl">quiz</span>
+                                        <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Additional Metrics</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {internship.customQuestions.map((q, idx) => (
+                                            <div key={idx} className="p-4 bg-surface-container-lowest dark:bg-slate-800/50 rounded-xl border border-outline-variant/10 dark:border-slate-700/50 flex justify-between items-center">
+                                                <p className="text-xs font-bold text-on-surface-variant dark:text-slate-400">{q}</p>
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${application.questionAnswers?.[idx] === 'Yes' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                    {application.questionAnswers?.[idx] || 'N/A'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
 
                             {/* Social URLs Section */}
                             {(student?.linkedinUrl || student?.githubUrl) && (

@@ -25,6 +25,7 @@ const InternshipApplication = () => {
     const [assignedRole, setAssignedRole] = useState(initialRole);
     const [sop, setSop] = useState('');
     const [preferredLocation, setPreferredLocation] = useState('');
+    const [questionAnswers, setQuestionAnswers] = useState({});
 
     // File States (Dynamic)
     const [files, setFiles] = useState({});
@@ -126,6 +127,7 @@ const InternshipApplication = () => {
         if (preferredLocation) {
             formData.append('preferredLocation', preferredLocation);
         }
+        formData.append('questionAnswers', JSON.stringify(questionAnswers));
 
         setSubmitting(true);
         setError('');
@@ -401,6 +403,38 @@ const InternshipApplication = () => {
                                             </p>
                                         )}
                                     </div>
+
+                                    {/* NEW: Custom Scoring Metric Questions */}
+                                    {internship.customQuestions && internship.customQuestions.length > 0 && (
+                                        <div className="space-y-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                                            <div>
+                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                    <Award className="w-4 h-4 text-indigo-500" /> Additional Qualifications
+                                                </h4>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">These details help us in automated shortlisting.</p>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {internship.customQuestions.map((q, idx) => (
+                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+                                                        <p className="text-xs font-bold text-slate-700">{q}</p>
+                                                        <div className="flex bg-slate-100 p-1 rounded-lg">
+                                                            {['Yes', 'No'].map(opt => (
+                                                                <button
+                                                                    key={opt}
+                                                                    type="button"
+                                                                    onClick={() => setQuestionAnswers(prev => ({...prev, [idx]: opt}))}
+                                                                    className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all
+                                                                        ${questionAnswers[idx] === opt ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                                                >
+                                                                    {opt}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

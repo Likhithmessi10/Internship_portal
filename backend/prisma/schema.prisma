@@ -22,7 +22,9 @@ enum Role {
 
 enum ApplicationStatus {
   APPLIED
+  SUBMITTED
   SHORTLISTED
+  HOD_REVIEW
   COMMITTEE_EVALUATION
   CA_APPROVED
   HIRED
@@ -135,6 +137,11 @@ model Internship {
   requiredDocuments    Json?
   stipendType          String?   @default("NON_COLLABORATIVE") // COLLABORATIVE or NON_COLLABORATIVE
   stipendAmount        Float?    // Amount in INR (optional, for collaborative)
+  shortlistingRatio    Int?      @default(2)
+  preferredColleges    Json?     @default("[]")
+  topColleges          Json?     @default("[]")
+  seatAllocation       Json?     @default("{}")
+  customQuestions      Json?     @default("[]")
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   shortlistLimit       Int?      @default(50)
@@ -149,7 +156,7 @@ model Application {
   studentId       String
   internshipId    String
   status          ApplicationStatus   @default(APPLIED)
-  score           Int?                @default(0)
+  score           Float?              @default(0)
   assignedRole     String?
   preferredCircle  String?
   preferredLocation String?  // User requirement for explicit preferred location
@@ -161,8 +168,14 @@ model Application {
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   category        InternshipCategory?
+  shortlistCategory String?
   domain          String?
   mentorId        String?
+  questionAnswers Json?
+  scoreBreakdown  Json?
+  parsedResumeText String?
+  extractedSkills  Json?
+  extractedProjects Json?
 
   student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   internship Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
@@ -199,21 +212,21 @@ model Shortlist {
   applicationId String   @unique
 
   // Committee evaluation scores (3 members)
-  // Member 1: HOD (Permanent)
-  hodId         String?
-  hodScore      ScoreCriteria?
-  
-  // Member 2: Assigned Mentor
-  mentorId      String?
-  mentorScore   ScoreCriteria?
-  
-  // Member 3: PRTI Representative (Editable)
+  // Member 1: PRTI Representative (Head)
   prtiMemberId  String?
-  prtiScore     ScoreCriteria?
+  prtiScore     Float?   @default(0)
+  
+  // Member 2: HOD (Permanent)
+  hodId         String?
+  hodScore      Float?   @default(0)
+  
+  // Member 3: Assigned Mentor
+  mentorId      String?
+  mentorScore   Float?   @default(0)
   
   // Aggregate score and decision
-  score         Int      @default(0)
-  decision      String
+  score         Float    @default(0)
+  decision      String?  @default("PENDING") // PENDING, APPROVED, REJECTED
   evaluatedAt   DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -365,4 +378,33 @@ model TaskSubmission {
 
   @@index([workAssignmentId])
   @@index([studentId])
+}
+
+enum JobStatus {
+  PENDING
+  CLAIMED
+  RUNNING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+}
+
+model Job {
+  id          String    @id @default(uuid())
+  type        String    // RESUME_PARSE, SCORING, BATCH_SHORTLIST
+  status      JobStatus @default(PENDING)
+  payload     Json?
+  result      Json?
+  error       String?
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  fingerprint String?   @unique // For deduplication (e.g. type + internshipId)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([createdAt])
 }
