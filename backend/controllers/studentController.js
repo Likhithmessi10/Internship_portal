@@ -30,12 +30,24 @@ const upsertProfile = async (req, res) => {
             return res.status(400).json({ success: false, message: 'fullName, collegeName, branch, and yearOfStudy are required fields.' });
         }
 
-        const allowedCategories = ['IIT', 'NIT', 'IIIT', 'CENTRAL', 'STATE_UNIV', 'DEEMED', 'AUTONOMOUS', 'COLLEGE', 'INSTITUTE', 'OTHER'];
-        const validatedCategory = allowedCategories.includes(collegeCategory) ? collegeCategory : 'OTHER';
+        // Requirement 6: Validate college against trusted dataset
+        const { findCollege, mapCategory } = require('../services/collegeService');
+        const trustedMatch = findCollege(collegeName);
+        
+        let validatedCategory = 'OTHER';
+        let validatedNirf = (nirfRanking && !isNaN(parseInt(nirfRanking))) ? parseInt(nirfRanking) : null;
+        let finalCollegeName = collegeName;
 
-        const parsedCgpa = parseFloat(cgpa) || 0.0;
-        if (parsedCgpa > 10) {
-            return res.status(400).json({ success: false, message: 'CGPA cannot be greater than 10.0' });
+        if (trustedMatch) {
+            // Use canonical data if matched
+            finalCollegeName = trustedMatch.institute_name;
+            validatedCategory = mapCategory(trustedMatch.institution_type || trustedMatch.college_type);
+            // Only overwrite if the dataset has it; otherwise, keep user input if we trust it, or keep null
+            if (trustedMatch.nirf_rank) validatedNirf = parseInt(trustedMatch.nirf_rank);
+        } else {
+            // Manual Entry Fallback (Requirement: manual entry implemented)
+            const allowedCategories = ['IIT', 'NIT', 'IIIT', 'CENTRAL', 'STATE', 'PRIVATE', 'OTHER'];
+            validatedCategory = allowedCategories.includes(collegeCategory) ? collegeCategory : 'OTHER';
         }
 
         const profileData = {
@@ -45,14 +57,14 @@ const upsertProfile = async (req, res) => {
             dob: new Date(dob),
             address,
             aadhar,
-            collegeName,
+            collegeName: finalCollegeName,
             university,
             degree,
             branch,
             yearOfStudy: parseInt(yearOfStudy) || 1,
             cgpa: parsedCgpa,
             collegeCategory: validatedCategory,
-            nirfRanking: (nirfRanking && !isNaN(parseInt(nirfRanking))) ? parseInt(nirfRanking) : null,
+            nirfRanking: validatedNirf,
             hasExperience: hasExperience === true || hasExperience === 'true',
             hasProjects: hasProjects === true || hasProjects === 'true',
             hasCertifications: hasCertifications === true || hasCertifications === 'true',
@@ -63,6 +75,7 @@ const upsertProfile = async (req, res) => {
             linkedinUrl: linkedinUrl || null,
             githubUrl: githubUrl || null
         };
+
 
         const profile = await prisma.studentProfile.upsert({
             where: { userId },

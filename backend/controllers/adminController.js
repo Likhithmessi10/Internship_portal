@@ -5,6 +5,7 @@ const xl = require('exceljs');
 const { allocateApplicants } = require('../services/allocationService');
 const { createAuditLog } = require('../utils/auditLogger');
 const { notifyMentorAssignment, notifyWorkAssignment } = require('../services/mailService');
+const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
 
 
 /**
@@ -252,9 +253,16 @@ const runShortlistingAction = async (req, res) => {
         const { enqueueJob } = require('../services/jobService');
         const job = await enqueueJob(
             'BATCH_SHORTLIST', 
-            { internshipId: id },
+            { 
+                internshipId: id,
+                triggeredBy: {
+                    email: req.user.email,
+                    role: req.user.role
+                }
+            },
             `shortlist_${id}`
         );
+
         
         // Audit Log
         await createAuditLog('RUN_SHORTLISTING', req.user.email, `Enqueued auto-shortlisting for internship ${id}`, id);
@@ -339,19 +347,14 @@ const updateApplicationStatus = async (req, res) => {
 
         // 3. Atomic Transaction for Updates
         const result = await prisma.$transaction(async (tx) => {
-            // Seat Check
-            if (status === 'APPROVED' || status === 'HIRED') {
-                const currentHired = await tx.application.count({
-                    where: {
-                        internshipId: internship.id,
-                        status: { in: ['APPROVED', 'HIRED', 'ONGOING'] }
-                    }
-                });
-
-                if (currentHired >= internship.openingsCount && application.status !== status) {
-                    throw new Error(`Internship Full: All ${internship.openingsCount} openings are filled.`);
-                }
-            }
+            // Requirement 4: All status updates must go through workflow service
+            const updatedApp = await transitionApplicationStatus(
+                applicationId, 
+                status, 
+                req.user, 
+                `Manual update via Admin Controller. Assigned Role: ${assignedRole || 'None'}`,
+                tx
+            );
 
             // Update student roll number if provided
             if (rollNumber) {
@@ -361,17 +364,19 @@ const updateApplicationStatus = async (req, res) => {
                 });
             }
 
-            // Core status and assignment update
-            const updateData = { status };
-            if (assignedRole) updateData.assignedRole = assignedRole;
-            if (joiningDate) updateData.joiningDate = new Date(joiningDate);
-            if (endDate) updateData.endDate = new Date(endDate);
-            if (mentorId) updateData.mentorId = mentorId;
+            // Update metadata (Role, Dates, Mentor)
+            const metadataUpdates = {};
+            if (assignedRole) metadataUpdates.assignedRole = assignedRole;
+            if (joiningDate) metadataUpdates.joiningDate = new Date(joiningDate);
+            if (endDate) metadataUpdates.endDate = new Date(endDate);
+            if (mentorId) metadataUpdates.mentorId = mentorId;
 
-            const updatedApp = await tx.application.update({
-                where: { id: applicationId },
-                data: updateData
-            });
+            if (Object.keys(metadataUpdates).length > 0) {
+                await tx.application.update({
+                    where: { id: applicationId },
+                    data: metadataUpdates
+                });
+            }
 
             // Committee Auto-Sync
             if (mentorUser) {
@@ -399,6 +404,7 @@ const updateApplicationStatus = async (req, res) => {
 
             return updatedApp;
         });
+
 
         // 4. Notifications & Logs
         res.status(200).json({ success: true, data: result });

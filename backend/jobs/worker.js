@@ -12,9 +12,11 @@ const executeJob = async (job) => {
             break;
         case 'BATCH_SHORTLIST':
             if (job.payload.internshipId) {
-                await runShortlistingForInternship(job.payload.internshipId);
+                const user = job.payload.triggeredBy || { email: 'system@aptransco.portal', role: 'ADMIN' };
+                await runShortlistingForInternship(job.payload.internshipId, user);
             }
             break;
+
         default:
             console.warn(`[Worker] Unknown job type: ${job.type}`);
     }

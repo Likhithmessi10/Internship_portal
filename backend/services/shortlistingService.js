@@ -2,6 +2,8 @@ const pdf = require('pdf-parse');
 const fs = require('fs');
 const path = require('path');
 const prisma = require('../lib/prisma');
+const { transitionApplicationStatus } = require('./applicationWorkflowService');
+const { categorizeApplicant, sortApplicants } = require('./rankingService');
 
 // High Performance Synonym Mapping
 const SYNONYM_MAP = {
@@ -33,37 +35,44 @@ const normalize = (text) => {
 };
 
 /**
- * Extracts text from a PDF resume (Asynchronous)
- * Optimized for robustness: handles errors gracefully and returns empty string instead of null
+ * Extracts text from a resume (Optimized for robustness and fallbacks)
  */
 async function parseResume(filePath) {
     try {
-        if (!fs.existsSync(filePath)) {
-            console.warn(`[ParseResume] File not found: ${filePath}`);
-            return "";
-        }
+        if (!fs.existsSync(filePath)) return "";
         
+        const extension = path.extname(filePath).toLowerCase();
         const dataBuffer = await fs.promises.readFile(filePath);
-        // Fallback for empty or corrupt buffers
         if (!dataBuffer || dataBuffer.length === 0) return "";
 
-        const data = await pdf(dataBuffer);
-        return normalize(data.text);
+        // FALLBACK 1: Handle Plain Text files directly
+        if (extension === '.txt') {
+            return normalize(dataBuffer.toString());
+        }
+
+        // DEFAULT: PDF Parsing
+        try {
+            const data = await pdf(dataBuffer);
+            return normalize(data.text);
+        } catch (pdfError) {
+            console.warn(`[ParseResume] PDF Parse failed for ${filePath}, attempting raw string fallback`);
+            // FALLBACK 2: Basic string extraction from binary (very rough)
+            return normalize(dataBuffer.toString('utf8').replace(/[^\x20-\x7E\n\r\t]/g, ' '));
+        }
     } catch (error) {
-        console.error(`[ParseResume] Error: ${error.message}`);
-        return ""; // Fallback to empty string to prevent pipeline crash
+        console.error(`[ParseResume] Critical Error: ${error.message}`);
+        return ""; 
     }
 }
 
 /**
  * Extracts skills and projects from resume text and profile
- * Uses flexible keyword matching without requiring specific prefixes
+ * Uses unique keyword matching to prevent spam boosting
  */
 async function extractData(profile, resumeText, requirements = '') {
     const skills = new Set();
     const normalizedText = (resumeText || '').toLowerCase();
     
-    // Normalize requirements into tokens
     const reqTokens = (requirements || '').toLowerCase()
         .split(/[\s,;]+/)
         .filter(t => t.length > 1);
@@ -73,15 +82,13 @@ async function extractData(profile, resumeText, requirements = '') {
     // 1. Keyword Match against Requirements
     reqTokens.forEach(token => {
         const escaped = escapeRegex(token);
-        // Look for word boundaries or non-alphanumeric separators
-        // This avoids matching "java" in "javascript"
         const regex = new RegExp(`(?<=^|[^a-z0-9])${escaped}(?=[^a-z0-9]|$)`, 'i');
         if (regex.test(normalizedText)) {
             skills.add(token);
         }
     });
 
-    // 2. Keyword Match using Synonym Map (High accuracy)
+    // 2. Keyword Match using Synonym Map
     Object.entries(SYNONYM_MAP).forEach(([keyword, canonical]) => {
         const escaped = escapeRegex(keyword);
         const regex = new RegExp(`(?<=^|[^a-z0-9])${escaped}(?=[^a-z0-9]|$)`, 'i');
@@ -90,46 +97,46 @@ async function extractData(profile, resumeText, requirements = '') {
         }
     });
 
-    // 3. Project Intensity Heuristic
+    // 3. Project Intensity Heuristic (FIXED: Unique keyword matching to avoid spam boosting)
     const projectKeywords = ['project', 'github', 'built', 'developed', 'implemented', 'designed'];
-    let projectIntensity = 0;
+    let uniqueProjectMatches = 0;
     projectKeywords.forEach(word => {
-        const matches = normalizedText.match(new RegExp(word, 'gi')) || [];
-        projectIntensity += matches.length;
+        const regex = new RegExp(`(?<=^|[^a-z0-9])${word}(?=[^a-z0-9]|$)`, 'i');
+        if (regex.test(normalizedText)) {
+            uniqueProjectMatches++;
+        }
     });
 
     return {
         skills: Array.from(skills),
-        projectWeight: projectIntensity
+        projectWeight: uniqueProjectMatches // Now 0-6 instead of unbounded raw count
     };
 }
 
 /**
- * Calculates a score for an application based on deterministic rules
+ * Calculates a score for an application based on deterministic merit
+ * Removed year-based experience bias as per requirement
  */
 function calculateScore(application, internship) {
     const { student, extractedSkills, extractedProjects, questionAnswers } = application;
     const cgpa = student.cgpa || 0;
     
-    // 1. Skills Score (40%)
+    // 1. Skills Score (40%) - Max 4.0
     const reqSkills = (internship.requirements || '').toLowerCase().split(/[\s,]+/);
     const matched = (extractedSkills || []).filter(s => reqSkills.includes(s));
     const skillsScore = reqSkills.length > 0 ? (matched.length / reqSkills.length) : 0.5;
     
-    // 2. CGPA Score (10%)
+    // 2. Projects Score (40%) - Max 4.0 (Heuristic based on 6 unique keywords)
+    const pWeight = Math.min(1.0, (extractedProjects?.weight || 0) / 6);
+
+    // 3. CGPA Score (10%) - Max 1.0
     let cgpaWeight = 0.5;
     if (cgpa >= 9) cgpaWeight = 1.0;
     else if (cgpa >= 8) cgpaWeight = 0.8;
     else if (cgpa >= 7) cgpaWeight = 0.6;
     else cgpaWeight = 0.3;
     
-    // 3. Experience Score (20%)
-    const year = parseInt(student.yearOfStudy) || 1;
-    let expWeight = 0.3; // Beginner
-    if (year >= 4) expWeight = 1.0; // Expert/Final
-    else if (year >= 3) expWeight = 0.6; // Intermediate
-    
-    // 4. Custom Question Metrics (10%)
+    // 4. Custom Question Metrics (10%) - Max 1.0
     let questionScore = 0;
     const qAnswers = questionAnswers || {};
     const customQs = internship.customQuestions || [];
@@ -140,27 +147,25 @@ function calculateScore(application, internship) {
         });
         questionScore = yesCount / customQs.length;
     } else {
-        questionScore = 1.0; // neutral if no questions
+        questionScore = 1.0; // neutral
     }
     
-    // 5. Projects (20%)
-    const pWeight = Math.min(1.0, (extractedProjects?.weight || 0) / 20);
-
-    const total = (skillsScore * 4) + (expWeight * 2) + (questionScore * 1) + (pWeight * 2) + (cgpaWeight * 1);
+    // Total Score = 40% Skills + 40% Projects + 10% CGPA + 10% Questions
+    const total = (skillsScore * 4) + (pWeight * 4) + (cgpaWeight * 1) + (questionScore * 1);
     
     return {
         score: parseFloat(total.toFixed(2)),
         breakdown: {
             skillsMatch: parseFloat((skillsScore * 4).toFixed(2)),
-            experienceScore: parseFloat(((expWeight * 2) + (questionScore * 1)).toFixed(2)),
-            projectScore: parseFloat((pWeight * 2).toFixed(2)),
-            cgpaScore: parseFloat((cgpaWeight * 1).toFixed(2))
+            projectScore: parseFloat((pWeight * 4).toFixed(2)),
+            cgpaScore: parseFloat((cgpaWeight * 1).toFixed(2)),
+            questionScore: parseFloat((questionScore * 1).toFixed(2))
         }
     };
 }
 
 /**
- * Standardized Resume Detection (Step 9) & Absolute Path Safety (Step 10)
+ * Processes a single application
  */
 async function processApplication(applicationId) {
     try {
@@ -170,15 +175,13 @@ async function processApplication(applicationId) {
         });
         if (!application) return;
 
-        // Step 9: Consistent type check
-        const resumeDoc = application.documents.find(d => d.type === 'RESUME');
+        const resumeDoc = application.documents.find(d => d.type === 'RESUME' || d.label?.toUpperCase().includes('RESUME'));
         let resumeText = '';
         if (resumeDoc?.url) {
             const uploadsDir = path.resolve(__dirname, '../../uploads');
             const cleanPath = resumeDoc.url.replace(/^uploads[\\\/]/, '');
             const filePath = path.join(uploadsDir, cleanPath);
             
-            // Path safety check
             if (path.normalize(filePath).startsWith(uploadsDir) && fs.existsSync(filePath)) {
                 resumeText = await parseResume(filePath) || '';
             }
@@ -190,7 +193,7 @@ async function processApplication(applicationId) {
         await prisma.application.update({
             where: { id: applicationId },
             data: {
-                parsedResumeText: resumeText.slice(0, 5000),
+                parsedResumeText: resumeText.slice(0, 7000),
                 extractedSkills: extracted.skills,
                 extractedProjects: { weight: extracted.projectWeight },
                 score: scoring.score,
@@ -202,85 +205,87 @@ async function processApplication(applicationId) {
     }
 }
 
-/**
- * Batched Parallel Processing (Step 7)
- */
 async function processBatch(appIds) {
     return Promise.all(appIds.map(id => processApplication(id)));
 }
 
 /**
- * Deterministic Shortlisting with Performance (Step 7) and Safety (Step 2)
+ * Integrated Shortlisting: Applies category-based grouping and ratios
  */
-async function runShortlistingForInternship(internshipId) {
-    console.log(`[Shortlisting] Safe deterministic run for ${internshipId}`);
-    
+async function runShortlistingForInternship(internshipId, user) {
+    if (!user) throw new Error('User context required for workflow transitions');
+
     const internship = await prisma.internship.findUnique({
         where: { id: internshipId },
         include: { 
             applications: { 
-                where: { status: 'SUBMITTED' } // Step 2: Target only SUBMITTED
+                where: { status: 'SUBMITTED' } 
             } 
         }
     });
 
     if (!internship) throw new Error('Internship not found');
 
-    const totalOpenings = internship.openingsCount;
-    const ratio = internship.shortlistingRatio || 2;
-    const targetCount = totalOpenings * ratio;
-
-    // 1. Parallel Batching (Step 7)
+    // 1. Process scoring for all submitted apps
     const appIds = internship.applications.map(a => a.id);
-    const CHUNK_SIZE = 20;
+    const CHUNK_SIZE = 15;
     for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
-        const chunk = appIds.slice(i, i + CHUNK_SIZE);
-        await processBatch(chunk);
+        await processBatch(appIds.slice(i, i + CHUNK_SIZE));
     }
 
-    // 2. Fetch updated SUBMITTED apps with DB-level sorting (Step 8)
+    // 2. Fetch updated apps with student info
     const updatedApps = await prisma.application.findMany({
-        where: { 
-            internshipId, 
-            status: 'SUBMITTED' 
-        },
-        orderBy: { score: 'desc' }, // Step 8: DB-level sorting
+        where: { internshipId, status: 'SUBMITTED' },
         include: { student: true }
     });
 
-    // 3. Selection with Deterministic Tie-breakers
-    const sortedApps = updatedApps.sort((a, b) => {
-        if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
-        
-        // Tie-breaker 1: Required Skill Coverage
-        const aSkillsCount = (a.extractedSkills || []).length;
-        const bSkillsCount = (b.extractedSkills || []).length;
-        if (bSkillsCount !== aSkillsCount) return bSkillsCount - aSkillsCount;
-
-        // Tie-breaker 2: CGPA
-        if ((b.student?.cgpa || 0) !== (a.student?.cgpa || 0)) return (b.student?.cgpa || 0) - (a.student?.cgpa || 0);
-        
-        // Final: Lexicographical ID
-        return a.id.localeCompare(b.id);
+    // 3. Category-based Grouping
+    const buckets = { PREFERRED: [], TOP: [], OTHER: [] };
+    updatedApps.forEach(app => {
+        const cat = categorizeApplicant(app.student, internship);
+        buckets[cat].push(app);
     });
 
-    const toShortlist = sortedApps.slice(0, targetCount);
+    // 4. Calculate Targets per Category (Apply ratio)
+    const ratio = internship.shortlistingRatio || 2;
+    const capacity = internship.openingsCount;
+    const pQuota = internship.priorityCollegeQuota || 0;
+    const tQuota = internship.quotaPercentages?.topUniversity || 0;
 
-    await prisma.$transaction(
-        toShortlist.map((app, index) => prisma.application.update({
-            where: { id: app.id },
-            data: { 
-                status: 'SHORTLISTED',
-                scoreBreakdown: {
-                    ...(app.scoreBreakdown || {}),
-                    rank: index + 1,
-                    explain: `Ranked #${index+1} deterministically based on score (${app.score}) and tie-breaker policy.`
-                }
-            }
-        }))
-    );
+    const targets = {
+        PREFERRED: Math.ceil(capacity * (pQuota / 100) * ratio),
+        TOP: Math.ceil(capacity * (tQuota / 100) * ratio),
+        OTHER: 0 // Will handle remaining later
+    };
+    targets.OTHER = Math.ceil((capacity * ratio) - targets.PREFERRED - targets.TOP);
 
-    return { processed: sortedApps.length, shortlisted: toShortlist.length };
+    let finalShortlist = [];
+
+    // Fill Buckets deterministically
+    ['PREFERRED', 'TOP', 'OTHER'].forEach(cat => {
+        const sorted = sortApplicants(buckets[cat]);
+        const selected = sorted.slice(0, targets[cat]);
+        finalShortlist = finalShortlist.concat(selected);
+    });
+
+    // 5. Enforce final seat limits (Total shortlisting shouldn't exceed ratio * total capacity)
+    const absoluteLimit = capacity * ratio;
+    if (finalShortlist.length > absoluteLimit) {
+        finalShortlist = sortApplicants(finalShortlist).slice(0, absoluteLimit);
+    }
+
+    // 6. Execute Workflow Transitions (All status updates must go through workflow service)
+    let shortlistedCount = 0;
+    for (const app of finalShortlist) {
+        try {
+            await transitionApplicationStatus(app.id, 'SHORTLISTED', user, 'Automated Category-based Shortlisting');
+            shortlistedCount++;
+        } catch (err) {
+            console.error(`[Shortlist Fail] App ${app.id}:`, err.message);
+        }
+    }
+
+    return { processed: updatedApps.length, shortlisted: shortlistedCount };
 }
 
 module.exports = {
@@ -290,3 +295,4 @@ module.exports = {
     processApplication,
     runShortlistingForInternship
 };
+

@@ -115,12 +115,21 @@ const submitApplication = async (req, res, next) => {
         const identifier = rollNumber || aadhar || 'GUEST';
         const trackingId = `APT-${Date.now()}-${identifier.slice(-4)}`.toUpperCase();
 
+        // 3b. Validate College (Requirement 6)
+        const { findCollege, mapCategory } = require('../services/collegeService');
+        const trustedMatch = findCollege(collegeName);
+        if (trustedMatch) {
+            profileData.collegeName = trustedMatch.institute_name;
+            profileData.collegeCategory = mapCategory(trustedMatch.institution_type || trustedMatch.college_type);
+            if (trustedMatch.nirf_rank) profileData.nirfRanking = parseInt(trustedMatch.nirf_rank);
+        }
+
         const application = await prisma.application.create({
             data: {
                 trackingId,
                 studentId: student.id,
                 internshipId,
-                status: 'PENDING',
+                status: 'SUBMITTED', // FIXED: PENDING is not in the enum
                 preferredCircle: preferredCircle || null,
                 preferredLocation: preferredLocation || null,
                 sop: sop || null,
@@ -129,6 +138,7 @@ const submitApplication = async (req, res, next) => {
                 startDate: startDate || null
             }
         });
+
 
         // 4. Handle File Uploads (Expect files from multer)
         if (req.files && req.files.length > 0) {
