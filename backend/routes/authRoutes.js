@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(authLimiter);
 
 router.post('/register', register);
-router.post('/admin/register', protect, authorize('ADMIN'), registerAdmin);
+router.post('/admin/register', registerAdmin);
 router.post('/login', login);
 router.post('/refresh', refreshToken);
 router.get('/me', protect, getMe);

@@ -92,16 +92,16 @@ const CommitteeCard = ({ internship, onManage }) => {
     const isComplete = committee?.membersData?.mentorId || committee?.mentor; // Simplified check
 
     return (
-        <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10 flex flex-col">
-            <div className="p-6 border-b border-outline-variant/10 bg-white">
+        <div className="admin-card !p-0 flex flex-col">
+            <div className="p-6 border-b border-outline-variant/10 bg-surface-container-lowest">
                 <div className="flex justify-between items-start mb-4">
                     <div className="w-10 h-10 bg-primary-container/10 rounded-lg flex items-center justify-center text-primary">
                         <span className="material-symbols-outlined">groups</span>
                     </div>
                     {isComplete ? (
-                        <span className="px-2 py-1 bg-green-50 text-green-700 text-[8px] font-bold rounded uppercase tracking-wider border border-green-200">Established</span>
+                        <span className="px-2 py-1 bg-emerald-500/10 text-emerald-600 text-[8px] font-bold rounded uppercase tracking-wider border border-emerald-500/20">Established</span>
                     ) : (
-                        <span className="px-2 py-1 bg-amber-50 text-amber-700 text-[8px] font-bold rounded uppercase tracking-wider border border-amber-200">Pending Members</span>
+                        <span className="px-2 py-1 bg-amber-500/10 text-amber-600 text-[8px] font-bold rounded uppercase tracking-wider border border-amber-500/20">Pending Members</span>
                     )}
                 </div>
                 <h3 className="text-sm font-bold text-primary truncate" title={internship.title}>{internship.title}</h3>
@@ -114,7 +114,7 @@ const CommitteeCard = ({ internship, onManage }) => {
                 <div className="flex gap-2 mt-4">
                     <button 
                         onClick={onManage}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-surface-container-high text-primary text-[10px] font-bold rounded-lg hover:bg-surface-variant transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-surface-container-high text-primary text-[10px] font-bold rounded-lg hover:bg-surface-variant transition-colors dark:bg-slate-800 dark:hover:bg-slate-700"
                     >
                         <Edit size={14} /> MANAGE
                     </button>
@@ -211,12 +211,12 @@ const CommitteeModal = ({ internship, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-primary text-white">
-                    <h3 className="font-bold flex items-center gap-2">
+            <div className="bg-surface-container-lowest rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10 animate-in fade-in zoom-in duration-200">
+                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-lowest">
+                    <h3 className="font-bold text-primary flex items-center gap-2">
                         <Users size={20} /> Manage Committee
                     </h3>
-                    <button onClick={onClose} className="hover:bg-white/10 p-1 rounded-full transition-colors">
+                    <button onClick={onClose} className="hover:bg-outline-variant/10 p-1 rounded-full transition-colors text-outline">
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>

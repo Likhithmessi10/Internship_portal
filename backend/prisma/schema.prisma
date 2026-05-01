@@ -144,6 +144,7 @@ model Internship {
 
   applications Application[]
   committee    Committee?
+  evaluationCriteria InternshipEvaluationCriteria[]
 }
 
 model Application {
@@ -153,6 +154,7 @@ model Application {
   internshipId    String
   status          ApplicationStatus   @default(SUBMITTED)
   score           Float?              @default(0)
+  committeeFinalScore Float?          @default(0)
   assignedRole     String?
   preferredCircle  String?
   preferredLocation String?  // User requirement for explicit preferred location
@@ -183,6 +185,7 @@ model Application {
   attendance Attendance?
   workAssignments WorkAssignment[]
   committeeEvaluations CommitteeEvaluation[]
+  evaluationScores EvaluationScore[]
 
   @@unique([studentId, internshipId, assignedRole])
   @@index([studentId])
@@ -238,6 +241,36 @@ model CommitteeEvaluation {
 
   @@unique([applicationId, memberId])
 }
+
+model InternshipEvaluationCriteria {
+  id           String     @id @default(uuid())
+  internshipId String
+  question     String
+  maxScore     Int        @default(50)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  scores       EvaluationScore[]
+}
+
+model EvaluationScore {
+  id            String   @id @default(uuid())
+  applicationId String
+  memberId      String
+  role          Role
+  questionId    String
+  score         Float
+  comments      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  question      InternshipEvaluationCriteria @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, memberId, questionId])
+}
+
 
 model Stipend {
   id             String @id @default(uuid())

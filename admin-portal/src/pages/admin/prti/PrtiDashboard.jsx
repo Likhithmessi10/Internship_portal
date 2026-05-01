@@ -103,7 +103,7 @@ const PrtiDashboard = () => {
             <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <button 
                     onClick={() => setSelectedStat({ title: 'Total Departments', type: 'DEPARTMENTS', data: departments })}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-primary/20 hover:-translate-y-1 transition-all group text-left w-full"
+                    className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-xl hover:border-primary/20 hover:-translate-y-1 transition-all group text-left w-full"
                 >
                     <div>
                         <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Total Departments</span>
@@ -117,7 +117,7 @@ const PrtiDashboard = () => {
 
                 <button 
                     onClick={() => setSelectedStat({ title: 'Active Interns', type: 'INTERNS', data: allInterns })}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-emerald-500/20 hover:-translate-y-1 transition-all group text-left w-full"
+                    className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-xl hover:border-emerald-500/20 hover:-translate-y-1 transition-all group text-left w-full"
                 >
                     <div>
                         <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Active Interns</span>
@@ -131,7 +131,7 @@ const PrtiDashboard = () => {
 
                 <button 
                     onClick={() => setSelectedStat({ title: 'Active Programs', type: 'PROGRAMS', data: internships.filter(i => i.isActive) })}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-outline-variant/10 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-sky-500/20 hover:-translate-y-1 transition-all group text-left w-full"
+                    className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-xl hover:border-sky-500/20 hover:-translate-y-1 transition-all group text-left w-full"
                 >
                     <div>
                         <span className="text-[10px] font-bold tracking-widest uppercase text-outline dark:text-slate-400 block mb-2">Active Programs</span>
@@ -171,7 +171,7 @@ const PrtiDashboard = () => {
                     </button>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10 dark:border-white/5">
+                <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-surface-container-low dark:bg-slate-700 border-b border-outline-variant/20 dark:border-white/5">

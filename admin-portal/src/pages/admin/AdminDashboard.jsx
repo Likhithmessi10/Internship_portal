@@ -38,7 +38,7 @@ const StatCard = ({ icon: Icon, label, value, color, subtext, onEdit }) => (
 const ProgressBar = ({ value, max, color = 'bg-emerald-500' }) => {
     const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
     return (
-        <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 mt-1">
+        <div className="w-full bg-surface-container-high rounded-full h-1.5 mt-1">
             <div className={`h-1.5 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
         </div>
     );
@@ -101,7 +101,7 @@ const AdvancedExportModal = ({ onClose }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary/20 backdrop-blur-md">
             <div className="bg-surface-container-low rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10">
-                <div className="bg-white border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
+                <div className="bg-surface-container-lowest border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
                     <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined">file_export</span>
                         <h3 className="text-sm font-bold uppercase tracking-[0.2em]">Institutional Export</h3>
@@ -114,7 +114,7 @@ const AdvancedExportModal = ({ onClose }) => {
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-outline">Filter by Internship</label>
                         <select 
-                            className="w-full bg-white border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary"
+                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 text-xs font-bold text-primary focus:outline-primary"
                             value={filters.internshipId}
                             onChange={e => setFilters({...filters, internshipId: e.target.value})}
                         >
@@ -157,7 +157,7 @@ const AdvancedExportModal = ({ onClose }) => {
                         </div>
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Application Status</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-outline">Application Status</label>
                         <select 
                             className="admin-input w-full font-bold"
                             value={filters.status}
@@ -234,7 +234,7 @@ const DepartmentsModal = ({ onClose }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary/20 backdrop-blur-md">
             <div className="bg-surface-container-low rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10 animate-fade-in-up">
-                <div className="bg-white border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
+                <div className="bg-surface-container-lowest border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
                     <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-primary">corporate_fare</span>
                         <h3 className="text-sm font-bold uppercase tracking-[0.2em]">Institutional Units</h3>
@@ -250,8 +250,8 @@ const DepartmentsModal = ({ onClose }) => {
                     </div>
                 ) : (
                     <div className="p-8 space-y-6">
-                        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-500/20">
-                            <p className="text-xs text-purple-700 dark:text-purple-300 font-medium leading-relaxed">
+                        <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+                            <p className="text-xs text-primary/80 font-medium leading-relaxed">
                                 Manage the list of official APTRANSCO departments. These options appear during account registration and internship creation.
                             </p>
                         </div>
@@ -260,7 +260,7 @@ const DepartmentsModal = ({ onClose }) => {
                             <input 
                                 type="text"
                                 placeholder="New Department Name..."
-                                className="admin-input flex-1 font-bold bg-slate-50 dark:bg-slate-800"
+                                className="admin-input flex-1 font-bold bg-surface-container-low"
                                 value={newDept}
                                 onChange={e => setNewDept(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleAdd()}
@@ -277,7 +277,7 @@ const DepartmentsModal = ({ onClose }) => {
 
                         <div className="max-h-64 overflow-y-auto pr-2 space-y-2">
                             {departments.map((dept, i) => (
-                                <div key={i} className="flex flex-row justify-between items-center p-3 px-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-2xl group hover:border-purple-200 transition-colors">
+                                <div key={i} className="flex flex-row justify-between items-center p-3 px-4 bg-surface-container-low border border-outline-variant/10 rounded-2xl group hover:border-primary/20 transition-colors">
                                     <span className="font-bold text-slate-700 dark:text-slate-200">{dept}</span>
                                     <button 
                                         onClick={() => handleRemove(dept)}
@@ -456,14 +456,14 @@ const AdminDashboard = () => {
                 <div className="flex gap-3">
                     <button 
                         onClick={() => setShowAdvancedExport(true)}
-                        className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors"
+                        className="bg-surface-container-low dark:bg-slate-800/50 px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors"
                     >
                         <Download size={16} /> Advanced Export
                     </button>
                     {user?.role === 'ADMIN' && (
                         <button
                             onClick={() => setShowDepartments(true)}
-                            className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors"
+                            className="bg-surface-container-low dark:bg-slate-800/50 px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors"
                         >
                             <Building2 size={16} /> Departments
                         </button>
@@ -477,7 +477,7 @@ const AdminDashboard = () => {
             {/* Bento Grid Stats */}
             <section className="grid grid-cols-12 gap-6">
                 {/* Main Progress Metric */}
-                <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+                <div className="col-span-12 lg:col-span-8 admin-card">
                     <div className="flex justify-between items-center mb-10">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Intake Performance Index</h3>
                         <div className="flex gap-4">
@@ -546,8 +546,8 @@ const AdminDashboard = () => {
             </section>
 
             {/* Internship Management Table - Stitch Style */}
-            <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
-                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
+            <div className="admin-card !p-0 overflow-hidden">
+                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-lowest">
                     <div>
                         <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Active Internship Programs</h3>
                         <p className="text-[10px] text-outline font-medium mt-0.5">Managing {internships.length} live recruitment cycles</p>
@@ -577,7 +577,7 @@ const AdminDashboard = () => {
                                 const isExpired = int.applicationDeadline && new Date(int.applicationDeadline) < new Date();
 
                                 return (
-                                    <tr key={int.id} className="hover:bg-white dark:hover:bg-slate-800/50 transition-colors group">
+                                    <tr key={int.id} className="hover:bg-surface-container-high/50 transition-colors group">
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 bg-primary-container/10 rounded-lg flex items-center justify-center text-primary">
@@ -593,7 +593,7 @@ const AdminDashboard = () => {
                                         </td>
                                         <td className="px-6 py-5 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tighter ${int.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tighter ${int.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-outline-variant/10 text-outline'}`}>
                                                     {int.isActive ? 'Active' : 'Paused'}
                                                 </span>
                                                 {int.applicationDeadline && (
@@ -633,14 +633,14 @@ const AdminDashboard = () => {
                                                     <>
                                                         <button
                                                             onClick={() => handleToggle(int.id)}
-                                                            className={`p-1 rounded transition-all ${int.isActive ? 'text-amber-600 hover:bg-amber-50' : 'text-green-600 hover:bg-green-50'}`}
+                                                            className={`p-1 rounded transition-all ${int.isActive ? 'text-amber-600 hover:bg-amber-500/10' : 'text-emerald-600 hover:bg-emerald-500/10'}`}
                                                             title={int.isActive ? 'Suspend Program' : 'Activate Program'}
                                                         >
                                                             <span className="material-symbols-outlined text-lg">{int.isActive ? 'pause_circle' : 'play_circle'}</span>
                                                         </button>
                                                         <button
                                                             onClick={() => handleExport(int.id, int.title)}
-                                                            className="p-1 text-outline hover:text-green-600 hover:bg-green-50 rounded transition-all"
+                                                            className="p-1 text-outline hover:text-emerald-600 hover:bg-emerald-500/10 rounded transition-all"
                                                             title="Institutional Export"
                                                         >
                                                             <span className="material-symbols-outlined text-lg">download</span>

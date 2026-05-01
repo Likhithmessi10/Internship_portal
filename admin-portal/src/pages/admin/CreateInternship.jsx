@@ -171,6 +171,7 @@ const CreateInternshipForm = () => {
                 topColleges: formData.topColleges,
                 seatAllocation: formData.seatAllocation,
                 customQuestions: formData.customQuestions,
+                evaluationQuestions: formData.customQuestions,
                 requirements: formData.requirementTags.join(', ')
             });
             alert('Internship program launched successfully!');
@@ -510,12 +511,12 @@ const CreateInternshipForm = () => {
                         <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
                             <div className="flex items-center gap-3 mb-6">
                                 <span className="material-symbols-outlined text-primary">quiz</span>
-                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Scoring Metrics (Yes/No Questions)</h3>
+                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Evaluation Criteria (0-50 Score)</h3>
                             </div>
                             <div className="flex gap-4 mb-6">
                                 <div className="flex-1">
                                     <input type="text" value={questionInput} onChange={e => setQuestionInput(e.target.value)}
-                                        placeholder="Add a Yes/No question for scoring (e.g. Do you have a laptop?)" className="admin-input text-sm font-bold border-outline-variant/20" />
+                                        placeholder="Add an evaluation question (e.g. Technical knowledge)" className="admin-input text-sm font-bold border-outline-variant/20" />
                                 </div>
                                 <button type="button" onClick={() => {
                                     if(questionInput.trim()){

@@ -363,7 +363,7 @@ const PrtiReports = () => {
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-primary/60 ml-1 italic">Target Program</label>
                                     <select
-                                        className="w-full bg-white dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/10 shadow-subtle appearance-none cursor-pointer group"
+                                        className="w-full bg-surface-container-lowest border-none rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/10 shadow-subtle appearance-none cursor-pointer group"
                                         value={filters.internshipId}
                                         onChange={(e) => setFilters({ ...filters, internshipId: e.target.value })}
                                     >
@@ -374,7 +374,7 @@ const PrtiReports = () => {
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-primary/60 ml-1 italic">Talent Tier</label>
                                     <select
-                                        className="w-full bg-white dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/10 shadow-subtle appearance-none cursor-pointer"
+                                        className="w-full bg-surface-container-lowest border-none rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/10 shadow-subtle appearance-none cursor-pointer"
                                         value={filters.tier}
                                         onChange={(e) => setFilters({ ...filters, tier: e.target.value })}
                                     >
@@ -389,7 +389,7 @@ const PrtiReports = () => {
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-primary/60 ml-1 italic">Recruitment Status</label>
                                     <select
-                                        className="w-full bg-white dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/10 shadow-subtle appearance-none cursor-pointer"
+                                        className="w-full bg-surface-container-lowest border-none rounded-2xl px-6 py-4 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/10 shadow-subtle appearance-none cursor-pointer"
                                         value={filters.status}
                                         onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                                     >
@@ -478,7 +478,7 @@ const PrtiReports = () => {
                                             type="date"
                                             value={timelineFilters.startDate}
                                             onChange={(e) => handleTimelineFilterChange('startDate', e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-900 border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent"
+                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -487,7 +487,7 @@ const PrtiReports = () => {
                                             type="date"
                                             value={timelineFilters.endDate}
                                             onChange={(e) => handleTimelineFilterChange('endDate', e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-900 border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent"
+                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent"
                                         />
                                     </div>
                                 </div>
@@ -524,7 +524,7 @@ const PrtiReports = () => {
                                     <select
                                         value={timelineFilters.college}
                                         onChange={(e) => handleTimelineFilterChange('college', e.target.value)}
-                                        className="w-full bg-white dark:bg-slate-900 border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent appearance-none"
+                                        className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent appearance-none"
                                     >
                                         <option value="All">All Colleges</option>
                                         {colleges.map(college => (
@@ -539,7 +539,7 @@ const PrtiReports = () => {
                                     <select
                                         value={timelineFilters.department}
                                         onChange={(e) => handleTimelineFilterChange('department', e.target.value)}
-                                        className="w-full bg-white dark:bg-slate-900 border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent appearance-none"
+                                        className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent appearance-none"
                                     >
                                         <option value="All">All Departments</option>
                                         {departments.map(dept => (
@@ -554,7 +554,7 @@ const PrtiReports = () => {
                                     <select
                                         value={timelineFilters.internshipId}
                                         onChange={(e) => handleTimelineFilterChange('internshipId', e.target.value)}
-                                        className="w-full bg-white dark:bg-slate-900 border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent appearance-none"
+                                        className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary/20 focus:border-transparent appearance-none"
                                     >
                                         <option value="All">All Programs</option>
                                         {internships.map(i => (
@@ -632,7 +632,7 @@ const PrtiReports = () => {
                                             {Object.entries(timelineStats.departmentCounts)
                                                 .sort((a, b) => b[1] - a[1])
                                                 .map(([dept, count]) => (
-                                                    <div key={dept} className="bg-white dark:bg-slate-900 p-3 rounded-xl">
+                                                    <div key={dept} className="bg-surface-container-lowest p-3 rounded-xl">
                                                         <p className="text-[9px] font-bold text-outline uppercase tracking-wider truncate">{dept}</p>
                                                         <p className="text-lg font-black text-primary">{count}</p>
                                                     </div>

@@ -20,7 +20,7 @@ const createInternship = async (req, res) => {
             expectations, location, duration, openingsCount, applicationDeadline,
             requiredDocuments, quotaPercentages, priorityCollege, priorityCollegeQuota,
             stipendType, stipendAmount, shortlistingRatio, preferredColleges,
-            topColleges, seatAllocation
+            topColleges, seatAllocation, evaluationQuestions
         } = req.body;
 
         let targetDepartment = department;
@@ -69,6 +69,18 @@ const createInternship = async (req, res) => {
                 seatAllocation: seatAllocation || {}
             }
         });
+
+        // Insert evaluation questions if provided
+        if (evaluationQuestions && Array.isArray(evaluationQuestions) && evaluationQuestions.length > 0) {
+            const criteriaData = evaluationQuestions.map(q => ({
+                internshipId: internship.id,
+                question: q,
+                maxScore: 50
+            }));
+            await prisma.internshipEvaluationCriteria.createMany({
+                data: criteriaData
+            });
+        }
 
         res.status(201).json({ success: true, data: internship });
 

@@ -34,6 +34,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const collegeRoutes = require('./routes/colleges');
 const prtiRoutes = require('./routes/prtiRoutes');
+const mentorRoutes = require('./routes/mentorRoutes');
 const commonRoutes = require('./routes/commonRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -45,6 +46,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/colleges', collegeRoutes);
 app.use('/api/v1/prti', prtiRoutes);
+app.use('/api/v1/mentor', mentorRoutes);
 
 // Health check endpoint (no auth required)
 app.get('/health', (req, res) => {

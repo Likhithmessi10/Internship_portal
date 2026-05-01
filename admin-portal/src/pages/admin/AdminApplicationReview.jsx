@@ -264,21 +264,21 @@ const AdminApplicationReview = () => {
                     </div>
 
                     <div className="grid grid-cols-3 gap-6">
-                        <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
+                        <div className="p-4 bg-surface-container-lowest/50 rounded-lg border border-outline-variant/5">
                             <p className="text-[10px] font-bold text-outline uppercase mb-1">Preferred Dept.</p>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-xl font-bold text-primary">{categoryStats.PREFERRED}</span>
                                 <span className="text-[10px] text-outline">Applicants</span>
                             </div>
                         </div>
-                        <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
+                        <div className="p-4 bg-surface-container-lowest/50 rounded-lg border border-outline-variant/5">
                             <p className="text-[10px] font-bold text-outline uppercase mb-1">Top Tier</p>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-xl font-bold text-primary">{categoryStats.TOP}</span>
                                 <span className="text-[10px] text-outline">Applicants</span>
                             </div>
                         </div>
-                        <div className="p-4 bg-white/50 rounded-lg border border-outline-variant/5">
+                        <div className="p-4 bg-surface-container-lowest/50 rounded-lg border border-outline-variant/5">
                             <p className="text-[10px] font-bold text-outline uppercase mb-1">General Pool</p>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-xl font-bold text-primary">{categoryStats.OTHER}</span>
@@ -314,7 +314,7 @@ const AdminApplicationReview = () => {
 
             {/* Candidate Table Area - Stitch Style */}
             <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
-                <div className="p-6 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
+                <div className="p-6 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-6 bg-surface-container-lowest">
                     <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
                         {FILTERS.map(f => (
                             <button key={f} onClick={() => setFilter(f)}

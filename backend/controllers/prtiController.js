@@ -56,7 +56,9 @@ const getCommitteeApplications = async (req, res) => {
                     select: {
                         title: true,
                         department: true,
-                        duration: true
+                        duration: true,
+                        evaluationCriteria: true,
+                        committee: true
                     }
                 },
                 mentor: {
@@ -68,9 +70,10 @@ const getCommitteeApplications = async (req, res) => {
                 },
                 shortlist: true,
                 committeeEvaluations: true,
+                evaluationScores: true,
                 documents: true
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { committeeFinalScore: 'desc' }
         });
 
         res.status(200).json({ success: true, data: applications });
@@ -81,23 +84,17 @@ const getCommitteeApplications = async (req, res) => {
 };
 
 /**
- * Submit committee evaluation score
+ * Submit committee evaluation score per question
  * POST /api/v1/prti/committees/evaluate
  */
 const submitEvaluation = async (req, res) => {
     try {
-        const { applicationId, score, comments } = req.body;
+        const { applicationId, scores } = req.body; // scores is an array of { questionId, score, comments }
         const evaluatorId = req.user.id;
         const evaluatorRole = req.user.role;
 
-        console.log(`[Evaluation] Received payload:`, { applicationId, score, comments, evaluatorId, evaluatorRole });
-
-        // Validate score
-        if (score === undefined || score < 1 || score > 100) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Score must be between 1 and 100' 
-            });
+        if (!Array.isArray(scores) || scores.length === 0) {
+            return res.status(400).json({ success: false, message: 'Scores array is required' });
         }
 
         const application = await prisma.application.findUnique({
@@ -105,7 +102,8 @@ const submitEvaluation = async (req, res) => {
             include: { 
                 internship: {
                     include: {
-                        committee: true
+                        committee: true,
+                        evaluationCriteria: true
                     }
                 }
             }
@@ -115,7 +113,6 @@ const submitEvaluation = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Application not found' });
         }
 
-        // Validate committee membership
         const committee = application.internship.committee;
         if (!committee) {
             return res.status(400).json({ success: false, message: 'Committee not formed for this internship' });
@@ -133,7 +130,6 @@ const submitEvaluation = async (req, res) => {
             });
         }
 
-        // Determine role for storage if not admin (admin acts as whatever role they are, but here we should probably be specific)
         let storageRole = evaluatorRole;
         if (isAdmin) {
             if (isHod) storageRole = 'HOD';
@@ -141,74 +137,95 @@ const submitEvaluation = async (req, res) => {
             else storageRole = 'CE_PRTI';
         }
 
-        // Upsert committee evaluation
-        const evaluation = await prisma.committeeEvaluation.upsert({
-            where: {
-                applicationId_memberId: {
-                    applicationId,
-                    memberId: evaluatorId
+        // Validate and Upsert all scores in a transaction
+        await prisma.$transaction(async (tx) => {
+            for (const s of scores) {
+                if (s.score === undefined || s.score < 0 || s.score > 50) {
+                    throw new Error(`Score must be between 0 and 50 for question ${s.questionId}`);
                 }
-            },
-            update: {
-                score: parseFloat(score),
-                comments,
-                role: storageRole,
-                updatedAt: new Date()
-            },
-            create: {
-                applicationId,
-                memberId: evaluatorId,
-                role: storageRole,
-                score: parseFloat(score),
-                comments
+                
+                await tx.evaluationScore.upsert({
+                    where: {
+                        applicationId_memberId_questionId: {
+                            applicationId,
+                            memberId: evaluatorId,
+                            questionId: s.questionId
+                        }
+                    },
+                    update: {
+                        score: parseFloat(s.score),
+                        comments: s.comments || null,
+                        role: storageRole,
+                        updatedAt: new Date()
+                    },
+                    create: {
+                        applicationId,
+                        memberId: evaluatorId,
+                        questionId: s.questionId,
+                        role: storageRole,
+                        score: parseFloat(s.score),
+                        comments: s.comments || null
+                    }
+                });
             }
-        });
 
-        console.log(`[Evaluation] DB Write Success for ${applicationId} by ${evaluatorId}`);
+            // Check if all members have submitted all questions
+            const criteriaCount = application.internship.evaluationCriteria.length;
+            const allScores = await tx.evaluationScore.findMany({
+                where: { applicationId }
+            });
 
-        // Update legacy shortlist table for compatibility and aggregate view
-        const shortlistData = {
-            evaluatedAt: new Date()
-        };
+            // Group by member role to check who submitted
+            const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
+            const hodScores = allScores.filter(s => s.role === 'HOD');
+            const mentorScores = allScores.filter(s => s.role === 'MENTOR');
 
-        if (storageRole === 'HOD') {
-            shortlistData.hodId = evaluatorId;
-            shortlistData.hodScore = parseFloat(score);
-        } else if (storageRole === 'MENTOR') {
-            shortlistData.mentorId = evaluatorId;
-            shortlistData.mentorScore = parseFloat(score);
-        } else {
-            shortlistData.prtiMemberId = evaluatorId;
-            shortlistData.prtiScore = parseFloat(score);
-        }
+            const hasPrti = prtiScores.length >= criteriaCount;
+            const hasHod = hodScores.length >= criteriaCount;
+            const hasMentor = mentorScores.length >= criteriaCount;
 
-        await prisma.shortlist.upsert({
-            where: { applicationId },
-            update: shortlistData,
-            create: {
-                applicationId,
-                ...shortlistData
+            if (hasPrti && hasHod && hasMentor) {
+                // Calculate average per question
+                let cumulativeScore = 0;
+                let breakdown = {};
+
+                application.internship.evaluationCriteria.forEach(q => {
+                    const prti = prtiScores.find(s => s.questionId === q.id)?.score || 0;
+                    const hod = hodScores.find(s => s.questionId === q.id)?.score || 0;
+                    const mentor = mentorScores.find(s => s.questionId === q.id)?.score || 0;
+                    
+                    const avg = (prti + hod + mentor) / 3;
+                    cumulativeScore += avg;
+                    breakdown[q.id] = avg;
+                });
+
+                await tx.application.update({
+                    where: { id: applicationId },
+                    data: {
+                        committeeFinalScore: parseFloat(cumulativeScore.toFixed(2)),
+                        scoreBreakdown: breakdown
+                    }
+                });
             }
         });
 
         // Get all evaluations to return updated state
-        const allEvaluations = await prisma.committeeEvaluation.findMany({
+        const allEvaluations = await prisma.evaluationScore.findMany({
             where: { applicationId }
         });
 
         res.status(200).json({ 
             success: true, 
-            message: 'Evaluation score submitted successfully',
+            message: 'Evaluation scores submitted successfully',
             data: { 
                 applicationId, 
-                score, 
                 evaluatorId,
                 evaluations: allEvaluations
             }
         });
     } catch (error) {
         console.error('[Evaluation] DB Write Failure:', error);
-        res.status(500).json({ success: false, message: 'Server Error during evaluation submission' });
+        res.status(500).json({ success: false, message: error.message || 'Server Error during evaluation submission' });
     }
 };
 
@@ -222,11 +239,11 @@ const giveFinalApproval = async (req, res) => {
         const evaluatorId = req.user.id;
         const evaluatorRole = req.user.role;
 
-        // Only PRTI Member (Committee Head) can give final approval
-        if (evaluatorRole !== 'CE_PRTI' && evaluatorRole !== 'COMMITTEE_MEMBER') {
+        // HOD makes final approval
+        if (evaluatorRole !== 'HOD') {
             return res.status(403).json({ 
                 success: false, 
-                message: 'Only PRTI Member (Committee Head) can give final approval' 
+                message: 'Only HOD can give final approval and select the candidate' 
             });
         }
 
@@ -251,20 +268,26 @@ const giveFinalApproval = async (req, res) => {
         }
 
         // Check if all 3 committee members have submitted scores
-        const evals = application.committeeEvaluations || [];
-        const hasPrti = evals.some(e => e.role === 'CE_PRTI' || e.role === 'COMMITTEE_MEMBER');
-        const hasHod = evals.some(e => e.role === 'HOD');
-        const hasMentor = evals.some(e => e.role === 'MENTOR');
+        const criteriaCount = application.internship.evaluationCriteria?.length || 0;
+        const allScores = await prisma.evaluationScore.findMany({ where: { applicationId } });
+        
+        const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
+        const hodScores = allScores.filter(s => s.role === 'HOD');
+        const mentorScores = allScores.filter(s => s.role === 'MENTOR');
+
+        const hasPrti = criteriaCount > 0 && prtiScores.length >= criteriaCount;
+        const hasHod = criteriaCount > 0 && hodScores.length >= criteriaCount;
+        const hasMentor = criteriaCount > 0 && mentorScores.length >= criteriaCount;
 
         if (!hasPrti || !hasHod || !hasMentor) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'All 3 committee members must submit scores before final approval' 
+                message: 'All 3 committee members must complete evaluation before final approval' 
             });
         }
 
-        // Calculate average score
-        const avgScore = evals.reduce((sum, e) => sum + e.score, 0) / evals.length;
+        // Use pre-calculated committeeFinalScore
+        const avgScore = application.committeeFinalScore || 0;
 
         const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
 
@@ -342,6 +365,11 @@ const getCommitteeStatus = async (req, res) => {
                 status: 'SHORTLISTED'
             },
             include: {
+                internship: {
+                    select: {
+                        evaluationCriteria: true
+                    }
+                },
                 student: {
                     select: {
                         fullName: true,
@@ -355,33 +383,34 @@ const getCommitteeStatus = async (req, res) => {
                     }
                 },
                 shortlist: true,
-                committeeEvaluations: true
+                committeeEvaluations: true,
+                evaluationScores: true
             }
         });
 
         const evaluationStatus = applications.map(app => {
-            const evals = app.committeeEvaluations || [];
-            const prtiEval = evals.find(e => e.role === 'CE_PRTI' || e.role === 'COMMITTEE_MEMBER');
-            const hodEval = evals.find(e => e.role === 'HOD');
-            const mentorEval = evals.find(e => e.role === 'MENTOR');
+            const allScores = app.evaluationScores || [];
+            const criteriaCount = app.internship?.evaluationCriteria?.length || 0;
+            
+            const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
+            const hodScores = allScores.filter(s => s.role === 'HOD');
+            const mentorScores = allScores.filter(s => s.role === 'MENTOR');
 
-            const scores = {
-                prti: prtiEval?.score ?? null,
-                hod: hodEval?.score ?? null,
-                mentor: mentorEval?.score ?? null
-            };
+            const hasPrti = criteriaCount > 0 && prtiScores.length >= criteriaCount;
+            const hasHod = criteriaCount > 0 && hodScores.length >= criteriaCount;
+            const hasMentor = criteriaCount > 0 && mentorScores.length >= criteriaCount;
 
-            const submittedCount = [scores.prti, scores.hod, scores.mentor].filter(s => s !== null).length;
+            const submittedCount = [hasPrti, hasHod, hasMentor].filter(Boolean).length;
 
             return {
                 applicationId: app.id,
                 studentName: app.student.fullName,
                 mentorName: app.mentor?.name || 'Not Assigned',
                 scores: {
-                    ...scores,
-                    average: submittedCount > 0 
-                        ? Math.round(( (scores.prti || 0) + (scores.hod || 0) + (scores.mentor || 0) ) / submittedCount)
-                        : null
+                    prtiComplete: hasPrti,
+                    hodComplete: hasHod,
+                    mentorComplete: hasMentor,
+                    average: app.committeeFinalScore
                 },
                 allScoresSubmitted: submittedCount === 3,
                 readyForApproval: submittedCount === 3

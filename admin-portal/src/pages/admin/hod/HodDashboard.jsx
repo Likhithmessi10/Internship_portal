@@ -131,7 +131,7 @@ const HodDashboard = () => {
                 >
                     <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Active Programs</span>
                     <div className="text-4xl font-extrabold text-primary mt-2 group-hover:scale-110 transition-transform origin-left">{internships.length}</div>
-                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded w-fit uppercase">
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-2 py-1 rounded w-fit uppercase">
                         <Activity size={12} /> Live Status
                     </div>
                 </button>
@@ -165,7 +165,7 @@ const HodDashboard = () => {
             {/* Internship Table */}
             {/* Internship Table - Stitch Style */}
             <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
-                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
+                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-lowest">
                     <div>
                         <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Departmental Programs</h3>
                         <p className="text-[10px] text-outline font-medium mt-0.5">Recruitment overview for {user?.department}</p>
@@ -190,7 +190,7 @@ const HodDashboard = () => {
                                 const effectiveOpenings = int.openingsCount || (int.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0);
                                 const isFilled = int.hiredCount >= effectiveOpenings && effectiveOpenings > 0;
                                 return (
-                                    <tr key={int.id} className="hover:bg-white dark:hover:bg-slate-800/50 transition-colors group">
+                                    <tr key={int.id} className="hover:bg-surface-container-high/50 transition-colors group">
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 bg-primary-container/10 rounded-lg flex items-center justify-center text-primary">

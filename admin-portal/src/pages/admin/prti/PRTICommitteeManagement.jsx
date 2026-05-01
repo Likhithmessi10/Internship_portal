@@ -111,17 +111,17 @@ const PRTICommitteeManagement = () => {
                     <div>
                         <h3 className="text-sm font-bold text-amber-800 mb-1">Committee Structure</h3>
                         <div className="grid grid-cols-3 gap-4 mt-3">
-                            <div className="p-3 bg-white rounded-lg border border-amber-100">
+                            <div className="p-3 bg-surface-container-lowest rounded-lg border border-amber-100/50">
                                 <p className="text-[9px] font-bold text-amber-700 uppercase">Member 1</p>
                                 <p className="text-sm font-black text-amber-900">HOD (Permanent)</p>
                                 <p className="text-[8px] text-amber-600 mt-1">Auto-assigned by department</p>
                             </div>
-                            <div className="p-3 bg-white rounded-lg border border-amber-100">
+                            <div className="p-3 bg-surface-container-lowest rounded-lg border border-amber-100/50">
                                 <p className="text-[9px] font-bold text-amber-700 uppercase">Member 2</p>
                                 <p className="text-sm font-black text-amber-900">Mentor (Assigned)</p>
                                 <p className="text-[8px] text-amber-600 mt-1">Assigned by HOD</p>
                             </div>
-                            <div className="p-3 bg-white rounded-lg border border-amber-100">
+                            <div className="p-3 bg-surface-container-lowest rounded-lg border border-amber-100/50">
                                 <p className="text-[9px] font-bold text-amber-700 uppercase">Member 3</p>
                                 <p className="text-sm font-black text-amber-900">PRTI Representative</p>
                                 <p className="text-[8px] text-amber-600 mt-1">Editable by PRTI member</p>
@@ -132,7 +132,7 @@ const PRTICommitteeManagement = () => {
             </div>
 
             {/* Committee List */}
-            <div className="bg-white rounded-[2rem] border border-outline-variant/20 shadow-xl shadow-primary/5 overflow-hidden">
+            <div className="bg-surface-container-lowest rounded-[2rem] border border-outline-variant/20 shadow-xl shadow-primary/5 overflow-hidden">
                 <div className="p-8 border-b border-outline-variant/10 flex items-center justify-between">
                     <h3 className="text-xl font-black text-primary flex items-center gap-3">
                         <Users size={24} /> Internship Committees ({internships.length})

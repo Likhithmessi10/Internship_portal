@@ -72,13 +72,13 @@ const PrtiInterns = () => {
                     <input 
                         type="text" 
                         placeholder="Search by name, college, or tracking ID..."
-                        className="w-full bg-white dark:bg-slate-900 border-none rounded-xl pl-10 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-subtle placeholder:text-outline/50"
+                        className="w-full bg-surface-container-lowest border-none rounded-xl pl-10 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-subtle placeholder:text-outline/50"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-slate-900 rounded-xl shadow-subtle">
+                    <div className="flex items-center gap-2 px-4 py-3 bg-surface-container-lowest rounded-xl shadow-subtle">
                         <Filter size={16} className="text-outline" />
                         <select 
                             className="bg-transparent border-none text-xs font-bold text-primary focus:ring-0 p-0 pr-8"

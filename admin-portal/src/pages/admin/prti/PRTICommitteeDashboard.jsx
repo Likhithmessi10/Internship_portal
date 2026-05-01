@@ -48,11 +48,16 @@ const PRTICommitteeDashboard = () => {
     };
 
     const getEvaluationStatus = (app) => {
-        const evals = app.committeeEvaluations || [];
-        const roles = evals.map(e => e.role);
-        const hasPrti = roles.some(r => r === 'CE_PRTI' || r === 'COMMITTEE_MEMBER');
-        const hasHod = roles.includes('HOD');
-        const hasMentor = roles.includes('MENTOR');
+        const allScores = app.evaluationScores || [];
+        const criteriaCount = app.internship?.evaluationCriteria?.length || 0;
+        
+        const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
+        const hodScores = allScores.filter(s => s.role === 'HOD');
+        const mentorScores = allScores.filter(s => s.role === 'MENTOR');
+
+        const hasPrti = criteriaCount > 0 && prtiScores.length >= criteriaCount;
+        const hasHod = criteriaCount > 0 && hodScores.length >= criteriaCount;
+        const hasMentor = criteriaCount > 0 && mentorScores.length >= criteriaCount;
 
         const submitted = [hasPrti, hasHod, hasMentor].filter(Boolean).length;
         
@@ -126,7 +131,7 @@ const PRTICommitteeDashboard = () => {
             </section>
 
             {/* Applications Table */}
-            <div className="bg-white rounded-[2rem] overflow-hidden border border-outline-variant/20 shadow-xl shadow-primary/5">
+            <div className="bg-surface-container-lowest rounded-[2rem] overflow-hidden border border-outline-variant/20 shadow-xl shadow-primary/5">
                 <div className="p-8 border-b border-outline-variant/10 flex items-center justify-between">
                     <h3 className="text-xl font-black text-primary">Committee Applications</h3>
                     <div className="flex gap-2">
@@ -203,25 +208,14 @@ const PRTICommitteeDashboard = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-6 text-center">
-                                            {app.committeeEvaluations ? (
-                                                <div className="flex items-center justify-center gap-1">
-                                                    {['CE_PRTI', 'HOD', 'MENTOR'].map((role, i) => {
-                                                        const evalItem = app.committeeEvaluations.find(e => {
-                                                            if (role === 'CE_PRTI') return e.role === 'CE_PRTI' || e.role === 'COMMITTEE_MEMBER';
-                                                            return e.role === role;
-                                                        });
-                                                        const score = evalItem?.score;
-                                                        return (
-                                                            <div key={i} className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-sm ${
-                                                                score ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
-                                                            }`} title={role}>
-                                                                {score || '--'}
-                                                            </div>
-                                                        );
-                                                    })}
+                                            {app.committeeFinalScore !== null ? (
+                                                <div className="flex items-center justify-center">
+                                                    <div className="px-3 py-2 bg-primary/10 text-primary font-black rounded-lg text-lg border border-primary/20">
+                                                        {app.committeeFinalScore} <span className="text-[10px] uppercase tracking-widest opacity-60">/ 50</span>
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <p className="text-[9px] text-outline">No scores yet</p>
+                                                <p className="text-[9px] text-outline font-bold uppercase tracking-widest bg-surface-container-high px-2 py-1 rounded-md inline-block">Scores Pending</p>
                                             )}
                                         </td>
                                         <td className="px-6 py-6 text-right">
@@ -279,7 +273,7 @@ const PRTICommitteeDashboard = () => {
 };
 
 const StatCard = ({ label, value, icon, color, sub }) => (
-    <div className="col-span-12 lg:col-span-3 bg-white p-6 rounded-[2rem] border border-outline-variant/20 shadow-xl shadow-primary/5 group hover:border-primary/30 transition-all duration-300">
+    <div className="col-span-12 lg:col-span-3 bg-surface-container-lowest p-6 rounded-[2rem] border border-outline-variant/20 shadow-xl shadow-primary/5 group hover:border-primary/30 transition-all duration-300">
         <div className="flex justify-between items-start mb-4">
             <span className="text-[10px] font-black text-outline uppercase tracking-[0.2em]">{label}</span>
             <div className={`w-10 h-10 bg-${color}-500/10 text-${color}-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
