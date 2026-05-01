@@ -84,7 +84,7 @@ model StudentProfile {
   phone             String
   dob               DateTime
   address           String
-  aadhar            String          @unique
+  aadhaarNumber     String          @unique @map("aadhar")
   collegeName       String
   collegeCode       String?
   university        String
@@ -182,6 +182,7 @@ model Application {
   stipend    Stipend?
   attendance Attendance?
   workAssignments WorkAssignment[]
+  committeeEvaluations CommitteeEvaluation[]
 
   @@unique([studentId, internshipId, assignedRole])
   @@index([studentId])
@@ -207,16 +208,11 @@ model Shortlist {
   id            String   @id @default(uuid())
   applicationId String   @unique
 
-  // Committee evaluation scores (3 members)
-  // Member 1: PRTI Representative (Head)
+  // Committee evaluation scores (Legacy fields - keeping for compatibility but will transition to CommitteeEvaluation)
   prtiMemberId  String?
   prtiScore     Float?   @default(0)
-  
-  // Member 2: HOD (Permanent)
   hodId         String?
   hodScore      Float?   @default(0)
-  
-  // Member 3: Assigned Mentor
   mentorId      String?
   mentorScore   Float?   @default(0)
   
@@ -226,6 +222,21 @@ model Shortlist {
   evaluatedAt   DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model CommitteeEvaluation {
+  id            String   @id @default(uuid())
+  applicationId String
+  memberId      String
+  role          Role
+  score         Float
+  comments      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, memberId])
 }
 
 model Stipend {

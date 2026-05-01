@@ -9,15 +9,7 @@ const crypto = require('crypto');
  */
 const upsertProfile = async (req, res) => {
     try {
-        let {
-            fullName, collegeRollNumber, phone, dob, address, aadhar,
-            collegeName, university, degree, branch,
-            yearOfStudy, cgpa, collegeCategory, nirfRanking,
-            hasExperience, hasProjects, hasCertifications,
-            experienceDesc, projectsDesc, skills, photoUrl,
-            linkedinUrl, githubUrl
-        } = req.body;
-
+        console.log('>>> Profile update payload:', JSON.stringify(req.body, null, 2));
         const userId = req.user.id;
 
         // Ensure user is a student
@@ -25,9 +17,32 @@ const upsertProfile = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Only students can manage student profiles' });
         }
 
+        let {
+            fullName, collegeRollNumber, phone, dob, address, aadhar, aadhaarNumber,
+            collegeName, university, degree, branch,
+            yearOfStudy, cgpa, collegeCategory, nirfRanking,
+            hasExperience, hasProjects, hasCertifications,
+            experienceDesc, projectsDesc, skills, photoUrl,
+            linkedinUrl, githubUrl
+        } = req.body;
+
+        // Standardize: Prefer aadhaarNumber if present, fallback to aadhar
+        const finalAadhaar = aadhaarNumber || aadhar;
+
+        // Validation for Aadhaar Number (12 digits)
+        if (finalAadhaar && !/^\d{12}$/.test(finalAadhaar.replace(/[-\s]/g, ''))) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid Aadhaar Number format. It must be exactly 12 digits.' 
+            });
+        }
+
         // MVP Profile Validation
-        if (!fullName || !collegeName || !branch || !yearOfStudy) {
-            return res.status(400).json({ success: false, message: 'fullName, collegeName, branch, and yearOfStudy are required fields.' });
+        if (!fullName || !collegeName || !branch || !yearOfStudy || !finalAadhaar || !dob || !phone || !university || !degree) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Mandatory fields missing: fullName, collegeName, branch, yearOfStudy, aadhaarNumber, dob, phone, university, or degree' 
+            });
         }
 
         // Requirement 6: Validate college against trusted dataset
@@ -50,17 +65,19 @@ const upsertProfile = async (req, res) => {
             validatedCategory = allowedCategories.includes(collegeCategory) ? collegeCategory : 'OTHER';
         }
 
+        const parsedCgpa = cgpa ? parseFloat(cgpa) : 0.0;
+
         const profileData = {
-            fullName,
-            collegeRollNumber,
-            phone,
+            fullName: fullName || "",
+            collegeRollNumber: collegeRollNumber || null,
+            phone: phone || "",
             dob: new Date(dob),
-            address,
-            aadhar,
-            collegeName: finalCollegeName,
-            university,
-            degree,
-            branch,
+            address: address || "",
+            aadhaarNumber: finalAadhaar || "",
+            collegeName: finalCollegeName || "",
+            university: university || "",
+            degree: degree || "",
+            branch: branch || "",
             yearOfStudy: parseInt(yearOfStudy) || 1,
             cgpa: parsedCgpa,
             collegeCategory: validatedCategory,
@@ -100,7 +117,7 @@ const upsertProfile = async (req, res) => {
             });
         }
 
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: `Server Error: ${error.message}` });
     }
 };
 

@@ -103,7 +103,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/prti/committee" element={
-            <ProtectedRoute allowedRoles={['CE_PRTI', 'COMMITTEE_MEMBER', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'COMMITTEE_MEMBER', 'ADMIN', 'HOD', 'MENTOR']}>
               <AdminLayout><PRTICommitteeDashboard /></AdminLayout>
             </ProtectedRoute>
           } />

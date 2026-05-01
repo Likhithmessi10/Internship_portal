@@ -22,13 +22,11 @@ const router = express.Router();
 
 // All routes require authentication and PRTI/Committee role
 router.use(protect);
-router.use(authorize('CE_PRTI', 'ADMIN'));
-
 // Committee Management
-router.get('/committees/applications', getCommitteeApplications);
-router.post('/committees/evaluate', submitEvaluation);
-router.post('/committees/approve', giveFinalApproval);
-router.get('/committees/:internshipId/status', getCommitteeStatus);
+router.get('/committees/applications', authorize('CE_PRTI', 'ADMIN', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'), getCommitteeApplications);
+router.post('/committees/evaluate', authorize('CE_PRTI', 'ADMIN', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'), submitEvaluation);
+router.post('/committees/approve', authorize('CE_PRTI', 'ADMIN'), giveFinalApproval);
+router.get('/committees/:internshipId/status', authorize('CE_PRTI', 'ADMIN', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'), getCommitteeStatus);
 
 // Committee Member Management (PRTI Representative)
 router.get('/committees/:internshipId', getCommittee);

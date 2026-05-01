@@ -48,14 +48,13 @@ const PRTICommitteeDashboard = () => {
     };
 
     const getEvaluationStatus = (app) => {
-        const shortlist = app.shortlist;
-        if (!shortlist) return { submitted: 0, total: 3, ready: false };
-        
-        const submitted = [
-            shortlist.member1Score,
-            shortlist.member2Score,
-            shortlist.member3Score
-        ].filter(s => s !== null && s !== undefined).length;
+        const evals = app.committeeEvaluations || [];
+        const roles = evals.map(e => e.role);
+        const hasPrti = roles.some(r => r === 'CE_PRTI' || r === 'COMMITTEE_MEMBER');
+        const hasHod = roles.includes('HOD');
+        const hasMentor = roles.includes('MENTOR');
+
+        const submitted = [hasPrti, hasHod, hasMentor].filter(Boolean).length;
         
         return {
             submitted,
@@ -204,15 +203,22 @@ const PRTICommitteeDashboard = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-6 text-center">
-                                            {app.shortlist ? (
+                                            {app.committeeEvaluations ? (
                                                 <div className="flex items-center justify-center gap-1">
-                                                    {[app.shortlist.member1Score, app.shortlist.member2Score, app.shortlist.member3Score].map((score, i) => (
-                                                        <div key={i} className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-sm ${
-                                                            score ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
-                                                        }`}>
-                                                            {score || '--'}
-                                                        </div>
-                                                    ))}
+                                                    {['CE_PRTI', 'HOD', 'MENTOR'].map((role, i) => {
+                                                        const evalItem = app.committeeEvaluations.find(e => {
+                                                            if (role === 'CE_PRTI') return e.role === 'CE_PRTI' || e.role === 'COMMITTEE_MEMBER';
+                                                            return e.role === role;
+                                                        });
+                                                        const score = evalItem?.score;
+                                                        return (
+                                                            <div key={i} className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-sm ${
+                                                                score ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
+                                                            }`} title={role}>
+                                                                {score || '--'}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : (
                                                 <p className="text-[9px] text-outline">No scores yet</p>

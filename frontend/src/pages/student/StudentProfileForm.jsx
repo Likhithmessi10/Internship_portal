@@ -18,7 +18,7 @@ const StudentProfileForm = () => {
 
     // Initial empty state
     const [formData, setFormData] = useState({
-        fullName: '', rollNumber: '', collegeRollNumber: '', phone: '', dob: '', address: '', aadhar: '', aadhaarNumber: '',
+        fullName: '', rollNumber: '', collegeRollNumber: '', phone: '', dob: '', address: '', aadhaarNumber: '',
         collegeName: '', manualCollegeName: '', university: '', degree: '', branch: '', yearOfStudy: 1,
         cgpa: '', collegeCategory: 'OTHER', nirfRanking: '',
         hasExperience: false, hasProjects: false, hasCertifications: false,
@@ -40,7 +40,7 @@ const StudentProfileForm = () => {
                         ...prev,
                         ...d,
                         dob: dDob,
-                        aadhaarNumber: d.aadhaarNumber || d.aadhar || '',
+                        aadhaarNumber: d.aadhaarNumber || '',
                         id: d.id // Ensure ID is present for checking Update vs Submit
                     }));
                 }
@@ -163,7 +163,6 @@ const StudentProfileForm = () => {
 
         const submissionData = {
             ...formData,
-            aadhar: formData.aadhaarNumber,
             collegeName: formData.collegeName === "Other Recognized University / College"
                 ? formData.manualCollegeName
                 : formData.collegeName,
@@ -302,27 +301,27 @@ const StudentProfileForm = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Full Legal Name</label>
-                                    <input type="text" name="fullName" className="input-field" value={formData.fullName} onChange={handleChange} placeholder="As per Aadhaar" />
+                                    <input type="text" name="fullName" className="input-field" value={formData.fullName || ""} onChange={handleChange} placeholder="As per Aadhaar" />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">College/University Roll Number</label>
-                                    <input type="text" name="collegeRollNumber" className="input-field font-mono" value={formData.collegeRollNumber} onChange={handleChange} placeholder="e.g. 21BE0012" />
+                                    <input type="text" name="collegeRollNumber" className="input-field font-mono" value={formData.collegeRollNumber || ""} onChange={handleChange} placeholder="e.g. 21BE0012" />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Aadhaar Number</label>
-                                    <input type="text" name="aadhaarNumber" className="input-field font-mono" value={formData.aadhaarNumber} onChange={handleChange} placeholder="XXXX-XXXX-XXXX" />
+                                    <input type="text" name="aadhaarNumber" className="input-field font-mono" value={formData.aadhaarNumber || ""} onChange={handleChange} placeholder="XXXX-XXXX-XXXX" />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Phone Number</label>
-                                    <input type="tel" name="phone" className="input-field" value={formData.phone} onChange={handleChange} placeholder="+91 XXXXX XXXXX" />
+                                    <input type="tel" name="phone" className="input-field" value={formData.phone || ""} onChange={handleChange} placeholder="+91 XXXXX XXXXX" />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Date of Birth</label>
-                                    <input type="date" name="dob" className="input-field" value={formData.dob} onChange={handleChange} />
+                                    <input type="date" name="dob" className="input-field" value={formData.dob || ""} onChange={handleChange} />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Permanent Address</label>
-                                    <textarea name="address" className="input-field h-32 resize-none" value={formData.address} onChange={handleChange} placeholder="House No, Street, City, Pincode..."></textarea>
+                                    <textarea name="address" className="input-field h-32 resize-none" value={formData.address || ""} onChange={handleChange} placeholder="House No, Street, City, Pincode..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -405,7 +404,7 @@ const StudentProfileForm = () => {
                                             name="manualCollegeName"
                                             className="input-field border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-500/10"
                                             placeholder="Full name of your institution..."
-                                            value={formData.manualCollegeName}
+                                            value={formData.manualCollegeName || ""}
                                             onChange={handleChange}
                                         />
                                     </div>
@@ -426,20 +425,20 @@ const StudentProfileForm = () => {
 
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">University Affiliation</label>
-                                    <input type="text" name="university" className="input-field" value={formData.university} onChange={handleChange} placeholder="e.g. JNTU Kakinada" />
+                                    <input type="text" name="university" className="input-field" value={formData.university || ""} onChange={handleChange} placeholder="e.g. JNTU Kakinada" />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Degree</label>
-                                    <input type="text" name="degree" placeholder="e.g. B.Tech / M.Tech" className="input-field" value={formData.degree} onChange={handleChange} />
+                                    <input type="text" name="degree" placeholder="e.g. B.Tech / M.Tech" className="input-field" value={formData.degree || ""} onChange={handleChange} />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Branch / Specialization</label>
-                                    <input type="text" name="branch" placeholder="e.g. Electrical & Electronics" className="input-field" value={formData.branch} onChange={handleChange} />
+                                    <input type="text" name="branch" placeholder="e.g. Electrical & Electronics" className="input-field" value={formData.branch || ""} onChange={handleChange} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Year</label>
-                                        <select name="yearOfStudy" className="input-field py-3.5" value={formData.yearOfStudy} onChange={handleChange}>
+                                        <select name="yearOfStudy" className="input-field py-3.5" value={formData.yearOfStudy || 1} onChange={handleChange}>
                                             <option value="1">1st Year</option>
                                             <option value="2">2nd Year</option>
                                             <option value="3">3rd Year</option>
@@ -456,7 +455,7 @@ const StudentProfileForm = () => {
                                             max="10"
                                             name="cgpa"
                                             className="input-field"
-                                            value={formData.cgpa}
+                                            value={formData.cgpa || ""}
                                             onChange={(e) => {
                                                 const val = parseFloat(e.target.value);
                                                 if (val > 10) return; // Prevent typing > 10
@@ -488,7 +487,7 @@ const StudentProfileForm = () => {
                                         <label htmlFor="hasExperience" className="font-black text-gray-900 dark:text-white uppercase tracking-widest cursor-pointer font-rajdhani">Previous Internships</label>
                                     </div>
                                     {formData.hasExperience && (
-                                        <textarea name="experienceDesc" className="input-field bg-white dark:bg-slate-900/60 h-32" placeholder="Describe your roles, responsibilities, and achievements at previous internships..." value={formData.experienceDesc} onChange={handleChange}></textarea>
+                                        <textarea name="experienceDesc" className="input-field bg-white dark:bg-slate-900/60 h-32" placeholder="Describe your roles, responsibilities, and achievements at previous internships..." value={formData.experienceDesc || ""} onChange={handleChange}></textarea>
                                     )}
                                 </div>
 
@@ -498,13 +497,13 @@ const StudentProfileForm = () => {
                                         <label htmlFor="hasProjects" className="font-black text-gray-900 dark:text-white uppercase tracking-widest cursor-pointer font-rajdhani">Major Projects / Thesis</label>
                                     </div>
                                     {formData.hasProjects && (
-                                        <textarea name="projectsDesc" className="input-field bg-white dark:bg-slate-900/60 h-32" placeholder="Highlight 1-2 major projects relevant to power systems, IT, or management..." value={formData.projectsDesc} onChange={handleChange}></textarea>
+                                        <textarea name="projectsDesc" className="input-field bg-white dark:bg-slate-900/60 h-32" placeholder="Highlight 1-2 major projects relevant to power systems, IT, or management..." value={formData.projectsDesc || ""} onChange={handleChange}></textarea>
                                     )}
                                 </div>
 
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Technical & Soft Skills</label>
-                                    <input type="text" name="skills" className="input-field" placeholder="E.g. MATLAB, AutoCAD, Python, Project Management (Comma separated)" value={formData.skills} onChange={handleChange} />
+                                    <input type="text" name="skills" className="input-field" placeholder="E.g. MATLAB, AutoCAD, Python, Project Management (Comma separated)" value={formData.skills || ""} onChange={handleChange} />
                                 </div>
                             </div>
                         </div>
@@ -538,7 +537,7 @@ const StudentProfileForm = () => {
                                         name="linkedinUrl"
                                         className="input-field bg-white dark:bg-slate-900/60"
                                         placeholder="https://www.linkedin.com/in/your-name"
-                                        value={formData.linkedinUrl}
+                                        value={formData.linkedinUrl || ""}
                                         onChange={handleChange}
                                     />
                                 </div>
@@ -559,7 +558,7 @@ const StudentProfileForm = () => {
                                         name="githubUrl"
                                         className="input-field bg-white dark:bg-slate-900/60"
                                         placeholder="https://github.com/your-username"
-                                        value={formData.githubUrl}
+                                        value={formData.githubUrl || ""}
                                         onChange={handleChange}
                                     />
                                 </div>

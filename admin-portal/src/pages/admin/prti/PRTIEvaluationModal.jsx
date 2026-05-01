@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import api from '../../../utils/api';
 import { Star, CheckCircle, XCircle, X, Send } from 'lucide-react';
 import Select from '../../../components/ui/Select';
+import { useAuth } from '../../../context/AuthContext';
 
 const PRTIEvaluationModal = ({ application, onClose }) => {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState('evaluate'); // 'evaluate' or 'approve'
     const [score, setScore] = useState('');
@@ -11,16 +13,17 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
     const [assignedRole, setAssignedRole] = useState('');
     const [rejectionReason, setRejectionReason] = useState('');
 
+    const evals = application.committeeEvaluations || [];
+    const prtiEval = evals.find(e => e.role === 'CE_PRTI' || e.role === 'COMMITTEE_MEMBER');
+    const hodEval = evals.find(e => e.role === 'HOD');
+    const mentorEval = evals.find(e => e.role === 'MENTOR');
+
     const evalStatus = {
-        submitted: [
-            application.shortlist?.member1Score,
-            application.shortlist?.member2Score,
-            application.shortlist?.member3Score
-        ].filter(s => s !== null && s !== undefined).length,
+        submitted: [prtiEval, hodEval, mentorEval].filter(Boolean).length,
         scores: {
-            member1: application.shortlist?.member1Score,
-            member2: application.shortlist?.member2Score,
-            member3: application.shortlist?.member3Score
+            member1: prtiEval?.score,
+            member2: hodEval?.score,
+            member3: mentorEval?.score
         }
     };
 
@@ -35,7 +38,6 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
             await api.post('/prti/committees/evaluate', {
                 applicationId: application.id,
                 score: parseInt(score),
-                memberType: 'PRTI',
                 comments
             });
             alert('Evaluation score submitted successfully!');
@@ -118,9 +120,9 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
                     <div className="p-4 bg-surface-container-low rounded-xl">
                         <h4 className="text-sm font-black text-primary uppercase tracking-widest mb-4">Committee Scores</h4>
                         <div className="grid grid-cols-3 gap-4">
-                            <ScoreCard label="Member 1 (PRTI)" score={evalStatus.scores.member1} isCurrent={true} />
-                            <ScoreCard label="Member 2 (HOD)" score={evalStatus.scores.member2} />
-                            <ScoreCard label="Member 3 (Mentor)" score={evalStatus.scores.member3} />
+                            <ScoreCard label="Member 1 (PRTI)" score={evalStatus.scores.member1} isCurrent={user?.role === 'CE_PRTI' || user?.role === 'COMMITTEE_MEMBER'} />
+                            <ScoreCard label="Member 2 (HOD)" score={evalStatus.scores.member2} isCurrent={user?.role === 'HOD'} />
+                            <ScoreCard label="Member 3 (Mentor)" score={evalStatus.scores.member3} isCurrent={user?.role === 'MENTOR'} />
                         </div>
                         {averageScore && (
                             <div className="mt-4 p-3 bg-primary/10 rounded-lg text-center">
@@ -199,7 +201,7 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
                                     <Send size={14} /> Submit Your Evaluation
                                 </p>
                                 <p className="text-[9px] text-amber-700 mt-1">
-                                    As PRTI Member (Committee Head), submit your evaluation score.
+                                    As a committee member ({user?.role}), please submit your evaluation score for this applicant.
                                 </p>
                             </div>
 

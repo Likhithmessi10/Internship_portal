@@ -111,12 +111,20 @@ const CommitteeCard = ({ internship, onManage }) => {
             <div className="p-6 space-y-4 flex-1">
                 <MemberRow label="Assigned Mentor" name={committee?.membersData?.mentorName || 'Pending assignment'} icon="person" active={!!committee?.membersData?.mentorId} />
                 <MemberRow label="PRTI Member" name={committee?.membersData?.prtiMemberName || 'Pending assignment'} icon="shield" active={!!committee?.membersData?.prtiMemberId} />
-                <button 
-                    onClick={onManage}
-                    className="w-full mt-4 flex items-center justify-center gap-2 py-2 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                    <Edit size={14} /> MANAGE COMMITTEE
-                </button>
+                <div className="flex gap-2 mt-4">
+                    <button 
+                        onClick={onManage}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-surface-container-high text-primary text-[10px] font-bold rounded-lg hover:bg-surface-variant transition-colors"
+                    >
+                        <Edit size={14} /> MANAGE
+                    </button>
+                    <a 
+                        href="/prti/committee"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-sm">rate_review</span> EVALUATE
+                    </a>
+                </div>
             </div>
 
             <div className="px-6 py-4 bg-surface-container-high/30 border-t border-outline-variant/10 flex justify-between items-center">

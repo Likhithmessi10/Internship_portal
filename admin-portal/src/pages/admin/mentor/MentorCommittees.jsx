@@ -123,9 +123,9 @@ const MentorCommittees = () => {
                             </div>
 
                             {/* Meeting Info */}
-                            {(committee.meetLink || committee.interviewDate) && (
-                                <div className="border-t border-slate-100 dark:border-border/50 pt-4">
-                                    <h4 className="text-sm font-semibold text-slate-400 dark:text-gray-400 uppercase mb-3">Meeting Details</h4>
+                            <div className="border-t border-slate-100 dark:border-border/50 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div className="space-y-3 w-full md:w-auto">
+                                    <h4 className="text-sm font-semibold text-slate-400 dark:text-gray-400 uppercase">Meeting Details</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {committee.interviewDate && (
                                             <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-gray-400">
@@ -143,7 +143,13 @@ const MentorCommittees = () => {
                                         )}
                                     </div>
                                 </div>
-                            )}
+                                <a 
+                                    href="/prti/committee"
+                                    className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Users size={16} /> START EVALUATION
+                                </a>
+                            </div>
                         </div>
                     ))}
                 </div>
