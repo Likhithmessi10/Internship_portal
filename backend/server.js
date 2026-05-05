@@ -12,14 +12,32 @@ const prisma = require('./lib/prisma');
 const PORT = process.env.PORT || 5001;
 
 // ============================================
-// SECURITY MIDDLEWARE
+// SECURITY & UTILITY MIDDLEWARE
 // ============================================
+const helmet = require('./middleware/securityHeaders');
+const morgan = require('morgan');
+const { generalLimiter } = require('./middleware/rateLimiter');
+
+app.use(helmet); // Security headers
+app.use(morgan(process.env.MORGAN_LOG_FORMAT || 'dev')); // Request logging
+
+const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').filter(Boolean);
 app.use(cors({
-    origin: '*', // Adjust as needed for production
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(generalLimiter); // Apply general rate limiting to all requests
 
 const { sanitizeInput } = require('./middleware/sanitizer');
 app.use(sanitizeInput);

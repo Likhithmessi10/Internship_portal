@@ -1,56 +1,63 @@
 const { maskSensitiveData } = require('./sanitizer');
 
 const errorHandler = (err, req, res, next) => {
-    // Log error internally (with sensitive data masked)
-    const maskedError = {
-        message: err.message,
-        code: err.code,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : 'Hidden in production'
-    };
-    console.error(`[Error Handler] ${err.message}`);
+    let statusCode = err.statusCode || 500;
+    let message = err.message || 'An error occurred. Please try again.';
+    let errorCode = err.errorCode || 'INTERNAL_ERROR';
+    let errors = err.errors || null;
 
-    // Some validation libraries might set their own status codes on the error object
-    let statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+    // Log error internally (with stack trace in dev)
+    if (process.env.NODE_ENV === 'development') {
+        console.error(`[Error Handler] ${err.stack}`);
+    } else {
+        console.error(`[Error Handler] ${err.message}`);
+    }
 
-    // Handle Prisma specific errors (example: duplicate entry P2002)
+    // Handle Prisma specific errors (duplicate entry P2002)
     if (err.code === 'P2002') {
         statusCode = 400;
-        err.message = 'Duplicate entry detected for one or more unique fields.';
+        message = 'Duplicate entry detected for one or more unique fields.';
+        errorCode = 'DUPLICATE_ENTRY';
     }
 
     // Handle Prisma record not found
     if (err.code === 'P2025') {
         statusCode = 404;
-        err.message = 'Record not found.';
+        message = 'Record not found.';
+        errorCode = 'NOT_FOUND';
     }
 
     // Handle Prisma invalid input
     if (err.code === 'P2003') {
         statusCode = 400;
-        err.message = 'Invalid reference to related record.';
+        message = 'Invalid reference to related record.';
+        errorCode = 'INVALID_REFERENCE';
     }
 
     // Handle JWT errors
     if (err.name === 'JsonWebTokenError') {
         statusCode = 401;
-        err.message = 'Invalid token.';
+        message = 'Invalid token.';
+        errorCode = 'INVALID_TOKEN';
     }
 
     if (err.name === 'TokenExpiredError') {
         statusCode = 401;
-        err.message = 'Token expired.';
+        message = 'Token expired.';
+        errorCode = 'TOKEN_EXPIRED';
     }
 
-    // Generic error message for production (hide internal details)
+    // Mask internal error messages in production unless they are operational errors
     const isProduction = process.env.NODE_ENV === 'production';
+    const isOperational = err.isOperational || false;
     
     res.status(statusCode).json({
         success: false,
-        message: isProduction ? 'An error occurred. Please try again.' : err.message,
+        message: isProduction && !isOperational ? 'An internal error occurred. Please try again.' : message,
+        errorCode: errorCode,
+        errors: errors,
         // Provide stack trace in development mode only
-        stack: isProduction ? null : err.stack,
-        // Internal error code for debugging (optional)
-        errorCode: isProduction ? null : err.code
+        stack: isProduction ? null : err.stack
     });
 };
 

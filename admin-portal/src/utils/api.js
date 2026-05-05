@@ -21,4 +21,20 @@ apiClient.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// Interceptor to handle global response errors
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Auto-logout on 401 errors
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/admin/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default apiClient;
