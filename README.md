@@ -1,138 +1,347 @@
 # APTRANSCO Internship Management Portal
 
-The APTRANSCO Internship Management Portal is an enterprise-grade solution for managing student internships. It features a student portal, a dedicated standalone admin dashboard, and a robust Node.js/Prisma backend.
+The APTRANSCO Internship Management Portal is a multi-application system for managing internship intake, evaluation, onboarding, and execution.
 
-## 🚀 Key Features
-
-### 🎓 For Students
-- **Profile Builder**: Multi-step academic and experience profile setup.
-- **Application Flow**: Single-click applications to internships with document upload.
-- **NOC Generator**: Instant download of official APTRANSCO No Objection Certificate (NOC) templates.
-- **Tracking**: Real-time status updates (Pending, Shortlisted, Hired).
-
-### 💼 For Administrators
-- **Standalone Portal**: A dedicated, premium admin interface for secure internship management.
-- **Internship Creation**: Define internships with quotas, roles, and departments.
-- **Application Review**: Detailed review of student profiles and documents.
-- **Hiring System**: Effortless hiring with roll number and role assignment.
-- **Data Export**: Export student data to formatted Excel files.
-
-## 🔐 Security & Engineering
-- **Rate Limiting**: Integrated global protection against brute-force and DDoS attacks.
-- **Role-Based Access Control (RBAC)**: Strict separation of Student and Admin roles with server-side validation.
-- **JWT Authentication**: Secure session management with industry-standard token expiry.
-- **Prisma ORM**: Type-safe database queries and performance-optimized schema with indexing.
+This repository contains:
+- `backend` (Node.js + Express + Prisma + PostgreSQL)
+- `frontend` (Student portal, Vite + React)
+- `admin-portal` (Admin/HOD/PRTI/Mentor portal, Vite + React)
 
 ---
 
-## 🛠 Prerequisites
+## Features
 
-- **Node.js**: v18+
-- **PostgreSQL**: Local or cloud instance.
-- **npm**: v9+
+### Student
+- Profile creation and academic details
+- Internship browsing and application
+- Document upload and application tracking
+- Internship progress views (attendance/tasks where enabled)
+
+### Admin/HOD/PRTI/Mentor
+- Internship creation and role/quota configuration
+- Application review and shortlisting
+- Committee-based per-question evaluation
+- Final selection workflow
+- Mentor intern/task/attendance operations
+- Reports and data export
 
 ---
 
-## 📋 Quick Start Guide
+## Prerequisites
 
-### 1. Initial Installation
-From the **root directory**, simply run the automated setup script to install all dependencies and generate your `.env` configuration files:
+Install these before setup:
 
-**Windows**:
+- **Node.js**: 18+ recommended (22+ supported)
+- **npm**: 9+ recommended
+- **PostgreSQL**: 14+ recommended
+- **Git**: latest
+- **Windows** (for `setup-all.bat`)
+
+Verify installation:
+
+```powershell
+node -v
+npm -v
+psql --version
+```
+
+---
+
+## Project Structure
+
+```text
+internship portal/
+  backend/               # API server, Prisma schema, controllers, services
+  frontend/              # Student app
+  admin-portal/          # Admin operations app
+  setup-all.bat          # Windows automated setup script
+  package.json           # Root scripts (run all apps)
+```
+
+---
+
+## Quick Setup (Windows - Recommended)
+
+From repository root:
+
 ```bat
 setup-all.bat
 ```
 
-*(Manual alternative: Copy `.env.example` to `.env` inside `backend`, `admin-portal`, and `frontend`, then run `npm install` in each directory).*
+What `setup-all.bat` does:
+- Validates required folders and package manifests.
+- Validates `node` and `npm` availability.
+- Creates `.env` from `.env.example` in:
+  - `backend`
+  - `frontend`
+  - `admin-portal`
+  (if `.env` does not already exist)
+- Installs dependencies in all modules and root package.
+- Stops with clear error if any step fails.
 
-### 2. Database Setup
+---
 
-#### Option A: Automatic Schema Setup (Empty Database)
-Use this if you want a clean database with no existing data. Ensure PostgreSQL is running and update `backend/.env`:
-```env
-PORT=5001
-JWT_SECRET=your_secret_key
-DATABASE_URL="postgresql://postgres:user_password@localhost:5432/aptransco?schema=public"
+## Manual Setup (Any OS)
+
+### 1) Install dependencies
+
+```bash
+npm install
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
+cd admin-portal && npm install && cd ..
 ```
 
-Push the schema and seed the default admin:
+### 2) Create environment files
+
+Copy examples:
+
+- `backend/.env.example` -> `backend/.env`
+- `frontend/.env.example` -> `frontend/.env`
+- `admin-portal/.env.example` -> `admin-portal/.env`
+
+---
+
+## Environment Configuration
+
+## Backend (`backend/.env`)
+
+Minimum required:
+
+```env
+PORT=5001
+NODE_ENV=development
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/aptransco?schema=public"
+JWT_SECRET=replace_with_strong_secret
+JWT_EXPIRY=2h
+JWT_REFRESH_EXPIRY=7d
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174,http://localhost:3000
+```
+
+Optional but recommended:
+- `EMAIL_SERVICE_URL`
+- `EMAIL_SERVICE_ATTACHMENT_URL`
+- Rate-limit/security options from `.env.example`
+
+## Frontend (`frontend/.env`)
+
+```env
+VITE_API_URL=http://localhost:5001/api/v1
+VITE_API_BASE_URL=http://localhost:5001
+```
+
+## Admin Portal (`admin-portal/.env`)
+
+```env
+VITE_API_URL=http://localhost:5001/api/v1
+VITE_API_BASE_URL=http://localhost:5001
+```
+
+---
+
+## Database Setup
+
+### Option A: Fresh local database (recommended for development)
+
+1. Create database (example: `aptransco`) in PostgreSQL.
+2. Ensure `backend/.env` has correct `DATABASE_URL`.
+3. Apply schema:
+
 ```bash
 cd backend
 npx prisma db push
-node seed.js
-cd ..
 ```
 
-#### Option B: Manual Import (Schema + Pre-populated Data)
-Use this if you want to import the database using a `.sql` dump containing existing internships, applications, and student profiles (recommended for mentors):
-1. **Create Database**: Open pgAdmin or `psql` and create a new database named `aptransco`.
-2. **Import via Command Line**: Run the following command from your terminal (adjusting the database name and path as needed):
-   ```bash
-   psql -U postgres -d aptransco -f "PATH_TO_YOUR_BACKEND/schema.sql"
-   ```
-3. **Configure Environment**: Create a `.env` file in the `backend` folder and set your `DATABASE_URL`:
-   ```env
-   DATABASE_URL="postgresql://postgres:PASSWORD_FOR_PGADMIN@localhost:5432/aptransco?schema=public"
-   ```
-4. **Seed/Update Admin**: (Ensures you have the latest admin login)
-   ```bash
-   cd backend
-   node seed.js
-   cd ..
-   ```
-5. **Load College Data**: (Optional but recommended) To populate the list of 39,000+ colleges for registration dropdowns:
-   ```bash
-   cd backend
-   node scripts/tools/import_json_colleges.js
-   cd ..
-   ```
+4. (Optional) Open Prisma Studio:
 
-### 3. Run Development Services
-Start the backend, student frontend, and admin portal simultaneously from the root:
 ```bash
+npx prisma studio
+```
+
+5. (Optional) Seed accounts/data:
+
+```bash
+node scripts/seed-accounts.js
+```
+
+### Option B: Import existing SQL dump
+
+```bash
+psql -U postgres -d aptransco -f "path/to/your/dump.sql"
+```
+
+Then run:
+
+```bash
+cd backend
+npx prisma db push
+```
+
+---
+
+## Running the Project
+
+From root (all services):
+
+```bash
+npm run dev
+```
+
+Or run separately:
+
+```bash
+npm run dev:backend
+npm run dev:student
+npm run dev:admin
+```
+
+---
+
+## Access URLs
+
+- Student app: `http://localhost:5173`
+- Admin portal: `http://localhost:5174`
+- Backend API: `http://localhost:5001/api/v1`
+
+---
+
+## Default Seed Credentials (if seed script used)
+
+Password (default): `password123`
+
+- Admin: `admin@transco.com`
+- PRTI: `prti@transco.com`
+- HOD example: `hod.transmission@transco.com`
+- Mentor example: `mentor.transmission@transco.com`
+
+---
+
+## Build and Lint
+
+### Frontend
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+### Admin Portal
+
+```bash
+cd admin-portal
+npm run lint
+npm run build
+```
+
+### Backend
+
+```bash
+cd backend
 npm run dev
 ```
 
 ---
 
-## 💻 Portal Access URLs
+## Common Troubleshooting
 
-| Portal | URL | Access |
-| :--- | :--- | :--- |
-| **Landing Page** | `http://localhost:5173/` | Public |
-| **Student Registration** | `http://localhost:5173/student/register` | Open Registration |
-| **Student Login** | `http://localhost:5173/login` | Registered Students |
-| **Admin Portal** | `http://localhost:5174/login` | Authorized Staff Only |
+## 1) `EADDRINUSE: address already in use :::5001`
 
-### 🔑 Test / Seed Credentials
-If you populated the database using the internal `seed-accounts.js` script, you can log in to the **Admin Portal** immediately with the following default credentials.
+Port `5001` is occupied by another process.
 
-**Password for ALL accounts:** `password123`
+Windows:
 
-| Role | Email |
-| :--- | :--- |
-| **System Admin** | `admin@transco.com` |
-| **PRTI Member** | `prti@transco.com` |
-| **HOD (Example)** | `hod.transmission@transco.com` |
-| **Mentor (Example)** | `mentor.transmission@transco.com` |
+```powershell
+netstat -ano | findstr :5001
+taskkill /PID <PID> /F
+```
 
-*(Note: Every department in the portal config has an automatically generated HOD and Mentor account in the format `hod.[department-slug]@transco.com` and `mentor.[department-slug]@transco.com`.)*
+Then restart backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+## 2) Frontend/Admin shows blank page after change
+
+- Check browser console for exact stack trace.
+- Check dev server terminal for compile/runtime errors.
+- Run build to detect production issues:
+
+```bash
+cd admin-portal && npm run build
+cd ../frontend && npm run build
+```
+
+## 3) Prisma connection or schema errors
+
+- Verify `DATABASE_URL` credentials and db existence.
+- Run:
+
+```bash
+cd backend
+npx prisma generate
+npx prisma db push
+```
+
+## 4) `.env` values still pointing to placeholder IP
+
+Make sure both web apps use localhost during local development:
+
+```env
+VITE_API_URL=http://localhost:5001/api/v1
+VITE_API_BASE_URL=http://localhost:5001
+```
+
+## 5) CORS errors
+
+- Ensure backend `CORS_ORIGINS` includes:
+  - `http://localhost:5173`
+  - `http://localhost:5174`
 
 ---
 
-## 📁 Project Structure
+## Recommended Developer Workflow
 
-```text
-📂 internship portal
- ├── 📂 admin-portal      # Refined Standalone Admin Dashboard (Vite/React)
- ├── 📂 backend           # Node.js/Prisma API (Security Hardened)
- ├── 📂 frontend          # Student Portal & Public Landing Page (Vite/React)
- └── 📄 package.json      # Concurrent dev scripts
+1. Pull latest changes.
+2. Run `setup-all.bat` (Windows) or manual install.
+3. Configure env files.
+4. Start DB and run `npx prisma db push`.
+5. Run `npm run dev`.
+6. Validate flows in both `frontend` and `admin-portal`.
+
+---
+
+## Security Notes
+
+- Never commit `.env` files.
+- Rotate `JWT_SECRET` in non-local environments.
+- Restrict CORS to trusted origins in staging/production.
+- Use separate credentials and DBs per environment.
+
+---
+
+## Useful Commands
+
+```bash
+# Root
+npm run dev
+
+# Backend
+cd backend
+npx prisma db push
+npx prisma studio
+npm run dev
+
+# Frontend
+cd frontend
+npm run dev
+npm run build
+
+# Admin
+cd admin-portal
+npm run dev
+npm run build
 ```
-
-## 🛠 Common Commands
-
-- `npm run dev`: Start all services (Backend, Student, Admin).
-- `cd backend && npx prisma db push`: Sync database schema.
-- `cd backend && npx prisma studio`: Open Prisma Studio (Database GUI).
 
