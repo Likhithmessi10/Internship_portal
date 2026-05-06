@@ -12,14 +12,14 @@ const AdminRegister = () => {
     const [searchParams] = useSearchParams();
     const targetRole = searchParams.get('role');
 
-    const roleNames = { 'ADMIN': 'Super Admin', 'CE_PRTI': 'PRTI', 'HOD': 'HOD', 'MENTOR': 'Mentor' };
-    const roleDisplay = targetRole ? roleNames[targetRole] : 'Admin';
+    const roleNames = { 'ADMIN': 'Super Admin', 'CE_PRTI': 'PRTI', 'HOD': 'HOD', 'MENTOR': 'Mentor', 'COMMITTEE_MEMBER': 'Committee Member' };
+    const roleDisplay = targetRole ? roleNames[targetRole] : 'Staff';
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState(targetRole || 'CE_PRTI');
+    const [role, setRole] = useState(targetRole || 'MENTOR');
     const [department, setDepartment] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -46,10 +46,6 @@ const AdminRegister = () => {
         };
         fetchConfig();
     }, [user, navigate]);
-
-    if (!targetRole) {
-        return <Navigate to="/" replace />;
-    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -98,6 +94,21 @@ const AdminRegister = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
+                                Institutional Role
+                            </label>
+                            <select
+                                value={role}
+                                onChange={e => setRole(e.target.value)}
+                                className="w-full bg-white border border-outline-variant/20 text-primary font-bold rounded-lg px-4 py-3 text-xs focus:outline-primary shadow-sm"
+                                required
+                            >
+                                {Object.entries(roleNames).map(([key, value]) => (
+                                    <option key={key} value={key}>{value}</option>
+                                ))}
+                            </select>
+                        </div>
                         <div>
                             <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
                                 Full Name

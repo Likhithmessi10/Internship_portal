@@ -11,17 +11,16 @@ const MentorMeetings = () => {
     useEffect(() => {
         const fetchMeetings = async () => {
             try {
-                // Get committees where this mentor is a member
-                const committeesRes = await api.get('/admin/committees');
-                const allCommittees = committeesRes.data.data || [];
-                const mentorCommittees = allCommittees.filter(c => c.mentorId === user.id);
+                // Backend returns committees relevant to the logged-in user.
+                const committeesRes = await api.get('/admin/meetings/my');
+                const committees = committeesRes.data.data || [];
 
-                setMeetings(mentorCommittees.map(committee => ({
+                setMeetings(committees.map(committee => ({
                     id: committee.id,
                     title: `Committee Meeting - ${committee.internship?.title || 'Internship'}`,
                     date: committee.interviewDate,
                     link: committee.meetLink,
-                    interns: committee.interns || [],
+                    interns: [], // interns list isn't returned here; show meeting info only
                     members: committee.membersData || {}
                 })));
             } catch (err) {

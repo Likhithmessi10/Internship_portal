@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import AsyncCreatableSelect from 'react-select/async-creatable';
-import api from '../../utils/api';
+import api, { MEDIA_URL } from '../../utils/api';
 import { collegesData } from '../../data/colleges';
-import { User, GraduationCap, Briefcase, CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Zap, Linkedin, Github } from 'lucide-react';
+import { User, GraduationCap, Briefcase, CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Zap, Linkedin, Github, Camera } from 'lucide-react';
 
 const StudentProfileForm = () => {
     const navigate = useNavigate();
@@ -26,6 +26,9 @@ const StudentProfileForm = () => {
         linkedinUrl: '', githubUrl: ''
     });
 
+    const [photo, setPhoto] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
+
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -43,6 +46,9 @@ const StudentProfileForm = () => {
                         aadhaarNumber: d.aadhaarNumber || '',
                         id: d.id // Ensure ID is present for checking Update vs Submit
                     }));
+                    if (d.photoUrl) {
+                        setPhotoPreview(getMediaUrl(d.photoUrl));
+                    }
                 }
             } catch (err) {
                 console.log("No profile to load or server error:", err.message);
@@ -52,6 +58,25 @@ const StudentProfileForm = () => {
         };
         fetchProfile();
     }, []);
+
+    const getMediaUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith('data:')) return url;
+        if (url.startsWith('http')) return url;
+        return `${MEDIA_URL}/${url.replace(/\\/g, '/')}`;
+    };
+
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setPhoto(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPhotoPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -161,18 +186,35 @@ const StudentProfileForm = () => {
         setLoading(true);
         setError('');
 
-        const submissionData = {
-            ...formData,
-            collegeName: formData.collegeName === "Other Recognized University / College"
-                ? formData.manualCollegeName
-                : formData.collegeName,
-            nirfRanking: (formData.nirfRanking && formData.nirfRanking !== 'N/A') ? parseInt(formData.nirfRanking) : null,
-            cgpa: parseFloat(formData.cgpa) || 0
-        };
+        const finalCollegeName = formData.collegeName === "Other Recognized University / College"
+            ? formData.manualCollegeName
+            : formData.collegeName;
+        
+        const finalNirf = (formData.nirfRanking && formData.nirfRanking !== 'N/A') ? parseInt(formData.nirfRanking) : null;
+        const finalCgpa = parseFloat(formData.cgpa) || 0;
+
+        const submissionData = new FormData();
+        
+        // Append all text fields
+        Object.keys(formData).forEach(key => {
+            if (key === 'collegeName') submissionData.append(key, finalCollegeName);
+            else if (key === 'nirfRanking') submissionData.append(key, finalNirf);
+            else if (key === 'cgpa') submissionData.append(key, finalCgpa);
+            else if (formData[key] !== null && formData[key] !== undefined) {
+                submissionData.append(key, formData[key]);
+            }
+        });
+
+        // Append photo if selected
+        if (photo) {
+            submissionData.append('photo', photo);
+        }
 
         try {
-            console.log('>>> Submitting Profile Data:', submissionData);
-            const res = await api.post('/students/profile', submissionData);
+            console.log('>>> Submitting Profile Data (FormData)');
+            const res = await api.post('/students/profile', submissionData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             const updatedProfile = res.data.data;
 
             // Determine specific alert message
@@ -296,6 +338,26 @@ const StudentProfileForm = () => {
                             <div className="mb-8 border-b border-gray-100 dark:border-white/5 pb-6">
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-wider font-rajdhani">Personal Information</h3>
                                 <p className="text-[10px] text-gray-500 dark:text-indigo-400/60 font-black uppercase tracking-[0.2em] mt-1">Enter your personal details</p>
+                            </div>
+
+                            <div className="flex flex-col items-center mb-10 group">
+                                <div className="relative">
+                                    <div className="w-32 h-32 rounded-3xl bg-indigo-50 dark:bg-slate-800 border-4 border-white dark:border-slate-900 shadow-xl overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105 duration-500">
+                                        {photoPreview ? (
+                                            <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-12 h-12 text-indigo-200 dark:text-slate-700" />
+                                        )}
+                                    </div>
+                                    <label htmlFor="photo-upload" className="absolute -bottom-2 -right-2 w-10 h-10 bg-indigo-600 text-white rounded-xl shadow-lg border-2 border-white dark:border-slate-900 flex items-center justify-center cursor-pointer hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all">
+                                        <Camera className="w-5 h-5" />
+                                        <input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                                    </label>
+                                </div>
+                                <div className="mt-4 text-center">
+                                    <h4 className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">Profile Avatar</h4>
+                                    <p className="text-[9px] text-gray-400 dark:text-slate-600 font-bold uppercase mt-1">Click the camera to upload</p>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

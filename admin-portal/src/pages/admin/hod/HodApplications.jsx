@@ -15,7 +15,7 @@ const HodApplications = () => {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
-    const [filter, setFilter] = useState('All');
+    const [filter, setFilter] = useState('APPLIED');
     const [searchQuery, setSearchQuery] = useState('');
     const [error, setError] = useState(null);
     const [showExportModal, setShowExportModal] = useState(false);
@@ -135,7 +135,7 @@ const HodApplications = () => {
             <div className="bg-surface-container-lowest dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10 dark:border-slate-800">
                 <div className="p-4 md:p-6 border-b border-outline-variant/10 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900/50">
                     <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                        {['All', 'APPLIED', 'SHORTLISTED', 'APPROVED', 'REJECTED'].map(f => (
+                        {['All', 'APPLIED', 'SHORTLISTED', 'UNDER_COMMITTEE_REVIEW', 'APPROVED', 'REJECTED'].map(f => (
                             <button key={f} onClick={() => setFilter(f)}
                                 className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${filter === f ? 'bg-primary text-white shadow-sm' : 'bg-surface-container-high dark:bg-slate-800 text-outline dark:text-slate-400 hover:bg-surface-variant dark:hover:bg-slate-700'}`}>
                                 {f.replace(/_/g, ' ')}

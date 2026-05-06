@@ -141,7 +141,7 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
                         {averageScore !== null && averageScore !== undefined && allScoresSubmitted && (
                             <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20 text-center">
                                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Final Cumulative Score</p>
-                                <p className="text-4xl font-black text-primary">{averageScore}<span className="text-xl text-primary/50">/50</span></p>
+                                <p className="text-4xl font-black text-primary">{averageScore}<span className="text-xl text-primary/50">/10</span></p>
                             </div>
                         )}
                         {!allScoresSubmitted && (

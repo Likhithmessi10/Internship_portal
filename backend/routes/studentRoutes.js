@@ -11,10 +11,10 @@ const upload = require('../middleware/uploadMiddleware');
 
 const router = express.Router();
 
-router.post('/profile', protect, upsertProfile);
+router.post('/profile', protect, upload.single('photo'), upsertProfile);
 router.get('/profile', protect, getProfile);
 router.post('/applications/:id/stipend', protect, upsertStipend);
-
+router.post('/applications/:id/fallback', protect, authorize('STUDENT'), require('../controllers/studentController').applyFallback);
 // Student Work Management
 router.get('/work', protect, authorize('STUDENT'), getStudentWork);
 router.post('/work/submit/:assignmentId', protect, authorize('STUDENT'), upload.single('file'), submitWork);

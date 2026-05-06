@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
-import { User, Mail, Shield, Building, Lock, Eye, EyeOff, Save, KeyRound } from 'lucide-react';
+import api, { MEDIA_URL } from '../../utils/api';
+import { User, Mail, Shield, Building, Lock, Eye, EyeOff, Save, KeyRound, Camera, Upload } from 'lucide-react';
 import WarningCard from '../../components/ui/WarningCard';
 
 const Profile = () => {
-    const { user } = useAuth();
+    const { user, login: refreshUser } = useAuth();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const fileInputRef = useRef(null);
+
+    const getMediaUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith('data:')) return url;
+        if (url.startsWith('http')) return url;
+        return `${MEDIA_URL}/${url.replace(/\\/g, '/')}`;
+    };
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
@@ -30,6 +39,38 @@ const Profile = () => {
             setFeedback({ type: 'error', text: err.response?.data?.message || 'Failed to update password' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            return setFeedback({ type: 'error', text: 'Please upload an image file' });
+        }
+
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        setUploading(true);
+        try {
+            const res = await api.put('/auth/update-profile', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            // Update auth context with new user data
+            if (res.data.success) {
+                // We need to update the local user object in context
+                // If AuthContext doesn't expose a way to update the user without re-logging,
+                // we might need to add it. For now, we'll assume it handles it or we'll refresh tokens.
+                setFeedback({ type: 'success', text: 'Profile photo updated!' });
+                window.location.reload(); // Quick fix to refresh user data from token/session
+            }
+        } catch (err) {
+            setFeedback({ type: 'error', text: 'Failed to upload photo' });
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -54,8 +95,32 @@ const Profile = () => {
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 text-center relative overflow-hidden group">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-primary/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
                         
-                        <div className="w-24 h-24 rounded-full bg-primary/10 border-4 border-primary/20 mx-auto flex items-center justify-center mb-6 relative group-hover:scale-105 transition-transform duration-500">
-                             <span className="text-4xl font-black text-primary uppercase">{user?.name?.charAt(0) || user?.email?.charAt(0)}</span>
+                        <div className="relative w-32 h-32 mx-auto mb-6 group/avatar">
+                            <div className="w-full h-full rounded-full bg-primary/10 border-4 border-primary/20 flex items-center justify-center overflow-hidden transition-transform duration-500 group-hover:scale-105">
+                                {user?.photoUrl ? (
+                                    <img src={getMediaUrl(user.photoUrl)} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-4xl font-black text-primary uppercase">{user?.name?.charAt(0) || user?.email?.charAt(0)}</span>
+                                )}
+                            </div>
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading}
+                                className="absolute bottom-0 right-0 w-10 h-10 bg-primary text-white rounded-xl shadow-lg border-2 border-white dark:border-slate-900 flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+                            >
+                                {uploading ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <Camera size={18} />
+                                )}
+                            </button>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handlePhotoUpload}
+                            />
                         </div>
                         
                         <h3 className="text-xl font-black text-primary mb-1 tracking-tight">{user?.name || 'Authorized User'}</h3>
@@ -96,7 +161,7 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        <form onSubmit={handleResetPassword} className="space-y-6 uppercase italic">
+                        <form onSubmit={handleResetPassword} className="space-y-6">
                             <div className="space-y-4">
                                 <div className="relative">
                                     <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Current Password</label>

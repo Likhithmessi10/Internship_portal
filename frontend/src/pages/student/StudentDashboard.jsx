@@ -218,12 +218,23 @@ const StudentDashboard = () => {
                                             </div>
                                             <div className="text-center sm:text-left">
                                                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-2">
-                                                    <h4 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">{app.internship?.title}</h4>
+                                                    <h4 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                                        {app.internship?.title}
+                                                        {app.internship?.stipendType === 'COLLABORATIVE' ? (
+                                                            <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md text-[8px] uppercase tracking-widest border border-green-200 dark:border-green-800">Monetary</span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-md text-[8px] uppercase tracking-widest border border-gray-200 dark:border-slate-700">Non-Monetary</span>
+                                                        )}
+                                                    </h4>
                                                     <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm
-                                                        ${app.status === 'APPLIED' ? 'bg-[#fffced] text-[#a37e13] border-[#f5d787]' :
-                                                            ['APPROVED'].includes(app.status) ? 'bg-emerald-500 text-white border-emerald-400' :
+                                                        ${app.status === 'SUBMITTED' ? 'bg-[#fffced] text-[#a37e13] border-[#f5d787]' :
+                                                        app.status === 'SHORTLISTED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                            ['APPROVED', 'HIRED'].includes(app.status) ? 'bg-emerald-500 text-white border-emerald-400' :
                                                                 'bg-red-50 text-red-700 border-red-200'}`}>
-                                                        {app.status === 'APPROVED' ? 'APPROVED' : app.status}
+                                                        {app.status === 'SUBMITTED' ? 'Under Review' :
+                                                            app.status === 'SHORTLISTED' ? 'Shortlisted' :
+                                                                ['APPROVED', 'HIRED'].includes(app.status) ? 'Selected' :
+                                                                    app.status === 'REJECTED' ? 'Not Selected' : app.status}
                                                     </span>
                                                 </div>
                                                 <p className="text-slate-500 dark:text-slate-400 font-bold flex items-center justify-center sm:justify-start gap-2 text-sm">
@@ -233,6 +244,24 @@ const StudentDashboard = () => {
                                         </div>
 
                                         <div className="flex flex-col sm:flex-row gap-3">
+                                            {app.status === 'REJECTED' && app.internship?.stipendType === 'COLLABORATIVE' && !profile.applications.some(a => a.shortlistCategory === 'FALLBACK' && a.internship?.department === app.internship?.department) && (
+                                                <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 p-4 rounded-xl max-w-sm">
+                                                    <p className="text-[10px] font-bold text-yellow-800 dark:text-yellow-500 mb-2 leading-relaxed">
+                                                        You were not selected for this monetary role. However, you can still apply for a Non-Monetary internship in this department.
+                                                    </p>
+                                                    <button onClick={async () => {
+                                                        if(confirm("Apply for Non-Monetary Internship?")) {
+                                                            try {
+                                                                await api.post(`/students/applications/${app.id}/fallback`);
+                                                                alert('Fallback application submitted successfully!');
+                                                                window.location.reload();
+                                                            } catch(err) { alert(err.response?.data?.message || 'Failed to submit fallback'); }
+                                                        }
+                                                    }} className="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors shadow-sm">
+                                                        Apply for Non-Monetary
+                                                    </button>
+                                                </div>
+                                            )}
                                             {['APPROVED'].includes(app.status) && (
                                                 <button
                                                     onClick={() => setStipendModalApp(app)}

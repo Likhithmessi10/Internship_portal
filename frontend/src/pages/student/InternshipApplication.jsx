@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import api from '../../utils/api';
+import api, { MEDIA_URL } from '../../utils/api';
 import { Upload, FileType, CheckCircle, AlertCircle, ArrowLeft, ShieldCheck, FileText, Check, MapPin, AlignLeft, X, Briefcase, BookOpen, Award, Users, Calendar, ChevronRight, Download } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -169,11 +169,11 @@ const InternshipApplication = () => {
 
     const FileUploadInput = ({ doc }) => {
         const state = files[doc.id];
-        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api/v1';
-        const serverBase = apiBase.replace('/api/v1', '');
+        const serverBase = MEDIA_URL;
+        const hasTemplates = doc.templates && doc.templates.length > 0;
 
         return (
-            <div className="relative group space-y-3">
+            <div className={`relative group rounded-2xl border transition-all ${state ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-200 bg-white'} overflow-hidden`}>
                 <input
                     type="file"
                     id={doc.id}
@@ -181,19 +181,39 @@ const InternshipApplication = () => {
                     className="hidden"
                     onChange={(e) => handleFileChange(e, doc)}
                 />
-                
-                {doc.templates && doc.templates.length > 0 && (
-                    <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 mb-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-                                <FileText className="w-5 h-5 text-indigo-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Required Template</p>
-                                <p className="text-[10px] text-indigo-600 font-bold uppercase">Download, fill, and then upload below</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
+
+                {/* Document Header Row */}
+                <div className="flex items-center gap-4 p-5">
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${state ? 'bg-emerald-100' : 'bg-indigo-50'} transition-colors`}>
+                        {state ? <Check className="w-5 h-5 text-emerald-600" /> : <FileText className="w-5 h-5 text-indigo-600" />}
+                    </div>
+                    <div className="flex-grow min-w-0">
+                        <h4 className={`font-bold text-sm ${state ? 'text-emerald-900' : 'text-gray-900'}`}>
+                            {doc.label} {doc.mandatory && <span className="text-red-500 ml-0.5 font-black text-[10px]">*</span>}
+                        </h4>
+                        <p className={`text-xs font-medium mt-0.5 truncate ${state ? 'text-emerald-600' : 'text-gray-400'}`}>
+                            {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 shrink-0" /> {state.name}</span> : `${doc.type === 'IMAGE' ? 'JPG / PNG' : 'PDF'} · Max 5MB`}
+                        </p>
+                    </div>
+                    <label
+                        htmlFor={doc.id}
+                        className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider shrink-0 cursor-pointer transition-all
+                        ${state
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}`}
+                    >
+                        {state ? 'Change' : 'Upload'}
+                    </label>
+                </div>
+
+                {/* Template Download Strip */}
+                {hasTemplates && (
+                    <div className="border-t border-dashed border-gray-200 bg-gray-50/80 px-5 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Download className="w-3 h-3 text-indigo-500" />
+                            Download template, fill, then upload
+                        </p>
+                        <div className="flex gap-2">
                             {doc.templates.map((template, idx) => (
                                 <a
                                     key={idx}
@@ -201,40 +221,15 @@ const InternshipApplication = () => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     download
-                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-black hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm active:scale-95"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-indigo-700 rounded-lg text-[11px] font-bold hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all active:scale-95"
                                 >
-                                    <Download className="w-3.5 h-3.5" />
+                                    <Download className="w-3 h-3" />
                                     {template.label}
                                 </a>
                             ))}
                         </div>
                     </div>
                 )}
-
-                <label
-                    htmlFor={doc.id}
-                    className={`block w-full p-5 sm:p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-4
-                    ${state
-                            ? 'border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50'
-                            : 'border-gray-200 bg-gray-50/50 hover:border-indigo-300 hover:bg-indigo-50/30'}`}
-                >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0
-                        ${state ? 'bg-emerald-100' : 'bg-indigo-100 group-hover:bg-indigo-200'} transition-colors`}>
-                        {state ? <Check className="w-6 h-6 text-emerald-600" /> : <FileText className="w-6 h-6 text-indigo-600" />}
-                    </div>
-                    <div className="flex-grow">
-                        <h4 className={`font-bold text-sm sm:text-base ${state ? 'text-emerald-900' : 'text-gray-900'}`}>
-                            {doc.label} {doc.mandatory && <span className="text-red-500 ml-1 font-black text-xs">*</span>}
-                        </h4>
-                        <p className={`text-xs sm:text-sm font-medium mt-1 ${state ? 'text-emerald-700/70' : 'text-gray-500'}`}>
-                            {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {state.name}</span> : `Upload ${doc.type === 'IMAGE' ? 'JPG/PNG' : 'PDF'}`}
-                        </p>
-                    </div>
-                    <div className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 mt-2 sm:mt-0
-                        ${state ? 'bg-emerald-200/50 text-emerald-800' : 'bg-white border border-gray-200 text-gray-600 shadow-sm group-hover:border-indigo-200 group-hover:text-indigo-600'}`}>
-                        {state ? 'Change' : 'Browse'}
-                    </div>
-                </label>
             </div>
         );
     };
@@ -308,10 +303,15 @@ const InternshipApplication = () => {
                             )}
 
                             <div className="mb-10">
-                                <h3 className="text-xl font-bold text-gray-900 mb-1">Supporting Documents</h3>
-                                <p className="text-sm text-gray-500 font-medium mb-6">Upload required authorization letters in PDF format (Max 5MB each).</p>
+                                <div className="flex items-center gap-3 mb-5">
+                                    <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">1</div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 leading-tight">Supporting Documents</h3>
+                                        <p className="text-xs text-gray-400 font-medium">Upload required files in PDF format · Max 5MB each</p>
+                                    </div>
+                                </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     {(() => {
                                         const originalReqDocs = internship.requiredDocuments || [{ id: 'RESUME', label: 'Resume / CV', type: 'PDF' }];
                                         const reqDocs = [...originalReqDocs];
@@ -349,8 +349,13 @@ const InternshipApplication = () => {
                             </div>
 
                             <div className="mb-10 space-y-8">
-                                <h3 className="text-xl font-bold text-gray-900 mb-1">Application Specifics</h3>
-                                <p className="text-sm text-gray-500 font-medium mb-6">Tell us why you're a great fit for this specific role.</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">2</div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 leading-tight">Application Specifics</h3>
+                                        <p className="text-xs text-gray-400 font-medium">Tell us why you're a great fit for this role</p>
+                                    </div>
+                                </div>
 
                                 <div className="grid grid-cols-1 gap-8">
                                     <div className="space-y-2">
@@ -404,32 +409,27 @@ const InternshipApplication = () => {
                                         )}
                                     </div>
 
-                                    {/* NEW: Custom Scoring Metric Questions */}
+                                    {/* NEW: Custom Questionnaire */}
                                     {internship.customQuestions && internship.customQuestions.length > 0 && (
                                         <div className="space-y-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
                                             <div>
                                                 <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                                    <Award className="w-4 h-4 text-indigo-500" /> Additional Qualifications
+                                                    <Award className="w-4 h-4 text-indigo-500" /> Application Questionnaire
                                                 </h4>
-                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">These details help us in automated shortlisting.</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Please provide detailed answers to help our committee evaluate your application.</p>
                                             </div>
                                             <div className="space-y-4">
                                                 {internship.customQuestions.map((q, idx) => (
-                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                                        <p className="text-xs font-bold text-slate-700">{q}</p>
-                                                        <div className="flex bg-slate-100 p-1 rounded-lg">
-                                                            {['Yes', 'No'].map(opt => (
-                                                                <button
-                                                                    key={opt}
-                                                                    type="button"
-                                                                    onClick={() => setQuestionAnswers(prev => ({...prev, [idx]: opt}))}
-                                                                    className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all
-                                                                        ${questionAnswers[idx] === opt ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                                                                >
-                                                                    {opt}
-                                                                </button>
-                                                            ))}
-                                                        </div>
+                                                    <div key={idx} className="space-y-3 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                                                        <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">Q: {q}</label>
+                                                        <textarea
+                                                            required
+                                                            placeholder="Your answer here..."
+                                                            rows="3"
+                                                            value={questionAnswers[idx] || ''}
+                                                            onChange={e => setQuestionAnswers(prev => ({...prev, [idx]: e.target.value}))}
+                                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-slate-300"
+                                                        />
                                                     </div>
                                                 ))}
                                             </div>

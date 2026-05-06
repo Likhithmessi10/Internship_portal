@@ -65,7 +65,12 @@ const upsertProfile = async (req, res) => {
             validatedCategory = allowedCategories.includes(collegeCategory) ? collegeCategory : 'OTHER';
         }
 
-        const parsedCgpa = cgpa ? parseFloat(cgpa) : 0.0;
+        let finalPhotoUrl = photoUrl;
+        if (req.file) {
+            finalPhotoUrl = `uploads/${req.file.filename}`;
+        }
+
+        const parsedCgpa = (cgpa && !isNaN(parseFloat(cgpa))) ? parseFloat(cgpa) : 0;
 
         const profileData = {
             fullName: fullName || "",
@@ -88,7 +93,7 @@ const upsertProfile = async (req, res) => {
             experienceDesc: experienceDesc || null,
             projectsDesc: projectsDesc || null,
             skills: skills || null,
-            photoUrl: photoUrl || null,
+            photoUrl: finalPhotoUrl || null,
             linkedinUrl: linkedinUrl || null,
             githubUrl: githubUrl || null
         };
@@ -194,7 +199,83 @@ const upsertStipend = async (req, res) => {
 
         res.status(200).json({ success: true, data: stipend });
     } catch (error) {
-        console.error(error);
+        console.error('Stipend upsert error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Apply for a Non-Monetary Fallback Internship
+ * @route   POST /api/v1/students/applications/:id/fallback
+ * @access  Private (Student)
+ */
+const applyFallback = async (req, res) => {
+    try {
+        const applicationId = req.params.id;
+
+        // Verify the original application exists, belongs to the student, is rejected, and was collaborative
+        const originalApp = await prisma.application.findFirst({
+            where: { 
+                id: applicationId, 
+                student: { userId: req.user.id },
+                status: 'REJECTED',
+                internship: { stipendType: 'COLLABORATIVE' }
+            },
+            include: { internship: true }
+        });
+
+        if (!originalApp) {
+            return res.status(400).json({ success: false, message: 'Invalid or ineligible application for fallback' });
+        }
+
+        // Find an active non-collaborative internship in the same department
+        const fallbackInternship = await prisma.internship.findFirst({
+            where: {
+                department: originalApp.internship.department,
+                stipendType: 'NON_COLLABORATIVE',
+                isActive: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        if (!fallbackInternship) {
+            return res.status(404).json({ success: false, message: 'No active non-monetary internships available in this department.' });
+        }
+
+        // Check if student already applied for this fallback internship
+        const existingFallback = await prisma.application.findFirst({
+            where: {
+                studentId: originalApp.studentId,
+                internshipId: fallbackInternship.id
+            }
+        });
+
+        if (existingFallback) {
+            return res.status(400).json({ success: false, message: 'You have already applied for the non-monetary internship.' });
+        }
+
+        // Mark the original app to indicate fallback was applied (optional, using category or similar if schema doesn't have a flag)
+        // Since we don't have a fallbackApplied flag, we can store it in questionAnswers or just rely on the existence of the new application.
+        
+        // Create the new application
+        const crypto = require('crypto');
+        const trackingId = 'FLB-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+
+        const newApp = await prisma.application.create({
+            data: {
+                trackingId,
+                studentId: originalApp.studentId,
+                internshipId: fallbackInternship.id,
+                status: 'SUBMITTED',
+                category: 'OTHER', // Flag it if needed
+                shortlistCategory: 'FALLBACK'
+            }
+        });
+
+        res.status(201).json({ success: true, data: newApp, message: 'Fallback application submitted successfully.' });
+
+    } catch (error) {
+        console.error('Fallback application error:', error);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -202,5 +283,6 @@ const upsertStipend = async (req, res) => {
 module.exports = {
     upsertProfile,
     getProfile,
-    upsertStipend
+    upsertStipend,
+    applyFallback
 };

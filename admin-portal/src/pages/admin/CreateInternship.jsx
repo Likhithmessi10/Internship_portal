@@ -82,20 +82,20 @@ const CreateInternshipForm = () => {
         applicationDeadline: '',
         stipendType: 'NON_COLLABORATIVE', // COLLABORATIVE or NON_COLLABORATIVE
         stipendAmount: '',
-        topUniversityQuota: 50, // Default 50%
-        priorityCollege: '',
-        priorityCollegeQuota: 10, // Default 10%
         manualOpenings: '',
-        shortlistingRatio: 2,
-        preferredColleges: [],
-        topColleges: [],
-        seatAllocation: { preferred: 33, top: 33, other: 34 },
         customQuestions: [],
-        requirementTags: []
+        requirementTags: [],
+        preferredColleges: [],
+        quotaPercentages: {
+            preferred: 20,
+            premier: 30,
+            normal: 50
+        }
     });
 
     const [questionInput, setQuestionInput] = useState('');
     const [requirementInput, setRequirementInput] = useState('');
+    const [preferredCollegeInput, setPreferredCollegeInput] = useState('');
 
     // Sub-states
     const [roles, setRoles] = useState([]);
@@ -163,16 +163,9 @@ const CreateInternshipForm = () => {
                 rolesData: roles,
                 location: locations.join(', '),
                 requiredDocuments: requiredDocs,
-                quotaPercentages: { topUniversity: parseInt(formData.topUniversityQuota) },
-                priorityCollege: formData.priorityCollege || null,
-                priorityCollegeQuota: parseInt(formData.priorityCollegeQuota) || 0,
-                shortlistingRatio: parseInt(formData.shortlistingRatio) || 2,
-                preferredColleges: formData.preferredColleges,
-                topColleges: formData.topColleges,
-                seatAllocation: formData.seatAllocation,
                 customQuestions: formData.customQuestions,
-                evaluationQuestions: formData.customQuestions,
-                requirements: formData.requirementTags.join(', ')
+                requirements: formData.requirementTags.join(', '),
+                preferredColleges: formData.preferredColleges
             });
             alert('Internship program launched successfully!');
             navigate('/dashboard');
@@ -196,15 +189,6 @@ const CreateInternshipForm = () => {
         setError('');
         setStep(step + 1);
     };
-
-    // Live Calculation Logic for Visualization
-    const pPct = parseInt(formData.priorityCollegeQuota) || 0;
-    const tPct = parseInt(formData.topUniversityQuota) || 0;
-    const gPct = Math.max(0, 100 - pPct - tPct);
-
-    const pSeats = Math.round((totalOpenings * pPct) / 100);
-    const tSeats = Math.round((totalOpenings * tPct) / 100);
-    const gSeats = Math.max(0, totalOpenings - pSeats - tSeats);
 
     return (
         <div className="max-w-7xl mx-auto pb-20">
@@ -358,18 +342,18 @@ const CreateInternshipForm = () => {
 
                         <div className="pt-6 border-t border-outline-variant/10">
                             <button onClick={nextStep} className="w-full py-4 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
-                                Continue to Seat Distribution <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                Continue to Capacity & Questions <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 2: SEAT DISTRIBUTION */}
+                {/* STEP 2: CAPACITY & QUESTIONS */}
                 {step === 2 && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div>
-                            <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 2: <span className="text-primary/60 font-medium">Seat Distribution</span></h2>
-                            <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Define vacancy volume and strategic allocation logic.</p>
+                            <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 2: <span className="text-primary/60 font-medium">Capacity & Questions</span></h2>
+                            <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Define vacancy volume and custom application questions.</p>
                         </div>
 
                         <div className="p-8 bg-white border border-outline-variant/10 rounded-xl">
@@ -386,144 +370,144 @@ const CreateInternshipForm = () => {
                                     <div className="flex-1 p-4 bg-primary/5 rounded-lg border border-primary/10 text-[10px] font-bold text-primary/70 leading-relaxed uppercase tracking-wide">
                                         <div className="flex items-center gap-2 mb-1 text-primary">
                                             <span className="material-symbols-outlined text-sm">lightbulb</span>
-                                            <span>Institutional Logic</span>
+                                            <span>Manual Selection</span>
                                         </div>
-                                        Important: Our automated system will pick the best candidates precisely up to this institutional limit.
+                                        This program will follow a manual application review process. Define your capacity for planning purposes.
                                     </div>
                                 </div>
                             </InputField>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-4">
-                            <div className="space-y-6">
-                                <InputField label="Preferred College" tooltip="Students from this specific institution will be selected first.">
-                                    <div className="relative">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none z-10">
-                                            <span className="material-symbols-outlined text-lg">grade</span>
-                                        </div>
-                                        <input
-                                            list="colleges-list"
-                                            name="priorityCollege"
-                                            value={formData.priorityCollege}
-                                            onChange={handleChange}
-                                            placeholder="Search & Select College..."
-                                            className="admin-input pl-12 font-bold border-outline-variant/20 focus:border-primary/30"
-                                        />
-                                        <datalist id="colleges-list">
-                                            {collegesData.slice(0, 200).map((c, idx) => (
-                                                <option key={idx} value={c.label} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                </InputField>
-
-                                <InputField label="Reserved for Preferred College (%)" hint={`${pPct}% of seats (${pSeats}) reserved`}>
-                                    <div className="flex items-center gap-4">
-                                        <input type="range" min="0" max="100" step="5" name="priorityCollegeQuota" value={pPct} onChange={handleChange} className="flex-1 accent-sky-500 h-1.5 bg-outline-variant/20 rounded-full appearance-none cursor-pointer" />
-                                        <span className="w-16 text-center font-bold text-sky-600 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-100/50 text-xs">{pPct}%</span>
-                                    </div>
-                                </InputField>
-                            </div>
-
-                            <div className="space-y-6">
-                                <InputField label="Top Tier Institutes %" tooltip="Reservation for IIT, NIT, IIIT, and Top 100 NIRF institutes.">
-                                    <div className="relative">
-                                        <div className="admin-input bg-surface-container-high/50 font-bold text-outline/80 flex items-center gap-3 border-outline-variant/20">
-                                            <span className="material-symbols-outlined text-primary/60">verified_user</span>
-                                            <span className="text-xs uppercase tracking-tight">IIT, NIT, IIIT & NIRF ≤ 100</span>
-                                        </div>
-                                    </div>
-                                </InputField>
-
-                                <InputField label="Reserved for Top Colleges (%)" hint={`${tPct}% of seats (${tSeats}) reserved`}>
-                                    <div className="flex items-center gap-4">
-                                        <input type="range" min="0" max="100" step="5" name="topUniversityQuota" value={tPct} onChange={handleChange} className="flex-1 accent-primary h-1.5 bg-outline-variant/20 rounded-full appearance-none cursor-pointer" />
-                                        <span className="w-16 text-center font-bold text-primary bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10 text-xs">{tPct}%</span>
-                                    </div>
-                                </InputField>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 p-8 bg-primary rounded-xl text-white shadow-xl shadow-primary/20">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Fulfillment Visualizer</h3>
-                                <span className={`text-[9px] font-bold px-3 py-1 rounded border uppercase tracking-widest ${pPct + tPct > 100 ? 'bg-error text-white border-error/50' : 'bg-white/10 text-white border-white/20'}`}>
-                                    {pPct + tPct > 100 ? 'Quota Overflow' : 'Logic Verified'}
-                                </span>
-                            </div>
-
-                            <div className="h-4 w-full flex rounded-full overflow-hidden mb-8 border-2 border-white/10 bg-white/5">
-                                <div style={{ width: `${pPct}%` }} className="bg-sky-400 h-full transition-all duration-500 flex items-center justify-center text-[7px] font-bold text-sky-950 uppercase tracking-tighter">Preferred</div>
-                                <div style={{ width: `${tPct}%` }} className="bg-white/90 h-full transition-all duration-500 flex items-center justify-center text-[7px] font-bold text-primary uppercase tracking-tighter">Top Tier</div>
-                                <div style={{ width: `${gPct}%` }} className="bg-white/20 h-full transition-all duration-500 flex items-center justify-center text-[7px] font-bold uppercase tracking-tighter">Open Pool</div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                                <div className="space-y-1">
-                                    <p className="text-sky-300 text-3xl font-black">{pSeats}</p>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">Institutional<br />Preference</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-white text-3xl font-black">{tSeats}</p>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">National Tier<br />Reserved</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-white/70 text-3xl font-black">{gSeats}</p>
-                                    <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest leading-tight">General Merit<br />Unrestricted</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* NEW: Automated Shortlisting Config */}
+                        {/* Quota Distribution Tracker */}
                         <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
                             <div className="flex items-center gap-3 mb-6">
-                                <span className="material-symbols-outlined text-primary">auto_awesome</span>
-                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Automated Shortlisting Logic</h3>
+                                <span className="material-symbols-outlined text-primary">pie_chart</span>
+                                <div>
+                                    <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Seat Distribution Tracker</h3>
+                                    <p className="text-[10px] text-outline/70 font-bold uppercase mt-1 tracking-widest">
+                                        Use this to guide your manual selection process. Must equal 100%.
+                                    </p>
+                                </div>
                             </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <InputField label="Shortlisting Ratio (N:1)" tooltip="How many candidates to shortlist per available seat. e.g. 2 means 2 candidates for every 1 seat.">
-                                    <input type="number" name="shortlistingRatio" value={formData.shortlistingRatio} onChange={handleChange}
-                                        placeholder="e.g. 2" className="admin-input text-sm font-bold border-outline-variant/20" />
+                            <div className="space-y-6 mb-8">
+                                <InputField label={`Preferred Colleges: ${formData.quotaPercentages.preferred}%`} hint={`${Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.preferred / 100))} seats`}>
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max="100" 
+                                        value={formData.quotaPercentages.preferred}
+                                        onChange={(e) => {
+                                            const pref = parseInt(e.target.value) || 0;
+                                            let prem = formData.quotaPercentages.premier;
+                                            if (pref + prem > 100) prem = 100 - pref;
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                quotaPercentages: { preferred: pref, premier: prem, normal: 100 - pref - prem }
+                                            }));
+                                        }}
+                                        className="w-full h-2 bg-amber-100 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                    />
                                 </InputField>
+
+                                <InputField label={`Premier (IIT/NIT): ${formData.quotaPercentages.premier}%`} hint={`${Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.premier / 100))} seats`}>
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max={100 - formData.quotaPercentages.preferred} 
+                                        value={formData.quotaPercentages.premier}
+                                        onChange={(e) => {
+                                            const prem = parseInt(e.target.value) || 0;
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                quotaPercentages: { ...prev.quotaPercentages, premier: prem, normal: 100 - prev.quotaPercentages.preferred - prem }
+                                            }));
+                                        }}
+                                        className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                    />
+                                </InputField>
+
+                                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-1">Remaining Colleges</p>
+                                        <p className="text-xs font-medium text-emerald-600">{Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.normal / 100))} seats allocated</p>
+                                    </div>
+                                    <span className="text-2xl font-black text-emerald-600">{formData.quotaPercentages.normal}%</span>
+                                </div>
                             </div>
+
+                            {/* Visual Progress Bar */}
+                            {(() => {
+                                const total = formData.quotaPercentages.preferred + formData.quotaPercentages.premier + formData.quotaPercentages.normal;
+                                return (
+                                    <div>
+                                        <div className="flex justify-between items-end mb-2">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-outline">Distribution Overview</span>
+                                            <span className="text-xs font-black text-emerald-600">{total}% Allocated</span>
+                                        </div>
+                                        <div className="w-full h-3 rounded-full flex overflow-hidden bg-surface-container-high border border-outline-variant/10">
+                                            <div className="bg-amber-400 h-full transition-all" style={{ width: `${formData.quotaPercentages.preferred}%` }} title={`Preferred: ${formData.quotaPercentages.preferred}%`}></div>
+                                            <div className="bg-indigo-500 h-full transition-all" style={{ width: `${formData.quotaPercentages.premier}%` }} title={`Premier: ${formData.quotaPercentages.premier}%`}></div>
+                                            <div className="bg-emerald-500 h-full transition-all" style={{ width: `${formData.quotaPercentages.normal}%` }} title={`Normal: ${formData.quotaPercentages.normal}%`}></div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+
+                        {/* NEW: Preferred Colleges Section */}
+                        <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="material-symbols-outlined text-primary">account_balance</span>
+                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Preferred Colleges</h3>
+                            </div>
+                            <p className="text-[10px] text-outline/70 font-bold uppercase mb-4">Add colleges to prioritize their students during the review process.</p>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                                <InputField label="Preferred Allocation %" hint="Allocation for Preferred Colleges">
-                                    <input type="number" value={formData.seatAllocation.preferred} 
-                                        onChange={(e) => setFormData({...formData, seatAllocation: {...formData.seatAllocation, preferred: parseInt(e.target.value)}})}
-                                        className="admin-input text-sm font-bold" />
-                                </InputField>
-                                <InputField label="Top Tier Allocation %" hint="Allocation for Top Institutes">
-                                    <input type="number" value={formData.seatAllocation.top} 
-                                        onChange={(e) => setFormData({...formData, seatAllocation: {...formData.seatAllocation, top: parseInt(e.target.value)}})}
-                                        className="admin-input text-sm font-bold" />
-                                </InputField>
-                                <InputField label="Other Allocation %" hint="Allocation for General Merit">
-                                    <input type="number" value={formData.seatAllocation.other} 
-                                        onChange={(e) => setFormData({...formData, seatAllocation: {...formData.seatAllocation, other: parseInt(e.target.value)}})}
-                                        className="admin-input text-sm font-bold" />
-                                </InputField>
+                            <div className="flex gap-4 mb-6">
+                                <div className="flex-1">
+                                    <input type="text" value={preferredCollegeInput} onChange={e => setPreferredCollegeInput(e.target.value)}
+                                        placeholder="e.g. IIT Madras, NIT Warangal" className="admin-input text-sm font-bold border-outline-variant/20" />
+                                </div>
+                                <button type="button" onClick={() => {
+                                    if(preferredCollegeInput.trim()){
+                                        setFormData({...formData, preferredColleges: [...formData.preferredColleges, preferredCollegeInput.trim()]});
+                                        setPreferredCollegeInput('');
+                                    }
+                                }} className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-[10px] uppercase">Add College</button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {formData.preferredColleges.map((college, i) => (
+                                    <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-lg border border-primary/20 text-[10px] font-bold uppercase tracking-wider">
+                                        <span className="material-symbols-outlined text-xs">school</span> {college}
+                                        <button onClick={() => setFormData({...formData, preferredColleges: formData.preferredColleges.filter((_, idx) => idx !== i)})} className="hover:text-error transition-colors ml-1">
+                                            <span className="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                    </span>
+                                ))}
+                                {formData.preferredColleges.length === 0 && (
+                                    <p className="w-full text-center py-4 text-outline/30 text-[10px] font-bold uppercase tracking-widest border border-dashed border-outline-variant/30 rounded-lg">No preferred colleges added.</p>
+                                )}
                             </div>
                         </div>
 
-                        {/* NEW: Custom Questions Section */}
+                        {/* NEW: Custom Student Questions Section */}
                         <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
                             <div className="flex items-center gap-3 mb-6">
                                 <span className="material-symbols-outlined text-primary">quiz</span>
-                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Evaluation Criteria (0-50 Score)</h3>
+                                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Application Questions for Students</h3>
                             </div>
+                            <p className="text-[10px] text-outline/70 font-bold uppercase mb-4">Add questions that students must answer during the application process.</p>
+                            
                             <div className="flex gap-4 mb-6">
                                 <div className="flex-1">
                                     <input type="text" value={questionInput} onChange={e => setQuestionInput(e.target.value)}
-                                        placeholder="Add an evaluation question (e.g. Technical knowledge)" className="admin-input text-sm font-bold border-outline-variant/20" />
+                                        placeholder="e.g. Why are you interested in this internship?" className="admin-input text-sm font-bold border-outline-variant/20" />
                                 </div>
                                 <button type="button" onClick={() => {
                                     if(questionInput.trim()){
                                         setFormData({...formData, customQuestions: [...formData.customQuestions, questionInput.trim()]});
                                         setQuestionInput('');
                                     }
-                                }} className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-[10px] uppercase">Add Metric</button>
+                                }} className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-[10px] uppercase">Add Question</button>
                             </div>
                             <div className="space-y-2">
                                 {formData.customQuestions.map((q, i) => (
@@ -534,12 +518,15 @@ const CreateInternshipForm = () => {
                                         </button>
                                     </div>
                                 ))}
+                                {formData.customQuestions.length === 0 && (
+                                    <p className="text-center py-4 text-outline/30 text-[10px] font-bold uppercase tracking-widest border border-dashed border-outline-variant/30 rounded-lg">No custom questions added yet.</p>
+                                )}
                             </div>
                         </div>
 
                         <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
                             <button onClick={() => setStep(1)} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
-                            <button onClick={nextStep} disabled={pPct + tPct > 100} className="flex-1 py-4 bg-primary disabled:opacity-50 hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
+                            <button onClick={nextStep} className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
                                 Continue to Roles <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
                         </div>
@@ -747,16 +734,16 @@ const CreateInternshipForm = () => {
                             </h3>
                             <div className="space-y-4 text-[11px] font-bold text-outline/80 leading-relaxed uppercase tracking-tight">
                                 <p className="flex items-start gap-4">
-                                    <span className="w-6 h-6 rounded bg-sky-100 flex items-center justify-center text-[10px] font-bold text-sky-600 shrink-0 border border-sky-200">1</span>
-                                    <span>First, the system will look for students from <strong className="text-primary font-black underline decoration-sky-300 underline-offset-4">{formData.priorityCollege || 'your Preferred College'}</strong>. It will pick the top performers by CGPA up to <strong>{pPct}%</strong> of seats.</span>
+                                    <span className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 border border-primary/20">1</span>
+                                    <span>Applications will be collected until the deadline.</span>
                                 </p>
                                 <p className="flex items-start gap-4">
-                                    <span className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 border border-primary/20">2</span>
-                                    <span>Next, it will fill the <strong>{tPct}%</strong> Top Tier quota using students from <strong>IITs, NITs, and IIITs</strong>, plus any leftover seats from step 1.</span>
+                                    <span className="w-6 h-6 rounded bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-outline shrink-0 border border-outline-variant/20">2</span>
+                                    <span>The committee will manually review each candidate's profile, resume, and answers to custom questions.</span>
                                 </p>
                                 <p className="flex items-start gap-4">
-                                    <span className="w-6 h-6 rounded bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-outline shrink-0 border border-outline-variant/20">3</span>
-                                    <span>Finally, all remaining seats will be filled by picking the <strong>highest CGPA students</strong> from any college in the pool.</span>
+                                    <span className="w-6 h-6 rounded bg-emerald-100 flex items-center justify-center text-[10px] font-bold text-emerald-600 shrink-0 border border-emerald-200">3</span>
+                                    <span>Final shortlisting and hiring decisions will be made based on manual evaluation.</span>
                                 </p>
                             </div>
                         </div>

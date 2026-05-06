@@ -58,23 +58,16 @@ router.get('/internships/:id/committee', getCommitteeDetails);
 router.put('/internships/:id/committee', updateCommitteeDetails);
 
 // Application Management
+const { submitEvaluation } = require('../controllers/committeeController');
 router.get('/internships/:id/applications', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), getApplications);
-router.post('/internships/:id/shortlist', authorize('HOD'), (req, res, next) => {
-    const { runShortlistingAction } = require('../controllers/adminController');
-    runShortlistingAction(req, res, next);
-});
 router.get('/internships/:id/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), exportApplications);
 router.get('/applications/rejected', authorize('ADMIN', 'HOD'), getRejectedApplications);
 router.put('/applications/:id', authorize('ADMIN', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), updateApplicationStatus);
+router.post('/applications/:id/evaluate', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), submitEvaluation);
 
 // Stipend Management
 router.get('/applications/:id/stipend', authorize('ADMIN', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), getStipendDetails);
 router.put('/applications/:id/stipend', authorize('ADMIN', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), updateStipendDetails);
-
-router.post('/internships/:id/allocate', authorize('ADMIN'), (req, res, next) => {
-    const { allocateApplicantsAction } = require('../controllers/adminController');
-    allocateApplicantsAction(req, res, next);
-});
 
 // User Management
 router.get('/users', getUsersByRole);

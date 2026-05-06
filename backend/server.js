@@ -38,6 +38,9 @@ const mentorRoutes = require('./routes/mentorRoutes');
 const commonRoutes = require('./routes/commonRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/common', commonRoutes);
 app.use('/api/v1/students', studentRoutes);
@@ -77,8 +80,8 @@ const startServer = async () => {
         await prisma.$connect();
         console.log('✅ Connected to PostgreSQL Database via Prisma');
 
-        const { workerLoop } = require('./jobs/worker');
-        workerLoop(); // Start background worker loop (no await as it's a daemon)
+        // const { workerLoop } = require('./jobs/worker');
+        // workerLoop(); // Start background worker loop (no await as it's a daemon)
 
         app.listen(PORT, () => {
             console.log(`🚀 Server listening on port ${PORT}`);

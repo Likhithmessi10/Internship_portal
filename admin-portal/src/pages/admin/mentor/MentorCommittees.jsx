@@ -11,11 +11,10 @@ const MentorCommittees = () => {
     useEffect(() => {
         const fetchCommittees = async () => {
             try {
-                const res = await api.get('/admin/committees');
-                const allCommittees = res.data.data || [];
-                // Filter committees where this mentor is assigned
-                const mentorCommittees = allCommittees.filter(c => c.mentorId === user.id);
-                setCommittees(mentorCommittees);
+                // Backend already filters by current user's role/id.
+                // For mentors, this returns only committees where they are a member.
+                const res = await api.get('/admin/meetings/my');
+                setCommittees(res.data.data || []);
             } catch (err) {
                 console.error('Failed to fetch committees', err);
             } finally {

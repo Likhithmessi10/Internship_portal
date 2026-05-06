@@ -1,5 +1,4 @@
 const prisma = require('../lib/prisma');
-const { processApplication } = require('../services/shortlistingService');
 
 /**
  * @desc    Apply to an internship
@@ -135,12 +134,6 @@ const applyForInternship = async (req, res) => {
             success: true,
             data: application,
             message: 'Application submitted successfully applied!'
-        });
-
-        // 7. Background Shortlisting Processing (Trigger asynchronously)
-        process.nextTick(() => {
-            processApplication(application.id)
-                .catch(err => console.error(`Background processing failed for application ${application.id}:`, err));
         });
 
     } catch (error) {

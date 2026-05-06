@@ -38,13 +38,31 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
             }
         }
 
-        // 4. Perform update
+        // 4. Committee Scoring Completion Enforcement
+        if ([STATUS.APPROVED, STATUS.REJECTED, STATUS.WAITLISTED].includes(toStatus) && application.status === STATUS.UNDER_COMMITTEE_REVIEW) {
+            const criteriaCount = application.internship.evaluationCriteria?.length || 0;
+            if (criteriaCount > 0) {
+                const scores = await tx.evaluationScore.findMany({ where: { applicationId } });
+                const roles = new Set(scores.map(s => s.role));
+                
+                // Must have HOD, Mentor, and some form of PRTI/Committee Member
+                const hasPrti = roles.has('CE_PRTI') || roles.has('COMMITTEE_MEMBER');
+                const hasHod = roles.has('HOD');
+                const hasMentor = roles.has('MENTOR');
+
+                if (!hasPrti || !hasHod || !hasMentor) {
+                    throw new Error(`Incomplete Evaluation: Approval/Rejection requires scores from HOD, Mentor, and PRTI Representative. Missing roles: ${[!hasHod && 'HOD', !hasMentor && 'Mentor', !hasPrti && 'PRTI'].filter(Boolean).join(', ')}`);
+                }
+            }
+        }
+
+        // 5. Perform update
         const updated = await tx.application.update({
             where: { id: applicationId },
             data: { status: toStatus }
         });
 
-        // 5. Create Audit Log
+        // 6. Create Audit Log
         await tx.auditLog.create({
             data: {
                 action: 'STATUS_TRANSITION',

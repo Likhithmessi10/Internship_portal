@@ -2,7 +2,6 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = require('../lib/prisma');
 const emailService = require('../services/email/emailService');
 const xl = require('exceljs');
-const { allocateApplicants } = require('../services/allocationService');
 const { createAuditLog } = require('../utils/auditLogger');
 const { notifyMentorAssignment, notifyWorkAssignment } = require('../services/mailService');
 const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
@@ -18,9 +17,8 @@ const createInternship = async (req, res) => {
         const {
             title, department, description, roles, rolesData, requirements,
             expectations, location, duration, openingsCount, applicationDeadline,
-            requiredDocuments, quotaPercentages, priorityCollege, priorityCollegeQuota,
-            stipendType, stipendAmount, shortlistingRatio, preferredColleges,
-            topColleges, seatAllocation, evaluationQuestions
+            requiredDocuments, stipendType, stipendAmount, customQuestions,
+            evaluationQuestions, preferredColleges
         } = req.body;
 
         let targetDepartment = department;
@@ -58,29 +56,27 @@ const createInternship = async (req, res) => {
                 openingsCount: parseInt(openingsCount),
                 applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
                 requiredDocuments: requiredDocuments || null,
-                quotaPercentages: quotaPercentages || null,
-                priorityCollege: priorityCollege || null,
-                priorityCollegeQuota: parseInt(priorityCollegeQuota) || 0,
                 stipendType: stipendType || 'NON_COLLABORATIVE',
                 stipendAmount: stipendAmount ? parseFloat(stipendAmount) : null,
-                shortlistingRatio: shortlistingRatio ? parseInt(shortlistingRatio) : 2,
+                customQuestions: customQuestions || [],
                 preferredColleges: preferredColleges || [],
-                topColleges: topColleges || [],
-                seatAllocation: seatAllocation || {}
+                quotaPercentages: req.body.quotaPercentages || null,
             }
         });
 
-        // Insert evaluation questions if provided
-        if (evaluationQuestions && Array.isArray(evaluationQuestions) && evaluationQuestions.length > 0) {
-            const criteriaData = evaluationQuestions.map(q => ({
-                internshipId: internship.id,
-                question: q,
-                maxScore: 50
-            }));
-            await prisma.internshipEvaluationCriteria.createMany({
-                data: criteriaData
-            });
-        }
+        // Insert evaluation questions if provided, otherwise use defaults
+        const questionsToUse = (evaluationQuestions && Array.isArray(evaluationQuestions) && evaluationQuestions.length > 0) 
+            ? evaluationQuestions 
+            : ["Technical Skills & Domain Knowledge", "Communication & Problem Solving"];
+
+        const criteriaData = questionsToUse.map(q => ({
+            internshipId: internship.id,
+            question: q,
+            maxScore: 50
+        }));
+        await prisma.internshipEvaluationCriteria.createMany({
+            data: criteriaData
+        });
 
         res.status(201).json({ success: true, data: internship });
 
@@ -206,6 +202,93 @@ const toggleInternship = async (req, res) => {
  * @route   GET /api/v1/admin/internships/:id/applications
  * @access  Private (Admin)
  */
+// Helper for string similarity
+const getLevenshteinDistance = (a, b) => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    var matrix = [];
+    for (var i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (var j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (var i = 1; i <= b.length; i++) {
+        for (var j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) == a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+};
+
+const STOP_TOKENS = new Set(['college', 'university', 'institute', 'inst', 'technology', 'technologies', 'school', 'of', 'the', 'and']);
+const ABBR_MAP = {
+    nit: 'national institute technology',
+    iit: 'indian institute technology',
+    iiit: 'indian institute information technology',
+    nitt: 'national institute technology trichy',
+    vnit: 'visvesvaraya national institute technology',
+    mnnit: 'motilal nehru national institute technology',
+    nitw: 'national institute technology warangal',
+    nitk: 'national institute technology karnataka',
+    nitc: 'national institute technology calicut',
+    nits: 'national institute technology silchar',
+    nita: 'national institute technology agartala',
+    nitd: 'national institute technology delhi',
+    nitr: 'national institute technology rourkela',
+    nitj: 'national institute technology jalandhar',
+    nitp: 'national institute technology patna',
+    iitm: 'indian institute technology madras',
+    iitd: 'indian institute technology delhi',
+    iitb: 'indian institute technology bombay',
+    iitk: 'indian institute technology kanpur',
+    iitkgp: 'indian institute technology kharagpur',
+    iitr: 'indian institute technology roorkee',
+    iith: 'indian institute technology hyderabad',
+    iitg: 'indian institute technology guwahati'
+};
+
+const expandAbbreviations = (s) => {
+    let text = (s || '').toLowerCase();
+    Object.entries(ABBR_MAP).forEach(([abbr, full]) => {
+        const re = new RegExp(`\\b${abbr}\\b`, 'g');
+        text = text.replace(re, full);
+    });
+    return text;
+};
+
+const normalizeCollege = (s) => expandAbbreviations(s).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+const tokenizeCollege = (s) => normalizeCollege(s).split(' ').filter(tok => tok && !STOP_TOKENS.has(tok));
+
+const tokenSimilarity = (a, b) => {
+    const aSet = new Set(tokenizeCollege(a));
+    const bSet = new Set(tokenizeCollege(b));
+    if (aSet.size === 0 || bSet.size === 0) return 0;
+    let inter = 0;
+    aSet.forEach(t => { if (bSet.has(t)) inter += 1; });
+    const union = new Set([...aSet, ...bSet]).size;
+    return union > 0 ? inter / union : 0;
+};
+
+const isPreferredCollege = (collegeName, preferredColleges) => {
+    if (!preferredColleges || preferredColleges.length === 0) return false;
+    if (!collegeName) return false;
+    const target = normalizeCollege(collegeName).replace(/\s/g, '');
+    for (const pref of preferredColleges) {
+        const p = normalizeCollege(pref).replace(/\s/g, '');
+        if (!p) continue;
+        if (target.includes(p) || p.includes(target)) return true;
+        if (tokenSimilarity(collegeName, pref) >= 0.5) return true;
+        const maxLen = Math.max(target.length, p.length);
+        if (maxLen > 0 && Math.abs(target.length - p.length) <= Math.max(6, Math.floor(maxLen * 0.35))) {
+            const dist = getLevenshteinDistance(target, p);
+            const ratio = dist / maxLen;
+            if (ratio <= 0.22) return true;
+        }
+    }
+    return false;
+};
+
 const getApplications = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -224,69 +307,66 @@ const getApplications = async (req, res) => {
         if (req.user.role === 'MENTOR') {
             whereClause.mentorId = req.user.id;
         }
+        if (req.user.role === 'HOD' && internship.department !== req.user.department) {
+            return res.status(403).json({ success: false, message: 'Not authorized for this department' });
+        }
 
-        const [applications, total] = await Promise.all([
-            prisma.application.findMany({
-                where: whereClause,
-                skip,
-                take: limit,
-                orderBy: { score: 'desc' },
-                include: {
-                    student: {
-                        include: { user: { select: { email: true, name: true } } }
-                    },
-                    documents: true,
-                    mentor: { select: { name: true, email: true } },
-                    shortlist: true,
-                    attendance: true,
-                    stipend: true
-                }
-            }),
-            prisma.application.count({ where: whereClause })
-        ]);
+        const allApplications = await prisma.application.findMany({
+            where: whereClause,
+            include: {
+                student: {
+                    include: { user: { select: { email: true, name: true } } }
+                },
+                documents: true,
+                mentor: { select: { name: true, email: true } },
+                shortlist: true,
+                attendance: true,
+                stipend: true,
+                committeeEvaluations: true
+            }
+        });
+
+        const preferredColleges = internship.preferredColleges || [];
+
+        // Apply Priority Sorting
+        allApplications.sort((a, b) => {
+             // Tier 1: Preferred
+             const aPref = isPreferredCollege(a.student?.collegeName, preferredColleges);
+             const bPref = isPreferredCollege(b.student?.collegeName, preferredColleges);
+             if (aPref && !bPref) return -1;
+             if (!aPref && bPref) return 1;
+
+             // Tier 2: IIT / NIT
+             const aPremier = a.student?.collegeCategory === 'IIT' || a.student?.collegeCategory === 'NIT';
+             const bPremier = b.student?.collegeCategory === 'IIT' || b.student?.collegeCategory === 'NIT';
+             if (aPremier && !bPremier) return -1;
+             if (!aPremier && bPremier) return 1;
+
+             // Tier 3: Top 100 NIRF
+             const aNirf = (a.student?.nirfRanking && a.student.nirfRanking <= 100) ? 1 : 0;
+             const bNirf = (b.student?.nirfRanking && b.student.nirfRanking <= 100) ? 1 : 0;
+             if (aNirf > bNirf) return -1;
+             if (aNirf < bNirf) return 1;
+
+             // Tier 4: CGPA Sorting
+             const aCgpa = a.student?.cgpa || 0;
+             const bCgpa = b.student?.cgpa || 0;
+             if (bCgpa !== aCgpa) return bCgpa - aCgpa;
+
+             return 0; // Default
+        });
+
+        const total = allApplications.length;
+        const paginatedApplications = allApplications.slice(skip, skip + limit);
 
         res.status(200).json({ 
             success: true, 
-            data: applications,
+            data: paginatedApplications,
             pagination: { total, page, limit, pages: Math.ceil(total / limit) }
         });
     } catch (error) {
         console.error('Get applications error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
-/**
- * @desc    Run automated shortlisting for internship
- */
-const runShortlistingAction = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { enqueueJob } = require('../services/jobService');
-        const job = await enqueueJob(
-            'BATCH_SHORTLIST', 
-            { 
-                internshipId: id,
-                triggeredBy: {
-                    email: req.user.email,
-                    role: req.user.role
-                }
-            },
-            `shortlist_${id}`
-        );
-
-        
-        // Audit Log
-        await createAuditLog('RUN_SHORTLISTING', req.user.email, `Enqueued auto-shortlisting for internship ${id}`, id);
-        
-        res.status(202).json({ 
-            success: true, 
-            message: 'Shortlisting process started in the background. It will process all applications deterministically.',
-            jobId: job.id
-        });
-    } catch (error) {
-        console.error('Run shortlisting error:', error.message);
-        res.status(500).json({ success: false, message: error.message || 'Failed to run shortlisting' });
     }
 };
 
@@ -390,29 +470,7 @@ const updateApplicationStatus = async (req, res) => {
                 });
             }
 
-            // Committee Auto-Sync
-            if (mentorUser) {
-                const hodUser = await tx.user.findFirst({
-                    where: { role: 'HOD', department: internship.department }
-                });
-
-                await tx.committee.upsert({
-                    where: { internshipId: internship.id },
-                    update: { mentorId: mentorUser.id, hodId: hodUser?.id || null },
-                    create: {
-                        internshipId: internship.id,
-                        mentorId: mentorUser.id,
-                        hodId: hodUser?.id || null,
-                        membersData: {
-                            structure: {
-                                member1: 'HOD (Permanent)',
-                                member2: 'Mentor (Assigned by HOD)',
-                                member3: 'PRTI Representative (Editable)'
-                            }
-                        }
-                    }
-                });
-            }
+            // Committee Auto-Sync logic removed to prevent assigning mentor to the entire internship.
 
             return updatedApp;
         });
@@ -612,24 +670,6 @@ const updatePortalConfig = async (req, res) => {
     } catch (error) {
         console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
-/**
- * @desc    Deterministically Allocate Applicants (Proposed Selection)
- */
-const allocateApplicantsAction = async (req, res, next) => {
-    try {
-        const internshipId = req.params.id;
-        const internship = await prisma.internship.findUnique({ where: { id: internshipId } });
-        const applications = await prisma.application.findMany({
-            where: { internshipId, status: { in: ['SUBMITTED', 'SHORTLISTED'] } },
-            include: { student: true }
-        });
-        const allocation = allocateApplicants(applications, internship);
-        res.status(200).json({ success: true, data: allocation });
-    } catch (error) {
-        next(error);
     }
 };
 
@@ -1068,7 +1108,6 @@ module.exports = {
     extendDeadline,
     getPortalConfig,
     updatePortalConfig,
-    allocateApplicantsAction,
     getCommitteeDetails,
     updateCommitteeDetails,
     getUsersByRole,
@@ -1080,6 +1119,5 @@ module.exports = {
     getMentorMeetings,
     getMentorInterns,
     assignWork,
-    getWorkAssignments,
-    runShortlistingAction
+    getWorkAssignments
 };

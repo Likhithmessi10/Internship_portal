@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../utils/api';
 import {
     Users, FileText, CheckCircle, XCircle, Clock,
-    TrendingUp, Award, Calendar, ChevronRight, Star
+    TrendingUp, Award, Calendar, ChevronRight, Star,
+    User as UserIcon, Search, Filter, RefreshCcw
 } from 'lucide-react';
-import PRTIEvaluationModal from './PRTIEvaluationModal';
+import ApplicationProfileModal from '../ApplicationProfileModal';
 
 const PRTICommitteeDashboard = () => {
     const { user } = useAuth();
@@ -13,9 +14,9 @@ const PRTICommitteeDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [selectedApp, setSelectedApp] = useState(null);
     const [showEvaluationModal, setShowEvaluationModal] = useState(false);
-    const [filter, setFilter] = useState('PENDING');
+    const [filter, setFilter] = useState('SHORTLISTED');
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const statusParam = filter === 'ALL' ? '' : `?status=${filter}`;
@@ -26,11 +27,11 @@ const PRTICommitteeDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
 
     useEffect(() => {
         fetchData();
-    }, [filter]);
+    }, [fetchData]);
 
     const handleEvaluate = (app) => {
         setSelectedApp(app);
@@ -39,8 +40,8 @@ const PRTICommitteeDashboard = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'COMMITTEE_EVALUATION': return 'bg-amber-100 text-amber-700';
-            case 'CA_APPROVED': return 'bg-emerald-100 text-emerald-700';
+            case 'SHORTLISTED': return 'bg-amber-100 text-amber-700';
+            case 'APPROVED': return 'bg-emerald-100 text-emerald-700';
             case 'HIRED': return 'bg-blue-100 text-blue-700';
             case 'REJECTED': return 'bg-red-100 text-red-700';
             default: return 'bg-gray-100 text-gray-700';
@@ -50,21 +51,26 @@ const PRTICommitteeDashboard = () => {
     const getEvaluationStatus = (app) => {
         const allScores = app.evaluationScores || [];
         const criteriaCount = app.internship?.evaluationCriteria?.length || 0;
-        
-        const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
-        const hodScores = allScores.filter(s => s.role === 'HOD');
-        const mentorScores = allScores.filter(s => s.role === 'MENTOR');
 
-        const hasPrti = criteriaCount > 0 && prtiScores.length >= criteriaCount;
-        const hasHod = criteriaCount > 0 && hodScores.length >= criteriaCount;
-        const hasMentor = criteriaCount > 0 && mentorScores.length >= criteriaCount;
+        const distinctQuestions = (predicate) =>
+            new Set(allScores.filter(predicate).map(s => s.questionId)).size;
 
-        const submitted = [hasPrti, hasHod, hasMentor].filter(Boolean).length;
+        const hasPrti = criteriaCount > 0 && distinctQuestions(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER') >= criteriaCount;
+        const hasHod = criteriaCount > 0 && distinctQuestions(s => s.role === 'HOD') >= criteriaCount;
+        const hasMentor = criteriaCount > 0 && distinctQuestions(s => s.role === 'MENTOR') >= criteriaCount;
+
+        const missing = [];
+        if (!hasHod) missing.push('HOD');
+        if (!hasMentor) missing.push('Mentor');
+        if (!hasPrti) missing.push('PRTI');
+
+        const submitted = 3 - missing.length;
         
         return {
             submitted,
             total: 3,
-            ready: submitted === 3
+            ready: submitted === 3,
+            missing
         };
     };
 
@@ -85,6 +91,14 @@ const PRTICommitteeDashboard = () => {
         ready: applications.filter(a => getEvaluationStatus(a).ready).length,
         approved: applications.filter(a => a.status === 'HIRED').length
     };
+
+    const filterOptions = [
+        { value: 'ALL', label: 'ALL' },
+        { value: 'SHORTLISTED', label: 'SHORTLISTED' },
+        { value: 'UNDER_COMMITTEE_REVIEW', label: 'UNDER REVIEW' },
+        { value: 'APPROVED', label: 'APPROVED' },
+        { value: 'HIRED', label: 'HIRED' }
+    ];
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-32">
@@ -135,17 +149,17 @@ const PRTICommitteeDashboard = () => {
                 <div className="p-8 border-b border-outline-variant/10 flex items-center justify-between">
                     <h3 className="text-xl font-black text-primary">Committee Applications</h3>
                     <div className="flex gap-2">
-                        {['ALL', 'COMMITTEE_EVALUATION', 'CA_APPROVED', 'HIRED'].map(f => (
+                        {filterOptions.map(f => (
                             <button
-                                key={f}
-                                onClick={() => setFilter(f)}
+                                key={f.value}
+                                onClick={() => setFilter(f.value)}
                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    filter === f 
+                                    filter === f.value 
                                         ? 'bg-primary text-white shadow-md' 
                                         : 'bg-surface-container-high text-outline hover:bg-surface-variant'
                                 }`}
                             >
-                                {f.replace(/_/g, ' ')}
+                                {f.label}
                             </button>
                         ))}
                     </div>
@@ -196,22 +210,29 @@ const PRTICommitteeDashboard = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-6 text-center">
-                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-high">
-                                                {evalStatus.submitted < 3 ? (
-                                                    <Clock size={14} className="text-amber-600" />
-                                                ) : (
-                                                    <CheckCircle size={14} className="text-emerald-600" />
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-high shadow-sm border border-outline-variant/10">
+                                                    {evalStatus.ready ? (
+                                                        <CheckCircle size={14} className="text-emerald-600" />
+                                                    ) : (
+                                                        <Clock size={14} className="text-amber-600 animate-pulse" />
+                                                    )}
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                                                        {evalStatus.submitted}/{evalStatus.total} Members
+                                                    </span>
+                                                </div>
+                                                {!evalStatus.ready && (
+                                                    <p className="text-[9px] font-bold text-amber-600 uppercase tracking-tighter opacity-80">
+                                                        {evalStatus.missing.length > 0 ? `Waiting for ${evalStatus.missing.join(', ')}` : 'Processing...'}
+                                                    </p>
                                                 )}
-                                                <span className="text-[9px] font-black uppercase tracking-widest">
-                                                    {evalStatus.submitted}/{evalStatus.total} Scores
-                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-6 text-center">
                                             {app.committeeFinalScore !== null ? (
                                                 <div className="flex items-center justify-center">
                                                     <div className="px-3 py-2 bg-primary/10 text-primary font-black rounded-lg text-lg border border-primary/20">
-                                                        {app.committeeFinalScore} <span className="text-[10px] uppercase tracking-widest opacity-60">/ 50</span>
+                                                        {app.committeeFinalScore} <span className="text-[10px] uppercase tracking-widest opacity-60">/ {(app.internship?.evaluationCriteria?.length || 0) * 50}</span>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -223,7 +244,7 @@ const PRTICommitteeDashboard = () => {
                                                 <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusColor(app.status)}`}>
                                                     {app.status.replace(/_/g, ' ')}
                                                 </span>
-                                                {evalStatus.ready && app.status !== 'HIRED' && (
+                                                {user?.role === 'HOD' && evalStatus.ready && app.status !== 'HIRED' && (
                                                     <button
                                                         onClick={() => handleEvaluate(app)}
                                                         className="px-4 py-2 bg-primary text-white text-[10px] font-black rounded-xl hover:scale-105 transition-all shadow-lg shadow-primary/20 inline-flex items-center gap-2 uppercase tracking-widest"
@@ -231,7 +252,7 @@ const PRTICommitteeDashboard = () => {
                                                         <Star size={14} /> Approve
                                                     </button>
                                                 )}
-                                                {!evalStatus.ready && (
+                                                {(user?.role !== 'HOD' || !evalStatus.ready) && (
                                                     <button
                                                         onClick={() => handleEvaluate(app)}
                                                         className="px-4 py-2 bg-surface-container-high text-primary text-[10px] font-black rounded-xl hover:bg-primary hover:text-white transition-all inline-flex items-center gap-2 uppercase tracking-widest"
@@ -260,11 +281,24 @@ const PRTICommitteeDashboard = () => {
             </div>
 
             {showEvaluationModal && selectedApp && (
-                <PRTIEvaluationModal
+                <ApplicationProfileModal
                     application={selectedApp}
-                    onClose={(success) => {
+                    internship={selectedApp.internship}
+                    allApplications={applications}
+                    onClose={() => {
                         setShowEvaluationModal(false);
-                        if (success) fetchData();
+                        setSelectedApp(null);
+                        fetchData();
+                    }}
+                    updateStatus={async (newStatus, extraData = {}) => {
+                        try {
+                            // Status changes go through the canonical admin workflow endpoint.
+                            // Role-based permissions are enforced server-side.
+                            await api.put(`/admin/applications/${selectedApp.id}`, { status: newStatus, ...extraData });
+                            fetchData();
+                        } catch (err) {
+                            alert(err.response?.data?.message || 'Failed to update status');
+                        }
                     }}
                 />
             )}

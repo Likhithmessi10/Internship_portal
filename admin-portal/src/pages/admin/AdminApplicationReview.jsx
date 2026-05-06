@@ -4,27 +4,39 @@ import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import ApplicationProfileModal from './ApplicationProfileModal';
 import {
-    ArrowLeft, Download, Users, CheckCircle, Clock, XCircle,
-    Eye, TrendingUp, Star, ChevronDown, ChevronRight, Sparkles,
-    Shield, Briefcase, GraduationCap, Award, Info, MapPin, Zap
+    X, CheckCircle, ChevronDown, ChevronRight, Download, Users, FileText, LayoutGrid, List, AlertCircle, ArrowLeft, MoreVertical, Star, TrendingUp, Info
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-const FILTERS = ['All', 'SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION', 'CA_APPROVED', 'ONGOING', 'COMPLETED', 'REJECTED'];
+// Keep filters aligned with backend enum ApplicationStatus (Prisma).
+const FILTERS = [
+    'All',
+    'SUBMITTED',
+    'SHORTLISTED',
+    'UNDER_COMMITTEE_REVIEW',
+    'WAITLISTED',
+    'APPROVED',
+    'HIRED',
+    'ONGOING',
+    'COMPLETED',
+    'REJECTED'
+];
 
 const getMediaUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('data:')) return url;
     if (url.startsWith('http')) return url;
-    return `http://localhost:5001/${url.replace(/\\/g, '/')}`;
+    return `${MEDIA_URL}/${url.replace(/\\/g, '/')}`;
 };
 
 const StatusBadge = ({ status }) => {
     const map = {
         SUBMITTED: 'bg-surface-container-low text-outline border-outline-variant/20',
-        HOD_REVIEW: 'bg-primary/10 text-primary border-primary/20',
-        COMMITTEE_EVALUATION: 'bg-secondary/10 text-secondary border-secondary/20',
-        CA_APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        SHORTLISTED: 'bg-amber-50 text-amber-700 border-amber-200',
+        UNDER_COMMITTEE_REVIEW: 'bg-secondary/10 text-secondary border-secondary/20',
+        WAITLISTED: 'bg-surface-container-high text-primary/70 border-outline-variant/15',
+        APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        HIRED: 'bg-emerald-100/50 text-emerald-800 border-emerald-300/50',
         ONGOING: 'bg-emerald-100/50 text-emerald-800 border-emerald-300/50',
         COMPLETED: 'bg-surface-container-high text-primary/60 border-outline-variant/10',
         REJECTED: 'bg-error/5 text-error border-error/10',
@@ -54,10 +66,10 @@ const AdminApplicationReview = () => {
     // AI Allocation states removed
 
     const [collapsed, setCollapsed] = useState({
-        nominated: false,
-        quota: false,
-        highlighted: false,
-        standard: true
+        PREFERRED: false,
+        IIT_NIT: false,
+        TOP_100: false,
+        REGULAR: false
     });
 
     const toggleSection = (s) => setCollapsed(prev => ({ ...prev, [s]: !prev[s] }));
@@ -123,97 +135,39 @@ const AdminApplicationReview = () => {
         }
     };
 
-    const handleRunShortlisting = async () => {
-        if (!window.confirm('This will automatically calculate scores for all candidates and move the top candidates to HOD Review. Continue?')) return;
-        try {
-            const res = await api.post(`/admin/internships/${id}/shortlist`);
-            alert(res.data.message);
-            fetchData();
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed to run shortlisting');
-        }
-    };
-
-    const isTopUniversity = (student) => {
-        if (!student) return false;
-        const nirf = parseInt(student.nirfRanking);
-        const category = student.collegeCategory;
-        const topCategories = ['IIT', 'NIT', 'IIIT', 'CENTRAL'];
-        return (nirf > 0 && nirf <= 100) || topCategories.includes(category);
-    };
-
-    const quotaPct = internship?.quotaPercentages?.topUniversity || 0;
-    const priorityPct = internship?.priorityCollegeQuota || 0;
-    const totalCap = internship?.openingsCount || 0;
-    const priorityMetricCap = Math.round((totalCap * priorityPct) / 100);
-    const quotaCap = Math.round((totalCap * quotaPct) / 100);
-
-    const { nominatedApps, highlightedApps, quotaApps, standardApps, uniqueColleges, nominatedHired, quotaHired, roleHiredStats, categoryStats } = (() => {
+    const { filteredApps, uniqueColleges, roleHiredStats } = (() => {
         const sortedFull = [...applications].sort((a, b) => (b.student?.cgpa || 0) - (a.student?.cgpa || 0));
-
-        const nominated = [];
-        const highlighted = [];
-        const quota = [];
-        const pool = [];
         const collegesSet = new Set();
-        const priorityCollegeName = internship?.priorityCollege;
-        const clean = (s) => (s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-
-        let nominatedHired = 0;
-        let quotaHired = 0;
-
+        
         sortedFull.forEach(app => {
-            const collegeNameRaw = (app.student?.collegeName || '').trim();
-            collegesSet.add(collegeNameRaw);
-            const collegeName = clean(collegeNameRaw);
-            const pCollege = clean(priorityCollegeName || '');
-            const hCollege = clean(highlightCollege);
-
-            const isNominated = pCollege.length > 0 && (collegeName.includes(pCollege) || pCollege.includes(collegeName));
-            const isTopUniv = isTopUniversity(app.student);
-            const isHighlighted = hCollege.length > 0 && (collegeName.includes(hCollege) || hCollege.includes(collegeName));
-
-            if (isNominated) {
-                nominated.push({ ...app, nominatedMatch: true });
-                if (['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status)) nominatedHired++;
-            }
-            else if (isTopUniv) {
-                quota.push({ ...app, quotaMatch: true });
-                if (['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status)) quotaHired++;
-            }
-            else if (isHighlighted) highlighted.push({ ...app, highlightMatch: true });
-            else pool.push({ ...app, nominatedMatch: isNominated, quotaMatch: isTopUniv && !isNominated });
+            if (app.student?.collegeName) collegesSet.add(app.student.collegeName);
         });
 
         const filterFn = a => {
             const statusMatch = filter === 'All' ? true : a.status === filter;
             const roleMatch = roleFilter === 'All Roles' ? true : a.assignedRole === roleFilter;
-            return statusMatch && roleMatch;
+            const collegeMatch = !highlightCollege || (a.student?.collegeName || '').toLowerCase().includes(highlightCollege.toLowerCase());
+            return statusMatch && roleMatch && collegeMatch;
         };
+
         const roleHiredStats = {};
-        applications.forEach(a => { if (a.status === 'HIRED' && a.assignedRole) roleHiredStats[a.assignedRole] = (roleHiredStats[a.assignedRole] || 0) + 1; });
+        applications.forEach(a => { 
+            if (['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status) && a.assignedRole) {
+                roleHiredStats[a.assignedRole] = (roleHiredStats[a.assignedRole] || 0) + 1; 
+            }
+        });
 
         return {
-            nominatedApps: nominated.filter(filterFn),
-            highlightedApps: highlighted.filter(filterFn),
-            quotaApps: quota.filter(filterFn),
-            standardApps: pool.filter(filterFn),
+            filteredApps: sortedFull.filter(filterFn),
             uniqueColleges: Array.from(collegesSet),
-            nominatedHired,
-            quotaHired,
-            roleHiredStats,
-            categoryStats: {
-                PREFERRED: applications.filter(a => a.shortlistCategory === 'PREFERRED').length,
-                TOP: applications.filter(a => a.shortlistCategory === 'TOP').length,
-                OTHER: applications.filter(a => a.shortlistCategory === 'OTHER').length
-            }
+            roleHiredStats
         };
     })();
 
     const stats = {
         total: applications.length,
-        pending: applications.filter(a => ['SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION'].includes(a.status)).length,
-        hired: applications.filter(a => ['CA_APPROVED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
+        pending: applications.filter(a => ['SUBMITTED', 'SHORTLISTED', 'UNDER_COMMITTEE_REVIEW', 'WAITLISTED'].includes(a.status)).length,
+        hired: applications.filter(a => ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
         rejected: applications.filter(a => a.status === 'REJECTED').length,
     };
     const fillPct = internship ? Math.min(100, Math.round((stats.hired / internship.openingsCount) * 100)) : 0;
@@ -234,11 +188,6 @@ const AdminApplicationReview = () => {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    {user?.role === 'HOD' && (
-                        <button onClick={handleRunShortlisting} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
-                            <Zap size={14} className="fill-white" /> Run Auto-Shortlisting
-                        </button>
-                    )}
                     <button onClick={handleExport} className="bg-surface-container-low px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-variant transition-colors">
                         <span className="material-symbols-outlined text-lg">download</span> Export Pool
                     </button>
@@ -263,26 +212,19 @@ const AdminApplicationReview = () => {
                         <div className="bg-primary h-full transition-all duration-1000 shadow-[0_0_15px_rgba(79,70,229,0.3)]" style={{ width: `${fillPct}%` }} />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="p-4 bg-surface-container-lowest/50 rounded-lg border border-outline-variant/5">
-                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Preferred Dept.</p>
+                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Target Openings</p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold text-primary">{categoryStats.PREFERRED}</span>
-                                <span className="text-[10px] text-outline">Applicants</span>
+                                <span className="text-xl font-bold text-primary">{internship?.openingsCount}</span>
+                                <span className="text-[10px] text-outline">Positions</span>
                             </div>
                         </div>
                         <div className="p-4 bg-surface-container-lowest/50 rounded-lg border border-outline-variant/5">
-                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Top Tier</p>
+                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Available Pool</p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold text-primary">{categoryStats.TOP}</span>
-                                <span className="text-[10px] text-outline">Applicants</span>
-                            </div>
-                        </div>
-                        <div className="p-4 bg-surface-container-lowest/50 rounded-lg border border-outline-variant/5">
-                            <p className="text-[10px] font-bold text-outline uppercase mb-1">General Pool</p>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold text-primary">{categoryStats.OTHER}</span>
-                                <span className="text-[10px] text-outline">Applicants</span>
+                                <span className="text-xl font-bold text-primary">{applications.length}</span>
+                                <span className="text-[10px] text-outline">Candidates</span>
                             </div>
                         </div>
                     </div>
@@ -355,24 +297,140 @@ const AdminApplicationReview = () => {
                             <tr className="bg-surface-container-high/30">
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Candidate Info</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">College Profile</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Score</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">CGPA</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Status</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/5">
-                            <GroupingHeader label="Preferred College Students" icon={<span className="material-symbols-outlined text-[12px] fill">grade</span>} active={nominatedApps.length > 0}
-                                collapsed={collapsed.nominated} onToggle={() => toggleSection('nominated')} count={nominatedApps.length} hired={nominatedHired} cap={priorityMetricCap} color="amber" />
-                            {!collapsed.nominated && nominatedApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
+                            {(() => {
+                                if (filteredApps.length === 0) {
+                                    return (
+                                        <tr>
+                                            <td colSpan="5" className="py-20 text-center">
+                                                <div className="flex flex-col items-center gap-2 opacity-30">
+                                                    <span className="material-symbols-outlined text-4xl">person_search</span>
+                                                    <p className="text-xs font-bold uppercase tracking-widest">No candidates found matching filters</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                }
 
-                            <GroupingHeader label="Top Tier Institute Students" icon={<span className="material-symbols-outlined text-[12px]">school</span>} active={quotaApps.length > 0}
-                                collapsed={collapsed.quota} onToggle={() => toggleSection('quota')} count={quotaApps.length} hired={quotaHired} cap={quotaCap} color="indigo" />
-                            {!collapsed.quota && quotaApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
+                                const preferredColleges = internship?.preferredColleges || [];
+                                const STOP_TOKENS = new Set(['college', 'university', 'institute', 'inst', 'technology', 'technologies', 'school', 'of', 'the', 'and']);
+                                const ABBR_MAP = {
+                                    nit: 'national institute technology',
+                                    iit: 'indian institute technology',
+                                    iiit: 'indian institute information technology',
+                                    nitt: 'national institute technology trichy',
+                                    vnit: 'visvesvaraya national institute technology',
+                                    mnnit: 'motilal nehru national institute technology',
+                                    nitw: 'national institute technology warangal',
+                                    nitk: 'national institute technology karnataka',
+                                    nitc: 'national institute technology calicut',
+                                    nitr: 'national institute technology rourkela',
+                                    iitm: 'indian institute technology madras',
+                                    iitd: 'indian institute technology delhi',
+                                    iitb: 'indian institute technology bombay',
+                                    iitk: 'indian institute technology kanpur',
+                                    iitkgp: 'indian institute technology kharagpur',
+                                    iitr: 'indian institute technology roorkee',
+                                    iith: 'indian institute technology hyderabad',
+                                    iitg: 'indian institute technology guwahati'
+                                };
+                                const expandAbbreviations = (s) => {
+                                    let text = (s || '').toLowerCase();
+                                    Object.entries(ABBR_MAP).forEach(([abbr, full]) => {
+                                        const re = new RegExp(`\\b${abbr}\\b`, 'g');
+                                        text = text.replace(re, full);
+                                    });
+                                    return text;
+                                };
+                                const normalize = (s) => expandAbbreviations(s).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+                                const tokenize = (s) => normalize(s).split(' ').filter(tok => tok && !STOP_TOKENS.has(tok));
+                                const tokenSimilarity = (a, b) => {
+                                    const aSet = new Set(tokenize(a));
+                                    const bSet = new Set(tokenize(b));
+                                    if (aSet.size === 0 || bSet.size === 0) return 0;
+                                    let inter = 0;
+                                    aSet.forEach(t => { if (bSet.has(t)) inter += 1; });
+                                    const union = new Set([...aSet, ...bSet]).size;
+                                    return union > 0 ? inter / union : 0;
+                                };
+                                const levenshtein = (a, b) => {
+                                    if (a.length === 0) return b.length;
+                                    if (b.length === 0) return a.length;
+                                    const matrix = [];
+                                    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+                                    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+                                    for (let i = 1; i <= b.length; i++) {
+                                        for (let j = 1; j <= a.length; j++) {
+                                            if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+                                            else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                                        }
+                                    }
+                                    return matrix[b.length][a.length];
+                                };
+                                const isPreferredCollege = (collegeName) => {
+                                    const target = normalize(collegeName).replace(/\s/g, '');
+                                    if (!target || !Array.isArray(preferredColleges)) return false;
+                                    return preferredColleges.some(pref => {
+                                        const p = normalize(pref).replace(/\s/g, '');
+                                        if (!p) return false;
+                                        if (target.includes(p) || p.includes(target)) return true;
+                                        if (tokenSimilarity(collegeName, pref) >= 0.5) return true;
+                                        const maxLen = Math.max(target.length, p.length);
+                                        if (maxLen > 0 && Math.abs(target.length - p.length) <= Math.max(6, Math.floor(maxLen * 0.35))) {
+                                            const ratio = levenshtein(target, p) / maxLen;
+                                            if (ratio <= 0.22) return true;
+                                        }
+                                        return false;
+                                    });
+                                };
 
-                            <GroupingHeader label="Other Applicants (General Merit)" icon={<span className="material-symbols-outlined text-[12px]">groups</span>} active={standardApps.length > 0}
-                                collapsed={collapsed.standard} onToggle={() => toggleSection('standard')} count={standardApps.length} color="slate" />
-                            {!collapsed.standard && standardApps.map(app => <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />)}
+                                const getBucket = (app) => {
+                                    const collegeName = app.student?.collegeName || '';
+                                    const category = (app.student?.collegeCategory || '').toUpperCase();
+                                    const nirf = Number(app.student?.nirfRanking || 0);
+
+                                    if (isPreferredCollege(collegeName)) return 'PREFERRED';
+                                    if (category === 'IIT' || category === 'NIT') return 'IIT_NIT';
+                                    if (nirf > 0 && nirf <= 100) return 'TOP_100';
+                                    return 'REGULAR';
+                                };
+
+                                const groups = [
+                                    { key: 'PREFERRED', label: 'Preferred Colleges', icon: Star, color: 'amber' },
+                                    { key: 'IIT_NIT', label: 'IITs & NITs', icon: TrendingUp, color: 'indigo' },
+                                    { key: 'TOP_100', label: 'Top 100 Colleges', icon: List, color: 'emerald' },
+                                    { key: 'REGULAR', label: 'Regular Colleges', icon: Users, color: 'slate' }
+                                ];
+
+                                return groups.map(group => {
+                                    const appsInGroup = filteredApps.filter(app => getBucket(app) === group.key);
+                                    if (appsInGroup.length === 0) return null;
+
+                                    return (
+                                        <React.Fragment key={group.key}>
+                                            <GroupingHeader 
+                                                label={group.label} 
+                                                icon={group.icon} 
+                                                active={true} 
+                                                collapsed={collapsed[group.key]} 
+                                                onToggle={() => toggleSection(group.key)} 
+                                                count={appsInGroup.length} 
+                                                hired={appsInGroup.filter(a => ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length}
+                                                cap={null}
+                                                color={group.color} 
+                                            />
+                                            {!collapsed[group.key] && appsInGroup.map(app => (
+                                                <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />
+                                            ))}
+                                        </React.Fragment>
+                                    );
+                                });
+                            })()}
                         </tbody>
                     </table>
                 </div>
@@ -395,15 +453,16 @@ const StatRow = ({ label, val, color }) => (
     </div>
 );
 
-const GroupingHeader = ({ label, icon, active, collapsed, onToggle, count, hired, cap, color }) => {
+const GroupingHeader = ({ label, icon: Icon, active, collapsed, onToggle, count, hired, cap, color }) => {
     if (!active) return null;
     const colors = {
         amber: 'bg-amber-100/50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border-amber-300/50',
         indigo: 'bg-indigo-50/50 dark:bg-indigo-900/40 text-indigo-900 dark:text-indigo-200 border-indigo-200',
+        emerald: 'bg-emerald-50/50 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-200 border-emerald-200',
         slate: 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200'
     };
     return (
-        <tr className={`${colors[color]} cursor-pointer hover:opacity-80 transition-all group`} onClick={onToggle}>
+        <tr className={`${colors[color] || colors.slate} cursor-pointer hover:opacity-80 transition-all group`} onClick={onToggle}>
             <td colSpan="5" className="py-4 px-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -412,7 +471,7 @@ const GroupingHeader = ({ label, icon, active, collapsed, onToggle, count, hired
                         </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5 italic">
-                                {React.cloneElement(icon, { size: 12 })} {label}
+                                {Icon ? <Icon size={12} /> : null} {label}
                             </span>
                             <span className="text-[9px] font-bold opacity-60 uppercase tracking-tighter">{count} Candidates found in this category</span>
                         </div>
@@ -454,7 +513,12 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
                         {app.student?.fullName?.charAt(0)}
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-primary">{app.student?.fullName}</p>
+                        <p className="text-sm font-bold text-primary flex items-center gap-2">
+                            {app.student?.fullName}
+                            {app.shortlistCategory === 'FALLBACK' && (
+                                <span className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 rounded text-[8px] uppercase tracking-widest border border-yellow-200 dark:border-yellow-800">Fallback Application</span>
+                            )}
+                        </p>
                         <p className="text-[10px] text-outline font-medium tracking-tighter uppercase mt-0.5">ID: {app.trackingId.slice(-6)}</p>
                     </div>
                 </div>
@@ -465,10 +529,6 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
                     <span className="text-[8px] font-bold px-1 py-0.5 bg-primary/10 text-primary rounded-sm uppercase tracking-widest">NIRF #{app.student?.nirfRanking || 'N/A'}</span>
                     <span className="text-[8px] font-bold px-1 py-0.5 bg-surface-container-high text-outline rounded-sm uppercase tracking-widest">{app.student?.collegeCategory}</span>
                 </div>
-            </td>
-            <td className="px-6 py-5 text-center">
-                <span className="text-sm font-black text-primary bg-primary/5 px-2 py-1 rounded">{app.score || '0.0'}</span>
-                <p className="text-[8px] font-bold text-outline/50 uppercase mt-1">Weighted</p>
             </td>
             <td className="px-6 py-5 text-center">
                 <span className="text-lg font-bold text-primary">{app.student?.cgpa}</span>
@@ -484,7 +544,7 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
                     <button onClick={() => setSelected(app)} className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all">
                         <span className="material-symbols-outlined text-lg">visibility</span>
                     </button>
-                    {['SUBMITTED', 'HOD_REVIEW', 'COMMITTEE_EVALUATION', 'CA_APPROVED'].includes(app.status) && (
+                    {['SUBMITTED', 'SHORTLISTED', 'UNDER_COMMITTEE_REVIEW', 'WAITLISTED', 'APPROVED', 'HIRED'].includes(app.status) && (
                         <button onClick={() => setSelected(app)} className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white hover:opacity-90 transition-all shadow-sm">
                             <span className="material-symbols-outlined text-lg">task_alt</span>
                         </button>

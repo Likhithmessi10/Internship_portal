@@ -27,6 +27,7 @@ import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
 import HodMeetings from './pages/admin/hod/HodMeetings';
+import HodSelection from './pages/admin/hod/HodSelection';
 import MentorDashboard from './pages/admin/mentor/MentorDashboard';
 import MentorApplications from './pages/admin/mentor/MentorApplications';
 import MentorCommittees from './pages/admin/mentor/MentorCommittees';
@@ -130,6 +131,11 @@ function App() {
           <Route path="/committees" element={
             <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
               <AdminLayout><HodCommittees /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/selection" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+              <AdminLayout><HodSelection /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/hod/meetings" element={

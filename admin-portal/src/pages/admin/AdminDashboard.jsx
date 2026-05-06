@@ -584,7 +584,14 @@ const AdminDashboard = () => {
                                                     <span className="material-symbols-outlined">work</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-primary">{int.title}</p>
+                                                    <p className="text-sm font-bold text-primary flex items-center gap-2">
+                                                        {int.title}
+                                                        {int.stipendType === 'COLLABORATIVE' ? (
+                                                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[8px] uppercase tracking-widest border border-green-200">Monetary</span>
+                                                        ) : (
+                                                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[8px] uppercase tracking-widest border border-gray-200">Non-Monetary</span>
+                                                        )}
+                                                    </p>
                                                     <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">
                                                         {int.department} • {int.location}
                                                     </p>

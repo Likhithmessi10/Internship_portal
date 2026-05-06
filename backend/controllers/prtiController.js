@@ -8,34 +8,51 @@ const prisma = require('../lib/prisma');
 const getCommitteeApplications = async (req, res) => {
     try {
         const { status, internshipId } = req.query;
+        const targetStatus = status;
 
-        let targetStatus = status || 'SHORTLISTED';
-        
-        // Map 'PENDING' to 'SHORTLISTED' for the dashboard default
-        if (targetStatus === 'PENDING' || targetStatus === 'SUBMITTED') {
-            targetStatus = 'SHORTLISTED';
+        const whereClause = {};
+
+        // If no status or generic pending, show both Shortlisted and Under Review
+        if (!targetStatus || targetStatus === 'PENDING' || targetStatus === 'SUBMITTED') {
+            whereClause.status = { in: ['SHORTLISTED', 'UNDER_COMMITTEE_REVIEW'] };
+        } else if (targetStatus !== 'ALL') {
+            whereClause.status = targetStatus;
         }
-
-        const whereClause = {
-            status: targetStatus
-        };
 
         if (internshipId) {
             whereClause.internshipId = internshipId;
         }
 
-        // If not ADMIN, filter by committee membership
-        if (req.user.role !== 'ADMIN') {
-            whereClause.internship = {
-                committee: {
-                    OR: [
-                        { hodId: req.user.id },
-                        { mentorId: req.user.id },
-                        { prtiMemberId: req.user.id }
-                    ]
-                }
-            };
+        // Global roles (ADMIN, CE_PRTI, COMMITTEE_MEMBER) see all relevant applications (filtered by status)
+        // Others (HOD, MENTOR) see only those they are assigned to in the committee
+        const isGlobalRole = req.user.role === 'ADMIN' || req.user.role === 'CE_PRTI' || req.user.role === 'COMMITTEE_MEMBER';
+
+        if (!isGlobalRole) {
+            whereClause.OR = [
+                {
+                    internship: {
+                        OR: [
+                            { department: req.user.department },
+                            {
+                                committee: {
+                                    OR: [
+                                        { hodId: req.user.id },
+                                        { mentorId: req.user.id },
+                                        { prtiMemberId: req.user.id }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                { mentorId: req.user.id }
+            ];
         }
+
+        console.log(
+            `[getCommitteeApplications] Role: ${req.user.role}, Dept: ${req.user.department}, Status: ${targetStatus}, Filter:`,
+            JSON.stringify(whereClause)
+        );
 
         const applications = await prisma.application.findMany({
             where: whereClause,
@@ -119,11 +136,15 @@ const submitEvaluation = async (req, res) => {
         }
 
         const isHod = committee.hodId === evaluatorId;
-        const isMentor = committee.mentorId === evaluatorId;
-        const isPrti = committee.prtiMemberId === evaluatorId;
+        // Mentor can be assigned either at committee level or per-application (HOD shortlisting flow).
+        const isMentor = committee.mentorId === evaluatorId || application.mentorId === evaluatorId;
+        const isAssignedPrtiRep = committee.prtiMemberId === evaluatorId;
         const isAdmin = evaluatorRole === 'ADMIN';
+        const isGlobalCommitteeRole = evaluatorRole === 'CE_PRTI' || evaluatorRole === 'COMMITTEE_MEMBER';
 
-        if (!isHod && !isMentor && !isPrti && !isAdmin) {
+        // CE_PRTI/COMMITTEE_MEMBER are treated as global committee roles (same as listing endpoint),
+        // so they can score even if not explicitly set as committee.prtiMemberId.
+        if (!isHod && !isMentor && !isAssignedPrtiRep && !isAdmin && !isGlobalCommitteeRole) {
             return res.status(403).json({ 
                 success: false, 
                 message: 'Unauthorized: You are not a member of the committee for this internship' 
@@ -139,6 +160,15 @@ const submitEvaluation = async (req, res) => {
 
         // Validate and Upsert all scores in a transaction
         await prisma.$transaction(async (tx) => {
+            // Update status if it's currently SHORTLISTED
+            if (application.status === 'SHORTLISTED') {
+                console.log(`[Evaluation] Transitioning Application ${applicationId} to UNDER_COMMITTEE_REVIEW`);
+                await tx.application.update({
+                    where: { id: applicationId },
+                    data: { status: 'UNDER_COMMITTEE_REVIEW' }
+                });
+            }
+
             for (const s of scores) {
                 if (s.score === undefined || s.score < 0 || s.score > 50) {
                     throw new Error(`Score must be between 0 and 50 for question ${s.questionId}`);
@@ -169,44 +199,33 @@ const submitEvaluation = async (req, res) => {
                 });
             }
 
-            // Check if all members have submitted all questions
-            const criteriaCount = application.internship.evaluationCriteria.length;
+            // Recalculate Final Score
             const allScores = await tx.evaluationScore.findMany({
                 where: { applicationId }
             });
 
-            // Group by member role to check who submitted
-            const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
-            const hodScores = allScores.filter(s => s.role === 'HOD');
-            const mentorScores = allScores.filter(s => s.role === 'MENTOR');
+            const criteria = application.internship.evaluationCriteria;
+            let totalFinalScore = 0;
+            let breakdown = {};
 
-            const hasPrti = prtiScores.length >= criteriaCount;
-            const hasHod = hodScores.length >= criteriaCount;
-            const hasMentor = mentorScores.length >= criteriaCount;
-
-            if (hasPrti && hasHod && hasMentor) {
-                // Calculate average per question
-                let cumulativeScore = 0;
-                let breakdown = {};
-
-                application.internship.evaluationCriteria.forEach(q => {
-                    const prti = prtiScores.find(s => s.questionId === q.id)?.score || 0;
-                    const hod = hodScores.find(s => s.questionId === q.id)?.score || 0;
-                    const mentor = mentorScores.find(s => s.questionId === q.id)?.score || 0;
-                    
-                    const avg = (prti + hod + mentor) / 3;
-                    cumulativeScore += avg;
-                    breakdown[q.id] = avg;
-                });
-
-                await tx.application.update({
-                    where: { id: applicationId },
-                    data: {
-                        committeeFinalScore: parseFloat(cumulativeScore.toFixed(2)),
-                        scoreBreakdown: breakdown
-                    }
-                });
+            for (const q of criteria) {
+                const questionScores = allScores.filter(s => s.questionId === q.id);
+                if (questionScores.length > 0) {
+                    const avg = questionScores.reduce((acc, s) => acc + s.score, 0) / questionScores.length;
+                    totalFinalScore += avg;
+                    breakdown[q.id] = parseFloat(avg.toFixed(2));
+                }
             }
+
+            console.log(`[Evaluation] Application ${applicationId} Final Score Recalculated: ${totalFinalScore}`);
+
+            await tx.application.update({
+                where: { id: applicationId },
+                data: {
+                    committeeFinalScore: parseFloat(totalFinalScore.toFixed(2)),
+                    scoreBreakdown: breakdown
+                }
+            });
         });
 
         // Get all evaluations to return updated state

@@ -33,7 +33,8 @@ const generateRefreshToken = (id, email, role, department) => {
  */
 const register = async (req, res) => {
     try {
-        const { email, password, role } = req.body;
+        const { password, role } = req.body;
+        const email = req.body.email?.trim().toLowerCase();
 
         // Validate password strength
         const passwordValidation = validatePassword(password);
@@ -56,13 +57,14 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create user
-        // SECURITY FIX: Never allow role from body in public registration
-        // Default to STUDENT. Admin creation should be a separate, restricted route.
+        const allowedRoles = ['STUDENT', 'ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
+        const finalRole = allowedRoles.includes(role) ? role : 'STUDENT';
+
         const user = await prisma.user.create({
             data: {
                 email,
                 password: hashedPassword,
-                role: 'STUDENT'
+                role: finalRole
             }
         });
 
@@ -94,7 +96,8 @@ const register = async (req, res) => {
  */
 const registerAdmin = async (req, res) => {
     try {
-        const { email, password, role, name, department } = req.body;
+        const { password, role, name, department } = req.body;
+        const email = req.body.email?.trim().toLowerCase();
 
         if (!['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'].includes(role)) {
             return res.status(400).json({ success: false, message: 'Invalid admin role' });
@@ -156,7 +159,8 @@ const registerAdmin = async (req, res) => {
  */
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { password } = req.body;
+        const email = req.body.email?.trim().toLowerCase();
         const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
 
         if (!email || !password) {
@@ -317,11 +321,46 @@ const resetPassword = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Update user profile (Name and Photo)
+ * @route   PUT /api/v1/auth/update-profile
+ * @access  Private
+ */
+const updateProfile = async (req, res) => {
+    try {
+        const { name } = req.body;
+        const updateData = {};
+
+        if (name) updateData.name = name;
+        
+        if (req.file) {
+            // Store the relative path to the file
+            updateData.photoUrl = `uploads/${req.file.filename}`;
+        }
+
+        const user = await prisma.user.update({
+            where: { id: req.user.id },
+            data: updateData,
+            select: { id: true, email: true, role: true, department: true, name: true, photoUrl: true }
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: user
+        });
+    } catch (error) {
+        console.error('Update profile error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     register,
     registerAdmin,
     login,
     refreshToken,
     getMe,
-    resetPassword
+    resetPassword,
+    updateProfile
 };

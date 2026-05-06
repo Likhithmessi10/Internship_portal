@@ -1,22 +1,8 @@
 const prisma = require('../lib/prisma');
-const { processApplication, runShortlistingForInternship } = require('../services/shortlistingService');
-
 const SLEEP_MS = 3000; // Poll every 3 seconds
 
 const executeJob = async (job) => {
     switch (job.type) {
-        case 'RESUME_SCORING':
-            if (job.payload.applicationId) {
-                await processApplication(job.payload.applicationId);
-            }
-            break;
-        case 'BATCH_SHORTLIST':
-            if (job.payload.internshipId) {
-                const user = job.payload.triggeredBy || { email: 'system@aptransco.portal', role: 'ADMIN' };
-                await runShortlistingForInternship(job.payload.internshipId, user);
-            }
-            break;
-
         default:
             console.warn(`[Worker] Unknown job type: ${job.type}`);
     }

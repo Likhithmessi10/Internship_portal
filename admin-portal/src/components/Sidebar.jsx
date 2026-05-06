@@ -36,8 +36,8 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             icon: 'description', 
             path: isHOD ? '/hod/applications' : (isMentor ? '/mentor/applications' : '/internships/past') 
         }] : []),
-        // PRTI Committee Evaluation (special for PRTI members)
-        ...(isPRTI ? [{
+        // PRTI Committee Evaluation (Shared between PRTI, HOD, and Mentor)
+        ...(isPRTI || isHOD || isMentor ? [{
             label: 'Committee Evaluation',
             icon: 'fact_check',
             path: '/prti/committee',
@@ -52,6 +52,12 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             label: 'Meetings',
             icon: 'event_available',
             path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : (isMentor ? '/mentor/meetings' : '/meetings'))
+        },
+        {
+            label: 'Selection',
+            icon: 'how_to_reg',
+            path: isHOD ? '/hod/selection' : (isAdmin ? '/admin/selection' : '/selection'),
+            highlight: true
         },
         {
             label: 'Reports',
