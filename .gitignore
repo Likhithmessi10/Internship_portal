@@ -1,17 +1,27 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+admin-portal/node_modules/
+
 # Environment files
 .env
 .env.local
 .env.production
+.env.*.local
 
-# Dependencies
-./node_modules
-./backend/node_modules
-./frontend/node_modules
-./admin-portal/node_modules
+# Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Uploaded files (may contain sensitive documents)
-backend/uploads/
+# Uploaded files
 uploads/
+backend/uploads/
 
 # Logs
 *.log
@@ -32,10 +42,12 @@ desktop.ini
 *.swo
 *~
 
-# Database
+# Database & Data
 *.db
 *.sqlite
 *.sqlite3
+backend/colleges_dump.json
+*.xlsx
 
 # Testing
 coverage/
@@ -50,11 +62,14 @@ build/
 tmp/
 temp/
 *.tmp
+*.sql
+seed-output.txt
 
-# Qwen files
+# Qwen & AI files
 .qwen/
+.cursor/
 
-# Exclude generated UI/template testing framework
+# Project specific
 stitch/
 stitch-*
 

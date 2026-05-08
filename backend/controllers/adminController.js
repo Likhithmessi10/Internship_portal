@@ -21,6 +21,25 @@ const createInternship = async (req, res) => {
             evaluationQuestions, preferredColleges
         } = req.body;
 
+        const normalizeRequirements = (rawRequirements) => {
+            if (Array.isArray(rawRequirements)) {
+                const unique = [...new Set(rawRequirements.map(item => String(item || '').trim()).filter(Boolean))];
+                return unique.join(', ');
+            }
+
+            if (typeof rawRequirements === 'string') {
+                const unique = [...new Set(
+                    rawRequirements
+                        .split(',')
+                        .map(item => item.trim())
+                        .filter(Boolean)
+                )];
+                return unique.join(', ');
+            }
+
+            return null;
+        };
+
         let targetDepartment = department;
 
         // Only force department for HOD and MENTOR (they can only create for their own dept)
@@ -49,7 +68,7 @@ const createInternship = async (req, res) => {
                 description,
                 roles: roles || null,
                 rolesData: rolesData || null,
-                requirements: requirements || null,
+                requirements: normalizeRequirements(requirements),
                 expectations: expectations || null,
                 location: location || null,
                 duration,

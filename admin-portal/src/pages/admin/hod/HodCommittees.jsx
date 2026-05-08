@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
 import { 
@@ -118,12 +119,12 @@ const CommitteeCard = ({ internship, onManage }) => {
                     >
                         <Edit size={14} /> MANAGE
                     </button>
-                    <a 
-                        href="/prti/committee"
+                    <Link 
+                        to={`/internships/${internship.id}/applications`}
                         className="flex-1 flex items-center justify-center gap-2 py-2 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary/90 transition-colors"
                     >
                         <span className="material-symbols-outlined text-sm">rate_review</span> EVALUATE
-                    </a>
+                    </Link>
                 </div>
             </div>
 

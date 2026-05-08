@@ -156,6 +156,7 @@ model Application {
   studentId       String
   internshipId    String
   status          ApplicationStatus   @default(SUBMITTED)
+  resumeMatchScore Float?             @default(0)
   score           Float?              @default(0)
   committeeFinalScore Float?          @default(0)
   assignedRole     String?

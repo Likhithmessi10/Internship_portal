@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../utils/api';
 import { Users, Building2, Mail, Phone, Calendar } from 'lucide-react';
@@ -142,12 +143,12 @@ const MentorCommittees = () => {
                                         )}
                                     </div>
                                 </div>
-                                <a 
-                                    href="/prti/committee"
+                                <Link 
+                                    to={`/internships/${committee.internship?.id}/applications`}
                                     className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
                                 >
                                     <Users size={16} /> START EVALUATION
-                                </a>
+                                </Link>
                             </div>
                         </div>
                     ))}

@@ -36,13 +36,6 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             icon: 'description', 
             path: isHOD ? '/hod/applications' : (isMentor ? '/mentor/applications' : '/internships/past') 
         }] : []),
-        // PRTI Committee Evaluation (Shared between PRTI, HOD, and Mentor)
-        ...(isPRTI || isHOD || isMentor ? [{
-            label: 'Committee Evaluation',
-            icon: 'fact_check',
-            path: '/prti/committee',
-            highlight: true
-        }] : []),
         {
             label: 'Committees',
             icon: 'account_tree',

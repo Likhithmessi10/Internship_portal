@@ -1,8 +1,38 @@
 const prisma = require('../lib/prisma');
+const { getResumeMatchScore } = require('../services/doclingService');
 const SLEEP_MS = 3000; // Poll every 3 seconds
 
 const executeJob = async (job) => {
     switch (job.type) {
+        case 'RESUME_MATCH_SCORE': {
+            const payload = job.payload || {};
+            const applicationId = payload.applicationId;
+            if (!applicationId) throw new Error('Missing applicationId in RESUME_MATCH_SCORE payload');
+
+            const application = await prisma.application.findUnique({
+                where: { id: applicationId },
+                include: { internship: true }
+            });
+
+            if (!application) throw new Error(`Application not found for job payload: ${applicationId}`);
+
+            const resumeFile = {
+                path: payload.resumePath,
+                originalname: payload.resumeOriginalname,
+                mimetype: payload.resumeMimetype
+            };
+
+            const score = await getResumeMatchScore({
+                internship: application.internship,
+                resumeFile
+            });
+
+            await prisma.application.update({
+                where: { id: applicationId },
+                data: { resumeMatchScore: score }
+            });
+            break;
+        }
         default:
             console.warn(`[Worker] Unknown job type: ${job.type}`);
     }

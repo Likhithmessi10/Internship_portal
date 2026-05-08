@@ -24,3 +24,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+venv/
+**/venv/
+node_modules/

@@ -1,0 +1,126 @@
+# NULU VEERA MANICHARAN
+
+Vijayawada, Andhra Pradesh
+📞 +91 7207244845 | ✉️ [manicharan.nulu1@gmail.com](mailto:manicharan.nulu1@gmail.com)
+GitHub: mc-mc111 | LinkedIn: nulu-manicharan
+
+---
+
+# PROFESSIONAL SUMMARY
+
+AI Engineer and Tech Bharat AI Fellowship Graduate with hands-on experience in developing AI-powered applications, Agentic AI workflows, Large Language Model (LLM) integrations, Retrieval-Augmented Generation (RAG) systems, semantic search engines, and automation pipelines. Experienced in building scalable backend systems, AI orchestration workflows, REST API integrations, and intelligent data-processing solutions for real-world applications. Strong foundation in Python, Machine Learning, NLP, vector databases, backend development, and AI automation. Passionate about solving real-world problems using practical AI engineering and modern software development practices.
+
+---
+
+# EDUCATION
+
+## NRI Institute of Technology
+
+Bachelor of Technology — Computer Science and Engineering (AI & ML)
+2023 – 2027
+CGPA: 9.09 (as of 3-1)
+
+---
+
+# TECHNICAL SKILLS
+
+### Programming Languages
+
+Python, Java, JavaScript, C
+
+### AI/ML & NLP
+
+Machine Learning, Natural Language Processing (NLP), Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Prompt Engineering, Semantic Search, AI Automation, Agentic AI Workflows, Data Preprocessing, Model Evaluation
+
+### Frameworks & Libraries
+
+LangChain, LangGraph, scikit-learn, NumPy, Pandas, SentenceTransformers, Flask
+
+### Databases & Vector Stores
+
+PostgreSQL, MySQL, ChromaDB, FAISS, Oracle SQL (11G)
+
+### Backend & APIs
+
+REST APIs, API Integration, Backend Development, Postman API Testing
+
+### Tools & Platforms
+
+Git, Docker, n8n, UiPath, DialogFlow, Power BI, Figma
+
+---
+
+# EXPERIENCE
+
+## AI Fellow — Tech Bharat AI CoE, Vishakhapatnam
+
+September 2025 – January 2026
+
+* Selected among 1000+ applicants for a fully funded AI Fellowship focused on Applied AI and Agentic AI systems.
+* Developed AI-powered Government-to-Citizen (G2C) disaster response solutions in collaboration with APSDMA, Google, and LTTS.
+* Engineered autonomous Agentic AI workflows using Large Language Models (LLMs) to automate disaster intelligence and emergency-response operations.
+* Worked on scalable AI pipelines, data governance workflows, API integrations, and backend automation systems.
+* Contributed to the design and implementation of production-oriented AI solutions for public-sector applications.
+* Collaborated with technical teams to optimize AI workflow reliability, response accuracy, and data integrity.
+
+---
+
+# PROJECTS
+
+## Community Driven Disaster Intelligence Platform
+
+Tech Bharat AI Fellowship Project
+
+* Developed a multi-modal AI-powered disaster response platform using Agentic AI workflows integrated with WhatsApp communication systems.
+* Built Retrieval-Augmented Generation (RAG) pipelines for real-time safety advisories and disaster information retrieval.
+* Implemented location validation, Government API cross-referencing, and automated emergency triage systems.
+* Designed a historical reliability scoring system to improve data trustworthiness and response quality.
+* Developed scalable backend workflows for intelligent disaster data processing and automation.
+
+### Tech Stack:
+
+Python, Flask, LangChain, Google Gemini API, Vertex AI, ChromaDB, PostgreSQL, Indic Conformer
+
+---
+
+## AI Analyst for RTGS
+
+* Developed an AI-driven automation workflow for automated data ingestion, preprocessing, exploratory data analysis (EDA), and intelligent report generation.
+* Built a CLI-based Agentic AI pipeline with logging and workflow traceability for reproducible execution across multiple datasets.
+* Automated analytical workflows to reduce manual preprocessing effort and improve operational efficiency.
+* Implemented data-processing pipelines using Machine Learning and AI-assisted analysis techniques.
+
+### Tech Stack:
+
+Python, LangGraph, Google Gemini API, Pandas, scikit-learn, Matplotlib, Typer, Rich CLI
+
+---
+
+## Research Paper Recommendation System
+
+* Engineered a semantic search and recommendation engine using NLP embeddings and vector similarity search.
+* Developed a high-accuracy research recommendation system using SentenceTransformers and FAISS.
+* Implemented confidence-aware filtering logic for improved recommendation relevance and retrieval quality.
+* Integrated authentication workflows and scalable data-processing pipelines for user-based recommendations.
+
+### Tech Stack:
+
+Python, SentenceTransformers, FAISS, Streamlit, Pandas, NumPy, NLTK, Gensim
+
+---
+
+# ACHIEVEMENTS
+
+* Selected as AI Fellow at Tech Bharat AI CoE among 1000+ applicants across India.
+* Won Consolation Prize in “AIgnite Hackathon 12hrs” organized by the Department of AIDS, P B Siddhartha College of Arts and Science.
+* Won 2nd Prize in “Innovarix” organized by Pari School of Business, SRM University AP.
+* Won 1st Prize in Technical Quiz and 3rd Prize in Codezilla organized by MIC College of Technology.
+* Won multiple prizes in Coding Contest, Bug Detection, Techwar, and Tech Trivia at Vikasit Technical Fest.
+
+---
+
+# LEADERSHIP & EXTRACURRICULAR ACTIVITIES
+
+* Organized multiple technical competitions and coding events through the Student2Student platform.
+* Conducted and mentored a Power BI workshop for students as part of peer-learning initiatives.
+* Participated actively in AI, software development, and innovation-focused hackathons and technical events.

@@ -1,6 +1,49 @@
 const prisma = require('../lib/prisma');
 const { STATUS, canTransition } = require('../domain/workflow/applicationStateMachine');
 
+const normalize = (s = '') => String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+const tokenize = (s = '') => normalize(s).split(' ').filter(Boolean);
+const tokenSimilarity = (a = '', b = '') => {
+    const aSet = new Set(tokenize(a));
+    const bSet = new Set(tokenize(b));
+    if (aSet.size === 0 || bSet.size === 0) return 0;
+    let inter = 0;
+    aSet.forEach(t => { if (bSet.has(t)) inter += 1; });
+    const union = new Set([...aSet, ...bSet]).size;
+    return union > 0 ? inter / union : 0;
+};
+
+const isPreferredCollege = (collegeName = '', preferredColleges = []) => {
+    if (!collegeName || !Array.isArray(preferredColleges) || preferredColleges.length === 0) return false;
+    const target = normalize(collegeName).replace(/\s/g, '');
+    return preferredColleges.some(pref => {
+        const p = normalize(pref).replace(/\s/g, '');
+        if (!p) return false;
+        if (target.includes(p) || p.includes(target)) return true;
+        if (tokenSimilarity(collegeName, pref) >= 0.5) return true;
+        return false;
+    });
+};
+
+const getApplicationBucket = (application, internship) => {
+    const preferredColleges = internship?.preferredColleges || [];
+    const collegeName = application?.student?.collegeName || '';
+    const category = (application?.student?.collegeCategory || '').toUpperCase();
+    if (isPreferredCollege(collegeName, preferredColleges)) return 'PREFERRED';
+    if (category === 'IIT' || category === 'NIT') return 'PREMIER';
+    return 'REGULAR';
+};
+
+const getSeatCaps = (openingsCount = 0, quotaPercentages = {}) => {
+    const openings = Math.max(0, Number(openingsCount || 0));
+    const preferredPct = Math.max(0, Number(quotaPercentages?.preferred || 0));
+    const premierPct = Math.max(0, Number(quotaPercentages?.premier || 0));
+    const preferredCap = Math.floor((openings * preferredPct) / 100);
+    const premierCap = Math.floor((openings * premierPct) / 100);
+    const regularCap = Math.max(0, openings - preferredCap - premierCap);
+    return { PREFERRED: preferredCap, PREMIER: premierCap, REGULAR: regularCap };
+};
+
 /**
  * atomic application status transition with validation and audit trail
  */
@@ -9,7 +52,15 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
         // 1. Fetch current application and its internship boundaries
         const application = await tx.application.findUnique({
             where: { id: applicationId },
-            include: { internship: true }
+            include: {
+                internship: true,
+                student: {
+                    select: {
+                        collegeName: true,
+                        collegeCategory: true
+                    }
+                }
+            }
         });
 
         if (!application) {
@@ -36,6 +87,37 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
             if (activeCount >= application.internship.openingsCount) {
                 throw new Error(`Allocation Failed: No seats remaining. All ${application.internship.openingsCount} slots are filled.`);
             }
+
+            // Enforce category quotas from internship creation (preferred/premier/regular)
+            const caps = getSeatCaps(application.internship.openingsCount, application.internship.quotaPercentages || {});
+            const targetBucket = getApplicationBucket(application, application.internship);
+            const targetCap = caps[targetBucket] ?? 0;
+
+            if (targetCap <= 0) {
+                throw new Error(`Allocation Failed: No seats allocated for ${targetBucket} category as per configured distribution.`);
+            }
+
+            const activeApps = await tx.application.findMany({
+                where: {
+                    internshipId: application.internshipId,
+                    status: { in: SEAT_CONSUMING }
+                },
+                include: {
+                    student: {
+                        select: {
+                            collegeName: true,
+                            collegeCategory: true
+                        }
+                    }
+                }
+            });
+
+            const usedInBucket = activeApps.filter(a => getApplicationBucket(a, application.internship) === targetBucket).length;
+            if (usedInBucket >= targetCap) {
+                throw new Error(
+                    `Allocation Failed: ${targetBucket} quota is full (${usedInBucket}/${targetCap}). Approvals must follow configured seat distribution.`
+                );
+            }
         }
 
         // 4. Committee Scoring Completion Enforcement
@@ -59,7 +141,12 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
         // 5. Perform update
         const updated = await tx.application.update({
             where: { id: applicationId },
-            data: { status: toStatus }
+            data: {
+                status: toStatus,
+                ...(SEAT_CONSUMING.includes(toStatus) && !SEAT_CONSUMING.includes(application.status)
+                    ? { shortlistCategory: getApplicationBucket(application, application.internship) }
+                    : {})
+            }
         });
 
         // 6. Create Audit Log

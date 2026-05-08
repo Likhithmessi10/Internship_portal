@@ -85,6 +85,7 @@ const HodDashboard = () => {
         fetchData();
     }, [user]);
 
+
     const totalApplications = internships.reduce((s, i) => s + (i.applicationsCount || 0), 0);
     const totalAllocated = internships.reduce((s, i) => {
         const rolesTotal = i.rolesData?.reduce((acc, r) => acc + (parseInt(r.openings) || 0), 0) || 0;

@@ -160,7 +160,7 @@ const HodApplications = () => {
                             <tr className="bg-surface-container-lowest dark:bg-slate-900">
                                 <th className="px-6 py-4 text-[10px] font-black text-outline dark:text-slate-500 uppercase tracking-[0.2em] border-b border-outline-variant/10 dark:border-slate-800">Candidate</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-outline dark:text-slate-500 uppercase tracking-[0.2em] border-b border-outline-variant/10 dark:border-slate-800">College Info</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-outline dark:text-slate-500 uppercase tracking-[0.2em] text-center border-b border-outline-variant/10 dark:border-slate-800">Score</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-outline dark:text-slate-500 uppercase tracking-[0.2em] text-center border-b border-outline-variant/10 dark:border-slate-800">Match Score</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-outline dark:text-slate-500 uppercase tracking-[0.2em] text-center border-b border-outline-variant/10 dark:border-slate-800">Status</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-outline dark:text-slate-500 uppercase tracking-[0.2em] text-right border-b border-outline-variant/10 dark:border-slate-800">Quick Actions</th>
                             </tr>
@@ -185,7 +185,7 @@ const HodApplications = () => {
                                     </td>
                                     <td className="px-6 py-4 text-center align-middle">
                                         <span className="inline-flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-black text-sm px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
-                                            {app.student?.cgpa ? app.student.cgpa.toFixed(2) : 'N/A'}
+                                            {typeof app.resumeMatchScore === 'number' ? `${app.resumeMatchScore.toFixed(2)}%` : 'N/A'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center align-middle">

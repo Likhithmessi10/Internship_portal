@@ -80,8 +80,14 @@ const startServer = async () => {
         await prisma.$connect();
         console.log('✅ Connected to PostgreSQL Database via Prisma');
 
-        // const { workerLoop } = require('./jobs/worker');
-        // workerLoop(); // Start background worker loop (no await as it's a daemon)
+        const { workerLoop } = require('./jobs/worker');
+        const workerEnabled = process.env.JOB_WORKER_ENABLED !== 'false';
+        if (workerEnabled) {
+            workerLoop(); // Start background worker loop (no await as it's a daemon)
+            console.log('👷 Background job worker enabled');
+        } else {
+            console.log('⏸️ Background job worker disabled via JOB_WORKER_ENABLED=false');
+        }
 
         app.listen(PORT, () => {
             console.log(`🚀 Server listening on port ${PORT}`);

@@ -1,4 +1,6 @@
 const prisma = require('../lib/prisma');
+const { getResumeFileFromUploads } = require('../services/doclingService');
+const { enqueueJob } = require('../services/jobService');
 
 /**
  * @desc    Apply to an internship
@@ -54,22 +56,9 @@ const applyForInternship = async (req, res) => {
             });
         }
 
-        // 5. Create Application
+        // 5. Prepare Tracking ID
         const identifier = profile.rollNumber || profile.aadhar || 'UNKNOWN';
         const trackingId = `APT-${Date.now()}-${identifier.slice(-4)}`.toUpperCase();
-
-        const application = await prisma.application.create({
-            data: {
-                trackingId,
-                studentId: profile.id, // Linking to StudentProfile ID
-                internshipId: internship.id,
-                status: 'SUBMITTED',
-                sop: sop || null,
-                preferredLocation: preferredLocation || null,
-                assignedRole: assignedRole || null,
-                questionAnswers: questionAnswers ? JSON.parse(questionAnswers) : null
-            }
-        });
 
         // 5. Validate Required Documents
         const originalRequiredDocs = internship.requiredDocuments || [];
@@ -87,9 +76,6 @@ const applyForInternship = async (req, res) => {
         const missingDocs = requiredDocs.filter(doc => !uploadedDocTypes.has(doc.id));
 
         if (missingDocs.length > 0) {
-            // Delete the application since we're returning an error
-            await prisma.application.delete({ where: { id: application.id } });
-
             const missingLabels = missingDocs.map(d => d.label).join(', ');
             return res.status(400).json({
                 success: false,
@@ -97,7 +83,31 @@ const applyForInternship = async (req, res) => {
             });
         }
 
-        // 6. Handle File Uploads (Expect files from multer via any())
+        // 6. Ensure resume exists for async matching
+        const resumeFile = getResumeFileFromUploads(req.files);
+        if (!resumeFile) {
+            return res.status(400).json({
+                success: false,
+                message: 'Resume document is required for internship matching.'
+            });
+        }
+
+        // 7. Create Application
+        const application = await prisma.application.create({
+            data: {
+                trackingId,
+                studentId: profile.id, // Linking to StudentProfile ID
+                internshipId: internship.id,
+                status: 'SUBMITTED',
+                sop: sop || null,
+                preferredLocation: preferredLocation || null,
+                assignedRole: assignedRole || null,
+                questionAnswers: questionAnswers ? JSON.parse(questionAnswers) : null,
+                resumeMatchScore: 0
+            }
+        });
+
+        // 8. Handle File Uploads (Expect files from multer via any())
         if (req.files && req.files.length > 0) {
             const documents = req.files.map(file => {
                 // Try to find the document label from internship config or mandatory defaults
@@ -130,10 +140,22 @@ const applyForInternship = async (req, res) => {
             }
         }
 
+        // 9. Enqueue background resume matching job (non-blocking for student)
+        await enqueueJob(
+            'RESUME_MATCH_SCORE',
+            {
+                applicationId: application.id,
+                resumePath: resumeFile.path,
+                resumeOriginalname: resumeFile.originalname,
+                resumeMimetype: resumeFile.mimetype
+            },
+            `RESUME_MATCH_SCORE:${application.id}`
+        );
+
         res.status(201).json({
             success: true,
             data: application,
-            message: 'Application submitted successfully applied!'
+            message: 'Application submitted successfully. Resume validation is being processed in the background.'
         });
 
     } catch (error) {
@@ -214,7 +236,12 @@ const getInternships = async (req, res) => {
 const getInternshipDetails = async (req, res) => {
     try {
         const internship = await prisma.internship.findUnique({
-            where: { id: req.params.id }
+            where: { id: req.params.id },
+            include: {
+                evaluationCriteria: {
+                    orderBy: { createdAt: 'asc' }
+                }
+            }
         });
         if (!internship) return res.status(404).json({ success: false, message: 'Not found' });
         res.status(200).json({ success: true, data: internship });

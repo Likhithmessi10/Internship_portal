@@ -61,7 +61,7 @@ const submitEvaluation = async (req, res) => {
         });
 
         if (allEvaluations.length > 0) {
-            const totalScore = allEvaluations.reduce((sum, eval) => sum + eval.score, 0);
+            const totalScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.score, 0);
             const averageScore = totalScore / allEvaluations.length;
 
             await prisma.application.update({

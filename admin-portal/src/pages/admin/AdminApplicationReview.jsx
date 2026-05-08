@@ -136,7 +136,7 @@ const AdminApplicationReview = () => {
     };
 
     const { filteredApps, uniqueColleges, roleHiredStats } = (() => {
-        const sortedFull = [...applications].sort((a, b) => (b.student?.cgpa || 0) - (a.student?.cgpa || 0));
+        const sortedFull = [...applications].sort((a, b) => (b.resumeMatchScore || 0) - (a.resumeMatchScore || 0));
         const collegesSet = new Set();
         
         sortedFull.forEach(app => {
@@ -171,6 +171,52 @@ const AdminApplicationReview = () => {
         rejected: applications.filter(a => a.status === 'REJECTED').length,
     };
     const fillPct = internship ? Math.min(100, Math.round((stats.hired / internship.openingsCount) * 100)) : 0;
+
+    const normalized = (s = '') => String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    const tokenized = (s = '') => normalized(s).split(' ').filter(Boolean);
+    const tokenSimilaritySimple = (a = '', b = '') => {
+        const aSet = new Set(tokenized(a));
+        const bSet = new Set(tokenized(b));
+        if (aSet.size === 0 || bSet.size === 0) return 0;
+        let inter = 0;
+        aSet.forEach(t => { if (bSet.has(t)) inter += 1; });
+        const union = new Set([...aSet, ...bSet]).size;
+        return union > 0 ? inter / union : 0;
+    };
+    const isPreferredCollegeSimple = (collegeName = '', preferredColleges = []) => {
+        if (!collegeName || !Array.isArray(preferredColleges) || preferredColleges.length === 0) return false;
+        const target = normalized(collegeName).replace(/\s/g, '');
+        return preferredColleges.some(pref => {
+            const p = normalized(pref).replace(/\s/g, '');
+            if (!p) return false;
+            if (target.includes(p) || p.includes(target)) return true;
+            if (tokenSimilaritySimple(collegeName, pref) >= 0.5) return true;
+            return false;
+        });
+    };
+    const getBucketSimple = (app) => {
+        const preferredColleges = internship?.preferredColleges || [];
+        const collegeName = app?.student?.collegeName || '';
+        const category = (app?.student?.collegeCategory || '').toUpperCase();
+        if (isPreferredCollegeSimple(collegeName, preferredColleges)) return 'PREFERRED';
+        if (category === 'IIT' || category === 'NIT') return 'PREMIER';
+        return 'REGULAR';
+    };
+    const openings = Number(internship?.openingsCount || 0);
+    const preferredPct = Number(internship?.quotaPercentages?.preferred || 0);
+    const premierPct = Number(internship?.quotaPercentages?.premier || 0);
+    const seatCaps = {
+        PREFERRED: Math.floor((openings * preferredPct) / 100),
+        PREMIER: Math.floor((openings * premierPct) / 100),
+        REGULAR: Math.max(0, openings - Math.floor((openings * preferredPct) / 100) - Math.floor((openings * premierPct) / 100))
+    };
+    const seatFilled = applications
+        .filter(a => ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status))
+        .reduce((acc, app) => {
+            const bucket = getBucketSimple(app);
+            acc[bucket] += 1;
+            return acc;
+        }, { PREFERRED: 0, PREMIER: 0, REGULAR: 0 });
 
     if (loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full shadow-xl" /></div>;
 
@@ -254,6 +300,30 @@ const AdminApplicationReview = () => {
                 </div>
             </section>
 
+            <section className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Preferred Quota Filled</span>
+                    <div className="flex items-end gap-2 mt-2">
+                        <span className="text-3xl font-extrabold text-primary">{seatFilled.PREFERRED}</span>
+                        <span className="text-sm font-bold text-outline mb-1">/ {seatCaps.PREFERRED}</span>
+                    </div>
+                </div>
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Premier (IIT/NIT) Filled</span>
+                    <div className="flex items-end gap-2 mt-2">
+                        <span className="text-3xl font-extrabold text-primary">{seatFilled.PREMIER}</span>
+                        <span className="text-sm font-bold text-outline mb-1">/ {seatCaps.PREMIER}</span>
+                    </div>
+                </div>
+                <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+                    <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Regular Quota Filled</span>
+                    <div className="flex items-end gap-2 mt-2">
+                        <span className="text-3xl font-extrabold text-primary">{seatFilled.REGULAR}</span>
+                        <span className="text-sm font-bold text-outline mb-1">/ {seatCaps.REGULAR}</span>
+                    </div>
+                </div>
+            </section>
+
             {/* Candidate Table Area - Stitch Style */}
             <div className="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
                 <div className="p-6 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-6 bg-surface-container-lowest">
@@ -297,7 +367,7 @@ const AdminApplicationReview = () => {
                             <tr className="bg-surface-container-high/30">
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Candidate Info</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">College Profile</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">CGPA</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Match Score</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Status</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Action</th>
                             </tr>
@@ -531,9 +601,14 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
                 </div>
             </td>
             <td className="px-6 py-5 text-center">
-                <span className="text-lg font-bold text-primary">{app.student?.cgpa}</span>
-                <div className="w-8 bg-surface-container-high h-0.5 mt-0.5 mx-auto rounded-full overflow-hidden">
-                    <div className="bg-primary h-full" style={{ width: `${(app.student?.cgpa / 10) * 100}%` }}></div>
+                <span className="text-lg font-bold text-primary">
+                    {typeof app.resumeMatchScore === 'number' ? `${app.resumeMatchScore.toFixed(2)}%` : 'N/A'}
+                </span>
+                <div className="w-16 bg-surface-container-high h-0.5 mt-0.5 mx-auto rounded-full overflow-hidden">
+                    <div
+                        className="bg-primary h-full"
+                        style={{ width: `${Math.max(0, Math.min(100, Number(app.resumeMatchScore || 0)))}%` }}
+                    ></div>
                 </div>
             </td>
             <td className="px-6 py-5 text-center">

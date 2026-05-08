@@ -3,7 +3,7 @@ import { useAuth } from '../../../context/AuthContext';
 import api from '../../../utils/api';
 import {
     Users, FileText, CheckCircle, XCircle, Clock,
-    TrendingUp, Award, Calendar, ChevronRight, Star,
+    TrendingUp, Award, Calendar, ChevronRight, ChevronDown, Star,
     User as UserIcon, Search, Filter, RefreshCcw
 } from 'lucide-react';
 import ApplicationProfileModal from '../ApplicationProfileModal';
@@ -15,6 +15,12 @@ const PRTICommitteeDashboard = () => {
     const [selectedApp, setSelectedApp] = useState(null);
     const [showEvaluationModal, setShowEvaluationModal] = useState(false);
     const [filter, setFilter] = useState('SHORTLISTED');
+    const [collapsed, setCollapsed] = useState({
+        PREFERRED: false,
+        IIT_NIT: false,
+        TOP_100: false,
+        REGULAR: false
+    });
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -100,6 +106,49 @@ const PRTICommitteeDashboard = () => {
         { value: 'HIRED', label: 'HIRED' }
     ];
 
+    const normalize = (s = '') => String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    const tokenize = (s = '') => normalize(s).split(' ').filter(Boolean);
+    const tokenSimilarity = (a = '', b = '') => {
+        const aSet = new Set(tokenize(a));
+        const bSet = new Set(tokenize(b));
+        if (aSet.size === 0 || bSet.size === 0) return 0;
+        let inter = 0;
+        aSet.forEach(t => { if (bSet.has(t)) inter += 1; });
+        const union = new Set([...aSet, ...bSet]).size;
+        return union > 0 ? inter / union : 0;
+    };
+
+    const isPreferredCollege = (collegeName = '', preferredColleges = []) => {
+        if (!collegeName || !Array.isArray(preferredColleges) || preferredColleges.length === 0) return false;
+        const target = normalize(collegeName).replace(/\s/g, '');
+        return preferredColleges.some(pref => {
+            const p = normalize(pref).replace(/\s/g, '');
+            if (!p) return false;
+            if (target.includes(p) || p.includes(target)) return true;
+            if (tokenSimilarity(collegeName, pref) >= 0.5) return true;
+            return false;
+        });
+    };
+
+    const getBucket = (app) => {
+        const collegeName = app.student?.collegeName || '';
+        const category = (app.student?.collegeCategory || '').toUpperCase();
+        const nirf = Number(app.student?.nirfRanking || 0);
+        const preferredColleges = app.internship?.preferredColleges || [];
+
+        if (isPreferredCollege(collegeName, preferredColleges)) return 'PREFERRED';
+        if (category === 'IIT' || category === 'NIT') return 'IIT_NIT';
+        if (nirf > 0 && nirf <= 100) return 'TOP_100';
+        return 'REGULAR';
+    };
+
+    const groupedBuckets = [
+        { key: 'PREFERRED', label: 'Preferred Colleges' },
+        { key: 'IIT_NIT', label: 'IITs & NITs' },
+        { key: 'TOP_100', label: 'Top 100 Colleges' },
+        { key: 'REGULAR', label: 'Regular Colleges' }
+    ];
+
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-32">
             {/* Header */}
@@ -178,9 +227,33 @@ const PRTICommitteeDashboard = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/10">
-                            {applications.map(app => {
-                                const evalStatus = getEvaluationStatus(app);
+                            {groupedBuckets.map(group => {
+                                const bucketApps = applications.filter(app => getBucket(app) === group.key);
+                                if (bucketApps.length === 0) return null;
+
                                 return (
+                                    <React.Fragment key={group.key}>
+                                        <tr
+                                            className="bg-surface-container-low border-y border-outline-variant/10 cursor-pointer hover:bg-surface-container transition-colors"
+                                            onClick={() => setCollapsed(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
+                                        >
+                                            <td colSpan="6" className="px-6 py-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        {collapsed[group.key] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                                        <span className="text-[11px] font-black uppercase tracking-widest text-primary italic">
+                                                            {group.label}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-outline">
+                                                        {bucketApps.length} candidates
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {!collapsed[group.key] && bucketApps.map(app => {
+                                            const evalStatus = getEvaluationStatus(app);
+                                            return (
                                     <tr key={app.id} className="hover:bg-primary/[0.01] transition-colors group">
                                         <td className="px-6 py-6">
                                             <div className="flex items-center gap-3">
@@ -263,6 +336,9 @@ const PRTICommitteeDashboard = () => {
                                             </div>
                                         </td>
                                     </tr>
+                                            );
+                                        })}
+                                    </React.Fragment>
                                 );
                             })}
                         </tbody>

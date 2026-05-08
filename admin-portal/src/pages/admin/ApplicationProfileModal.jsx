@@ -115,6 +115,9 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
     // Destructure application properties early to avoid "cannot access before initialization"
     if (!application) return null;
     const { student, documents, status, trackingId, createdAt } = application;
+    const evaluationCriteria = (internship?.evaluationCriteria && internship.evaluationCriteria.length > 0)
+        ? internship.evaluationCriteria
+        : (application?.internship?.evaluationCriteria || []);
 
     useEffect(() => {
         if (status === 'SUBMITTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role)) {
@@ -177,7 +180,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
     };
 
     const handleEvaluationSubmit = async () => {
-        const criteria = internship?.evaluationCriteria || [];
+        const criteria = evaluationCriteria || [];
         if (criteria.length === 0) {
             return setWarning('No evaluation criteria defined for this internship.');
         }
@@ -512,7 +515,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[10px] uppercase font-bold text-outline">Avg Score:</span>
                                                 <span className="text-sm font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border border-blue-100 dark:border-blue-800">
-                                                    {Number(application.committeeFinalScore).toFixed(1)} / {(internship?.evaluationCriteria?.length || 0) * 50}
+                                                        {Number(application.committeeFinalScore).toFixed(1)} / {(evaluationCriteria?.length || 0) * 50}
                                                 </span>
                                             </div>
                                         )}
@@ -526,7 +529,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                                 {(() => {
                                                     const scores = application.evaluationScores || [];
                                                     const roles = ['HOD', 'MENTOR', 'CE_PRTI'];
-                                                    const criteriaCount = internship?.evaluationCriteria?.length || 0;
+                                                    const criteriaCount = evaluationCriteria?.length || 0;
                                                     const totalMax = criteriaCount * 50;
 
                                                     const roleTotals = roles.map(r => {
@@ -569,7 +572,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                             </div>
                                             
                                             <div className="space-y-6">
-                                                {internship?.evaluationCriteria?.map((q, idx) => (
+                                                {evaluationCriteria?.map((q, idx) => (
                                                     <div key={q.id} className="p-4 bg-surface-container-low/30 rounded-xl border border-outline-variant/10">
                                                         <div className="flex justify-between items-start mb-3">
                                                             <div className="flex-1">

@@ -117,6 +117,13 @@ const CreateInternshipForm = () => {
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+    const parseCommaSeparatedValues = (value) => {
+        return (value || '')
+            .split(',')
+            .map(item => item.trim())
+            .filter(Boolean);
+    };
+
     const addRole = () => {
         if (roleNameInput.trim() && roleOpeningsInput > 0) {
             setRoles([...roles, { name: roleNameInput.trim(), openings: parseInt(roleOpeningsInput) }]);
@@ -143,13 +150,20 @@ const CreateInternshipForm = () => {
     };
 
     const addRequirement = () => {
-        if (requirementInput.trim()) {
+        const parsedRequirements = parseCommaSeparatedValues(requirementInput);
+        if (parsedRequirements.length === 0) return;
+
+        const existing = new Set(formData.requirementTags.map(tag => tag.toLowerCase()));
+        const uniqueNewTags = parsedRequirements.filter(tag => !existing.has(tag.toLowerCase()));
+
+        if (uniqueNewTags.length > 0) {
             setFormData({
                 ...formData,
-                requirementTags: [...formData.requirementTags, requirementInput.trim()]
+                requirementTags: [...formData.requirementTags, ...uniqueNewTags]
             });
-            setRequirementInput('');
         }
+
+        setRequirementInput('');
     };
 
     const handleSubmit = async (e) => {
