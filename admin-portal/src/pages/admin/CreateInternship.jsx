@@ -9,6 +9,8 @@ import {
 import { collegesData } from '../../data/colleges';
 import departmentsData from '../../data/departments.json';
 import Select from '../../components/ui/Select';
+import DepartmentGroupModal from './DepartmentGroupModal';
+import { useAuth } from '../../context/AuthContext';
 
 const PRESET_LOCATIONS = [
     'ANY', 'Vijayawada HQ', 'Visakhapatnam', 'Tirupati', 'Guntur', 'Kurnool',
@@ -37,6 +39,7 @@ const InputField = ({ label, required, hint, children, tooltip }) => (
 );
 
 const CreateInternshipForm = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -83,6 +86,8 @@ const CreateInternshipForm = () => {
         stipendType: 'NON_COLLABORATIVE', // COLLABORATIVE or NON_COLLABORATIVE
         stipendAmount: '',
         manualOpenings: '',
+        internshipMode: 'SINGLE',
+        departmentGroups: [],
         customQuestions: [],
         requirementTags: [],
         preferredColleges: [],
@@ -90,8 +95,19 @@ const CreateInternshipForm = () => {
             preferred: 20,
             premier: 30,
             normal: 50
-        }
+        },
+        internshipType: 'NON_STIPEND', // COLLABORATIVE, NON_STIPEND
+        fields: []
     });
+
+    const [fieldInput, setFieldInput] = useState({
+        fieldName: '',
+        description: '',
+        vacancies: '',
+        locations: []
+    });
+    const [locationInput, setLocationInput] = useState('');
+    const [locations, setLocations] = useState([]);
 
     const [questionInput, setQuestionInput] = useState('');
     const [requirementInput, setRequirementInput] = useState('');
@@ -102,9 +118,6 @@ const CreateInternshipForm = () => {
     const [roleNameInput, setRoleNameInput] = useState('');
     const [roleOpeningsInput, setRoleOpeningsInput] = useState(1);
 
-    const [locations, setLocations] = useState([]);
-    const [locationInput, setLocationInput] = useState('');
-
     const [requiredDocs, setRequiredDocs] = useState([
         { id: 'RESUME', label: 'Resume / CV', type: 'PDF', mandatory: true },
         { id: 'PASSPORT_PHOTO', label: 'Passport Size Photo', type: 'IMAGE', mandatory: true }
@@ -113,7 +126,11 @@ const CreateInternshipForm = () => {
     const [docTypeInput, setDocTypeInput] = useState('PDF');
     const [docMandatoryInput, setDocMandatoryInput] = useState(true);
 
-    const totalOpenings = roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0;
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+
+    const totalOpenings = formData.internshipMode === 'GROUP' 
+        ? formData.departmentGroups.reduce((sum, g) => sum + parseInt(g.openings || 0), 0)
+        : roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0;
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -170,17 +187,25 @@ const CreateInternshipForm = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/admin/internships', {
+            const payload = {
                 ...formData,
                 openingsCount: totalOpenings,
-                roles: roles.map(r => r.name).join(', '),
-                rolesData: roles,
+                roles: formData.internshipMode === 'SINGLE' ? roles.map(r => r.name).join(', ') : '',
+                rolesData: formData.internshipMode === 'SINGLE' ? roles : [],
                 location: locations.join(', '),
                 requiredDocuments: requiredDocs,
-                customQuestions: formData.customQuestions,
-                requirements: formData.requirementTags.join(', '),
-                preferredColleges: formData.preferredColleges
-            });
+                customQuestions: formData.internshipMode === 'SINGLE' ? formData.customQuestions : [],
+                requirements: formData.internshipMode === 'SINGLE' ? formData.requirementTags.join(', ') : '',
+                preferredColleges: formData.internshipMode === 'SINGLE' ? formData.preferredColleges : [],
+                internshipType: formData.internshipType,
+                fields: formData.internshipType === 'NON_STIPEND' ? formData.fields : []
+            };
+
+            if (formData.internshipMode === 'GROUP') {
+                payload.department = 'MULTI';
+            }
+
+            await api.post('/admin/internships', payload);
             alert('Internship program launched successfully!');
             navigate('/dashboard');
         } catch (err) {
@@ -192,16 +217,46 @@ const CreateInternshipForm = () => {
     };
 
     const nextStep = () => {
-        if (step === 1 && (!formData.title || !formData.department)) {
+        if (step === 1 && (!formData.title || (formData.internshipMode === 'SINGLE' && !formData.department))) {
             setError('Please fill in required basic details');
             return;
         }
-        if (step === 3 && roles.length === 0) {
-            setError('Add at least one role to continue');
-            return;
+        if (formData.internshipMode === 'SINGLE') {
+            if (formData.internshipType !== 'NON_STIPEND') {
+                if (step === 3 && roles.length === 0) {
+                    setError('Add at least one role to continue');
+                    return;
+                }
+            } else {
+                if (step === 3 && formData.fields.length === 0) {
+                    setError('Add at least one field to continue');
+                    return;
+                }
+            }
+        } else {
+            // GROUP MODE skips step 3 and capacity of step 2
+            if (step === 2 && formData.departmentGroups.length === 0) {
+                setError('Add at least one department group to continue');
+                return;
+            }
+            if (step === 2) {
+                setStep(4); // Skip step 3 directly to 4 (Documents)
+                return;
+            }
+            if (step === 4 && formData.departmentGroups.length === 0) {
+                 // In case of back tracking
+            }
         }
         setError('');
         setStep(step + 1);
+    };
+
+    const prevStep = () => {
+        if (formData.internshipMode === 'GROUP' && step === 4) {
+            setStep(2);
+        } else {
+            setStep(step - 1);
+        }
     };
 
     return (
@@ -254,21 +309,40 @@ const CreateInternshipForm = () => {
                                     placeholder="e.g. Graduate Engineering Trainee 2026" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
                             </InputField>
 
-                            <InputField label="Target Department" required>
-                                <Select
-                                    value={formData.department}
-                                    onChange={(value) => {
-                                        handleChange({ target: { name: 'department', value } });
-                                    }}
-                                    options={[
-                                        { value: '', label: '-- Select Department --' },
-                                        ...departments.map(d => ({ value: d, label: d }))
-                                    ]}
-                                    placeholder="Select Department"
-                                    size="lg"
-                                />
-                            </InputField>
+                            {/* Mode Selection */}
+                            {user?.role !== 'HOD' && (
+                                <InputField label="Internship Mode" required tooltip="Choose Single Department or Multi-Department Group Mode">
+                                    <Select
+                                        value={formData.internshipMode}
+                                        onChange={v => setFormData({...formData, internshipMode: v})}
+                                        options={[
+                                            { value: 'SINGLE', label: 'Single Department' },
+                                            { value: 'GROUP', label: 'Group (Multi-Department)' }
+                                        ]}
+                                        size="lg"
+                                    />
+                                </InputField>
+                            )}
                         </div>
+
+                        {formData.internshipMode === 'SINGLE' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <InputField label="Target Department" required>
+                                    <Select
+                                        value={formData.department}
+                                        onChange={(value) => {
+                                            handleChange({ target: { name: 'department', value } });
+                                        }}
+                                        options={[
+                                            { value: '', label: '-- Select Department --' },
+                                            ...departments.map(d => ({ value: d, label: d }))
+                                        ]}
+                                        placeholder="Select Department"
+                                        size="lg"
+                                    />
+                                </InputField>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <InputField label="Internship Duration" required hint="Standard engagement period">
@@ -290,24 +364,27 @@ const CreateInternshipForm = () => {
                                 />
                             </InputField>
 
-                            <InputField label="Internship Type" required hint="Select whether this is a paid or unpaid internship">
+                            <InputField label="Internship Type" required tooltip="STIPEND/COLLABORATIVE use role-based flow. NON_STIPEND uses field-based flow.">
                                 <Select
-                                    value={formData.stipendType}
-                                    onChange={(value) => {
-                                        handleChange({ target: { name: 'stipendType', value } });
+                                    value={formData.internshipType}
+                                    onChange={(v) => {
+                                        setFormData({
+                                            ...formData, 
+                                            internshipType: v,
+                                            stipendType: v === 'COLLABORATIVE' ? 'COLLABORATIVE' : 'NON_COLLABORATIVE'
+                                        });
                                     }}
                                     options={[
-                                        { value: 'NON_COLLABORATIVE', label: 'Non-Collaborative (No Stipend)' },
-                                        { value: 'COLLABORATIVE', label: 'Collaborative (With Stipend)' }
+                                        { value: 'COLLABORATIVE', label: 'Collaborative (With Stipend)' },
+                                        { value: 'NON_STIPEND', label: 'Non-Collaborative (No Stipend)' }
                                     ]}
-                                    placeholder="Select Type"
                                     size="lg"
                                 />
                             </InputField>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {formData.stipendType === 'COLLABORATIVE' && (
+                            {formData.internshipType === 'COLLABORATIVE' && (
                                 <InputField label="Stipend Amount (₹)" hint="Monthly stipend amount in INR">
                                     <input type="number" name="stipendAmount" value={formData.stipendAmount} onChange={handleChange}
                                         placeholder="e.g. 10000" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
@@ -356,14 +433,14 @@ const CreateInternshipForm = () => {
 
                         <div className="pt-6 border-t border-outline-variant/10">
                             <button onClick={nextStep} className="w-full py-4 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
-                                Continue to Capacity & Questions <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                {formData.internshipMode === 'GROUP' ? 'Continue to Department Groups' : 'Continue to Capacity & Questions'} <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 2: CAPACITY & QUESTIONS */}
-                {step === 2 && (
+                {/* STEP 2: CAPACITY & QUESTIONS (SINGLE) OR DEPARTMENT GROUPS (GROUP) */}
+                {step === 2 && formData.internshipMode === 'SINGLE' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div>
                             <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 2: <span className="text-primary/60 font-medium">Capacity & Questions</span></h2>
@@ -539,7 +616,7 @@ const CreateInternshipForm = () => {
                         </div>
 
                         <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
-                            <button onClick={() => setStep(1)} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
+                            <button onClick={prevStep} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
                             <button onClick={nextStep} className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
                                 Continue to Roles <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
@@ -547,61 +624,201 @@ const CreateInternshipForm = () => {
                     </div>
                 )}
 
-                {/* STEP 3: ROLES */}
-                {step === 3 && (
+                {/* STEP 2: DEPARTMENT GROUPS (GROUP MODE) */}
+                {step === 2 && formData.internshipMode === 'GROUP' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div>
-                            <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 3: <span className="text-primary/60 font-medium">Available Roles</span></h2>
-                            <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Assign seats to specific positions within the programme.</p>
+                            <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 2: <span className="text-primary/60 font-medium">Department Groups</span></h2>
+                            <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Add participating departments, capacities, and custom requirements.</p>
                         </div>
 
-                        <div className="p-8 bg-white border border-outline-variant/10 rounded-xl flex flex-col md:flex-row gap-6">
-                            <div className="flex-1">
-                                <InputField label="Role/Position Name">
-                                    <input type="text" value={roleNameInput} onChange={e => setRoleNameInput(e.target.value)}
-                                        placeholder="e.g. Graduate Engineer Trainee" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
-                                </InputField>
-                            </div>
-                            <div className="w-48">
-                                <InputField label="Seats for this Role">
-                                    <input type="number" min="1" value={roleOpeningsInput} onChange={e => setRoleOpeningsInput(e.target.value)}
-                                        className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
-                                </InputField>
-                            </div>
-                            <div className="flex items-end">
-                                <button type="button" onClick={addRole} className="h-[46px] px-6 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md shadow-primary/10">
-                                    <span className="material-symbols-outlined text-sm">add</span> Add Role
-                                </button>
-                            </div>
-                        </div>
+                        <div className="space-y-4">
+                            <button onClick={() => setIsGroupModalOpen(true)} className="w-full p-6 border-2 border-dashed border-primary/30 rounded-xl text-primary font-bold hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-2">
+                                <span className="material-symbols-outlined text-3xl">add_business</span>
+                                <span className="text-sm uppercase tracking-widest">Add Department Group</span>
+                            </button>
 
-                        <div className="space-y-3">
-                            {roles.length === 0 ? (
-                                <div className="p-12 border border-dashed border-outline-variant/30 rounded-xl text-center bg-surface-container-high/20">
-                                    <span className="material-symbols-outlined text-outline/30 text-4xl mb-2">group</span>
-                                    <p className="text-outline/50 font-bold uppercase text-[10px] tracking-widest leading-loose">No active roles defined. Assign at least one position to proceed with institutional configuration.</p>
-                                </div>
-                            ) : (
-                                roles.map((r, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 bg-white border border-outline-variant/10 rounded-xl shadow-sm hover:border-primary/20 transition-all group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary font-bold text-xs">R{i + 1}</div>
-                                            <div>
-                                                <p className="font-bold text-primary tracking-tight text-sm uppercase">{r.name}</p>
-                                                <p className="text-[10px] text-outline font-bold uppercase tracking-widest">{r.openings} Positions available</p>
-                                            </div>
+                            {formData.departmentGroups.map((g, i) => (
+                                <div key={i} className="p-6 bg-white border border-outline-variant/20 rounded-xl shadow-sm flex justify-between items-start">
+                                    <div>
+                                        <h3 className="font-bold text-primary text-lg">{g.title || `${g.department} Internship`}</h3>
+                                        <div className="flex gap-4 mt-2 text-xs font-bold text-outline">
+                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">domain</span> {g.department}</span>
+                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">group</span> {g.openings} Openings</span>
+                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">badge</span> {g.rolesData.length} Roles</span>
                                         </div>
-                                        <button onClick={() => setRoles(roles.filter((_, idx) => idx !== i))} className="p-2 text-outline/40 hover:text-error transition-colors">
-                                            <span className="material-symbols-outlined text-lg">delete</span>
-                                        </button>
                                     </div>
-                                ))
-                            )}
+                                    <button onClick={() => setFormData({...formData, departmentGroups: formData.departmentGroups.filter((_, idx) => idx !== i)})} className="text-error hover:bg-error/10 p-2 rounded-lg transition-colors">
+                                        <span className="material-symbols-outlined">delete</span>
+                                    </button>
+                                </div>
+                            ))}
                         </div>
 
                         <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
-                            <button onClick={() => setStep(2)} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
-                            <button onClick={nextStep} disabled={roles.length === 0} className="flex-1 py-4 bg-primary disabled:opacity-50 hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
+                            <button onClick={prevStep} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
+                            <button onClick={nextStep} disabled={formData.departmentGroups.length === 0} className="flex-1 py-4 bg-primary disabled:opacity-50 hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
+                                Continue to Documents <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </div>
+
+                        <DepartmentGroupModal 
+                            isOpen={isGroupModalOpen} 
+                            onClose={() => setIsGroupModalOpen(false)} 
+                            departments={departments}
+                            internshipType={formData.internshipType}
+                            onSave={(groupData) => {
+                                setFormData({...formData, departmentGroups: [...formData.departmentGroups, groupData]});
+                                setIsGroupModalOpen(false);
+                            }}
+                        />
+                    </div>
+                )}
+
+                {/* STEP 3: ROLES OR FIELDS */}
+                {step === 3 && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {formData.internshipType !== 'NON_STIPEND' ? (
+                            <>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 3: <span className="text-primary/60 font-medium">Available Roles</span></h2>
+                                    <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Assign seats to specific positions within the programme.</p>
+                                </div>
+
+                                <div className="p-8 bg-white border border-outline-variant/10 rounded-xl flex flex-col md:flex-row gap-6">
+                                    <div className="flex-1">
+                                        <InputField label="Role/Position Name">
+                                            <input type="text" value={roleNameInput} onChange={e => setRoleNameInput(e.target.value)}
+                                                placeholder="e.g. Graduate Engineer Trainee" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                        </InputField>
+                                    </div>
+                                    <div className="w-48">
+                                        <InputField label="Seats for this Role">
+                                            <input type="number" min="1" value={roleOpeningsInput} onChange={e => setRoleOpeningsInput(e.target.value)}
+                                                className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                        </InputField>
+                                    </div>
+                                    <div className="flex items-end">
+                                        <button type="button" onClick={addRole} className="h-[46px] px-6 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md shadow-primary/10">
+                                            <span className="material-symbols-outlined text-sm">add</span> Add Role
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {roles.length === 0 ? (
+                                        <div className="p-12 border border-dashed border-outline-variant/30 rounded-xl text-center bg-surface-container-high/20">
+                                            <span className="material-symbols-outlined text-outline/30 text-4xl mb-2">group</span>
+                                            <p className="text-outline/50 font-bold uppercase text-[10px] tracking-widest leading-loose">No active roles defined. Assign at least one position to proceed with institutional configuration.</p>
+                                        </div>
+                                    ) : (
+                                        roles.map((r, i) => (
+                                            <div key={i} className="flex items-center justify-between p-4 bg-white border border-outline-variant/10 rounded-xl shadow-sm hover:border-primary/20 transition-all group">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary font-bold text-xs">R{i + 1}</div>
+                                                    <div>
+                                                        <p className="font-bold text-primary tracking-tight text-sm uppercase">{r.name}</p>
+                                                        <p className="text-[10px] text-outline font-bold uppercase tracking-widest">{r.openings} Positions available</p>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => setRoles(roles.filter((_, idx) => idx !== i))} className="p-2 text-outline/40 hover:text-error transition-colors">
+                                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 3: <span className="text-primary/60 font-medium">Available Fields</span></h2>
+                                    <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Define technical fields and locations for Non-Stipend internship.</p>
+                                </div>
+
+                                <div className="p-8 bg-white border border-outline-variant/10 rounded-xl space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <InputField label="Field Name">
+                                            <input type="text" value={fieldInput.fieldName} onChange={e => setFieldInput({...fieldInput, fieldName: e.target.value})}
+                                                placeholder="e.g. Transmission Operations" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                        </InputField>
+                                        <InputField label="Vacancies">
+                                            <input type="number" min="1" value={fieldInput.vacancies} onChange={e => setFieldInput({...fieldInput, vacancies: e.target.value})}
+                                                className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                        </InputField>
+                                    </div>
+                                    <InputField label="Field Description">
+                                        <textarea value={fieldInput.description} onChange={e => setFieldInput({...fieldInput, description: e.target.value})}
+                                            rows="2" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                    </InputField>
+                                    
+                                    <div className="space-y-4">
+                                        <InputField label="Available Locations">
+                                            <div className="flex gap-4">
+                                                <input type="text" value={locationInput} onChange={e => setLocationInput(e.target.value)}
+                                                    placeholder="e.g. Vijayawada" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                                <button type="button" onClick={() => {
+                                                    if(locationInput.trim()){
+                                                        setFieldInput({...fieldInput, locations: [...fieldInput.locations, locationInput.trim()]});
+                                                        setLocationInput('');
+                                                    }
+                                                }} className="h-[46px] px-6 bg-primary/10 text-primary rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-primary/20 transition-all">Add Location</button>
+                                            </div>
+                                        </InputField>
+                                        <div className="flex flex-wrap gap-2">
+                                            {fieldInput.locations.map((loc, i) => (
+                                                <span key={i} className="px-3 py-1 bg-surface-variant text-outline rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                                                    {loc} <button onClick={() => setFieldInput({...fieldInput, locations: fieldInput.locations.filter((_, idx) => idx !== i)})} className="text-error">×</button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <button type="button" onClick={() => {
+                                        if(fieldInput.fieldName && fieldInput.vacancies && fieldInput.locations.length > 0){
+                                            setFormData({...formData, fields: [...formData.fields, fieldInput]});
+                                            setFieldInput({fieldName: '', description: '', vacancies: '', locations: []});
+                                        } else {
+                                            alert('Please fill all field details and add at least one location');
+                                        }
+                                    }} className="w-full py-4 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-md">
+                                        <span className="material-symbols-outlined text-sm">add</span> Add Field to Internship
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {formData.fields.length === 0 ? (
+                                        <div className="p-12 border border-dashed border-outline-variant/30 rounded-xl text-center bg-surface-container-high/20">
+                                            <span className="material-symbols-outlined text-outline/30 text-4xl mb-2">account_tree</span>
+                                            <p className="text-outline/50 font-bold uppercase text-[10px] tracking-widest leading-loose">No fields defined. Define at least one technical field to proceed.</p>
+                                        </div>
+                                    ) : (
+                                        formData.fields.map((f, i) => (
+                                            <div key={i} className="p-5 bg-white border border-outline-variant/10 rounded-xl shadow-sm group relative">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <h3 className="font-bold text-primary text-lg tracking-tight uppercase">{f.fieldName}</h3>
+                                                        <p className="text-[10px] text-outline/60 font-bold uppercase tracking-widest mt-1">{f.vacancies} Vacancies available</p>
+                                                    </div>
+                                                    <button onClick={() => setFormData({...formData, fields: formData.fields.filter((_, idx) => idx !== i)})} className="text-error hover:bg-error/10 p-2 rounded-lg transition-colors">
+                                                        <span className="material-symbols-outlined">delete</span>
+                                                    </button>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {f.locations.map((loc, li) => (
+                                                        <span key={li} className="px-2 py-1 bg-primary/5 text-primary rounded-md text-[9px] font-bold uppercase tracking-wider border border-primary/10">{loc}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
+                            <button onClick={prevStep} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
+                            <button onClick={nextStep} disabled={formData.internshipType !== 'NON_STIPEND' ? roles.length === 0 : formData.fields.length === 0} className="flex-1 py-4 bg-primary disabled:opacity-50 hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
                                 Continue to Documents <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
                         </div>
@@ -676,7 +893,7 @@ const CreateInternshipForm = () => {
                         </div>
 
                         <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
-                            <button onClick={() => setStep(3)} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
+                            <button onClick={prevStep} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
                             <button onClick={nextStep} className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
                                 Finalize & Preview <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
@@ -763,7 +980,7 @@ const CreateInternshipForm = () => {
                         </div>
 
                         <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
-                            <button onClick={() => setStep(4)} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
+                            <button onClick={prevStep} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
                             <button onClick={handleSubmit} disabled={loading} className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-emerald-200/50 transition-all hover:scale-[1.02]">
                                 {loading ? <span className="animate-pulse">Deploying Program...</span> : <><span className="material-symbols-outlined">rocket_launch</span> Launch Internship Program</>}
                             </button>

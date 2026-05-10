@@ -60,6 +60,8 @@ const AdminApplicationReview = () => {
     const [error, setError] = useState('');
     const [filter, setFilter] = useState('All');
     const [roleFilter, setRoleFilter] = useState('All Roles');
+    const [groupFilter, setGroupFilter] = useState('All Groups');
+    const [fieldFilter, setFieldFilter] = useState('All Fields');
     const [selected, setSelected] = useState(null);
     const [highlightCollege, setHighlightCollege] = useState('');
 
@@ -146,8 +148,10 @@ const AdminApplicationReview = () => {
         const filterFn = a => {
             const statusMatch = filter === 'All' ? true : a.status === filter;
             const roleMatch = roleFilter === 'All Roles' ? true : a.assignedRole === roleFilter;
+            const groupMatch = groupFilter === 'All Groups' ? true : a.departmentGroupId === groupFilter;
+            const fieldMatch = fieldFilter === 'All Fields' ? true : a.fieldId === fieldFilter;
             const collegeMatch = !highlightCollege || (a.student?.collegeName || '').toLowerCase().includes(highlightCollege.toLowerCase());
-            return statusMatch && roleMatch && collegeMatch;
+            return statusMatch && roleMatch && groupMatch && fieldMatch && collegeMatch;
         };
 
         const roleHiredStats = {};
@@ -337,17 +341,54 @@ const AdminApplicationReview = () => {
                     </div>
 
                     <div className="flex gap-4 w-full md:w-auto">
+                        {internship?.internshipMode === 'GROUP' && (
+                            <div className="relative w-full md:w-64">
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">domain</span>
+                                <select value={groupFilter} onChange={e => { setGroupFilter(e.target.value); setRoleFilter('All Roles'); }}
+                                    className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary appearance-none">
+                                    <option value="All Groups">All Departments</option>
+                                    {internship?.departmentGroups?.map(g => (
+                                        <option key={g.id} value={g.id}>{g.title || g.department}</option>
+                                    ))}
+                                </select>
+                                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">expand_more</span>
+                            </div>
+                        )}
+
+                        {internship?.internshipType === 'NON_STIPEND' && (
+                            <div className="relative w-full md:w-64">
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">account_tree</span>
+                                <select value={fieldFilter} onChange={e => setFieldFilter(e.target.value)}
+                                    className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary appearance-none">
+                                    <option value="All Fields">All Fields</option>
+                                    {(internship.fields || []).map(f => (
+                                        <option key={f.id} value={f.id}>{f.fieldName}</option>
+                                    ))}
+                                </select>
+                                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">expand_more</span>
+                            </div>
+                        )}
+
                         <div className="relative w-full md:w-64">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">work</span>
                             <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
                                 className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-primary focus:outline-primary appearance-none">
                                 <option>All Roles</option>
-                                {internship?.rolesData?.map(r => (
-                                    <option key={r.name} value={r.name}>{r.name}</option>
-                                ))}
-                                {(!internship?.rolesData && internship?.roles) && internship.roles.split(',').map(r => (
-                                    <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
-                                ))}
+                                {internship?.internshipMode === 'GROUP' ? (
+                                    (groupFilter === 'All Groups' 
+                                        ? internship?.departmentGroups?.flatMap(g => g.rolesData || []) 
+                                        : internship?.departmentGroups?.find(g => g.id === groupFilter)?.rolesData || []
+                                    ).map((r, i) => <option key={`${r.name}-${i}`} value={r.name}>{r.name}</option>)
+                                ) : (
+                                    <>
+                                        {internship?.rolesData?.map(r => (
+                                            <option key={r.name} value={r.name}>{r.name}</option>
+                                        ))}
+                                        {(!internship?.rolesData && internship?.roles) && internship.roles.split(',').map(r => (
+                                            <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
+                                        ))}
+                                    </>
+                                )}
                             </select>
                             <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">expand_more</span>
                         </div>
@@ -495,7 +536,7 @@ const AdminApplicationReview = () => {
                                                 color={group.color} 
                                             />
                                             {!collapsed[group.key] && appsInGroup.map(app => (
-                                                <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} />
+                                                <ApplicationRow key={app.id} app={app} updateStatus={updateStatus} setSelected={setSelected} internship={internship} />
                                             ))}
                                         </React.Fragment>
                                     );
@@ -574,7 +615,7 @@ const SummaryCard = ({ label, val, total, color }) => {
     );
 };
 
-const ApplicationRow = ({ app, updateStatus, setSelected }) => {
+const ApplicationRow = ({ app, updateStatus, setSelected, internship }) => {
     return (
         <tr className="hover:bg-primary/5 transition-colors group">
             <td className="px-6 py-5">
@@ -583,13 +624,16 @@ const ApplicationRow = ({ app, updateStatus, setSelected }) => {
                         {app.student?.fullName?.charAt(0)}
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-primary flex items-center gap-2">
+                        <p className="text-sm font-bold text-primary flex flex-wrap items-center gap-2">
                             {app.student?.fullName}
                             {app.shortlistCategory === 'FALLBACK' && (
                                 <span className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 rounded text-[8px] uppercase tracking-widest border border-yellow-200 dark:border-yellow-800">Fallback Application</span>
                             )}
+                            {internship?.internshipMode === 'GROUP' && app.departmentGroup && (
+                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[8px] uppercase tracking-widest border border-purple-200">{app.departmentGroup.department}</span>
+                            )}
                         </p>
-                        <p className="text-[10px] text-outline font-medium tracking-tighter uppercase mt-0.5">ID: {app.trackingId.slice(-6)}</p>
+                        <p className="text-[10px] text-outline font-medium tracking-tighter uppercase mt-0.5">ID: {app.trackingId.slice(-6)} • {app.assignedRole || 'No Role'}</p>
                     </div>
                 </div>
             </td>

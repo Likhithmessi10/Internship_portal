@@ -121,6 +121,7 @@ model Internship {
   title                String
   department           String
   description          String
+  internshipMode       String    @default("SINGLE") // "SINGLE" or "GROUP"
   roles                String?
   rolesData            Json?
   requirements         String?
@@ -143,11 +144,41 @@ model Internship {
   customQuestions      Json?     @default("[]")
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  internshipType       String?   @default("STIPEND") // STIPEND, COLLABORATIVE, NON_STIPEND
   shortlistLimit       Int?      @default(50)
 
   applications Application[]
+  fields       InternshipField[]
   committee    Committee?
   evaluationCriteria InternshipEvaluationCriteria[]
+  departmentGroups InternshipDepartmentGroup[]
+}
+
+model InternshipDepartmentGroup {
+  id                String    @id @default(uuid())
+  internshipId      String
+  department        String
+  title             String    // e.g. "Electrical Engineering Trainee"
+  description       String?
+  openings          Int       @default(0)
+  rolesData         Json?     // [{name, openings}]
+  skillsRequired    String?   // comma-separated skills
+  expectations      String?
+  preferredColleges Json?     @default("[]")
+  quotaPercentages  Json?     // {preferred, premier, normal}
+  problemStatements Json?     @default("[]")
+  customQuestions   Json?     @default("[]")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  internshipType    String?   @default("STIPEND")
+  internship        Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  applications      Application[]
+  fields            InternshipField[]
+  committee         Committee?
+
+  @@unique([internshipId, department])
+  @@index([internshipId])
 }
 
 model Application {
@@ -155,6 +186,8 @@ model Application {
   trackingId      String              @unique
   studentId       String
   internshipId    String
+  departmentGroupId String?           // For GROUP mode: links to specific department group
+  fieldId         String?           // For NON_STIPEND mode: links to specific field
   status          ApplicationStatus   @default(SUBMITTED)
   resumeMatchScore Float?             @default(0)
   score           Float?              @default(0)
@@ -181,6 +214,8 @@ model Application {
 
   student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   internship Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  departmentGroup InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id])
+  field          InternshipField?           @relation(fields: [fieldId], references: [id])
   mentor     User?          @relation("MentorApps", fields: [mentorId], references: [id])
 
   documents  Document[]
@@ -191,10 +226,27 @@ model Application {
   committeeEvaluations CommitteeEvaluation[]
   evaluationScores EvaluationScore[]
 
-  @@unique([studentId, internshipId, assignedRole])
+  @@unique([studentId, internshipId, assignedRole, fieldId])
   @@index([studentId])
   @@index([internshipId])
+  @@index([departmentGroupId])
   @@index([status])
+}
+
+model InternshipField {
+  id                String   @id @default(uuid())
+  internshipId      String?
+  departmentGroupId String?
+  fieldName         String
+  description       String?
+  vacancies         Int      @default(0)
+  locations         Json?    @default("[]") // Array of strings
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  internship        Internship? @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  departmentGroup   InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
+  applications      Application[]
 }
 
 model Document {
@@ -333,10 +385,11 @@ model DocumentConfiguration {
 }
 
 model Committee {
-  id            String    @id @default(uuid())
-  internshipId  String    @unique
-  meetLink      String?
-  interviewDate DateTime?
+  id                String    @id @default(uuid())
+  internshipId      String?   @unique // For SINGLE mode
+  departmentGroupId String?   @unique // For GROUP mode
+  meetLink          String?
+  interviewDate     DateTime?
   
   // Committee structure:
   // Member 1 (Permanent): HOD of the department
@@ -351,7 +404,8 @@ model Committee {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  internship    Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  internship        Internship? @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  departmentGroup   InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
 }
 
 model aishe_colleges {

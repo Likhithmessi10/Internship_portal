@@ -5,16 +5,13 @@ import api from '../../utils/api';
 import { Home } from 'lucide-react';
 import departmentsData from '../../data/departments.json';
 
-const AdminRegister = () => {
+const AdminRegister = ({ forcedRole }) => {
     const { registerAdmin, user } = useAuth();
     const navigate = useNavigate();
-
     const [searchParams] = useSearchParams();
-    const targetRole = searchParams.get('role');
-
+    const targetRole = forcedRole || searchParams.get('role');
     const roleNames = { 'ADMIN': 'Super Admin', 'CE_PRTI': 'PRTI', 'HOD': 'HOD', 'MENTOR': 'Mentor', 'COMMITTEE_MEMBER': 'Committee Member' };
     const roleDisplay = targetRole ? roleNames[targetRole] : 'Staff';
-
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -217,7 +214,7 @@ const AdminRegister = () => {
                                 <Home size={12} /> All Roles
                             </Link>
                             <span className="text-outline/40">•</span>
-                            <Link to="/login" className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline">Sign In</Link>
+                            <Link to={targetRole === 'ADMIN' ? '/super-admin/login' : targetRole === 'CE_PRTI' ? '/prti/login' : `/${targetRole?.toLowerCase()}/login`} className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline">Sign In</Link>
                         </div>
                     </div>
                 </div>

@@ -584,8 +584,11 @@ const AdminDashboard = () => {
                                                     <span className="material-symbols-outlined">work</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-primary flex items-center gap-2">
+                                                    <p className="text-sm font-bold text-primary flex flex-wrap items-center gap-2">
                                                         {int.title}
+                                                        {int.internshipMode === 'GROUP' && (
+                                                            <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[8px] uppercase tracking-widest border border-purple-200">Group</span>
+                                                        )}
                                                         {int.stipendType === 'COLLABORATIVE' ? (
                                                             <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[8px] uppercase tracking-widest border border-green-200">Monetary</span>
                                                         ) : (
@@ -593,7 +596,7 @@ const AdminDashboard = () => {
                                                         )}
                                                     </p>
                                                     <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">
-                                                        {int.department} • {int.location}
+                                                        {int.internshipMode === 'GROUP' ? `${int.departmentGroups?.length || 0} Departments` : int.department} • {int.location}
                                                     </p>
                                                 </div>
                                             </div>

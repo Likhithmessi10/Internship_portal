@@ -156,15 +156,65 @@ const InternshipList = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                     {filtered.flatMap(internship => {
-                        const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim(), openings: 'N/A' })) : [{ name: internship.title, openings: internship.openingsCount }]);
+                        let itemsToRender = [];
+                        
+                        if (internship.internshipMode === 'GROUP' && internship.departmentGroups?.length > 0) {
+                            internship.departmentGroups.forEach(group => {
+                                if (group.internshipType === 'NON_STIPEND') {
+                                    const fields = group.fields || [];
+                                    fields.forEach(field => {
+                                        itemsToRender.push({
+                                            department: group.department,
+                                            roleName: field.fieldName,
+                                            openings: field.vacancies || 'N/A',
+                                            groupId: group.id,
+                                            fieldId: field.id,
+                                            locations: field.locations || [],
+                                            isNonStipend: true
+                                        });
+                                    });
+                                } else {
+                                    const roles = group.rolesData || [{ name: group.title || group.department, openings: group.openings }];
+                                    roles.forEach(role => {
+                                        itemsToRender.push({
+                                            department: group.department,
+                                            roleName: role.name,
+                                            openings: role.openings || group.openings || 'N/A',
+                                            groupId: group.id
+                                        });
+                                    });
+                                }
+                            });
+                        } else if (internship.internshipType === 'NON_STIPEND') {
+                            const fields = internship.fields || [];
+                            fields.forEach(field => {
+                                itemsToRender.push({
+                                    department: internship.department,
+                                    roleName: field.fieldName,
+                                    openings: field.vacancies || 'N/A',
+                                    fieldId: field.id,
+                                    locations: field.locations || [],
+                                    isNonStipend: true
+                                });
+                            });
+                        } else {
+                            const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim(), openings: 'N/A' })) : [{ name: internship.title, openings: internship.openingsCount }]);
+                            roles.forEach(role => {
+                                itemsToRender.push({
+                                    department: internship.department,
+                                    roleName: role.name,
+                                    openings: role.openings || internship.openingsCount || 'N/A'
+                                });
+                            });
+                        }
 
-                        return roles.map((role, idx) => (
+                        return itemsToRender.map((item, idx) => (
                             <div key={`${internship.id}-${idx}`} className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[#003087]/20 dark:hover:border-blue-500/30 transition-all duration-300 flex flex-col h-full group overflow-hidden relative">
 
                                 {/* Card Header Strip */}
-                                <div className={`h-2.5 w-full ${internship.department === 'IT' ? 'bg-blue-500' :
-                                    internship.department === 'Operations' ? 'bg-emerald-500 dark:bg-emerald-400' :
-                                        internship.department === 'HR' ? 'bg-[#D4A017] dark:bg-yellow-500' :
+                                <div className={`h-2.5 w-full ${item.department === 'IT' ? 'bg-blue-500' :
+                                    item.department === 'Operations' ? 'bg-emerald-500 dark:bg-emerald-400' :
+                                        item.department === 'HR' ? 'bg-[#D4A017] dark:bg-yellow-500' :
                                             'bg-[#003087] dark:bg-blue-600'
                                     }`}></div>
 
@@ -172,7 +222,7 @@ const InternshipList = () => {
                                     <div className="flex justify-between items-start mb-5 gap-4">
                                         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 border border-gray-100 dark:border-slate-600 text-[10px] font-black uppercase tracking-widest shadow-sm">
                                             <Briefcase className="w-3.5 h-3.5" />
-                                            {internship.department}
+                                            {item.department}
                                         </div>
                                         <div className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#eff4ff] dark:bg-blue-500/10 text-[#003087] dark:text-blue-400 border border-[#b3cfff] dark:border-blue-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">
                                             <ShieldCheck className="w-3.5 h-3.5" /> Govt. Appr.
@@ -193,7 +243,7 @@ const InternshipList = () => {
                                     </div>
 
                                     <h2 className="text-xl lg:text-2xl font-black font-rajdhani text-gray-900 dark:text-white mb-1.5 line-clamp-2 leading-tight group-hover:text-[#003087] dark:group-hover:text-blue-400 transition-colors">
-                                        {role.name}
+                                        {item.roleName}
                                     </h2>
                                     <div className="text-[11px] font-extrabold text-gray-400 dark:text-slate-500 tracking-wide mb-4 line-clamp-1">
                                         PART OF: <span className="text-[#003087] dark:text-blue-400 opacity-80">{internship.title}</span>
@@ -208,7 +258,7 @@ const InternshipList = () => {
                                             <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600 shadow-sm">
                                                 <MapPin className="w-4 h-4 text-[#003087] dark:text-blue-400" />
                                             </div>
-                                            {internship.location || 'Multiple Locations'}
+                                            {item.isNonStipend ? (Array.isArray(item.locations) ? item.locations.join(', ') : 'Multiple') : (internship.location || 'Multiple Locations')}
                                         </div>
                                         <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
                                             <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600 shadow-sm">
@@ -220,13 +270,13 @@ const InternshipList = () => {
                                             <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600 shadow-sm">
                                                 <Users className="w-4 h-4 text-[#D4A017] dark:text-yellow-400" />
                                             </div>
-                                            {role.openings} Openings
+                                            {item.openings} {item.isNonStipend ? 'Vacancies' : 'Openings'}
                                         </div>
                                     </div>
 
                                     <div className="pt-0 mt-auto">
                                         <Link
-                                            to={`/student/internships/${internship.id}/apply?role=${encodeURIComponent(role.name)}`}
+                                            to={`/student/internships/${internship.id}/apply?role=${encodeURIComponent(item.roleName)}${item.groupId ? `&groupId=${item.groupId}` : ''}${item.fieldId ? `&fieldId=${item.fieldId}` : ''}`}
                                             className="w-full bg-[#D4A017] dark:bg-yellow-500 hover:bg-[#b88c14] dark:hover:bg-yellow-600 text-[#00266b] dark:text-slate-900 font-extrabold py-3.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 group-hover:bg-[#003087] dark:group-hover:bg-blue-600 group-hover:text-white dark:group-hover:text-white active:scale-[0.98] uppercase tracking-widest text-[11px]"
                                         >
                                             View Details & Apply <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

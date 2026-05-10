@@ -3,11 +3,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Home } from 'lucide-react';
 
-const AdminLogin = () => {
+const AdminLogin = ({ forcedRole }) => {
     const { login, user } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const targetRole = searchParams.get('role');
+    const targetRole = forcedRole || searchParams.get('role');
 
     const roleNames = { 'ADMIN': 'Super Admin', 'CE_PRTI': 'PRTI', 'HOD': 'HOD', 'MENTOR': 'Mentor' };
     const roleDisplay = targetRole ? roleNames[targetRole] : 'Admin';
@@ -120,7 +120,7 @@ const AdminLogin = () => {
                                 <Home size={12} /> All Roles
                             </Link>
                             <span className="text-outline/40">•</span>
-                            <Link to="/register" className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline">Staff Enrollment</Link>
+                            <Link to={targetRole === 'ADMIN' ? '/super-admin/register' : targetRole === 'CE_PRTI' ? '/prti/register' : `/${targetRole?.toLowerCase()}/register`} className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline">Staff Enrollment</Link>
                         </div>
                     </div>
                 </div>

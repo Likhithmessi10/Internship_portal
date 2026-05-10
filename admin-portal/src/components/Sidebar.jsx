@@ -46,12 +46,12 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             icon: 'event_available',
             path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : (isMentor ? '/mentor/meetings' : '/meetings'))
         },
-        {
+        ...(!isPRTI && !isMentor ? [{
             label: 'Selection',
             icon: 'how_to_reg',
-            path: isHOD ? '/hod/selection' : (isAdmin ? '/admin/selection' : '/selection'),
+            path: isHOD ? '/hod/selection' : '/admin/selection',
             highlight: true
-        },
+        }] : []),
         {
             label: 'Reports',
             icon: 'assessment',

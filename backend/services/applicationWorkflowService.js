@@ -54,6 +54,7 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
             where: { id: applicationId },
             include: {
                 internship: true,
+                departmentGroup: true,
                 student: {
                     select: {
                         collegeName: true,
@@ -77,20 +78,26 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
         
         // If moving TO a seat-consuming status FROM a non-consuming one
         if (SEAT_CONSUMING.includes(toStatus) && !SEAT_CONSUMING.includes(application.status)) {
+            // Determine active entity (group vs parent)
+            const targetEntity = application.departmentGroup || application.internship;
+            const targetOpenings = targetEntity.openings ?? targetEntity.openingsCount;
+
             const activeCount = await tx.application.count({
                 where: {
-                    internshipId: application.internshipId,
+                    ...(application.departmentGroup 
+                        ? { departmentGroupId: application.departmentGroupId } 
+                        : { internshipId: application.internshipId, departmentGroupId: null }),
                     status: { in: SEAT_CONSUMING }
                 }
             });
 
-            if (activeCount >= application.internship.openingsCount) {
-                throw new Error(`Allocation Failed: No seats remaining. All ${application.internship.openingsCount} slots are filled.`);
+            if (activeCount >= targetOpenings) {
+                throw new Error(`Allocation Failed: No seats remaining. All ${targetOpenings} slots are filled for this role/department.`);
             }
 
             // Enforce category quotas from internship creation (preferred/premier/regular)
-            const caps = getSeatCaps(application.internship.openingsCount, application.internship.quotaPercentages || {});
-            const targetBucket = getApplicationBucket(application, application.internship);
+            const caps = getSeatCaps(targetOpenings, targetEntity.quotaPercentages || {});
+            const targetBucket = getApplicationBucket(application, targetEntity);
             const targetCap = caps[targetBucket] ?? 0;
 
             if (targetCap <= 0) {
@@ -99,7 +106,9 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
 
             const activeApps = await tx.application.findMany({
                 where: {
-                    internshipId: application.internshipId,
+                    ...(application.departmentGroup 
+                        ? { departmentGroupId: application.departmentGroupId } 
+                        : { internshipId: application.internshipId, departmentGroupId: null }),
                     status: { in: SEAT_CONSUMING }
                 },
                 include: {
@@ -112,7 +121,7 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
                 }
             });
 
-            const usedInBucket = activeApps.filter(a => getApplicationBucket(a, application.internship) === targetBucket).length;
+            const usedInBucket = activeApps.filter(a => getApplicationBucket(a, targetEntity) === targetBucket).length;
             if (usedInBucket >= targetCap) {
                 throw new Error(
                     `Allocation Failed: ${targetBucket} quota is full (${usedInBucket}/${targetCap}). Approvals must follow configured seat distribution.`

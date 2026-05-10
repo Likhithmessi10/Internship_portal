@@ -3,24 +3,28 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShieldAlert, Users, Star, Building2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const RoleCard = ({ title, desc, role, icon: Icon, colorClass, textClass, borderClass }) => (
-    <div className={`p-8 rounded-[2.5rem] border ${borderClass} bg-white dark:bg-slate-900 shadow-xl shadow-gray-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group`}>
-        <div className={`absolute top-0 right-0 w-32 h-32 opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform ${colorClass}`}></div>
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm ${colorClass} bg-opacity-10 ${textClass}`}>
-             <Icon size={28} />
+const RoleCard = ({ title, desc, role, icon: Icon, colorClass, textClass, borderClass }) => {
+    const rolePath = role === 'ADMIN' ? 'super-admin' : role === 'CE_PRTI' ? 'prti' : role.toLowerCase();
+    
+    return (
+        <div className={`p-8 rounded-[2.5rem] border ${borderClass} bg-white dark:bg-slate-900 shadow-xl shadow-gray-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group`}>
+            <div className={`absolute top-0 right-0 w-32 h-32 opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform ${colorClass}`}></div>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm ${colorClass} bg-opacity-10 ${textClass}`}>
+                <Icon size={28} />
+            </div>
+            <h3 className="text-2xl font-black font-rajdhani text-gray-900 dark:text-white uppercase tracking-tight mb-2">{title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 font-medium leading-relaxed">{desc}</p>
+            <div className="flex gap-3">
+                <Link to={`/${rolePath}/login`} className={`flex-1 text-center py-3 text-white ${colorClass} hover:opacity-90 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95`}>
+                    Login
+                </Link>
+                <Link to={`/${rolePath}/register`} className={`flex-1 text-center py-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95`}>
+                    Register
+                </Link>
+            </div>
         </div>
-        <h3 className="text-2xl font-black font-rajdhani text-gray-900 dark:text-white uppercase tracking-tight mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 font-medium leading-relaxed">{desc}</p>
-        <div className="flex gap-3">
-            <Link to={`/login?role=${role}`} className={`flex-1 text-center py-3 text-white ${colorClass} hover:opacity-90 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95`}>
-                Login
-            </Link>
-            <Link to={`/register?role=${role}`} className={`flex-1 text-center py-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95`}>
-                Register
-            </Link>
-        </div>
-    </div>
-);
+    );
+};
 
 const AdminLanding = () => {
     const { user, loading } = useAuth();

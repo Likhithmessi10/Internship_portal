@@ -39,14 +39,51 @@ const applyForInternship = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please complete your student profile before applying' });
         }
 
-        const { sop, preferredLocation, assignedRole, questionAnswers } = req.body;
+        const { sop, preferredLocation, assignedRole, questionAnswers, departmentGroupId, fieldId } = req.body;
 
         // 4. Check if student already applied in this internship
-        const existingApplication = await prisma.application.findFirst({
-            where: {
-                studentId: profile.id,
-                internshipId: internshipId
+        const duplicateWhere = {
+            studentId: profile.id,
+            internshipId: internshipId
+        };
+
+        // For GROUP mode: check duplicate per department group, not per internship
+        if (internship.internshipMode === 'GROUP') {
+            if (!departmentGroupId) {
+                return res.status(400).json({ success: false, message: 'Department group is required for group internships' });
             }
+            // Verify group belongs to this internship
+            const group = await prisma.internshipDepartmentGroup.findUnique({ where: { id: departmentGroupId } });
+            if (!group || group.internshipId !== internshipId) {
+                return res.status(400).json({ success: false, message: 'Invalid department group' });
+            }
+            duplicateWhere.departmentGroupId = departmentGroupId;
+        }
+
+        // For NON_STIPEND mode: check duplicate per field, and validate location
+        if (internship.internshipType === 'NON_STIPEND') {
+            if (!fieldId) {
+                return res.status(400).json({ success: false, message: 'Field selection is required for non-stipend internships' });
+            }
+            if (!preferredLocation) {
+                return res.status(400).json({ success: false, message: 'Preferred location is required for non-stipend internships' });
+            }
+
+            const field = await prisma.internshipField.findUnique({ where: { id: fieldId } });
+            if (!field) {
+                return res.status(400).json({ success: false, message: 'Invalid technical field selected' });
+            }
+
+            const fieldLocations = Array.isArray(field.locations) ? field.locations : [];
+            if (!fieldLocations.includes(preferredLocation)) {
+                return res.status(400).json({ success: false, message: `Invalid location: ${preferredLocation} is not available for ${field.fieldName}` });
+            }
+
+            duplicateWhere.fieldId = fieldId;
+        }
+
+        const existingApplication = await prisma.application.findFirst({
+            where: duplicateWhere
         });
 
         if (existingApplication) {
@@ -98,6 +135,8 @@ const applyForInternship = async (req, res) => {
                 trackingId,
                 studentId: profile.id, // Linking to StudentProfile ID
                 internshipId: internship.id,
+                departmentGroupId: internship.internshipMode === 'GROUP' ? departmentGroupId : null,
+                fieldId: internship.internshipType === 'NON_STIPEND' ? fieldId : null,
                 status: 'SUBMITTED',
                 sop: sop || null,
                 preferredLocation: preferredLocation || null,
@@ -190,6 +229,7 @@ const getInternships = async (req, res) => {
                 id: true,
                 title: true,
                 department: true,
+                internshipMode: true,
                 requiredDocuments: true,
                 location: true,
                 duration: true,
@@ -197,7 +237,26 @@ const getInternships = async (req, res) => {
                 isActive: true,
                 rolesData: true,
                 description: true,
-                stipendType: true
+                stipendType: true,
+                internshipType: true,
+                fields: true,
+                departmentGroups: {
+                    select: {
+                        id: true,
+                        department: true,
+                        title: true,
+                        description: true,
+                        openings: true,
+                        rolesData: true,
+                        skillsRequired: true,
+                        expectations: true,
+                        customQuestions: true,
+                        internshipType: true,
+                        fields: true,
+                        _count: { select: { applications: true } }
+                    },
+                    orderBy: { department: 'asc' }
+                }
             },
             orderBy: { createdAt: 'desc' },
             skip,
@@ -240,7 +299,12 @@ const getInternshipDetails = async (req, res) => {
             include: {
                 evaluationCriteria: {
                     orderBy: { createdAt: 'asc' }
-                }
+                },
+                departmentGroups: {
+                    include: { fields: true },
+                    orderBy: { department: 'asc' }
+                },
+                fields: true
             }
         });
         if (!internship) return res.status(404).json({ success: false, message: 'Not found' });

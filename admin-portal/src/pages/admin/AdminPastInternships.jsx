@@ -214,8 +214,13 @@ const AdminPastInternships = () => {
                                 {internships.map(int => (
                                     <tr key={int.id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all group font-medium">
                                         <td className="py-5 pr-6">
-                                            <p className="font-bold text-gray-800 dark:text-indigo-100">{int.title}</p>
-                                            <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 mt-1 uppercase tracking-widest">{int.department} · {int.location}</p>
+                                            <p className="font-bold text-gray-800 dark:text-indigo-100 flex items-center gap-2">
+                                                {int.title}
+                                                {int.internshipMode === 'GROUP' && (
+                                                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[8px] uppercase tracking-widest border border-purple-200">Group</span>
+                                                )}
+                                            </p>
+                                            <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 mt-1 uppercase tracking-widest">{int.internshipMode === 'GROUP' ? `${int.departmentGroups?.length || 0} Depts` : int.department} · {int.location}</p>
                                         </td>
                                         <td className="py-5 text-center">
                                             <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${int.isActive ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20'}`}>

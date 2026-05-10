@@ -151,17 +151,17 @@ router.get('/colleges', async (req, res) => {
 
 
 // ── POST /api/v1/public/colleges/custom ──────────────────────────────────────
-const { addCustomCollege } = require('../scripts/tools/manage_colleges');
+// const { addCustomCollege } = require('../scripts/tools/manage_colleges');
 
-router.post('/colleges/custom', express.json(), async (req, res) => {
-  try {
-    const { name, state, type } = req.body;
-    const result = await addCustomCollege({ name, state, type });
-    return res.json({ success: true, data: result });
-  } catch (e) {
-    return res.status(400).json({ success: false, message: e.message });
-  }
-});
+// router.post('/colleges/custom', express.json(), async (req, res) => {
+//   try {
+//     const { name, state, type } = req.body;
+//     const result = await addCustomCollege({ name, state, type });
+//     return res.json({ success: true, data: result });
+//   } catch (e) {
+//     return res.status(400).json({ success: false, message: e.message });
+//   }
+// });
 
 
 // ── GET /api/v1/public/colleges/:aishe_code ──────────────────────────────────

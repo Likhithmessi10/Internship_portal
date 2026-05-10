@@ -57,10 +57,16 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Admin Routes */}
+          {/* Public Admin Routes (Role-Specific) */}
           <Route path="/" element={<AdminLanding />} />
-          <Route path="/login" element={<AdminLogin />} />
-          <Route path="/register" element={<AdminRegister />} />
+          <Route path="/prti/login" element={<AdminLogin forcedRole="CE_PRTI" />} />
+          <Route path="/prti/register" element={<AdminRegister forcedRole="CE_PRTI" />} />
+          <Route path="/hod/login" element={<AdminLogin forcedRole="HOD" />} />
+          <Route path="/hod/register" element={<AdminRegister forcedRole="HOD" />} />
+          <Route path="/mentor/login" element={<AdminLogin forcedRole="MENTOR" />} />
+          <Route path="/mentor/register" element={<AdminRegister forcedRole="MENTOR" />} />
+          <Route path="/super-admin/login" element={<AdminLogin forcedRole="ADMIN" />} />
+          <Route path="/super-admin/register" element={<AdminRegister forcedRole="ADMIN" />} />
 
           {/* Protected Admin Routes */}
           <Route path="/admin/dashboard" element={
@@ -174,7 +180,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/internships/:id/applications" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER']}>
               <AdminLayout><AdminApplicationReview /></AdminLayout>
             </ProtectedRoute>
           } />

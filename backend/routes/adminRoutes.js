@@ -22,7 +22,10 @@ const {
     getMentorMeetings,
     getMentorInterns,
     assignWork,
-    getWorkAssignments
+    getWorkAssignments,
+    addDepartmentGroup,
+    updateDepartmentGroup,
+    deleteDepartmentGroup
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
@@ -52,6 +55,11 @@ router.post('/internships', createInternship);
 router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI'), deleteInternship);
 router.put('/internships/:id/toggle', toggleInternship);
 router.put('/internships/:id/deadline', extendDeadline);
+
+// Department Group CRUD (for GROUP internships)
+router.post('/internships/:id/groups', authorize('ADMIN', 'CE_PRTI'), addDepartmentGroup);
+router.put('/internships/:id/groups/:groupId', authorize('ADMIN', 'CE_PRTI'), updateDepartmentGroup);
+router.delete('/internships/:id/groups/:groupId', authorize('ADMIN', 'CE_PRTI'), deleteDepartmentGroup);
 
 // Committee Management
 router.get('/internships/:id/committee', getCommitteeDetails);

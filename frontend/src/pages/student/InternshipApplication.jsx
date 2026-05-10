@@ -21,11 +21,14 @@ const InternshipApplication = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const initialRole = queryParams.get('role') || '';
+    const groupId = queryParams.get('groupId') || '';
+    const fieldId = queryParams.get('fieldId') || '';
 
     const [assignedRole, setAssignedRole] = useState(initialRole);
     const [sop, setSop] = useState('');
     const [preferredLocation, setPreferredLocation] = useState('');
     const [questionAnswers, setQuestionAnswers] = useState({});
+    const [selectedField, setSelectedField] = useState(null);
 
     // File States (Dynamic)
     const [files, setFiles] = useState({});
@@ -64,6 +67,21 @@ const InternshipApplication = () => {
         };
         fetchData();
     }, [id, initialRole]);
+
+    useEffect(() => {
+        if (internship && fieldId) {
+            let field = null;
+            if (groupId) {
+                const group = internship.departmentGroups?.find(g => g.id === groupId);
+                if (group) {
+                    field = group.fields?.find(f => f.id === fieldId);
+                }
+            } else {
+                field = internship.fields?.find(f => f.id === fieldId);
+            }
+            setSelectedField(field);
+        }
+    }, [internship, fieldId, groupId]);
 
     const handleFileChange = (e, doc) => {
         const file = e.target.files[0];
@@ -128,6 +146,12 @@ const InternshipApplication = () => {
             formData.append('preferredLocation', preferredLocation);
         }
         formData.append('questionAnswers', JSON.stringify(questionAnswers));
+        if (groupId) {
+            formData.append('departmentGroupId', groupId);
+        }
+        if (fieldId) {
+            formData.append('fieldId', fieldId);
+        }
 
         setSubmitting(true);
         setError('');
@@ -260,7 +284,7 @@ const InternshipApplication = () => {
                                     {internship.title}
                                 </h1>
                                 <p className="text-indigo-200 font-medium text-lg">
-                                    {internship.department} Department • ID: {internship.id.slice(0, 8).toUpperCase()}
+                                    {(groupId && internship.departmentGroups?.find(g => g.id === groupId)?.department) || internship.department} Department • ID: {internship.id.slice(0, 8).toUpperCase()}
                                 </p>
                             </div>
                             <button
@@ -371,18 +395,37 @@ const InternshipApplication = () => {
                                         <p className="text-[10px] text-gray-400 font-bold ml-1 uppercase">Position cannot be changed. Return to listings to select a different role.</p>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider ml-1">
-                                            <MapPin className="w-4 h-4 text-indigo-500" /> Preferred Deployment Location (Optional)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Vijayawada, Guntur, or Remote"
-                                            value={preferredLocation}
-                                            onChange={e => setPreferredLocation(e.target.value)}
-                                            className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all font-medium placeholder:text-gray-300"
-                                        />
-                                    </div>
+                                    {internship.internshipType === 'NON_STIPEND' || (groupId && internship.departmentGroups?.find(g => g.id === groupId)?.internshipType === 'NON_STIPEND') ? (
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider ml-1">
+                                                <MapPin className="w-4 h-4 text-indigo-500" /> Preferred Location
+                                            </label>
+                                            <select
+                                                required
+                                                value={preferredLocation}
+                                                onChange={e => setPreferredLocation(e.target.value)}
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all"
+                                            >
+                                                <option value="">-- Select Preferred Location --</option>
+                                                {selectedField?.locations?.map(loc => (
+                                                    <option key={loc} value={loc}>{loc}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider ml-1">
+                                                <MapPin className="w-4 h-4 text-indigo-500" /> Preferred Deployment Location (Optional)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Vijayawada, Guntur, or Remote"
+                                                value={preferredLocation}
+                                                onChange={e => setPreferredLocation(e.target.value)}
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all font-medium placeholder:text-gray-300"
+                                            />
+                                        </div>
+                                    )}
 
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center px-1">
@@ -410,31 +453,38 @@ const InternshipApplication = () => {
                                     </div>
 
                                     {/* NEW: Custom Questionnaire */}
-                                    {internship.customQuestions && internship.customQuestions.length > 0 && (
-                                        <div className="space-y-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                                            <div>
-                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                                    <Award className="w-4 h-4 text-indigo-500" /> Application Questionnaire
-                                                </h4>
-                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Please provide detailed answers to help our committee evaluate your application.</p>
+                                    {(() => {
+                                        const activeGroup = groupId ? internship.departmentGroups?.find(g => g.id === groupId) : null;
+                                        const questions = (activeGroup ? activeGroup.customQuestions : internship.customQuestions) || [];
+                                        
+                                        if (questions.length === 0) return null;
+
+                                        return (
+                                            <div className="space-y-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                                                <div>
+                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                        <Award className="w-4 h-4 text-indigo-500" /> Application Questionnaire
+                                                    </h4>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Please provide detailed answers to help our committee evaluate your application.</p>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {questions.map((q, idx) => (
+                                                        <div key={idx} className="space-y-3 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                                                            <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">Q: {q}</label>
+                                                            <textarea
+                                                                required
+                                                                placeholder="Your answer here..."
+                                                                rows="3"
+                                                                value={questionAnswers[idx] || ''}
+                                                                onChange={e => setQuestionAnswers(prev => ({...prev, [idx]: e.target.value}))}
+                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-slate-300"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                            <div className="space-y-4">
-                                                {internship.customQuestions.map((q, idx) => (
-                                                    <div key={idx} className="space-y-3 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                                                        <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">Q: {q}</label>
-                                                        <textarea
-                                                            required
-                                                            placeholder="Your answer here..."
-                                                            rows="3"
-                                                            value={questionAnswers[idx] || ''}
-                                                            onChange={e => setQuestionAnswers(prev => ({...prev, [idx]: e.target.value}))}
-                                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-slate-300"
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })()}
                                 </div>
                             </div>
 
