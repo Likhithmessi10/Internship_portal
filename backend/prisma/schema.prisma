@@ -157,6 +157,7 @@ model Internship {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   internshipType       String?   @default("STIPEND") // STIPEND, COLLABORATIVE, NON_STIPEND
+  internshipMode       String?   @default("SINGLE") // SINGLE or GROUP
   shortlistLimit       Int?      @default(50)
 
   batch        InternshipBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)

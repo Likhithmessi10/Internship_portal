@@ -109,6 +109,7 @@ const CreateInternshipForm = () => {
             normal: 50
         },
         internshipType: 'NON_STIPEND', // COLLABORATIVE, NON_STIPEND
+        internshipMode: 'SINGLE', // SINGLE or GROUP
         fields: []
     });
 
@@ -391,6 +392,23 @@ const CreateInternshipForm = () => {
                                     options={[
                                         { value: 'COLLABORATIVE', label: 'Collaborative (With Stipend)' },
                                         { value: 'NON_STIPEND', label: 'Non-Collaborative (No Stipend)' }
+                                    ]}
+                                    size="lg"
+                                />
+                            </InputField>
+
+                            <InputField label="Operational Mode" required tooltip="SINGLE: One department. GROUP: Multiple departments with separate quotas.">
+                                <Select
+                                    value={formData.internshipMode}
+                                    onChange={(v) => {
+                                        setFormData({
+                                            ...formData, 
+                                            internshipMode: v
+                                        });
+                                    }}
+                                    options={[
+                                        { value: 'SINGLE', label: 'Single Department' },
+                                        { value: 'GROUP', label: 'Department Grouping' }
                                     ]}
                                     size="lg"
                                 />

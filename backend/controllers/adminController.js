@@ -75,6 +75,7 @@ const createInternship = async (req, res) => {
                 preferredColleges: preferredColleges || [],
                 quotaPercentages: req.body.quotaPercentages || null,
                 internshipType: req.body.internshipType || 'STIPEND',
+                internshipMode: req.body.internshipMode || 'SINGLE',
                 fields: {
                     create: (req.body.fields || []).map(f => ({
                         fieldName: f.fieldName,

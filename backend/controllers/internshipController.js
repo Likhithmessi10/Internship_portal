@@ -242,6 +242,11 @@ const getInternships = async (req, res) => {
                 description: true,
                 stipendType: true,
                 internshipType: true,
+                internshipMode: true,
+                departmentGroups: {
+                    include: { fields: true }
+                },
+                fields: true,
                 batch: {
                     select: { title: true }
                 }
