@@ -66,7 +66,7 @@ const Login = () => {
                     </div>
 
                     <div className="relative z-10 mb-8">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10  border border-white/20 mb-6">
                             <Zap className="text-[#D4A017] w-6 h-6" />
                         </div>
                         <h1 className="text-4xl lg:text-5xl font-black font-rajdhani leading-tight mb-4 text-white">

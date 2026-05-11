@@ -442,7 +442,7 @@ const PrtiReports = () => {
 
             {/* Timeline Report Modal */}
             {showTimelineModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/60  z-50 flex items-center justify-center p-4">
                     <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant/20 shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between p-8 border-b border-outline-variant/10">

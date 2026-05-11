@@ -158,6 +158,26 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
             }
         });
 
+        // 5b. Generate Roll Number if status is HIRED and student doesn't have one
+        if (toStatus === STATUS.HIRED) {
+            const student = await tx.studentProfile.findUnique({
+                where: { id: application.studentId }
+            });
+
+            if (student && !student.rollNumber) {
+                const { generatePortalRollNumber } = require('./rollNumberService');
+                const newRollNumber = await generatePortalRollNumber(applicationId, tx);
+                
+                await tx.studentProfile.update({
+                    where: { id: application.studentId },
+                    data: { rollNumber: newRollNumber }
+                });
+                
+                // Add to audit details
+                auditDetails += ` Generated Roll Number: ${newRollNumber}.`;
+            }
+        }
+
         // 6. Create Audit Log
         await tx.auditLog.create({
             data: {

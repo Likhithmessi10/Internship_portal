@@ -1,7 +1,8 @@
+const axios = require('axios');
 const fs = require('fs/promises');
 const path = require('path');
 
-const DOCLING_MATCH_URL = process.env.DOCLING_MATCH_URL || 'http://localhost:8000/match';
+const DOCLING_MATCH_URL = process.env.DOCLING_MATCH_URL || 'http://127.0.0.1:8000/match';
 const DOCLING_TIMEOUT_MS = parseInt(process.env.DOCLING_TIMEOUT_MS || '20000', 10);
 
 const buildJdPayload = (internship) => {
@@ -24,37 +25,36 @@ const getResumeMatchScore = async ({ internship, resumeFile }) => {
         throw new Error('Resume file not found in uploaded documents.');
     }
 
-    const resumePath = path.resolve(resumeFile.path);
-    const fileBuffer = await fs.readFile(resumePath);
-    const blob = new Blob([fileBuffer], { type: resumeFile.mimetype || 'application/pdf' });
-
-    const formData = new FormData();
-    formData.append('resume', blob, resumeFile.originalname || path.basename(resumePath));
-    formData.append('jd_text', JSON.stringify(buildJdPayload(internship)));
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), DOCLING_TIMEOUT_MS);
-
     try {
-        const response = await fetch(DOCLING_MATCH_URL, {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal
+        const resumePath = path.resolve(resumeFile.path);
+        const fileBuffer = await fs.readFile(resumePath);
+        
+        const formData = new FormData();
+        // Node's FormData needs a Blob or Buffer. For axios, we can use a Blob-like object or just use form-data package, 
+        // but since we are in Node 18+, native FormData + axios works with Blobs.
+        const blob = new Blob([fileBuffer], { type: resumeFile.mimetype || 'application/pdf' });
+        
+        formData.append('resume', blob, resumeFile.originalname || path.basename(resumePath));
+        formData.append('jd_text', JSON.stringify(buildJdPayload(internship)));
+
+        const response = await axios.post(DOCLING_MATCH_URL, formData, {
+            timeout: DOCLING_TIMEOUT_MS,
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
         });
 
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Docling service failed with status ${response.status}: ${errorBody}`);
-        }
-
-        const data = await response.json();
+        const data = response.data;
         const rawScore = Number(data?.score);
         if (!Number.isFinite(rawScore)) return 0;
 
         // Guard rails: ensure a valid percentage-like score.
         return Math.max(0, Math.min(100, Number(rawScore.toFixed(2))));
-    } finally {
-        clearTimeout(timeout);
+    } catch (error) {
+        if (error.response) {
+            throw new Error(`Docling service failed with status ${error.response.status}: ${JSON.stringify(error.response.data)}`);
+        }
+        throw new Error(`Docling service communication error: ${error.message}`);
     }
 };
 

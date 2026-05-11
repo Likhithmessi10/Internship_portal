@@ -200,6 +200,11 @@ const HodDashboard = () => {
                                                 <div>
                                                     <p className="text-sm font-bold text-primary">{int.title}</p>
                                                     <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">{int.location}</p>
+                                                    {int.batch && (
+                                                        <p className="text-[9px] text-primary/60 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[10px]">folder</span> {int.batch.title}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>

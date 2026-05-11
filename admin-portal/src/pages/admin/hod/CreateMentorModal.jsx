@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../../utils/api';
 import { UserPlus, X, Send, Lock, Mail, User } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
@@ -34,9 +35,10 @@ const CreateMentorModal = ({ onClose }) => {
         }
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300 border border-slate-200 dark:border-slate-800">
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
                 <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-gradient-to-r from-emerald-600 to-emerald-500 text-white">
                     <div>
                         <h3 className="text-xl font-bold flex items-center gap-2">
@@ -51,7 +53,7 @@ const CreateMentorModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="flex-1 p-10 overflow-y-auto space-y-10">
                     {error && (
                         <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm font-semibold text-center">
                             {error}
@@ -117,7 +119,8 @@ const CreateMentorModal = ({ onClose }) => {
                     </button>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

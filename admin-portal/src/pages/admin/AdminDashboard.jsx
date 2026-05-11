@@ -99,7 +99,7 @@ const AdvancedExportModal = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary/20 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary/20 ">
             <div className="bg-surface-container-low rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10">
                 <div className="bg-surface-container-lowest border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
                     <div className="flex items-center gap-3">
@@ -232,7 +232,7 @@ const DepartmentsModal = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary/20 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary/20 ">
             <div className="bg-surface-container-low rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10 animate-fade-in-up">
                 <div className="bg-surface-container-lowest border-b border-outline-variant/10 px-8 py-6 flex justify-between items-center text-primary">
                     <div className="flex items-center gap-3">
@@ -586,9 +586,6 @@ const AdminDashboard = () => {
                                                 <div>
                                                     <p className="text-sm font-bold text-primary flex flex-wrap items-center gap-2">
                                                         {int.title}
-                                                        {int.internshipMode === 'GROUP' && (
-                                                            <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[8px] uppercase tracking-widest border border-purple-200">Group</span>
-                                                        )}
                                                         {int.stipendType === 'COLLABORATIVE' ? (
                                                             <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[8px] uppercase tracking-widest border border-green-200">Monetary</span>
                                                         ) : (
@@ -596,8 +593,13 @@ const AdminDashboard = () => {
                                                         )}
                                                     </p>
                                                     <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">
-                                                        {int.internshipMode === 'GROUP' ? `${int.departmentGroups?.length || 0} Departments` : int.department} • {int.location}
+                                                        {int.department} • {int.location}
                                                     </p>
+                                                    {int.batch && (
+                                                        <p className="text-[9px] text-primary/60 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[10px]">folder</span> {int.batch.title}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>

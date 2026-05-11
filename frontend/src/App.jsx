@@ -11,6 +11,7 @@ import StudentProfileForm from './pages/student/StudentProfileForm';
 import InternshipList from './pages/student/InternshipList';
 import InternshipApplication from './pages/student/InternshipApplication';
 import StudentAttendance from './pages/student/StudentAttendance';
+import StudentAssignments from './pages/student/StudentAssignments';
 import LandingPage from './pages/LandingPage';
 
 function App() {
@@ -47,6 +48,11 @@ function App() {
           <Route path="/student/attendance" element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <StudentLayout><StudentAttendance /></StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/student/assignments" element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentLayout><StudentAssignments /></StudentLayout>
             </ProtectedRoute>
           } />
 

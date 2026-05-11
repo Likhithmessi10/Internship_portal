@@ -19,7 +19,7 @@ const Navbar = () => {
     const displayName = getDisplayName();
 
     return (
-        <header className="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-800/20 h-16 flex justify-between items-center px-8 shadow-sm dark:shadow-none">
+        <header className="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/80 dark:bg-slate-950/80  border-b border-slate-200/20 dark:border-slate-800/20 h-16 flex justify-between items-center px-8 shadow-sm dark:shadow-none">
             <div className="flex items-center flex-1">
                 {/* Logo and Title */}
                 <div className="flex items-center gap-3">

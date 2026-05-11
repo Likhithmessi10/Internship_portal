@@ -8,15 +8,16 @@ import { useTheme } from '../context/ThemeContext';
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [internships, setInternships] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const fetchInternships = async () => {
       try {
-        const response = await api.get('/internships');
-        setInternships(response.data.data.slice(0, 3));
+        const response = await api.get('/public/internships');
+        // The response now contains batches with nested internships
+        setBatches(response.data.data || []);
       } catch (err) {
         console.error('Error fetching internships:', err);
       } finally {
@@ -60,7 +61,7 @@ const LandingPage = () => {
       </header>
 
       {/* Scrolling Active Internships Bar - Placed between header and hero */}
-      {!loading && internships.length > 0 && (
+      {!loading && batches.length > 0 && (
         <div className="scrolling-internships-bar">
           <div className="scrolling-header">
             <Zap size={16} className="scroll-icon" />
@@ -68,13 +69,31 @@ const LandingPage = () => {
           </div>
           <div className="scrolling-content">
             <div className="scroll-track">
-              {[...internships, ...internships].map((internship, idx) => (
-                <div key={`${internship.id}-${idx}`} className="scroll-item">
-                  <span className="scroll-dept">{internship.department}</span>
-                  <span className="scroll-title">{internship.title}</span>
-                  <span className="scroll-openings">{internship.openingsCount} Openings</span>
-                </div>
-              ))}
+              {(() => {
+                // Flatten all roles across all internships in all batches for the marquee
+                const allRoles = batches.flatMap(batch => 
+                  (batch.internships || []).flatMap(internship => {
+                    const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
+                    return roles.map(role => ({
+                      ...internship,
+                      displayRole: role.name
+                    }));
+                  })
+                );
+                
+                // Repeat items to ensure smooth scrolling even with few items
+                const repeatedItems = [...allRoles, ...allRoles, ...allRoles, ...allRoles, ...allRoles, ...allRoles];
+                return repeatedItems.map((item, idx) => {
+                  if (!item) return null;
+                  return (
+                    <div key={`${item.id || idx}-${idx}`} className="scroll-item">
+                      <span className="scroll-dept">{item.department}</span>
+                      <span className="scroll-title">{item.displayRole}</span>
+                      <span className="scroll-openings">{item.openingsCount} Openings</span>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
@@ -111,24 +130,40 @@ const LandingPage = () => {
             <div className="spinner"></div>
             <p>Loading latest opportunities...</p>
           </div>
-        ) : internships.length > 0 ? (
-          <div className="internships-grid">
-            {internships.flatMap(internship => {
-              const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
-              return roles.map((role, idx) => (
-                <div key={`${internship.id}-${idx}`} className="internship-card">
-                  <div className="card-dept">{internship.department}</div>
-                  <h3 className="card-title">{role.name}</h3>
-                  <div className="card-subtitle">Part of: {internship.title}</div>
-                  <p className="card-desc">{internship.description.substring(0, 100)}...</p>
-                  <div className="card-meta">
-                    <span className="card-meta-item"><MapPin size={14} /> {internship.location || 'Multiple Locations'}</span>
-                    <span className="card-meta-item"><Clock size={14} /> {internship.duration}</span>
+        ) : batches.length > 0 ? (
+          <div className="batches-container">
+            {batches.map(batch => (
+              <div key={batch.id} className="batch-group mb-12">
+                <div className="batch-header flex items-center gap-4 mb-6">
+                  <div className="batch-icon p-3 bg-primary/10 text-primary rounded-xl">
+                    <Zap size={24} />
                   </div>
-                  <button className="btn-outline" onClick={() => navigate('/student/register')}>View & Apply →</button>
+                  <div>
+                    <h3 className="text-2xl font-bold text-primary">{batch.title}</h3>
+                    {batch.description && <p className="text-sm text-outline opacity-70">{batch.description}</p>}
+                  </div>
                 </div>
-              ));
-            })}
+                <div className="internships-grid">
+                  {(batch.internships || []).map((internship, idx) => {
+                    if (!internship) return null;
+                    const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
+                    return roles.map((role, rIdx) => (
+                      <div key={`${internship.id || idx}-${idx}-${rIdx}`} className="internship-card">
+                        <div className="card-dept">{internship.department}</div>
+                        <h3 className="card-title">{role.name}</h3>
+                        <div className="card-subtitle">Part of: {internship.title}</div>
+                        <p className="card-desc">{(internship.description || '').substring(0, 100)}...</p>
+                        <div className="card-meta">
+                          <span className="card-meta-item"><MapPin size={14} /> {internship.location || 'Multiple Locations'}</span>
+                          <span className="card-meta-item"><Clock size={14} /> {internship.duration}</span>
+                        </div>
+                        <button className="btn-outline" onClick={() => navigate('/student/register')}>View & Apply →</button>
+                      </div>
+                    ));
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="empty-state">No active internships at the moment. Please check back later.</div>

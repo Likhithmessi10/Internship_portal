@@ -1,0 +1,72 @@
+ROLE: STUDENT         | NAME: N/A                                 | EMAIL: mlikhith6@gmail.com                           | PASSWORD: password123 (Reset)
+ROLE: STUDENT         | NAME: N/A                                 | EMAIL: student@test.com                              | PASSWORD: password123
+ROLE: CE_PRTI         | NAME: likhith                             | EMAIL: likhithprti@gmail.com                         | PASSWORD: password123
+ROLE: STUDENT         | NAME: N/A                                 | EMAIL: mani@mail.com                                 | PASSWORD: password123 (Reset)
+ROLE: HOD             | NAME: likhith                             | EMAIL: sldchod@gmail.com                             | PASSWORD: password123
+ROLE: STUDENT         | NAME: N/A                                 | EMAIL: manicharan@mail.com                           | PASSWORD: password123 (Reset)
+ROLE: CE_PRTI         | NAME: prti                                | EMAIL: prti@mail.com                                 | PASSWORD: password123 (Reset)
+ROLE: HOD             | NAME: TRANSMISSION HOD                    | EMAIL: hod.transmission@aptransco.com                | PASSWORD: password123
+ROLE: MENTOR          | NAME: TRANSMISSION Mentor                 | EMAIL: mentor.transmission@aptransco.com             | PASSWORD: password123
+ROLE: HOD             | NAME: PLANNING AND POWER SYSTEMS HOD      | EMAIL: hod.planning.and.power.systems@aptransco.com  | PASSWORD: password123
+ROLE: MENTOR          | NAME: PLANNING AND POWER SYSTEMS Mentor   | EMAIL: mentor.planning.and.power.systems@aptransco.com | PASSWORD: password123
+ROLE: HOD             | NAME: SLDC HOD                            | EMAIL: hod.sldc@aptransco.com                        | PASSWORD: password123
+ROLE: MENTOR          | NAME: SLDC Mentor                         | EMAIL: mentor.sldc@aptransco.com                     | PASSWORD: password123
+ROLE: HOD             | NAME: PROJECTS HOD                        | EMAIL: hod.projects@aptransco.com                    | PASSWORD: password123
+ROLE: MENTOR          | NAME: PROJECTS Mentor                     | EMAIL: mentor.projects@aptransco.com                 | PASSWORD: password123
+ROLE: HOD             | NAME: APPCC AND LEGAL HOD                 | EMAIL: hod.appcc.and.legal@aptransco.com             | PASSWORD: password123
+ROLE: MENTOR          | NAME: APPCC AND LEGAL Mentor              | EMAIL: mentor.appcc.and.legal@aptransco.com          | PASSWORD: password123
+ROLE: HOD             | NAME: COMMERCIAL AND COORDINATION LMC HOD | EMAIL: hod.commercial.and.coordination.lmc@aptransco.com | PASSWORD: password123
+ROLE: MENTOR          | NAME: COMMERCIAL AND COORDINATION LMC Mentor | EMAIL: mentor.commercial.and.coordination.lmc@aptransco.com | PASSWORD: password123
+ROLE: HOD             | NAME: HRD HOD                             | EMAIL: hod.hrd@aptransco.com                         | PASSWORD: password123
+ROLE: MENTOR          | NAME: HRD Mentor                          | EMAIL: mentor.hrd@aptransco.com                      | PASSWORD: password123
+ROLE: HOD             | NAME: ZONE VIJAYAWADA HOD                 | EMAIL: hod.zone.vijayawada@aptransco.com             | PASSWORD: password123
+ROLE: MENTOR          | NAME: ZONE VIJAYAWADA Mentor              | EMAIL: mentor.zone.vijayawada@aptransco.com          | PASSWORD: password123
+ROLE: HOD             | NAME: ZONE VISHAKAPATNAM HOD              | EMAIL: hod.zone.vishakapatnam@aptransco.com          | PASSWORD: password123
+ROLE: MENTOR          | NAME: ZONE VISHAKAPATNAM Mentor           | EMAIL: mentor.zone.vishakapatnam@aptransco.com       | PASSWORD: password123
+ROLE: HOD             | NAME: APPCC HOD                           | EMAIL: hod.appcc@aptransco.com                       | PASSWORD: password123
+ROLE: MENTOR          | NAME: APPCC Mentor                        | EMAIL: mentor.appcc@aptransco.com                    | PASSWORD: password123
+ROLE: HOD             | NAME: ZONE KADAPA HOD                     | EMAIL: hod.zone.kadapa@aptransco.com                 | PASSWORD: password123
+ROLE: MENTOR          | NAME: ZONE KADAPA Mentor                  | EMAIL: mentor.zone.kadapa@aptransco.com              | PASSWORD: password123
+ROLE: HOD             | NAME: CIVIL HOD                           | EMAIL: hod.civil@aptransco.com                       | PASSWORD: password123
+ROLE: MENTOR          | NAME: CIVIL Mentor                        | EMAIL: mentor.civil@aptransco.com                    | PASSWORD: password123
+ROLE: HOD             | NAME: TELECOM AND IT HOD                  | EMAIL: hod.telecom.and.it@aptransco.com              | PASSWORD: password123
+ROLE: MENTOR          | NAME: TELECOM AND IT Mentor               | EMAIL: mentor.telecom.and.it@aptransco.com           | PASSWORD: password123
+ROLE: HOD             | NAME: ADDITIONAL SECRETARY HOD            | EMAIL: hod.additional.secretary@aptransco.com        | PASSWORD: password123
+ROLE: MENTOR          | NAME: ADDITIONAL SECRETARY Mentor         | EMAIL: mentor.additional.secretary@aptransco.com     | PASSWORD: password123
+ROLE: HOD             | NAME: CGM AND FINANCE HOD                 | EMAIL: hod.cgm.and.finance@aptransco.com             | PASSWORD: password123
+ROLE: MENTOR          | NAME: CGM AND FINANCE Mentor              | EMAIL: mentor.cgm.and.finance@aptransco.com          | PASSWORD: password123
+ROLE: CE_PRTI         | NAME: PRTI Central                        | EMAIL: prti@aptransco.com                            | PASSWORD: password123
+ROLE: ADMIN           | NAME: System Administrator                | EMAIL: admin@aptransco.com                           | PASSWORD: password123
+ROLE: HOD             | NAME: Surya                               | EMAIL: suryahod@gmail.com                            | PASSWORD: password123
+ROLE: MENTOR          | NAME: sukesh                              | EMAIL: sukeshmentor@gmail.com                        | PASSWORD: password123
+ROLE: HOD             | NAME: TRANSMISSION HOD                    | EMAIL: hod.transmission@transco.com                  | PASSWORD: password123
+ROLE: MENTOR          | NAME: TRANSMISSION Mentor                 | EMAIL: mentor.transmission@transco.com               | PASSWORD: password123
+ROLE: HOD             | NAME: PLANNING AND POWER SYSTEMS HOD      | EMAIL: hod.planning.and.power.systems@transco.com    | PASSWORD: password123
+ROLE: MENTOR          | NAME: PLANNING AND POWER SYSTEMS Mentor   | EMAIL: mentor.planning.and.power.systems@transco.com | PASSWORD: password123
+ROLE: HOD             | NAME: SLDC HOD                            | EMAIL: hod.sldc@transco.com                          | PASSWORD: password123
+ROLE: MENTOR          | NAME: SLDC Mentor                         | EMAIL: mentor.sldc@transco.com                       | PASSWORD: password123
+ROLE: HOD             | NAME: PROJECTS HOD                        | EMAIL: hod.projects@transco.com                      | PASSWORD: password123
+ROLE: MENTOR          | NAME: PROJECTS Mentor                     | EMAIL: mentor.projects@transco.com                   | PASSWORD: password123
+ROLE: HOD             | NAME: APPCC AND LEGAL HOD                 | EMAIL: hod.appcc.and.legal@transco.com               | PASSWORD: password123
+ROLE: MENTOR          | NAME: APPCC AND LEGAL Mentor              | EMAIL: mentor.appcc.and.legal@transco.com            | PASSWORD: password123
+ROLE: HOD             | NAME: COMMERCIAL AND COORDINATION LMC HOD | EMAIL: hod.commercial.and.coordination.lmc@transco.com | PASSWORD: password123
+ROLE: MENTOR          | NAME: COMMERCIAL AND COORDINATION LMC Mentor | EMAIL: mentor.commercial.and.coordination.lmc@transco.com | PASSWORD: password123
+ROLE: HOD             | NAME: HRD HOD                             | EMAIL: hod.hrd@transco.com                           | PASSWORD: password123
+ROLE: MENTOR          | NAME: HRD Mentor                          | EMAIL: mentor.hrd@transco.com                        | PASSWORD: password123
+ROLE: HOD             | NAME: ZONE VIJAYAWADA HOD                 | EMAIL: hod.zone.vijayawada@transco.com               | PASSWORD: password123
+ROLE: MENTOR          | NAME: ZONE VIJAYAWADA Mentor              | EMAIL: mentor.zone.vijayawada@transco.com            | PASSWORD: password123
+ROLE: HOD             | NAME: ZONE VISHAKAPATNAM HOD              | EMAIL: hod.zone.vishakapatnam@transco.com            | PASSWORD: password123
+ROLE: MENTOR          | NAME: ZONE VISHAKAPATNAM Mentor           | EMAIL: mentor.zone.vishakapatnam@transco.com         | PASSWORD: password123
+ROLE: HOD             | NAME: APPCC HOD                           | EMAIL: hod.appcc@transco.com                         | PASSWORD: password123
+ROLE: MENTOR          | NAME: APPCC Mentor                        | EMAIL: mentor.appcc@transco.com                      | PASSWORD: password123
+ROLE: HOD             | NAME: ZONE KADAPA HOD                     | EMAIL: hod.zone.kadapa@transco.com                   | PASSWORD: password123
+ROLE: MENTOR          | NAME: ZONE KADAPA Mentor                  | EMAIL: mentor.zone.kadapa@transco.com                | PASSWORD: password123
+ROLE: HOD             | NAME: CIVIL HOD                           | EMAIL: hod.civil@transco.com                         | PASSWORD: password123
+ROLE: MENTOR          | NAME: CIVIL Mentor                        | EMAIL: mentor.civil@transco.com                      | PASSWORD: password123
+ROLE: HOD             | NAME: TELECOM AND IT HOD                  | EMAIL: hod.telecom.and.it@transco.com                | PASSWORD: password123
+ROLE: MENTOR          | NAME: TELECOM AND IT Mentor               | EMAIL: mentor.telecom.and.it@transco.com             | PASSWORD: password123
+ROLE: HOD             | NAME: ADDITIONAL SECRETARY HOD            | EMAIL: hod.additional.secretary@transco.com          | PASSWORD: password123
+ROLE: MENTOR          | NAME: ADDITIONAL SECRETARY Mentor         | EMAIL: mentor.additional.secretary@transco.com       | PASSWORD: password123
+ROLE: HOD             | NAME: CGM AND FINANCE HOD                 | EMAIL: hod.cgm.and.finance@transco.com               | PASSWORD: password123
+ROLE: MENTOR          | NAME: CGM AND FINANCE Mentor              | EMAIL: mentor.cgm.and.finance@transco.com            | PASSWORD: password123
+ROLE: ADMIN           | NAME: System Administrator                | EMAIL: admin@transco.com                             | PASSWORD: password123

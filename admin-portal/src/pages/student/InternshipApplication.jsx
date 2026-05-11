@@ -170,7 +170,7 @@ const InternshipApplication = () => {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
                     
                     <div className="relative z-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-4 ">
                             <ShieldCheck className="w-4 h-4" /> Official Application Portal
                         </div>
                         <h1 className="text-3xl sm:text-4xl font-black font-rajdhani mb-2 leading-tight">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api, { MEDIA_URL } from '../../utils/api';
 import { Upload, FileType, CheckCircle, AlertCircle, ArrowLeft, ShieldCheck, FileText, Check, MapPin, AlignLeft, X, Briefcase, BookOpen, Award, Users, Calendar, ChevronRight, Download } from 'lucide-react';
@@ -207,9 +208,9 @@ const InternshipApplication = () => {
                 />
 
                 {/* Document Header Row */}
-                <div className="flex items-center gap-4 p-5">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${state ? 'bg-emerald-100' : 'bg-indigo-50'} transition-colors`}>
-                        {state ? <Check className="w-5 h-5 text-emerald-600" /> : <FileText className="w-5 h-5 text-indigo-600" />}
+                <div className="flex items-center gap-3 p-4">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${state ? 'bg-emerald-100' : 'bg-indigo-50'} transition-colors`}>
+                        {state ? <Check className="w-4 h-4 text-emerald-600" /> : <FileText className="w-4 h-4 text-indigo-600" />}
                     </div>
                     <div className="flex-grow min-w-0">
                         <h4 className={`font-bold text-sm ${state ? 'text-emerald-900' : 'text-gray-900'}`}>
@@ -221,7 +222,7 @@ const InternshipApplication = () => {
                     </div>
                     <label
                         htmlFor={doc.id}
-                        className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider shrink-0 cursor-pointer transition-all
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0 cursor-pointer transition-all
                         ${state
                             ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}`}
@@ -232,8 +233,8 @@ const InternshipApplication = () => {
 
                 {/* Template Download Strip */}
                 {hasTemplates && (
-                    <div className="border-t border-dashed border-gray-200 bg-gray-50/80 px-5 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="border-t border-dashed border-gray-200 bg-gray-50/80 px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                             <Download className="w-3 h-3 text-indigo-500" />
                             Download template, fill, then upload
                         </p>
@@ -245,9 +246,9 @@ const InternshipApplication = () => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     download
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-indigo-700 rounded-lg text-[11px] font-bold hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all active:scale-95"
+                                    className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 text-indigo-700 rounded-lg text-[9px] font-bold hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all active:scale-95"
                                 >
-                                    <Download className="w-3 h-3" />
+                                    <Download className="w-2.5 h-2.5" />
                                     {template.label}
                                 </a>
                             ))}
@@ -271,33 +272,33 @@ const InternshipApplication = () => {
             <div className="card shadow-xl shadow-indigo-100/50 border-0 ring-1 ring-gray-100 overflow-hidden relative p-0">
 
                 {/* Header */}
-                <div className="bg-gradient-to-br from-gray-900 to-indigo-900 p-8 sm:p-10 text-white relative">
+                <div className="bg-gradient-to-br from-gray-900 to-indigo-900 p-6 sm:p-8 text-white relative">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
 
                     <div className="relative z-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-4 ">
                             <ShieldCheck className="w-4 h-4" /> Official Application Portal
                         </div>
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start justify-between gap-3">
                             <div>
-                                <h1 className="text-3xl sm:text-4xl font-black font-rajdhani mb-2 leading-tight">
+                                <h1 className="text-2xl sm:text-3xl font-black font-rajdhani mb-1 leading-tight">
                                     {internship.title}
                                 </h1>
-                                <p className="text-indigo-200 font-medium text-lg">
+                                <p className="text-indigo-200 font-medium text-sm">
                                     {(groupId && internship.departmentGroups?.find(g => g.id === groupId)?.department) || internship.department} Department • ID: {internship.id.slice(0, 8).toUpperCase()}
                                 </p>
                             </div>
                             <button
                                 onClick={() => setShowJobDescription(true)}
-                                className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-sm font-bold transition-all flex items-center gap-2 backdrop-blur-sm"
+                                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-[11px] font-bold transition-all flex items-center gap-2 "
                             >
-                                <FileText size={16} /> View Job Description
+                                <FileText size={14} /> JD
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div className="p-8 sm:p-10">
+                <div className="p-6 sm:p-8">
 
                     {!profileComplete ? (
                         <div className="text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-300">
@@ -315,7 +316,7 @@ const InternshipApplication = () => {
                     ) : (
                         <form onSubmit={handleSubmit}>
                             {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl mb-8 text-sm font-bold flex items-center gap-3">
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm font-bold flex items-center gap-3">
                                     <AlertCircle className="w-5 h-5 shrink-0" /> {error}
                                 </div>
                             )}
@@ -326,7 +327,7 @@ const InternshipApplication = () => {
                                 </div>
                             )}
 
-                            <div className="mb-10">
+                            <div className="mb-8">
                                 <div className="flex items-center gap-3 mb-5">
                                     <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">1</div>
                                     <div>
@@ -372,7 +373,7 @@ const InternshipApplication = () => {
                                 </div>
                             </div>
 
-                            <div className="mb-10 space-y-8">
+                            <div className="mb-8 space-y-6">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">2</div>
                                     <div>
@@ -390,7 +391,7 @@ const InternshipApplication = () => {
                                             type="text"
                                             value={assignedRole}
                                             readOnly
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:ring-0 cursor-default"
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 shadow-sm focus:ring-0 cursor-default"
                                         />
                                         <p className="text-[10px] text-gray-400 font-bold ml-1 uppercase">Position cannot be changed. Return to listings to select a different role.</p>
                                     </div>
@@ -404,7 +405,7 @@ const InternshipApplication = () => {
                                                 required
                                                 value={preferredLocation}
                                                 onChange={e => setPreferredLocation(e.target.value)}
-                                                className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all"
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all"
                                             >
                                                 <option value="">-- Select Preferred Location --</option>
                                                 {selectedField?.locations?.map(loc => (
@@ -422,7 +423,7 @@ const InternshipApplication = () => {
                                                 placeholder="e.g. Vijayawada, Guntur, or Remote"
                                                 value={preferredLocation}
                                                 onChange={e => setPreferredLocation(e.target.value)}
-                                                className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all font-medium placeholder:text-gray-300"
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all font-medium placeholder:text-gray-300"
                                             />
                                         </div>
                                     )}
@@ -443,7 +444,7 @@ const InternshipApplication = () => {
                                             maxLength="500"
                                             value={sop}
                                             onChange={e => setSop(e.target.value)}
-                                            className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-sm font-medium text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-gray-300 min-h-[160px]"
+                                            className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm font-medium text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-gray-300 min-h-[140px]"
                                         />
                                         {sop.length < 50 && (
                                             <p className="text-[10px] text-amber-600 font-bold ml-1 uppercase flex items-center gap-1">
@@ -514,12 +515,12 @@ const InternshipApplication = () => {
             </div>
 
             {/* Job Description Modal */}
-            {showJobDescription && internship && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setShowJobDescription(false)} />
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+            {showJobDescription && internship && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowJobDescription(false)} />
+                    <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
                         {/* Header */}
-                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white shrink-0">
+                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 lg:p-10 text-white shrink-0 flex justify-between items-center">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h2 className="text-2xl font-black font-rajdhani mb-2">{internship.title}</h2>
@@ -536,7 +537,7 @@ const InternshipApplication = () => {
                         </div>
 
                         {/* Content */}
-                        <div className="p-8 overflow-y-auto flex-1 space-y-8">
+                        <div className="p-8 lg:p-12 overflow-y-auto flex-1 space-y-10">
                             {/* Description */}
                             <div>
                                 <h3 className="text-lg font-black text-gray-900 flex items-center gap-2 mb-4">
@@ -647,7 +648,7 @@ const InternshipApplication = () => {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
+                        <div className="p-8 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
                             <p className="text-sm text-gray-500 font-medium">
                                 Review all details before submitting your application
                             </p>
@@ -659,7 +660,8 @@ const InternshipApplication = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

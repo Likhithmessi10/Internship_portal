@@ -174,7 +174,6 @@ Key entities:
 - `InternshipEvaluationCriteria` (question, maxScore)
 - `EvaluationScore` (applicationId, memberId, role, questionId, score)
 - `Document` (application documents)
-- `Shortlist` (legacy compatibility fields)
 - `Stipend`, `Attendance`, `WorkAssignment`, `WorkSubmission`
 - `AuditLog`
 

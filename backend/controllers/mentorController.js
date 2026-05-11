@@ -339,8 +339,8 @@ const reviewSubmission = async (req, res) => {
             }
         });
 
-        // If revision requested, reset assignment
-        if (status === 'REVISION_REQUESTED') {
+        // If revision requested or rejected, reset assignment to PENDING to allow resubmission
+        if (['REVISION_REQUESTED', 'REJECTED'].includes(status)) {
             await prisma.workAssignment.update({
                 where: { id: submission.workAssignmentId },
                 data: { status: 'PENDING' }
@@ -354,160 +354,6 @@ const reviewSubmission = async (req, res) => {
     }
 };
 
-/**
- * POST /api/v1/mentor/attendance
- * Mark daily attendance for an intern.
- */
-const markAttendance = async (req, res) => {
-    try {
-        const { applicationId, date, present, hours } = req.body;
-        const mentorId = req.user.id;
-
-        const application = await prisma.application.findUnique({
-            where: { id: applicationId },
-            include: { attendance: true }
-        });
-
-        if (!application) {
-            return res.status(404).json({ success: false, message: 'Application not found' });
-        }
-
-        if (application.mentorId !== mentorId && req.user.role !== 'ADMIN') {
-            return res.status(403).json({ success: false, message: 'Not authorized' });
-        }
-
-        let attendanceLog = application.attendance?.attendanceLog || [];
-        const existingIndex = attendanceLog.findIndex(log => log.date === date);
-
-        if (existingIndex >= 0) {
-            attendanceLog[existingIndex] = { date, present, hours: hours || 8, markedAt: new Date().toISOString() };
-        } else {
-            attendanceLog.push({ date, present, hours: hours || 8, markedAt: new Date().toISOString() });
-        }
-
-        const daysAttended = attendanceLog.filter(log => log.present).length;
-        const totalDays = attendanceLog.length;
-        const minimumDays = application.attendance?.minimumDays || 20;
-        const meetsMinimum = daysAttended >= minimumDays;
-
-        const updated = await prisma.attendance.upsert({
-            where: { applicationId },
-            create: { applicationId, daysAttended, totalDays, attendanceLog, meetsMinimum, minimumDays },
-            update: { daysAttended, totalDays, attendanceLog, meetsMinimum }
-        });
-
-        res.status(200).json({ success: true, data: updated });
-    } catch (error) {
-        console.error('markAttendance error:', error.message);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
-/**
- * POST /api/v1/mentor/attendance/bulk
- * Bulk mark attendance for multiple interns on the same date.
- */
-const bulkMarkAttendance = async (req, res) => {
-    try {
-        const { entries } = req.body; // [{applicationId, present}]
-        const { date } = req.body;
-        const mentorId = req.user.id;
-
-        if (!entries || !date) {
-            return res.status(400).json({ success: false, message: 'entries and date are required' });
-        }
-
-        const results = await Promise.all(
-            entries.map(async ({ applicationId, present }) => {
-                const application = await prisma.application.findUnique({
-                    where: { id: applicationId },
-                    include: { attendance: true }
-                });
-
-                if (!application || (application.mentorId !== mentorId && req.user.role !== 'ADMIN')) {
-                    return null;
-                }
-
-                let attendanceLog = application.attendance?.attendanceLog || [];
-                const existingIndex = attendanceLog.findIndex(log => log.date === date);
-
-                if (existingIndex >= 0) {
-                    attendanceLog[existingIndex] = { date, present, hours: 8, markedAt: new Date().toISOString() };
-                } else {
-                    attendanceLog.push({ date, present, hours: 8, markedAt: new Date().toISOString() });
-                }
-
-                const daysAttended = attendanceLog.filter(log => log.present).length;
-                const totalDays = attendanceLog.length;
-                const minimumDays = application.attendance?.minimumDays || 20;
-
-                return prisma.attendance.upsert({
-                    where: { applicationId },
-                    create: { applicationId, daysAttended, totalDays, attendanceLog, meetsMinimum: daysAttended >= minimumDays, minimumDays },
-                    update: { daysAttended, totalDays, attendanceLog, meetsMinimum: daysAttended >= minimumDays }
-                });
-            })
-        );
-
-        const successful = results.filter(Boolean);
-        res.status(200).json({
-            success: true,
-            message: `Attendance marked for ${successful.length} intern(s)`,
-            data: successful
-        });
-    } catch (error) {
-        console.error('bulkMarkAttendance error:', error.message);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
-/**
- * GET /api/v1/mentor/attendance?internshipId=xxx
- * Get attendance records for mentor's interns.
- */
-const getAttendance = async (req, res) => {
-    try {
-        const mentorId = req.user.id;
-        const { internshipId, applicationId } = req.query;
-
-        if (applicationId) {
-            const attendance = await prisma.attendance.findUnique({
-                where: { applicationId },
-                include: {
-                    application: {
-                        include: {
-                            student: { select: { fullName: true, rollNumber: true, photoUrl: true } },
-                            internship: { select: { title: true } }
-                        }
-                    }
-                }
-            });
-            return res.status(200).json({ success: true, data: attendance });
-        }
-
-        const whereClause = { application: { mentorId } };
-        if (internshipId) {
-            whereClause.application.internshipId = internshipId;
-        }
-
-        const attendances = await prisma.attendance.findMany({
-            where: whereClause,
-            include: {
-                application: {
-                    include: {
-                        student: { select: { fullName: true, rollNumber: true, photoUrl: true } },
-                        internship: { select: { title: true } }
-                    }
-                }
-            }
-        });
-
-        res.status(200).json({ success: true, data: attendances });
-    } catch (error) {
-        console.error('getAttendance error:', error.message);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
 
 module.exports = {
     getMentorInternships,
@@ -515,8 +361,5 @@ module.exports = {
     createTask,
     getTasks,
     getSubmissions,
-    reviewSubmission,
-    markAttendance,
-    bulkMarkAttendance,
-    getAttendance
+    reviewSubmission
 };

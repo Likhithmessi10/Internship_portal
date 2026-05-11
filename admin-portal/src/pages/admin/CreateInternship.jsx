@@ -9,7 +9,6 @@ import {
 import { collegesData } from '../../data/colleges';
 import departmentsData from '../../data/departments.json';
 import Select from '../../components/ui/Select';
-import DepartmentGroupModal from './DepartmentGroupModal';
 import { useAuth } from '../../context/AuthContext';
 
 const PRESET_LOCATIONS = [
@@ -20,9 +19,9 @@ const PRESET_LOCATIONS = [
 /**
  * Premium Input Component with High Contrast and Clear Labels
  */
-const InputField = ({ label, required, hint, children, tooltip }) => (
-    <div className="space-y-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-1 flex items-center gap-2">
+const InputField = ({ label, required, hint, children, tooltip, error }) => (
+    <div className={`space-y-1.5 ${error ? 'animate-shake' : ''}`}>
+        <label className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 flex items-center gap-2 ${error ? 'text-error' : 'text-outline'}`}>
             {label} {required && <span className="text-error">*</span>}
             {tooltip && (
                 <div className="group relative cursor-help">
@@ -33,8 +32,10 @@ const InputField = ({ label, required, hint, children, tooltip }) => (
                 </div>
             )}
         </label>
-        {children}
-        {hint && <p className="text-[9px] text-outline/70 font-bold uppercase tracking-tighter mt-1">{hint}</p>}
+        <div className={`transition-all ${error ? 'ring-2 ring-error/20 border-error rounded-lg' : ''}`}>
+            {children}
+        </div>
+        {hint && <p className={`text-[9px] font-bold uppercase tracking-tighter mt-1 ${error ? 'text-error' : 'text-outline/70'}`}>{hint}</p>}
     </div>
 );
 
@@ -43,39 +44,52 @@ const CreateInternshipForm = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [validationErrors, setValidationErrors] = useState([]);
     const [step, setStep] = useState(1);
 
     // Use departments from JSON file as default
     const [departments, setDepartments] = useState(departmentsData.departments);
 
+    const [batches, setBatches] = useState([]);
+    const [loadingBatches, setLoadingBatches] = useState(true);
+
     React.useEffect(() => {
-        const fetchConfig = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get('/admin/config');
-                const configDepartments = res.data.data?.departments || [];
-                console.log('Config departments:', configDepartments);
-                console.log('JSON departments:', departmentsData.departments);
-                // Use config departments if available and not empty, otherwise use JSON
+                setLoadingBatches(true);
+                const [configRes, batchesRes] = await Promise.all([
+                    api.get('/admin/config'),
+                    api.get('/admin/batches')
+                ]);
+                
+                const configDepartments = configRes.data.data?.departments || [];
                 if (configDepartments && configDepartments.length > 0) {
-                    console.log('Using config departments');
                     setDepartments(configDepartments);
                 } else {
-                    // Config exists but departments is empty, use JSON
-                    console.log('Using JSON departments (config empty)');
                     setDepartments(departmentsData.departments);
                 }
+
+                setBatches(batchesRes.data.data || []);
             } catch (err) {
-                console.error('Config fetch failed, using departments.json');
-                // API failed, use JSON
-                console.log('Using JSON departments (API error)');
+                console.error('Fetch failed:', err);
                 setDepartments(departmentsData.departments);
+            } finally {
+                setLoadingBatches(false);
             }
         };
-        fetchConfig();
+        fetchData();
     }, []);
+
+    // Effect to pre-fill department for HODs
+    React.useEffect(() => {
+        if (user && (user.role === 'HOD' || user.role === 'MENTOR') && user.department) {
+            setFormData(prev => ({ ...prev, department: user.department }));
+        }
+    }, [user, user?.department]);
 
     // Form Data
     const [formData, setFormData] = useState({
+        batchId: '',
         title: '',
         department: '',
         description: '',
@@ -86,8 +100,6 @@ const CreateInternshipForm = () => {
         stipendType: 'NON_COLLABORATIVE', // COLLABORATIVE or NON_COLLABORATIVE
         stipendAmount: '',
         manualOpenings: '',
-        internshipMode: 'SINGLE',
-        departmentGroups: [],
         customQuestions: [],
         requirementTags: [],
         preferredColleges: [],
@@ -128,11 +140,14 @@ const CreateInternshipForm = () => {
 
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
-    const totalOpenings = formData.internshipMode === 'GROUP' 
-        ? formData.departmentGroups.reduce((sum, g) => sum + parseInt(g.openings || 0), 0)
-        : roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0;
+    const totalOpenings = roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0;
 
-    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        if (validationErrors.includes(e.target.name)) {
+            setValidationErrors(prev => prev.filter(err => err !== e.target.name));
+        }
+    };
 
     const parseCommaSeparatedValues = (value) => {
         return (value || '')
@@ -190,20 +205,16 @@ const CreateInternshipForm = () => {
             const payload = {
                 ...formData,
                 openingsCount: totalOpenings,
-                roles: formData.internshipMode === 'SINGLE' ? roles.map(r => r.name).join(', ') : '',
-                rolesData: formData.internshipMode === 'SINGLE' ? roles : [],
+                roles: roles.map(r => r.name).join(', '),
+                rolesData: roles,
                 location: locations.join(', '),
                 requiredDocuments: requiredDocs,
-                customQuestions: formData.internshipMode === 'SINGLE' ? formData.customQuestions : [],
-                requirements: formData.internshipMode === 'SINGLE' ? formData.requirementTags.join(', ') : '',
-                preferredColleges: formData.internshipMode === 'SINGLE' ? formData.preferredColleges : [],
+                customQuestions: formData.customQuestions,
+                requirements: formData.requirementTags.join(', '),
+                preferredColleges: formData.preferredColleges,
                 internshipType: formData.internshipType,
                 fields: formData.internshipType === 'NON_STIPEND' ? formData.fields : []
             };
-
-            if (formData.internshipMode === 'GROUP') {
-                payload.department = 'MULTI';
-            }
 
             await api.post('/admin/internships', payload);
             alert('Internship program launched successfully!');
@@ -217,46 +228,42 @@ const CreateInternshipForm = () => {
     };
 
     const nextStep = () => {
-        if (step === 1 && (!formData.title || (formData.internshipMode === 'SINGLE' && !formData.department))) {
-            setError('Please fill in required basic details');
+        const errors = [];
+        if (step === 1) {
+            if (!formData.batchId) errors.push('batchId');
+            if (!formData.title) errors.push('title');
+            if (!formData.department) errors.push('department');
+            if (!formData.duration) errors.push('duration');
+            if (!formData.description) errors.push('description');
+        }
+        if (step === 2) {
+            if (!formData.manualOpenings) errors.push('manualOpenings');
+        }
+        if (step === 3) {
+            if (formData.internshipType !== 'NON_STIPEND' && roles.length === 0) {
+                errors.push('roles');
+            }
+            if (formData.internshipType === 'NON_STIPEND' && formData.fields.length === 0) {
+                errors.push('fields');
+            }
+        }
+        if (step === 4) {
+            if (requiredDocs.length === 0) errors.push('documents');
+        }
+        
+        if (errors.length > 0) {
+            setValidationErrors(errors);
+            setError('Please fill in all mandatory fields highlighted below');
             return;
         }
-        if (formData.internshipMode === 'SINGLE') {
-            if (formData.internshipType !== 'NON_STIPEND') {
-                if (step === 3 && roles.length === 0) {
-                    setError('Add at least one role to continue');
-                    return;
-                }
-            } else {
-                if (step === 3 && formData.fields.length === 0) {
-                    setError('Add at least one field to continue');
-                    return;
-                }
-            }
-        } else {
-            // GROUP MODE skips step 3 and capacity of step 2
-            if (step === 2 && formData.departmentGroups.length === 0) {
-                setError('Add at least one department group to continue');
-                return;
-            }
-            if (step === 2) {
-                setStep(4); // Skip step 3 directly to 4 (Documents)
-                return;
-            }
-            if (step === 4 && formData.departmentGroups.length === 0) {
-                 // In case of back tracking
-            }
-        }
+
+        setValidationErrors([]);
         setError('');
         setStep(step + 1);
     };
 
     const prevStep = () => {
-        if (formData.internshipMode === 'GROUP' && step === 4) {
-            setStep(2);
-        } else {
-            setStep(step - 1);
-        }
+        setStep(step - 1);
     };
 
     return (
@@ -302,54 +309,61 @@ const CreateInternshipForm = () => {
                             <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 1: <span className="text-primary/60 font-medium">Basic Information</span></h2>
                             <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Programme identity and core operational parameters.</p>
                         </div>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <InputField label="Internship Program Title" required tooltip="Visible to all students. Keep it descriptive.">
-                                <input type="text" name="title" required value={formData.title} onChange={handleChange}
-                                    placeholder="e.g. Graduate Engineering Trainee 2026" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                            <InputField label="Master Program (Batch)" required tooltip="Select the master program this internship belongs to." error={validationErrors.includes('batchId')}>
+                                <Select
+                                    value={formData.batchId}
+                                    onChange={v => {
+                                        setFormData({...formData, batchId: v});
+                                        setValidationErrors(prev => prev.filter(e => e !== 'batchId'));
+                                    }}
+                                    options={[
+                                        { value: '', label: '-- Select Master Program --' },
+                                        ...batches.map(b => ({ value: b.id, label: b.title }))
+                                    ]}
+                                    size="lg"
+                                    disabled={loadingBatches}
+                                />
                             </InputField>
 
-                            {/* Mode Selection */}
-                            {user?.role !== 'HOD' && (
-                                <InputField label="Internship Mode" required tooltip="Choose Single Department or Multi-Department Group Mode">
-                                    <Select
-                                        value={formData.internshipMode}
-                                        onChange={v => setFormData({...formData, internshipMode: v})}
-                                        options={[
-                                            { value: 'SINGLE', label: 'Single Department' },
-                                            { value: 'GROUP', label: 'Group (Multi-Department)' }
-                                        ]}
-                                        size="lg"
-                                    />
-                                </InputField>
-                            )}
+                            <InputField label="Internship Posting Title" required hint="e.g. Graduate Engineer Trainee (Electrical)" error={validationErrors.includes('title')}>
+                                <input 
+                                    type="text" 
+                                    name="title" 
+                                    value={formData.title} 
+                                    onChange={handleChange}
+                                    placeholder="Enter specific title for this posting..." 
+                                    className={`admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 ${validationErrors.includes('title') ? 'border-error/50' : ''}`} 
+                                />
+                            </InputField>
                         </div>
 
-                        {formData.internshipMode === 'SINGLE' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <InputField label="Target Department" required>
-                                    <Select
-                                        value={formData.department}
-                                        onChange={(value) => {
-                                            handleChange({ target: { name: 'department', value } });
-                                        }}
-                                        options={[
-                                            { value: '', label: '-- Select Department --' },
-                                            ...departments.map(d => ({ value: d, label: d }))
-                                        ]}
-                                        placeholder="Select Department"
-                                        size="lg"
-                                    />
-                                </InputField>
-                            </div>
-                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <InputField label="Target Department" required error={validationErrors.includes('department')}>
+                                <Select
+                                    value={formData.department}
+                                    onChange={(value) => {
+                                        handleChange({ target: { name: 'department', value } });
+                                        setValidationErrors(prev => prev.filter(e => e !== 'department'));
+                                    }}
+                                    options={[
+                                        { value: '', label: '-- Select Department --' },
+                                        ...departments.map(d => ({ value: d, label: d }))
+                                    ]}
+                                    placeholder="Select Department"
+                                    size="lg"
+                                    disabled={user && (user.role === 'HOD' || user.role === 'MENTOR') && !!user.department}
+                                />
+                            </InputField>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <InputField label="Internship Duration" required hint="Standard engagement period">
+                            <InputField label="Internship Duration" required hint="Standard engagement period" error={validationErrors.includes('duration')}>
                                 <Select
                                     value={formData.duration}
                                     onChange={(value) => {
                                         handleChange({ target: { name: 'duration', value } });
+                                        setValidationErrors(prev => prev.filter(e => e !== 'duration'));
                                     }}
                                     options={[
                                         { value: '', label: '-- Select Duration --' },
@@ -426,21 +440,21 @@ const CreateInternshipForm = () => {
                             </div>
                         </InputField>
 
-                        <InputField label="Detailed Description" required hint="Explain what the program is about">
+                        <InputField label="Detailed Description" required hint="Explain what the program is about" error={validationErrors.includes('description')}>
                             <textarea name="description" required value={formData.description} onChange={handleChange}
-                                rows={4} placeholder="Briefly describe the internship objectives and scope..." className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 resize-none" />
+                                rows={4} placeholder="Briefly describe the internship objectives and scope..." className={`admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 resize-none ${validationErrors.includes('description') ? 'border-error/50' : ''}`} />
                         </InputField>
 
                         <div className="pt-6 border-t border-outline-variant/10">
                             <button onClick={nextStep} className="w-full py-4 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
-                                {formData.internshipMode === 'GROUP' ? 'Continue to Department Groups' : 'Continue to Capacity & Questions'} <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                Continue to Capacity & Questions <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 2: CAPACITY & QUESTIONS (SINGLE) OR DEPARTMENT GROUPS (GROUP) */}
-                {step === 2 && formData.internshipMode === 'SINGLE' && (
+                {/* STEP 2: CAPACITY & QUESTIONS */}
+                {step === 2 && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div>
                             <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 2: <span className="text-primary/60 font-medium">Capacity & Questions</span></h2>
@@ -448,7 +462,7 @@ const CreateInternshipForm = () => {
                         </div>
 
                         <div className="p-8 bg-white border border-outline-variant/10 rounded-xl">
-                            <InputField label="Total Available Seats" required hint="Total number of students you can accommodate">
+                            <InputField label="Total Available Seats" required hint="Total number of students you can accommodate" error={validationErrors.includes('manualOpenings')}>
                                 <div className="flex items-center gap-6">
                                     <input
                                         type="number"
@@ -456,7 +470,7 @@ const CreateInternshipForm = () => {
                                         value={formData.manualOpenings}
                                         onChange={handleChange}
                                         placeholder="000"
-                                        className="admin-input text-3xl font-black text-primary w-40 border-outline-variant/20 focus:border-primary/30"
+                                        className={`admin-input text-3xl font-black text-primary w-40 border-outline-variant/20 focus:border-primary/30 ${validationErrors.includes('manualOpenings') ? 'border-error/50' : ''}`}
                                     />
                                     <div className="flex-1 p-4 bg-primary/5 rounded-lg border border-primary/10 text-[10px] font-bold text-primary/70 leading-relaxed uppercase tracking-wide">
                                         <div className="flex items-center gap-2 mb-1 text-primary">
@@ -624,56 +638,6 @@ const CreateInternshipForm = () => {
                     </div>
                 )}
 
-                {/* STEP 2: DEPARTMENT GROUPS (GROUP MODE) */}
-                {step === 2 && formData.internshipMode === 'GROUP' && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div>
-                            <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 2: <span className="text-primary/60 font-medium">Department Groups</span></h2>
-                            <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Add participating departments, capacities, and custom requirements.</p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <button onClick={() => setIsGroupModalOpen(true)} className="w-full p-6 border-2 border-dashed border-primary/30 rounded-xl text-primary font-bold hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-2">
-                                <span className="material-symbols-outlined text-3xl">add_business</span>
-                                <span className="text-sm uppercase tracking-widest">Add Department Group</span>
-                            </button>
-
-                            {formData.departmentGroups.map((g, i) => (
-                                <div key={i} className="p-6 bg-white border border-outline-variant/20 rounded-xl shadow-sm flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-bold text-primary text-lg">{g.title || `${g.department} Internship`}</h3>
-                                        <div className="flex gap-4 mt-2 text-xs font-bold text-outline">
-                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">domain</span> {g.department}</span>
-                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">group</span> {g.openings} Openings</span>
-                                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">badge</span> {g.rolesData.length} Roles</span>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setFormData({...formData, departmentGroups: formData.departmentGroups.filter((_, idx) => idx !== i)})} className="text-error hover:bg-error/10 p-2 rounded-lg transition-colors">
-                                        <span className="material-symbols-outlined">delete</span>
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
-                            <button onClick={prevStep} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
-                            <button onClick={nextStep} disabled={formData.departmentGroups.length === 0} className="flex-1 py-4 bg-primary disabled:opacity-50 hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
-                                Continue to Documents <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                            </button>
-                        </div>
-
-                        <DepartmentGroupModal 
-                            isOpen={isGroupModalOpen} 
-                            onClose={() => setIsGroupModalOpen(false)} 
-                            departments={departments}
-                            internshipType={formData.internshipType}
-                            onSave={(groupData) => {
-                                setFormData({...formData, departmentGroups: [...formData.departmentGroups, groupData]});
-                                setIsGroupModalOpen(false);
-                            }}
-                        />
-                    </div>
-                )}
 
                 {/* STEP 3: ROLES OR FIELDS */}
                 {step === 3 && (
@@ -685,7 +649,7 @@ const CreateInternshipForm = () => {
                                     <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Assign seats to specific positions within the programme.</p>
                                 </div>
 
-                                <div className="p-8 bg-white border border-outline-variant/10 rounded-xl flex flex-col md:flex-row gap-6">
+                                <div className={`p-8 bg-white border rounded-xl flex flex-col md:flex-row gap-6 ${validationErrors.includes('roles') ? 'border-error/50 bg-error/5 shadow-lg shadow-error/5 animate-shake' : 'border-outline-variant/10 shadow-sm'}`}>
                                     <div className="flex-1">
                                         <InputField label="Role/Position Name">
                                             <input type="text" value={roleNameInput} onChange={e => setRoleNameInput(e.target.value)}
@@ -736,7 +700,7 @@ const CreateInternshipForm = () => {
                                     <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Define technical fields and locations for Non-Stipend internship.</p>
                                 </div>
 
-                                <div className="p-8 bg-white border border-outline-variant/10 rounded-xl space-y-6">
+                                <div className={`p-8 bg-white border rounded-xl space-y-6 ${validationErrors.includes('fields') ? 'border-error/50 bg-error/5 shadow-lg shadow-error/5 animate-shake' : 'border-outline-variant/10 shadow-sm'}`}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <InputField label="Field Name">
                                             <input type="text" value={fieldInput.fieldName} onChange={e => setFieldInput({...fieldInput, fieldName: e.target.value})}
@@ -833,7 +797,7 @@ const CreateInternshipForm = () => {
                             <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Specify mandatory evidentiary submissions for candidates.</p>
                         </div>
 
-                        <div className="p-8 bg-white border border-outline-variant/10 rounded-xl flex flex-col md:flex-row gap-6">
+                        <div className={`p-8 bg-white border rounded-xl flex flex-col md:flex-row gap-6 ${validationErrors.includes('documents') ? 'border-error/50 bg-error/5 shadow-lg shadow-error/5 animate-shake' : 'border-outline-variant/10 shadow-sm'}`}>
                             <div className="flex-1">
                                 <InputField label="Document Name (e.g. NOC Letter)">
                                     <input type="text" value={docNameInput} onChange={e => setDocNameInput(e.target.value)}
@@ -932,7 +896,7 @@ const CreateInternshipForm = () => {
                                     <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-surface-container-high/20 rounded-xl border border-dashed border-outline-variant/30">
                                         {formData.requirementTags.length === 0 && (
                                             <p className="text-[10px] text-outline/40 font-bold uppercase tracking-widest flex items-center gap-2">
-                                                <Star size={12} /> Add at least 3-5 key skills for best auto-shortlisting results
+                                                <Star size={12} /> Add at least 3-5 key skills for better committee evaluation results
                                             </p>
                                         )}
                                         {formData.requirementTags.map((tag, i) => (

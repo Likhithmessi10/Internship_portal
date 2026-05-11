@@ -43,7 +43,7 @@ const StudentDashboard = () => {
                         {profile?.photoUrl ? (
                             <img src={profile.photoUrl} alt="Profile" className="w-24 h-24 rounded-full border-4 border-white/20 shadow-xl object-cover" />
                         ) : (
-                            <div className="w-24 h-24 rounded-full bg-white/10 border-4 border-white/20 flex items-center justify-center backdrop-blur-sm">
+                            <div className="w-24 h-24 rounded-full bg-white/10 border-4 border-white/20 flex items-center justify-center ">
                                 <span className="text-3xl font-bold">{profile?.fullName?.charAt(0) || user?.email?.charAt(0).toUpperCase()}</span>
                             </div>
                         )}

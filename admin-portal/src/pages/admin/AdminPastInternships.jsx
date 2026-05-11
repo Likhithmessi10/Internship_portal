@@ -159,7 +159,7 @@ const AdminPastInternships = () => {
 
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
-                        <Link to="/dashboard" className="w-14 h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-xl shadow-inner hover:bg-white/20 transition-all hover:rotate-6">
+                        <Link to="/dashboard" className="w-14 h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center  shadow-inner hover:bg-white/20 transition-all hover:rotate-6">
                             <ArrowLeft className="w-6 h-6 text-white" />
                         </Link>
                         <div>

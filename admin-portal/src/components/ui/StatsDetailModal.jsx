@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, Building2, Users, Briefcase, FileText, Download, ChevronRight } from 'lucide-react';
 
 const StatsDetailModal = ({ title, data = [], type, onClose }) => {
@@ -116,9 +117,10 @@ const StatsDetailModal = ({ title, data = [], type, onClose }) => {
         document.body.removeChild(link);
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-surface-container-lowest dark:bg-slate-950 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20 flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-8 duration-500">
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
                 {/* Modal Header */}
                 <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
                     <div className="flex items-center gap-4">
@@ -159,7 +161,7 @@ const StatsDetailModal = ({ title, data = [], type, onClose }) => {
                 </div>
 
                 {/* List Area */}
-                <div className="flex-1 overflow-y-auto p-8 space-y-3 custom-scrollbar">
+                <div className="flex-1 p-10 overflow-y-auto space-y-12 custom-scrollbar">
                     {filteredData.length > 0 ? (
                         filteredData.map((item, idx) => renderItem(item, idx))
                     ) : (
@@ -185,7 +187,8 @@ const StatsDetailModal = ({ title, data = [], type, onClose }) => {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

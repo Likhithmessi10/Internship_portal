@@ -85,8 +85,6 @@ const getCommitteeApplications = async (req, res) => {
                         department: true
                     }
                 },
-                shortlist: true,
-                committeeEvaluations: true,
                 evaluationScores: true,
                 documents: true
             },
@@ -269,9 +267,7 @@ const giveFinalApproval = async (req, res) => {
         const application = await prisma.application.findUnique({
             where: { id: applicationId },
             include: { 
-                internship: true,
-                shortlist: true,
-                committeeEvaluations: true
+                internship: true
             }
         });
 
@@ -313,7 +309,7 @@ const giveFinalApproval = async (req, res) => {
         const result = await prisma.$transaction(async (tx) => {
             const application = await tx.application.findUnique({
                 where: { id: applicationId },
-                include: { internship: true, shortlist: true }
+                include: { internship: true }
             });
 
             if (!application) throw new Error('Application not found');
@@ -401,8 +397,6 @@ const getCommitteeStatus = async (req, res) => {
                         department: true
                     }
                 },
-                shortlist: true,
-                committeeEvaluations: true,
                 evaluationScores: true
             }
         });

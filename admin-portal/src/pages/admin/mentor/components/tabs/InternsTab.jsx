@@ -146,7 +146,7 @@ const InternsTab = ({ internshipId }) => {
 
             {/* Profile Drawer */}
             {selectedIntern && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex justify-end" onClick={() => setSelectedIntern(null)}>
+                <div className="fixed inset-0 bg-black/50  z-[60] flex justify-end" onClick={() => setSelectedIntern(null)}>
                     <div
                         className="w-full max-w-md bg-white dark:bg-slate-900 h-full overflow-y-auto shadow-2xl animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-slate-800"
                         onClick={e => e.stopPropagation()}

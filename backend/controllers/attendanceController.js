@@ -171,23 +171,26 @@ const getAttendance = async (req, res) => {
 };
 
 /**
- * Bulk mark attendance for a date range
- * POST /api/v1/admin/attendance/bulk
+ * Bulk mark attendance for a single date (Multiple Interns)
+ * POST /api/v1/mentor/attendance/bulk
  */
 const bulkMarkAttendance = async (req, res) => {
     try {
-        const { applicationIds, startDate, endDate, present, hours } = req.body;
+        const { date, entries } = req.body;
         const mentorId = req.user.id;
         const userRole = req.user.role;
 
-        // Verify ownership for all applications
+        if (!entries || !Array.isArray(entries)) {
+            return res.status(400).json({ success: false, message: 'Invalid entries' });
+        }
+
+        const applicationIds = entries.map(e => e.applicationId);
+
+        // Verify ownership/auth for all applications
         const applications = await prisma.application.findMany({
-            where: {
-                id: { in: applicationIds }
-            }
+            where: { id: { in: applicationIds } }
         });
 
-        // Check authorization
         const authorized = applications.every(app => 
             app.mentorId === mentorId || userRole === 'ADMIN'
         );
@@ -199,37 +202,34 @@ const bulkMarkAttendance = async (req, res) => {
             });
         }
 
-        // Generate date range
-        const dateRange = [];
-        let currentDate = new Date(startDate);
-        const end = new Date(endDate);
-        
-        while (currentDate <= end) {
-            dateRange.push(currentDate.toISOString().split('T')[0]);
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        // Update each application
-        const results = await Promise.all(applicationIds.map(async (applicationId) => {
-            const application = await prisma.application.findUnique({
+        // Process all entries
+        const results = await Promise.all(entries.map(async (entry) => {
+            const { applicationId, present, hours } = entry;
+            
+            const app = await prisma.application.findUnique({
                 where: { id: applicationId },
                 include: { attendance: true }
             });
 
-            let attendanceLog = application.attendance?.attendanceLog || [];
-            
-            dateRange.forEach(date => {
-                const existingIndex = attendanceLog.findIndex(log => log.date === date);
-                if (existingIndex >= 0) {
-                    attendanceLog[existingIndex] = { date, present, hours: hours || 8, markedAt: new Date().toISOString() };
-                } else {
-                    attendanceLog.push({ date, present, hours: hours || 8, markedAt: new Date().toISOString() });
-                }
-            });
+            let attendanceLog = app.attendance?.attendanceLog || [];
+            const existingIndex = attendanceLog.findIndex(log => log.date === date);
+
+            const logEntry = { 
+                date, 
+                present, 
+                hours: hours || 8, 
+                markedAt: new Date().toISOString() 
+            };
+
+            if (existingIndex >= 0) {
+                attendanceLog[existingIndex] = logEntry;
+            } else {
+                attendanceLog.push(logEntry);
+            }
 
             const daysAttended = attendanceLog.filter(log => log.present).length;
             const totalDays = attendanceLog.length;
-            const minimumDays = application.attendance?.minimumDays || 20;
+            const minimumDays = app.attendance?.minimumDays || 20;
             const meetsMinimum = daysAttended >= minimumDays;
 
             return prisma.attendance.upsert({

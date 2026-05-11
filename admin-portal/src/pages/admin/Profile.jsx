@@ -12,8 +12,11 @@ const Profile = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [name, setName] = useState(user?.name || '');
+    const [phone, setPhone] = useState(user?.phone || '');
     const [feedback, setFeedback] = useState(null);
     const fileInputRef = useRef(null);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
 
     const getMediaUrl = (url) => {
         if (!url) return null;
@@ -37,6 +40,23 @@ const Profile = () => {
             setConfirmPassword('');
         } catch (err) {
             setFeedback({ type: 'error', text: err.response?.data?.message || 'Failed to update password' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const res = await api.put('/auth/update-profile', { name, phone });
+            if (res.data.success) {
+                setFeedback({ type: 'success', text: 'Profile updated successfully!' });
+                setIsEditingProfile(false);
+                setTimeout(() => window.location.reload(), 1000);
+            }
+        } catch (err) {
+            setFeedback({ type: 'error', text: 'Failed to update profile' });
         } finally {
             setLoading(false);
         }
@@ -135,6 +155,14 @@ const Profile = () => {
                                 </div>
                             </div>
                             
+                            <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
+                                <Shield size={16} className="text-primary/60" />
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-black text-outline uppercase tracking-tight">Contact Number</p>
+                                    <p className="text-xs font-bold text-primary truncate">{user?.phone || 'Not Set'}</p>
+                                </div>
+                            </div>
+
                             {user?.department && (
                                 <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
                                     <Building size={16} className="text-primary/60" />
@@ -149,7 +177,72 @@ const Profile = () => {
                 </div>
 
                 {/* Security/Password Form */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Basic Profile Form */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-outline-variant/10 shadow-xl shadow-primary/5 relative overflow-hidden">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <User size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-primary tracking-tight">Basic Information</h3>
+                                    <p className="text-[10px] font-bold text-outline uppercase tracking-widest">Public identity & contact</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleUpdateProfile} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="relative">
+                                    <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Full Legal Name</label>
+                                    <div className="relative group">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
+                                            <User size={16} />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                            placeholder="Your full name"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="relative">
+                                    <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Mobile Number</label>
+                                    <div className="relative group">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
+                                            <Shield size={16} />
+                                        </div>
+                                        <input
+                                            type="tel"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                            placeholder="Direct contact line"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-slate-900 dark:bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                            >
+                                {loading ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <>
+                                        <Save size={18} />
+                                        Update Basic Identity
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-outline-variant/10 shadow-xl shadow-primary/5 relative overflow-hidden">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400">

@@ -39,7 +39,7 @@ const AdminRejected = () => {
                 
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
-                        <button onClick={() => navigate('/dashboard')} className="w-14 h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-xl shadow-inner hover:bg-white/20 transition-all hover:rotate-6">
+                        <button onClick={() => navigate('/dashboard')} className="w-14 h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center  shadow-inner hover:bg-white/20 transition-all hover:rotate-6">
                             <ArrowLeft className="w-6 h-6 text-white" />
                         </button>
                         <div>
@@ -51,7 +51,7 @@ const AdminRejected = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10">
+                    <div className="bg-white/10  px-6 py-4 rounded-3xl border border-white/10">
                         <span className="text-3xl font-black text-white">{applications.length}</span>
                         <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-red-300">Total Rejected</span>
                     </div>

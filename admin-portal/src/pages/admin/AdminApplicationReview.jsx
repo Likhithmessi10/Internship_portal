@@ -577,7 +577,7 @@ const GroupingHeader = ({ label, icon: Icon, active, collapsed, onToggle, count,
             <td colSpan="5" className="py-4 px-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 rounded-xl bg-white/50 backdrop-blur-md flex items-center justify-center shadow-sm">
+                        <div className="w-8 h-8 rounded-xl bg-white/50  flex items-center justify-center shadow-sm">
                             {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                         </div>
                         <div className="flex flex-col">
@@ -645,12 +645,19 @@ const ApplicationRow = ({ app, updateStatus, setSelected, internship }) => {
                 </div>
             </td>
             <td className="px-6 py-5 text-center">
-                <span className="text-lg font-bold text-primary">
-                    {typeof app.resumeMatchScore === 'number' ? `${app.resumeMatchScore.toFixed(2)}%` : 'N/A'}
-                </span>
-                <div className="w-16 bg-surface-container-high h-0.5 mt-0.5 mx-auto rounded-full overflow-hidden">
+                {!app.isResumeProcessed ? (
+                    <div className="flex flex-col items-center gap-1.5 animate-pulse">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-primary/40 bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">Syncing AI Match</span>
+                        <span className="text-[8px] font-bold text-outline/40 italic">Processing Resume...</span>
+                    </div>
+                ) : (
+                    <span className="text-lg font-bold text-primary">
+                        {(app.resumeMatchScore || 0).toFixed(1)}%
+                    </span>
+                )}
+                <div className="w-16 bg-surface-container-high h-0.5 mt-2 mx-auto rounded-full overflow-hidden">
                     <div
-                        className="bg-primary h-full"
+                        className={`h-full ${app.isResumeProcessed ? 'bg-primary' : 'bg-outline/20'}`}
                         style={{ width: `${Math.max(0, Math.min(100, Number(app.resumeMatchScore || 0)))}%` }}
                     ></div>
                 </div>

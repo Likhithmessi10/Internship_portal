@@ -5,11 +5,13 @@ const {
     createTask,
     getTasks,
     getSubmissions,
-    reviewSubmission,
-    markAttendance,
-    bulkMarkAttendance,
-    getAttendance
+    reviewSubmission
 } = require('../controllers/mentorController');
+const {
+    markAttendance,
+    getAttendance,
+    bulkMarkAttendance
+} = require('../controllers/attendanceController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();

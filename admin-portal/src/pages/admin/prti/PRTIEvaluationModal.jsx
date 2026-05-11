@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../../utils/api';
 import { Star, CheckCircle, XCircle, X, Send } from 'lucide-react';
 import Select from '../../../components/ui/Select';
@@ -92,10 +93,11 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
 
     const allScoresSubmitted = evalStatus.submitted === 3;
 
-    return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-surface-container-lowest rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
-                <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-gradient-to-r from-indigo-600 to-indigo-600/80 text-white">
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
+                <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-gradient-to-r from-indigo-600 to-indigo-600/80 text-white shrink-0">
                     <div>
                         <h3 className="text-xl font-bold flex items-center gap-2">
                             <Star size={24} /> Committee Evaluation
@@ -109,7 +111,7 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
                     </button>
                 </div>
 
-                <div className="p-6 space-y-6 max-h-[70vh] overflow-auto">
+                <div className="flex-1 p-10 overflow-y-auto space-y-10">
                     {/* Application Info */}
                     <div className="grid grid-cols-2 gap-4 p-4 bg-surface-container-low rounded-xl">
                         <div>
@@ -284,7 +286,8 @@ const PRTIEvaluationModal = ({ application, onClose }) => {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

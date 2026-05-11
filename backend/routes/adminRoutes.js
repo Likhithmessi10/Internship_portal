@@ -20,12 +20,15 @@ const {
     getAllInterns,
     getMeetings,
     getMentorMeetings,
-    getMentorInterns,
     assignWork,
     getWorkAssignments,
     addDepartmentGroup,
     updateDepartmentGroup,
-    deleteDepartmentGroup
+    deleteDepartmentGroup,
+    getBatches,
+    createBatch,
+    deleteBatch,
+    searchInternByRollNumber
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
@@ -48,8 +51,13 @@ router.use(authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'));
 router.put('/config', authorize('ADMIN'), updatePortalConfig);
 
 // Internship Management
+router.get('/batches', getBatches);
+router.post('/batches', authorize('ADMIN', 'CE_PRTI'), createBatch);
+router.delete('/batches/:id', authorize('ADMIN', 'CE_PRTI'), deleteBatch);
+
 router.get('/internships', getAllInternships);
-router.get('/interns/all', authorize('ADMIN', 'CE_PRTI'), getAllInterns);
+router.get('/interns/all', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), getAllInterns);
+router.get('/interns/search/:rollNumber', authorize('ADMIN', 'CE_PRTI', 'HOD'), searchInternByRollNumber);
 router.get('/meetings', authorize('ADMIN', 'CE_PRTI', 'HOD'), getMeetings);
 router.post('/internships', createInternship);
 router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI'), deleteInternship);
@@ -66,7 +74,7 @@ router.get('/internships/:id/committee', getCommitteeDetails);
 router.put('/internships/:id/committee', updateCommitteeDetails);
 
 // Application Management
-const { submitEvaluation } = require('../controllers/committeeController');
+const { submitEvaluation } = require('../controllers/prtiController');
 router.get('/internships/:id/applications', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), getApplications);
 router.get('/internships/:id/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), exportApplications);
 router.get('/applications/rejected', authorize('ADMIN', 'HOD'), getRejectedApplications);
@@ -87,7 +95,6 @@ router.get('/system/health', authorize('ADMIN', 'CE_PRTI'), getSystemHealth);
 
 // Mentor & Work Assignments
 router.get('/meetings/my', getMentorMeetings);
-router.get('/mentor/interns', getMentorInterns);
 router.post('/work/assign', assignWork);
 router.get('/work/assignments', getWorkAssignments);
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles, Send, Users, Landmark, ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, FileText, User, GraduationCap, Award, CheckCircle, XCircle, BookOpen, Sparkles, Send, Users, Landmark, ChevronDown, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api, { MEDIA_URL } from '../../utils/api';
 import Select from '../../components/ui/Select';
@@ -18,7 +19,7 @@ const DocViewer = ({ url, label, onClose }) => {
     const isImage = fullUrl && (url?.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(fullUrl));
 
     return (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-white dark:bg-slate-900">
             <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -215,9 +216,9 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
 
     const handleHire = () => {
         if (!selectedRole && internship?.rolesData?.length > 0) return setWarning('Assign a role.');
-        if (!manualRollNumber) return setWarning('Assign an internal Roll Number.');
         if (!joiningDate || !endDate) return setWarning('Specify Joining and End dates.');
-        updateStatus('APPROVED', { rollNumber: manualRollNumber, joiningDate, endDate, assignedRole: selectedRole });
+        // rollNumber is now strictly handled by the system on the backend
+        updateStatus('APPROVED', { joiningDate, endDate, assignedRole: selectedRole });
     };
 
 
@@ -231,13 +232,12 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
         REJECTED: 'bg-red-100 text-red-700',
     }[status] || 'bg-gray-100 text-gray-700';
 
-    return (
+    return createPortal(
         <>
             {warning && <WarningCard message={warning} onClose={() => setWarning(null)} />}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md" onClick={onClose} />
-                <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden z-10 border border-outline-variant/10 dark:border-slate-800">
-
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+                <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+                <div className="relative w-full max-w-5xl h-[90vh] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
                     {/* Stitch-style Header Section */}
                     <div className="shrink-0 bg-white dark:bg-slate-900 border-b border-outline-variant/10 dark:border-slate-800 px-8 py-6 flex items-center justify-between">
                         <div className="flex items-center gap-5">
@@ -278,7 +278,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                         </div>
                     </div>
 
-                    <div className="p-10 space-y-10 overflow-y-auto flex-1 custom-scrollbar bg-white dark:bg-slate-900/40">
+                    <div className="p-10 space-y-12 overflow-y-auto flex-1 custom-scrollbar bg-white dark:bg-slate-900/40">
                         {/* Section Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             {/* Personal */}
@@ -664,15 +664,17 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                             </select>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-outline dark:text-slate-500 uppercase tracking-widest ml-1">Institutional ID / Roll Number</label>
-                                            <input
-                                                type="text"
-                                                placeholder={`e.g. TR-${new Date().getFullYear()}-001`}
-                                                value={manualRollNumber}
-                                                onChange={e => setManualRollNumber(e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 dark:border-slate-700 rounded px-4 py-3 text-xs font-bold text-primary dark:text-white placeholder:text-outline/30 dark:placeholder:text-slate-600 focus:outline-emerald-500"
-                                            />
+                                        <div className="space-y-2 flex flex-col justify-center">
+                                            <div className="flex items-center gap-2 px-4 py-3 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/30 rounded-xl">
+                                                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg text-indigo-600 dark:text-indigo-400">
+                                                    <Zap size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-500 mb-0.5">Automated Identifier</p>
+                                                    <p className="text-xs font-bold text-indigo-900 dark:text-indigo-300">System Generated ID</p>
+                                                </div>
+                                            </div>
+                                            <p className="text-[9px] text-outline/50 italic ml-1 mt-1">Roll number will be automatically assigned following the YYDDGGNNN protocol upon authorization.</p>
                                         </div>
                                     </div>
 
@@ -753,7 +755,8 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
 
             {/* Document Viewer (fullscreen overlay with high z-index) */}
             {viewerUrl && <DocViewer url={viewerUrl} label={viewerLabel} onClose={closeViewer} />}
-        </>
+        </>,
+        document.body
     );
 };
 

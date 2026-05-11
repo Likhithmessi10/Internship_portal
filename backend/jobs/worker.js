@@ -29,7 +29,10 @@ const executeJob = async (job) => {
 
             await prisma.application.update({
                 where: { id: applicationId },
-                data: { resumeMatchScore: score }
+                data: { 
+                    resumeMatchScore: score,
+                    isResumeProcessed: true
+                }
             });
             break;
         }
@@ -41,6 +44,78 @@ const executeJob = async (job) => {
 const workerLoop = async () => {
     console.log('👷 High-Availability Background Worker started...');
     
+    // 2. MAINTENANCE TASK: Sync missing resume jobs and reset failed ones
+    setInterval(async () => {
+        try {
+            // A. Reset FAILED jobs
+            const resetResult = await prisma.job.updateMany({
+                where: {
+                    type: 'RESUME_MATCH_SCORE',
+                    status: 'FAILED'
+                },
+                data: {
+                    status: 'PENDING',
+                    attempts: 0,
+                    error: 'Auto-reset for retry after service outage'
+                }
+            });
+            if (resetResult.count > 0) {
+                console.log(`[Worker] Auto-reset ${resetResult.count} FAILED resume matching jobs.`);
+            }
+
+            // B. Find Applications with resumes but NO processed flag and NO active job
+            // We order by createdAt ASC to process oldest first as requested
+            const unprocessedApps = await prisma.application.findMany({
+                where: {
+                    isResumeProcessed: false,
+                    NOT: {
+                        documents: {
+                            none: { type: 'RESUME' }
+                        }
+                    }
+                },
+                include: {
+                    documents: {
+                        where: { type: 'RESUME' }
+                    }
+                },
+                orderBy: { createdAt: 'asc' },
+                take: 50 // Process in batches
+            });
+
+            for (const app of unprocessedApps) {
+                const resume = app.documents[0];
+                if (!resume) continue;
+
+                const fingerprint = `RESUME_MATCH_SCORE:${app.id}`;
+                
+                // Check if a job already exists for this app
+                const existingJob = await prisma.job.findFirst({
+                    where: { fingerprint, status: { in: ['PENDING', 'CLAIMED', 'RUNNING'] } }
+                });
+
+                if (!existingJob) {
+                    await prisma.job.create({
+                        data: {
+                            type: 'RESUME_MATCH_SCORE',
+                            status: 'PENDING',
+                            fingerprint,
+                            payload: {
+                                applicationId: app.id,
+                                resumePath: resume.fileUrl || resume.url,
+                                resumeOriginalname: resume.label || 'resume.pdf',
+                                resumeMimetype: 'application/pdf'
+                            }
+                        }
+                    });
+                    console.log(`[Worker] Auto-enqueued missing job for App ${app.trackingId}`);
+                }
+            }
+        } catch (err) {
+            console.error('[Worker Maintenance Error]', err.message);
+        }
+    }, 1000 * 60 * 2); // Run every 2 minutes for faster sync
+
     while (true) {
         try {
             // Atomic Claim using PG SKIP LOCKED

@@ -213,23 +213,26 @@ const applyForInternship = async (req, res) => {
  */
 const getInternships = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        const { batchId } = req.query;
+        const whereClause = {
+            isActive: true,
+            OR: [
+                { applicationDeadline: null },
+                { applicationDeadline: { gte: new Date() } }
+            ]
+        };
+
+        if (batchId) {
+            whereClause.batchId = batchId;
+        }
 
         const internships = await prisma.internship.findMany({
-            where: {
-                isActive: true,
-                OR: [
-                    { applicationDeadline: null },
-                    { applicationDeadline: { gte: new Date() } }
-                ]
-            },
+            where: whereClause,
             select: {
                 id: true,
+                batchId: true,
                 title: true,
                 department: true,
-                internshipMode: true,
                 requiredDocuments: true,
                 location: true,
                 duration: true,
@@ -239,46 +242,16 @@ const getInternships = async (req, res) => {
                 description: true,
                 stipendType: true,
                 internshipType: true,
-                fields: true,
-                departmentGroups: {
-                    select: {
-                        id: true,
-                        department: true,
-                        title: true,
-                        description: true,
-                        openings: true,
-                        rolesData: true,
-                        skillsRequired: true,
-                        expectations: true,
-                        customQuestions: true,
-                        internshipType: true,
-                        fields: true,
-                        _count: { select: { applications: true } }
-                    },
-                    orderBy: { department: 'asc' }
+                batch: {
+                    select: { title: true }
                 }
             },
-            orderBy: { createdAt: 'desc' },
-            skip,
-            take: limit
-        });
-
-        const total = await prisma.internship.count({
-            where: {
-                isActive: true,
-                OR: [
-                    { applicationDeadline: null },
-                    { applicationDeadline: { gte: new Date() } }
-                ]
-            }
+            orderBy: { createdAt: 'desc' }
         });
 
         res.status(200).json({
             success: true,
             count: internships.length,
-            total,
-            page,
-            totalPages: Math.ceil(total / limit),
             data: internships
         });
     } catch (error) {
@@ -304,7 +277,10 @@ const getInternshipDetails = async (req, res) => {
                     include: { fields: true },
                     orderBy: { department: 'asc' }
                 },
-                fields: true
+                fields: true,
+                batch: {
+                    select: { id: true, title: true }
+                }
             }
         });
         if (!internship) return res.status(404).json({ success: false, message: 'Not found' });

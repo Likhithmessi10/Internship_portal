@@ -184,9 +184,16 @@ const HodApplications = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center align-middle">
-                                        <span className="inline-flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-black text-sm px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
-                                            {typeof app.resumeMatchScore === 'number' ? `${app.resumeMatchScore.toFixed(2)}%` : 'N/A'}
-                                        </span>
+                                        {!app.isResumeProcessed ? (
+                                            <div className="flex flex-col items-center gap-1 animate-pulse">
+                                                <div className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-400 dark:text-indigo-600 rounded-full text-[8px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-800/30">AI Syncing</div>
+                                                <span className="text-[8px] font-bold text-slate-400 dark:text-slate-600 italic">Processing...</span>
+                                            </div>
+                                        ) : (
+                                            <span className="inline-flex items-center justify-center font-black text-sm px-3 py-1.5 rounded-lg border bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-800/30">
+                                                {(app.resumeMatchScore || 0).toFixed(1)}%
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-center align-middle">
                                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border ${

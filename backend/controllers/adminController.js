@@ -26,132 +26,40 @@ const normalizeRequirements = (rawRequirements) => {
 const createInternship = async (req, res) => {
     try {
         const {
-            title, department, description, roles, rolesData, requirements,
+            batchId, title, department, description, roles, rolesData, requirements,
             expectations, location, duration, openingsCount, applicationDeadline,
             requiredDocuments, stipendType, stipendAmount, customQuestions,
-            evaluationQuestions, preferredColleges, internshipMode, departmentGroups
+            evaluationQuestions, preferredColleges
         } = req.body;
 
-        const mode = internshipMode || 'SINGLE';
-
-        // ─── GROUP MODE ───
-        if (mode === 'GROUP') {
-            // Only ADMIN and CE_PRTI can create GROUP internships
-            if (req.user.role !== 'ADMIN' && req.user.role !== 'CE_PRTI') {
-                return res.status(403).json({ success: false, message: 'Only ADMIN or PRTI can create group internships' });
-            }
-
-            if (!departmentGroups || !Array.isArray(departmentGroups) || departmentGroups.length === 0) {
-                return res.status(400).json({ success: false, message: 'At least one department group is required for GROUP mode' });
-            }
-
-            // Validate no duplicate departments
-            const deptSet = new Set();
-            for (const g of departmentGroups) {
-                if (deptSet.has(g.department)) {
-                    return res.status(400).json({ success: false, message: `Duplicate department: ${g.department}` });
-                }
-                deptSet.add(g.department);
-            }
-
-            const totalOpenings = departmentGroups.reduce((sum, g) => sum + (parseInt(g.openings) || 0), 0);
-
-            const result = await prisma.$transaction(async (tx) => {
-                // 1. Create parent internship
-                const internship = await tx.internship.create({
-                    data: {
-                        title,
-                        department: 'MULTI',
-                        description: description || '',
-                        internshipMode: 'GROUP',
-                        duration,
-                        openingsCount: totalOpenings,
-                        applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
-                        requiredDocuments: requiredDocuments || null,
-                        stipendType: stipendType || 'NON_COLLABORATIVE',
-                        stipendAmount: stipendAmount ? parseFloat(stipendAmount) : null,
-                        location: location || null,
-                        internshipType: req.body.internshipType || 'STIPEND',
-                        fields: {
-                            create: (req.body.fields || []).map(f => ({
-                                fieldName: f.fieldName,
-                                description: f.description,
-                                vacancies: parseInt(f.vacancies) || 0,
-                                locations: f.locations || []
-                            }))
-                        }
-                    }
-                });
-
-                // 2. Create department groups + committee stubs
-                const groups = [];
-                for (const g of departmentGroups) {
-                    const group = await tx.internshipDepartmentGroup.create({
-                        data: {
-                            internshipId: internship.id,
-                            department: g.department,
-                            title: g.title || `${g.department} Internship`,
-                            description: g.description || null,
-                            openings: parseInt(g.openings) || 0,
-                            rolesData: g.rolesData || null,
-                            skillsRequired: normalizeRequirements(g.skillsRequired),
-                            expectations: g.expectations || null,
-                            preferredColleges: g.preferredColleges || [],
-                            quotaPercentages: g.quotaPercentages || null,
-                            problemStatements: g.problemStatements || [],
-                            customQuestions: g.customQuestions || [],
-                            internshipType: req.body.internshipType || 'STIPEND',
-                            fields: {
-                                create: (g.fields || []).map(f => ({
-                                    fieldName: f.fieldName,
-                                    description: f.description,
-                                    vacancies: parseInt(f.vacancies) || 0,
-                                    locations: f.locations || []
-                                }))
-                            }
-                        }
-                    });
-                    // Create committee stub per group
-                    await tx.committee.create({
-                        data: { departmentGroupId: group.id }
-                    });
-                    groups.push(group);
-                }
-
-                // 3. Evaluation criteria at parent level
-                const questionsToUse = (evaluationQuestions && Array.isArray(evaluationQuestions) && evaluationQuestions.length > 0)
-                    ? evaluationQuestions
-                    : ["Technical Skills & Domain Knowledge", "Communication & Problem Solving"];
-                await tx.internshipEvaluationCriteria.createMany({
-                    data: questionsToUse.map(q => ({ internshipId: internship.id, question: q, maxScore: 50 }))
-                });
-
-                return { ...internship, departmentGroups: groups };
-            });
-
-            res.status(201).json({ success: true, data: result });
-            await createAuditLog('CREATE_GROUP_INTERNSHIP', req.user.email, `Created GROUP: ${title} (${departmentGroups.length} depts)`, result.id);
-            return;
+        if (!batchId) {
+            return res.status(400).json({ success: false, message: 'Batch ID (Master Program) is required' });
         }
 
-        // ─── SINGLE MODE (existing flow) ───
+        // Verify Batch exists
+        const batch = await prisma.internshipBatch.findUnique({ where: { id: batchId } });
+        if (!batch) {
+            return res.status(404).json({ success: false, message: 'Invalid Master Program selected' });
+        }
+
         let targetDepartment = department;
-        if ((req.user.role === 'HOD' || req.user.role === 'MENTOR') && req.user.department) {
+        if (req.user.role === 'HOD' || req.user.role === 'MENTOR') {
+            if (!req.user.department) {
+                return res.status(403).json({ success: false, message: 'You are not assigned to any department. Please contact the administrator.' });
+            }
             targetDepartment = req.user.department;
         }
-        if (!targetDepartment && (req.user.role === 'HOD' || req.user.role === 'MENTOR') && req.user.department) {
-            targetDepartment = req.user.department;
-        }
+
         if (!targetDepartment) {
             return res.status(400).json({ success: false, message: 'Department is required' });
         }
 
         const internship = await prisma.internship.create({
             data: {
+                batchId,
                 title,
                 department: targetDepartment,
                 description,
-                internshipMode: 'SINGLE',
                 roles: roles || null,
                 rolesData: rolesData || null,
                 requirements: normalizeRequirements(requirements),
@@ -181,14 +89,87 @@ const createInternship = async (req, res) => {
         const questionsToUse = (evaluationQuestions && Array.isArray(evaluationQuestions) && evaluationQuestions.length > 0)
             ? evaluationQuestions
             : ["Technical Skills & Domain Knowledge", "Communication & Problem Solving"];
+        
         await prisma.internshipEvaluationCriteria.createMany({
             data: questionsToUse.map(q => ({ internshipId: internship.id, question: q, maxScore: 50 }))
         });
 
         res.status(201).json({ success: true, data: internship });
-        await createAuditLog('CREATE_INTERNSHIP', req.user.email, `Created: ${title}`, internship.id);
+        await createAuditLog('CREATE_INTERNSHIP', req.user.email, `Created ${title} in batch ${batch.title}`, internship.id);
     } catch (error) {
         console.error('Create internship error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Get All Internship Batches (Master Folders)
+ * @route   GET /api/v1/admin/batches
+ * @access  Private (Admin)
+ */
+const getBatches = async (req, res) => {
+    try {
+        const batches = await prisma.internshipBatch.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                _count: { select: { internships: true } }
+            }
+        });
+        res.status(200).json({ success: true, data: batches });
+    } catch (error) {
+        console.error('Get batches error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Create Internship Batch (Master Folder)
+ * @route   POST /api/v1/admin/batches
+ * @access  Private (PRTI, Admin)
+ */
+const createBatch = async (req, res) => {
+    try {
+        const { title, description } = req.body;
+        if (!title) return res.status(400).json({ success: false, message: 'Title is required' });
+
+        const batch = await prisma.internshipBatch.create({
+            data: {
+                title,
+                description,
+                createdBy: req.user.email
+            }
+        });
+
+        res.status(201).json({ success: true, data: batch });
+        await createAuditLog('CREATE_BATCH', req.user.email, `Created Program: ${title}`, batch.id);
+    } catch (error) {
+        console.error('Create batch error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Delete Internship Batch
+ * @route   DELETE /api/v1/admin/batches/:id
+ * @access  Private (PRTI, Admin)
+ */
+const deleteBatch = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const batch = await prisma.internshipBatch.findUnique({ 
+            where: { id },
+            include: { _count: { select: { internships: true } } }
+        });
+
+        if (!batch) return res.status(404).json({ success: false, message: 'Batch not found' });
+        if (batch._count.internships > 0) {
+            return res.status(400).json({ success: false, message: 'Cannot delete program with existing internships' });
+        }
+
+        await prisma.internshipBatch.delete({ where: { id } });
+        res.status(200).json({ success: true, message: 'Program deleted successfully' });
+    } catch (error) {
+        console.error('Delete batch error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -205,12 +186,13 @@ const getAllInternships = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const whereClause = {};
-        // For HOD/MENTOR: show SINGLE internships from their dept + GROUP internships containing their dept
+        if (req.query.batchId) {
+            whereClause.batchId = req.query.batchId;
+        }
+
+        // For HOD/MENTOR: show internships from their dept
         if (req.user.role !== 'ADMIN' && req.user.role !== 'CE_PRTI' && req.user.department) {
-            whereClause.OR = [
-                { department: req.user.department, internshipMode: 'SINGLE' },
-                { internshipMode: 'GROUP', departmentGroups: { some: { department: req.user.department } } }
-            ];
+            whereClause.department = req.user.department;
         }
 
         const [internships, total] = await Promise.all([
@@ -222,6 +204,7 @@ const getAllInternships = async (req, res) => {
                 include: {
                     _count: { select: { applications: true } },
                     applications: { select: { status: true } },
+                    batch: { select: { id: true, title: true } },
                     departmentGroups: {
                         include: {
                             _count: { select: { applications: true } }
@@ -472,10 +455,8 @@ const getApplications = async (req, res) => {
                 },
                 documents: true,
                 mentor: { select: { name: true, email: true } },
-                shortlist: true,
                 attendance: true,
                 stipend: true,
-                committeeEvaluations: true,
                 departmentGroup: { select: { id: true, department: true, title: true } },
                 field: true
             }
@@ -615,13 +596,8 @@ const updateApplicationStatus = async (req, res) => {
                 tx
             );
 
-            // Update student roll number if provided
-            if (rollNumber) {
-                await tx.studentProfile.update({
-                    where: { id: application.studentId },
-                    data: { rollNumber }
-                });
-            }
+            // Student roll number is now automatically handled by the transitionApplicationStatus
+            // within the applicationWorkflowService using the generatePortalRollNumber utility.
 
             // Update metadata (Role, Dates, Mentor)
             const metadataUpdates = {};
@@ -1092,12 +1068,27 @@ const updateStipendDetails = async (req, res) => {
  */
 const getAllInterns = async (req, res) => {
     try {
+        const whereClause = {
+            status: { in: ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'] }
+        };
+
+        // Role-based filtering
+        if (req.user.role === 'HOD' || req.user.role === 'MENTOR') {
+            if (req.user.department) {
+                whereClause.OR = [
+                    { internship: { department: req.user.department } },
+                    { departmentGroup: { department: req.user.department } }
+                ];
+            }
+        }
+
         const interns = await prisma.application.findMany({
-            where: { status: 'APPROVED' },
+            where: whereClause,
             include: {
                 student: true,
                 internship: { select: { title: true, department: true, location: true } },
-                mentor: { select: { name: true, email: true } }
+                mentor: { select: { name: true, email: true } },
+                departmentGroup: { select: { department: true } }
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -1118,53 +1109,6 @@ const getMeetings = async (req, res) => {
             orderBy: { interviewDate: 'asc' }
         });
         res.status(200).json({ success: true, data: committees });
-    } catch (error) {
-        console.error('Admin controller error:', error.message);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
-/**
- * @desc    Get Interns for Mentor (Dashboard)
- */
-const getMentorInterns = async (req, res) => {
-    try {
-        const mentorId = req.user.id;
-
-        // Show interns with HIRED, CA_APPROVED, ONGOING, or COMPLETED status
-        const interns = await prisma.application.findMany({
-            where: {
-                mentorId,
-                status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
-            },
-            include: {
-                student: {
-                    include: {
-                        user: { select: { email: true } }
-                    }
-                },
-                internship: { select: { title: true, department: true } },
-                attendance: true,
-                workAssignments: { orderBy: { createdAt: 'desc' } }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-
-        // Group by Internship
-        const groupedByInternship = interns.reduce((acc, current) => {
-            const intTitle = current.internship.title;
-            if (!acc[intTitle]) {
-                acc[intTitle] = {
-                    title: intTitle,
-                    id: current.internshipId,
-                    interns: []
-                };
-            }
-            acc[intTitle].interns.push(current);
-            return acc;
-        }, {});
-
-        res.status(200).json({ success: true, data: Object.values(groupedByInternship) });
     } catch (error) {
         console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -1425,6 +1369,73 @@ const deleteDepartmentGroup = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Search Intern by Roll Number
+ * @route   GET /api/v1/admin/interns/search/:rollNumber
+ */
+const searchInternByRollNumber = async (req, res) => {
+    try {
+        const { rollNumber } = req.params;
+
+        // 1. Find the student by roll number
+        const student = await prisma.studentProfile.findFirst({
+            where: {
+                rollNumber: {
+                    equals: rollNumber,
+                    mode: 'insensitive'
+                }
+            },
+            include: {
+                user: {
+                    select: {
+                        email: true,
+                        createdAt: true
+                    }
+                },
+                applications: {
+                    include: {
+                        internship: true,
+                        departmentGroup: true,
+                        mentor: {
+                            select: {
+                                name: true,
+                                email: true,
+                                phone: true
+                            }
+                        },
+                        attendance: true,
+                        stipend: true,
+                        workAssignments: {
+                            orderBy: { createdAt: 'desc' }
+                        }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
+        });
+
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student with this roll number not found' });
+        }
+
+        // Check department access if HOD or MENTOR
+        if (['HOD', 'MENTOR'].includes(req.user.role)) {
+            const hasAccess = student.applications.some(app => 
+                app.internship?.department === req.user.department || 
+                app.departmentGroup?.department === req.user.department
+            );
+            if (!hasAccess) {
+                return res.status(403).json({ success: false, message: 'Access denied: Student is not in your department' });
+            }
+        }
+
+        res.status(200).json({ success: true, data: student });
+    } catch (error) {
+        console.error('Search intern error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -1446,10 +1457,13 @@ module.exports = {
     getAllInterns,
     getMeetings,
     getMentorMeetings,
-    getMentorInterns,
     assignWork,
     getWorkAssignments,
     addDepartmentGroup,
     updateDepartmentGroup,
-    deleteDepartmentGroup
+    deleteDepartmentGroup,
+    getBatches,
+    createBatch,
+    deleteBatch,
+    searchInternByRollNumber
 };

@@ -31,6 +31,11 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             icon: 'dashboard',
             path: isAdmin ? '/admin/dashboard' : (isPRTI ? '/prti/dashboard' : `/${user?.role?.toLowerCase()}/dashboard`)
         },
+        ...(isPRTI || isAdmin ? [{
+            label: 'Master Programs',
+            icon: 'folder_open',
+            path: '/prti/batches'
+        }] : []),
         ...(!isPRTI ? [{ 
             label: 'Applications', 
             icon: 'description', 
@@ -57,6 +62,11 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             icon: 'assessment',
             path: isPRTI ? '/prti/reports' : (isHOD ? '/hod/reports' : (isMentor ? '/mentor/reports' : '/reports'))
         },
+        ...((isAdmin || isPRTI || isHOD) ? [{
+            label: 'Candidate Search',
+            icon: 'person_search',
+            path: '/admin/search'
+        }] : []),
     ];
 
     return (

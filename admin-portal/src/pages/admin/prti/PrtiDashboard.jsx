@@ -193,7 +193,14 @@ const PrtiDashboard = () => {
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-primary text-sm">{int.title}</p>
-                                                    <p className="text-[10px] text-outline font-bold uppercase tracking-tighter">{int.location || 'VARIOUS LOCATIONS'}</p>
+                                                    <p className="text-[10px] text-outline font-bold uppercase tracking-tighter">
+                                                        {int.department} • {int.location || 'VARIOUS LOCATIONS'}
+                                                    </p>
+                                                    {int.batch && (
+                                                        <p className="text-[9px] text-primary/60 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[10px]">folder</span> {int.batch.title}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>

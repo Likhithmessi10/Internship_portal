@@ -176,13 +176,13 @@
 
   /* ── Premium Utilities ── */
   .glass-card {
-    @apply backdrop-blur-md border transition-all duration-300;
+    @apply border transition-all duration-300;
     background: var(--glass-bg);
     border-color: var(--glass-border);
   }
 
   .glass-navbar {
-    @apply backdrop-blur-lg border-b sticky top-0 z-50;
+    @apply border-b sticky top-0 z-50;
     background: var(--glass-bg);
     border-color: var(--glass-border);
   }

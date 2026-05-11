@@ -11,15 +11,15 @@
     font-family: 'Source Sans 3', sans-serif;
   }
 
-  html.dark body {
-    @apply bg-slate-950 text-slate-100;
-    --glass-bg: rgba(15, 23, 42, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.08);
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.98);
+    --glass-border: rgba(0, 0, 0, 0.05);
   }
 
-  :root {
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.05);
+  html.dark body {
+    @apply bg-slate-950 text-slate-100;
+    --glass-bg: rgba(15, 23, 42, 0.98);
+    --glass-border: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -39,11 +39,11 @@
   }
 
   .input-field {
-    @apply mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100;
+    @apply mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 transition-all font-medium dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100;
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 dark:bg-slate-900 dark:border-slate-800;
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 dark:bg-slate-900 dark:border-slate-800;
   }
 
   /* ── Admin-specific components ── */
@@ -56,7 +56,7 @@
   }
 
   .admin-input {
-    @apply w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all placeholder-gray-400 font-medium dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 dark:focus:bg-slate-800;
+    @apply w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all placeholder-gray-400 font-medium dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 dark:focus:bg-slate-800;
   }
 
   select.admin-input {
@@ -65,13 +65,13 @@
 
   /* ── Premium Utilities ── */
   .glass-card {
-    @apply backdrop-blur-md border transition-all duration-300;
+    @apply border transition-all duration-300;
     background: var(--glass-bg);
     border-color: var(--glass-border);
   }
 
   .glass-navbar {
-    @apply backdrop-blur-lg border-b sticky top-0 z-50;
+    @apply border-b sticky top-0 z-50;
     background: var(--glass-bg);
     border-color: var(--glass-border);
   }
@@ -108,4 +108,10 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:hover {
   background-color: #94a3b8;
   /* slate-400 */
+}
+
+/* Disable all backdrop-blur effects as requested */
+* {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }

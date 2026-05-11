@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../../../../utils/api';
+import api, { MEDIA_URL } from '../../../../../utils/api';
 import {
     FileText, Star, CheckCircle, XCircle, Eye, MessageSquare,
     Clock, Filter, X, Send, RotateCcw
@@ -134,7 +134,7 @@ const SubmissionsTab = ({ internshipId }) => {
                                     <div className="flex items-center gap-2">
                                         {sub.attachmentUrl && (
                                             <a
-                                                href={sub.attachmentUrl}
+                                                href={`${MEDIA_URL}${sub.attachmentUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -178,7 +178,7 @@ const SubmissionsTab = ({ internshipId }) => {
 
             {/* Review Modal */}
             {reviewModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/60  z-[60] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
                         <div className={`p-6 flex justify-between items-center ${
                             reviewData.status === 'APPROVED' ? 'bg-gradient-to-r from-emerald-600 to-emerald-500'

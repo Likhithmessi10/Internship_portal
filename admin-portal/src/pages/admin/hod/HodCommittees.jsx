@@ -211,7 +211,7 @@ const CommitteeModal = ({ internship, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50  z-50 flex items-center justify-center p-4">
             <div className="bg-surface-container-lowest rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-outline-variant/10 animate-in fade-in zoom-in duration-200">
                 <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-lowest">
                     <h3 className="font-bold text-primary flex items-center gap-2">

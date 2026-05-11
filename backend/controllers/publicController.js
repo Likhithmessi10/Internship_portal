@@ -248,11 +248,27 @@ const trackStatus = async (req, res, next) => {
  */
 const getPublicInternships = async (req, res, next) => {
     try {
-        const internships = await prisma.internship.findMany({
+        const batches = await prisma.internshipBatch.findMany({
             where: { isActive: true },
+            include: {
+                internships: {
+                    where: { 
+                        isActive: true,
+                        OR: [
+                            { applicationDeadline: null },
+                            { applicationDeadline: { gte: new Date() } }
+                        ]
+                    },
+                    orderBy: { createdAt: 'desc' }
+                }
+            },
             orderBy: { createdAt: 'desc' }
         });
-        res.status(200).json({ success: true, data: internships });
+
+        // Filter out batches with no active internships
+        const activeBatches = batches.filter(b => b.internships.length > 0);
+
+        res.status(200).json({ success: true, data: activeBatches });
     } catch (error) {
         next(error);
     }
@@ -326,10 +342,78 @@ const verifyOtp = async (req, res, next) => {
     }
 };
 
+/**
+ * @desc    Search AISHE colleges
+ * @route   GET /api/v1/public/colleges
+ * @access  Public
+ */
+const searchColleges = async (req, res, next) => {
+    try {
+        const { search, state, type } = req.query;
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 50);
+
+        if (!search || search.length < 3) {
+            return res.status(400).json({ success: false, message: 'Search query must be at least 3 characters.' });
+        }
+
+        const whereClause = {
+            is_active: true,
+            OR: [
+                { college_name: { contains: search, mode: 'insensitive' } },
+                { university_name: { contains: search, mode: 'insensitive' } }
+            ]
+        };
+
+        if (state) whereClause.state_name = state;
+        if (type) whereClause.college_type = type;
+
+        const colleges = await prisma.aishe_colleges.findMany({
+            where: whereClause,
+            take: limit,
+            orderBy: [
+                { nirf_rank: 'asc' },
+                { college_name: 'asc' }
+            ]
+        });
+
+        res.status(200).json({
+            success: true,
+            count: colleges.length,
+            data: colleges
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * @desc    Get single college by AISHE code
+ * @route   GET /api/v1/public/colleges/:code
+ * @access  Public
+ */
+const getCollegeByCode = async (req, res, next) => {
+    try {
+        const { code } = req.params;
+        const college = await prisma.aishe_colleges.findUnique({
+            where: { aishe_code: code.toUpperCase() }
+        });
+
+        if (!college || !college.is_active) {
+            return res.status(404).json({ success: false, message: 'College not found.' });
+        }
+
+        res.status(200).json({ success: true, data: college });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     submitApplication,
     trackStatus,
     getPublicInternships,
     generateOtp,
-    verifyOtp
+    verifyOtp,
+    searchColleges,
+    getCollegeByCode
 };

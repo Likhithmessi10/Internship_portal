@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../../utils/api';
 import { CheckCircle, XCircle, Calendar, Clock, X, Send } from 'lucide-react';
 
@@ -17,7 +18,7 @@ const AttendanceModal = ({ application, onClose }) => {
 
     const fetchAttendance = async () => {
         try {
-            const res = await api.get(`/admin/attendance?applicationId=${application.id}`);
+            const res = await api.get(`/mentor/attendance?applicationId=${application.id}`);
             setAttendanceData(res.data.data);
         } catch (err) {
             console.error('Failed to fetch attendance', err);
@@ -34,7 +35,7 @@ const AttendanceModal = ({ application, onClose }) => {
                 present,
                 hours
             });
-            const res = await api.post('/admin/attendance/mark', {
+            const res = await api.post('/mentor/attendance/mark', {
                 applicationId: application.id,
                 date: selectedDate,
                 present,
@@ -57,9 +58,10 @@ const AttendanceModal = ({ application, onClose }) => {
         ? Math.round((attendanceData.daysAttended / attendanceData.totalDays) * 100)
         : 0;
 
-    return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300 border border-slate-200 dark:border-slate-800">
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
                 <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-gradient-to-r from-emerald-600 to-emerald-600/80 text-white">
                     <div>
                         <h3 className="text-xl font-bold flex items-center gap-2">
@@ -74,7 +76,7 @@ const AttendanceModal = ({ application, onClose }) => {
                     </button>
                 </div>
 
-                <div className="p-8 space-y-6">
+                <div className="flex-1 p-10 overflow-y-auto space-y-10">
                     {/* Attendance Summary */}
                     {attendanceData && (
                         <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-6">
@@ -185,7 +187,8 @@ const AttendanceModal = ({ application, onClose }) => {
                     </form>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

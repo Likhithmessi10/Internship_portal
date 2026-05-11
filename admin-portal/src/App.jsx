@@ -13,6 +13,7 @@ import AdminApplicationReview from './pages/admin/AdminApplicationReview';
 import AdminRejected from './pages/admin/AdminRejected';
 import AdminRegister from './pages/admin/AdminRegister';
 import AdminPastInternships from './pages/admin/AdminPastInternships';
+import CandidateSearch from './pages/admin/CandidateSearch';
 
 import PrtiDashboard from './pages/admin/prti/PrtiDashboard';
 import PrtiInterns from './pages/admin/prti/PrtiInterns';
@@ -23,6 +24,7 @@ import PrtiHealth from './pages/admin/prti/PrtiHealth';
 import PrtiAuditLogs from './pages/admin/prti/PrtiAuditLogs';
 import PRTICommitteeDashboard from './pages/admin/prti/PRTICommitteeDashboard';
 import PRTICommitteeManagement from './pages/admin/prti/PRTICommitteeManagement';
+import PrtiBatches from './pages/admin/prti/PrtiBatches';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
@@ -59,6 +61,7 @@ function App() {
         <Routes>
           {/* Public Admin Routes (Role-Specific) */}
           <Route path="/" element={<AdminLanding />} />
+          <Route path="/login" element={<AdminLogin />} />
           <Route path="/prti/login" element={<AdminLogin forcedRole="CE_PRTI" />} />
           <Route path="/prti/register" element={<AdminRegister forcedRole="CE_PRTI" />} />
           <Route path="/hod/login" element={<AdminLogin forcedRole="HOD" />} />
@@ -107,6 +110,11 @@ function App() {
           <Route path="/prti/audit-logs" element={
             <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
               <AdminLayout><PrtiAuditLogs /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/batches" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiBatches /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/prti/committee" element={
@@ -192,6 +200,11 @@ function App() {
           <Route path="/internships/past" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminLayout><AdminPastInternships /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/search" element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI', 'HOD']}>
+              <AdminLayout><CandidateSearch /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/profile" element={

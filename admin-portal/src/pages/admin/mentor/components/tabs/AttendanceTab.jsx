@@ -195,7 +195,7 @@ const AttendanceTab = ({ internshipId }) => {
             </div>
 
             {/* Submit Button */}
-            <div className="sticky bottom-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 p-4 -mx-6 -mb-6 mt-6 rounded-b-2xl">
+            <div className="sticky bottom-0 bg-white/90 dark:bg-slate-900/90  border-t border-slate-200 dark:border-slate-800 p-4 -mx-6 -mb-6 mt-6 rounded-b-2xl">
                 <button
                     onClick={handleBulkSubmit}
                     disabled={submitting}

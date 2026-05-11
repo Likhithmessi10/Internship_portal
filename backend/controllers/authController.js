@@ -7,21 +7,21 @@ const { logFailedLogin, logSuccessfulLogin } = require('../utils/auditLogger');
 const prisma = require('../lib/prisma');
 
 // Generate Access Token
-const generateAccessToken = (id, email, role, department) => {
+const generateAccessToken = (id, email, role, department, phone) => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, email, role, department }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, email, role, department, phone }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRY || '2h'
     });
 };
 
 // Generate Refresh Token
-const generateRefreshToken = (id, email, role, department) => {
+const generateRefreshToken = (id, email, role, department, phone) => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, email, role, department }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, email, role, department, phone }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d'
     });
 };
@@ -69,8 +69,8 @@ const register = async (req, res) => {
         });
 
         // Generate tokens
-        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department);
-        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone);
 
         res.status(201).json({
             success: true,
@@ -80,7 +80,8 @@ const register = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                department: user.department
+                department: user.department,
+                phone: user.phone
             }
         });
     } catch (error) {
@@ -131,8 +132,8 @@ const registerAdmin = async (req, res) => {
             }
         });
 
-        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department);
-        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone);
 
         res.status(201).json({
             success: true,
@@ -143,7 +144,8 @@ const registerAdmin = async (req, res) => {
                 email: user.email,
                 name: user.name,
                 role: user.role,
-                department: user.department
+                department: user.department,
+                phone: user.phone
             }
         });
     } catch (error) {
@@ -182,8 +184,8 @@ const login = async (req, res) => {
         }
 
         // Generate tokens
-        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department);
-        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone);
 
         // Log successful login
         await logSuccessfulLogin(email, ipAddress);
@@ -196,7 +198,8 @@ const login = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                department: user.department
+                department: user.department,
+                phone: user.phone
             }
         });
 
@@ -224,7 +227,7 @@ const refreshToken = async (req, res) => {
         // Verify user still exists
         const user = await prisma.user.findUnique({ 
             where: { id: decoded.id },
-            select: { id: true, email: true, role: true, department: true }
+            select: { id: true, email: true, role: true, department: true, phone: true }
         });
         
         if (!user) {
@@ -232,7 +235,7 @@ const refreshToken = async (req, res) => {
         }
 
         // Generate new access token
-        const newAccessToken = generateAccessToken(user.id, user.email, user.role, user.department);
+        const newAccessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
 
         res.status(200).json({
             success: true,
@@ -260,7 +263,7 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
-            select: { id: true, email: true, role: true, department: true, name: true, createdAt: true }
+            select: { id: true, email: true, role: true, department: true, name: true, phone: true, createdAt: true }
         });
 
         res.status(200).json({
@@ -332,6 +335,7 @@ const updateProfile = async (req, res) => {
         const updateData = {};
 
         if (name) updateData.name = name;
+        if (req.body.phone) updateData.phone = req.body.phone;
         
         if (req.file) {
             // Store the relative path to the file
@@ -341,7 +345,7 @@ const updateProfile = async (req, res) => {
         const user = await prisma.user.update({
             where: { id: req.user.id },
             data: updateData,
-            select: { id: true, email: true, role: true, department: true, name: true, photoUrl: true }
+            select: { id: true, email: true, role: true, department: true, name: true, photoUrl: true, phone: true }
         });
 
         res.status(200).json({

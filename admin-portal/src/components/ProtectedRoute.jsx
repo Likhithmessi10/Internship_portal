@@ -17,19 +17,22 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
         // Check if this is a PRTI route
         if (path.includes('/prti/')) {
-            redirectPath = '/login?role=CE_PRTI';
+            redirectPath = '/prti/login';
         }
         // Check if this is a HOD route
         else if (path.includes('/hod/')) {
-            redirectPath = '/login?role=HOD';
+            redirectPath = '/hod/login';
         }
         // Check if this is a Mentor route
         else if (path.includes('/mentor/')) {
-            redirectPath = '/login?role=MENTOR';
+            redirectPath = '/mentor/login';
         }
         // Check if this is an Admin route
         else if (path.includes('/admin/')) {
-            redirectPath = '/login?role=ADMIN';
+            redirectPath = '/super-admin/login';
+        }
+        else {
+            redirectPath = '/login'; // Fallback to general login
         }
 
         // Redirect to login with role parameter, preserving the intended destination

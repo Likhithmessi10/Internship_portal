@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle, Trash2 } from 'lucide-react';
 
 const DeleteConfirmationModal = ({ 
@@ -13,15 +14,15 @@ const DeleteConfirmationModal = ({
 }) => {
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60" onClick={onClose} />
+            <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg m-4 overflow-hidden animate-in fade-in zoom-in duration-300 z-10">
                 {/* Header */}
                 <div className="bg-gradient-to-br from-error to-error/80 p-6 text-white">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/20">
+                            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center  border border-white/20">
                                 <AlertTriangle size={24} />
                             </div>
                             <div>
@@ -82,7 +83,8 @@ const DeleteConfirmationModal = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

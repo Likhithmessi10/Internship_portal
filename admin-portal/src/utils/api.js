@@ -22,4 +22,24 @@ apiClient.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// Response interceptor to handle expired tokens
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Check if this was a login attempt
+            const isLoginRequest = error.config.url.includes('/auth/login') || error.config.url.includes('/auth/admin/register');
+            
+            if (!isLoginRequest) {
+                // For any other 401, the session is likely expired
+                console.warn('Session expired. Logging out...');
+                localStorage.removeItem('token');
+                // Force a full page reload to the landing page to clear all state
+                window.location.href = '/';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default apiClient;

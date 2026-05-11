@@ -140,7 +140,7 @@ const getProfile = async (req, res) => {
                     include: {
                         internship: true,
                         stipend: true,
-                        mentor: { select: { name: true, email: true } },
+                        mentor: { select: { name: true, email: true, phone: true } },
                         attendance: true
                     }
                 }
@@ -204,85 +204,8 @@ const upsertStipend = async (req, res) => {
     }
 };
 
-/**
- * @desc    Apply for a Non-Monetary Fallback Internship
- * @route   POST /api/v1/students/applications/:id/fallback
- * @access  Private (Student)
- */
-const applyFallback = async (req, res) => {
-    try {
-        const applicationId = req.params.id;
-
-        // Verify the original application exists, belongs to the student, is rejected, and was collaborative
-        const originalApp = await prisma.application.findFirst({
-            where: { 
-                id: applicationId, 
-                student: { userId: req.user.id },
-                status: 'REJECTED',
-                internship: { stipendType: 'COLLABORATIVE' }
-            },
-            include: { internship: true }
-        });
-
-        if (!originalApp) {
-            return res.status(400).json({ success: false, message: 'Invalid or ineligible application for fallback' });
-        }
-
-        // Find an active non-collaborative internship in the same department
-        const fallbackInternship = await prisma.internship.findFirst({
-            where: {
-                department: originalApp.internship.department,
-                stipendType: 'NON_COLLABORATIVE',
-                isActive: true
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-
-        if (!fallbackInternship) {
-            return res.status(404).json({ success: false, message: 'No active non-monetary internships available in this department.' });
-        }
-
-        // Check if student already applied for this fallback internship
-        const existingFallback = await prisma.application.findFirst({
-            where: {
-                studentId: originalApp.studentId,
-                internshipId: fallbackInternship.id
-            }
-        });
-
-        if (existingFallback) {
-            return res.status(400).json({ success: false, message: 'You have already applied for the non-monetary internship.' });
-        }
-
-        // Mark the original app to indicate fallback was applied (optional, using category or similar if schema doesn't have a flag)
-        // Since we don't have a fallbackApplied flag, we can store it in questionAnswers or just rely on the existence of the new application.
-        
-        // Create the new application
-        const crypto = require('crypto');
-        const trackingId = 'FLB-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-
-        const newApp = await prisma.application.create({
-            data: {
-                trackingId,
-                studentId: originalApp.studentId,
-                internshipId: fallbackInternship.id,
-                status: 'SUBMITTED',
-                category: 'OTHER', // Flag it if needed
-                shortlistCategory: 'FALLBACK'
-            }
-        });
-
-        res.status(201).json({ success: true, data: newApp, message: 'Fallback application submitted successfully.' });
-
-    } catch (error) {
-        console.error('Fallback application error:', error);
-        res.status(500).json({ success: false, message: 'Server Error' });
-    }
-};
-
 module.exports = {
     upsertProfile,
     getProfile,
-    upsertStipend,
-    applyFallback
+    upsertStipend
 };

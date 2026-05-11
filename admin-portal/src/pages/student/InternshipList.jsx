@@ -49,7 +49,7 @@ const InternshipList = () => {
                 <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-500 opacity-10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
                 
                 <div className="relative z-10 max-w-3xl">
-                    <span className="inline-block py-1 px-3 rounded-full bg-white/10 border border-white/20 text-xs font-bold tracking-widest uppercase mb-4 backdrop-blur-sm shadow-sm">
+                    <span className="inline-block py-1 px-3 rounded-full bg-white/10 border border-white/20 text-xs font-bold tracking-widest uppercase mb-4  shadow-sm">
                         Career Launchpad
                     </span>
                     <h1 className="text-4xl lg:text-5xl font-black font-rajdhani mb-4 leading-tight">
