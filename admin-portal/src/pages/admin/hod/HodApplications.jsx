@@ -14,7 +14,9 @@ const STATUS_COLOR = {
     UNDER_COMMITTEE_REVIEW: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     SELECTED:               'bg-emerald-50 text-emerald-700 border-emerald-200',
     APPROVED:               'bg-emerald-50 text-emerald-700 border-emerald-200',
-    HIRED:                  'bg-emerald-50 text-emerald-700 border-emerald-200',
+    DOCUMENTS_PENDING:      'bg-amber-50 text-amber-700 border-amber-200',
+    DOCUMENTS_VERIFIED:     'bg-teal-50 text-teal-700 border-teal-200',
+    HIRED:                  'bg-emerald-100 text-emerald-800 border-emerald-300',
     REJECTED:               'bg-red-50 text-red-700 border-red-200',
     ONGOING:                'bg-indigo-50 text-indigo-700 border-indigo-200',
     COMPLETED:              'bg-purple-50 text-purple-700 border-purple-200',
@@ -139,6 +141,8 @@ const LearningTab = () => {
                                 searchQ={q}
                                 onAction={handleAction}
                                 onView={setSelected}
+                                department={fieldData.apps[0]?.departmentGroup?.department || fieldData.apps[0]?.internship?.department || ''}
+                                onRefresh={() => fetchApps(true)}
                             />
                         ))}
                     </div>
@@ -164,8 +168,70 @@ const LearningTab = () => {
     );
 };
 
+// ── Inline mentor assignment cell for HIRED learning interns ─────────────────
+const AssignMentorCell = ({ app, department, onAssigned }) => {
+    const [mentors, setMentors]   = useState([]);
+    const [picked, setPicked]     = useState(app.mentorId || '');
+    const [saving, setSaving]     = useState(false);
+    const [open, setOpen]         = useState(false);
+
+    const load = async () => {
+        if (mentors.length) { setOpen(true); return; }
+        try {
+            const res = await api.get(`/admin/users?role=MENTOR&department=${encodeURIComponent(department)}`);
+            setMentors((res.data.data || []).filter(m => m.department === department));
+        } catch { /* silent */ }
+        setOpen(true);
+    };
+
+    const handleSave = async () => {
+        if (!picked) return;
+        setSaving(true);
+        try {
+            await api.put(`/admin/applications/${app.id}/mentor`, { mentorId: picked });
+            onAssigned();
+            setOpen(false);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to assign mentor');
+        } finally { setSaving(false); }
+    };
+
+    const assignedMentorName = app.mentor?.name || mentors.find(m => m.id === picked)?.name;
+
+    if (!open) {
+        return (
+            <button onClick={load}
+                className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border transition-colors ${
+                    app.mentorId
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                }`}>
+                {app.mentorId ? (assignedMentorName || 'Mentor Set ✓') : '+ Assign Mentor'}
+            </button>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-1.5">
+            <select value={picked} onChange={e => setPicked(e.target.value)}
+                className="text-xs font-bold border border-outline-variant/20 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20 max-w-[160px]">
+                <option value="">-- Select Mentor --</option>
+                {mentors.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+            </select>
+            <button onClick={handleSave} disabled={saving || !picked}
+                className="px-2.5 py-1 bg-primary text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-50 hover:bg-primary/90 transition-colors">
+                {saving ? '…' : 'Save'}
+            </button>
+            <button onClick={() => setOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-xs font-bold transition-colors px-1">✕</button>
+        </div>
+    );
+};
+
 // ── Field section inside a Learning Internship ────────────────────────────────
-const FieldSection = ({ fieldData, searchQ, onAction, onView }) => {
+const FieldSection = ({ fieldData, searchQ, onAction, onView, department, onRefresh }) => {
     const [open, setOpen] = useState(true);
     const filtered = fieldData.apps.filter(app => {
         if (!searchQ) return true;
@@ -201,7 +267,7 @@ const FieldSection = ({ fieldData, searchQ, onAction, onView }) => {
                         <table className="w-full text-left min-w-[600px]">
                             <thead>
                                 <tr className="bg-slate-50/50">
-                                    {['Candidate', 'College', 'CGPA', 'Location', 'Status', 'Actions'].map(h => (
+                                    {['Candidate', 'College', 'CGPA', 'Location', 'Status', 'Mentor', 'Actions'].map(h => (
                                         <th key={h} className="px-5 py-2.5 text-[10px] font-black text-outline uppercase tracking-widest border-b border-slate-100">{h}</th>
                                     ))}
                                 </tr>
@@ -229,7 +295,15 @@ const FieldSection = ({ fieldData, searchQ, onAction, onView }) => {
                                             </span>
                                         </td>
                                         <td className="px-5 py-3.5">
+                                            {['HIRED', 'ONGOING', 'COMPLETED', 'DOCUMENTS_VERIFIED'].includes(app.status) ? (
+                                                <AssignMentorCell app={app} department={department} onAssigned={onRefresh} />
+                                            ) : (
+                                                <span className="text-[10px] text-slate-300 font-bold">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-5 py-3.5">
                                             <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {/* HOD actions: up to SELECTED only */}
                                                 {app.status === 'SUBMITTED' && (
                                                     <button onClick={() => onAction(app.id, 'SHORTLISTED')}
                                                         className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors" title="Shortlist">
@@ -237,15 +311,9 @@ const FieldSection = ({ fieldData, searchQ, onAction, onView }) => {
                                                     </button>
                                                 )}
                                                 {['SUBMITTED', 'SHORTLISTED'].includes(app.status) && (
-                                                     <button onClick={() => onAction(app.id, 'SELECTED')}
-                                                         className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-colors" title="Select Directly">
-                                                         <Check size={13} />
-                                                     </button>
-                                                 )}
-                                                {['SUBMITTED', 'SHORTLISTED', 'SELECTED'].includes(app.status) && (
-                                                    <button onClick={() => onAction(app.id, 'HIRED')}
-                                                        className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors" title="Hire Directly">
-                                                        <CheckCircle size={13} />
+                                                    <button onClick={() => onAction(app.id, 'SELECTED')}
+                                                        className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-colors" title="Select (PRTI verifies docs next)">
+                                                        <Check size={13} />
                                                     </button>
                                                 )}
                                                 {['SUBMITTED', 'SHORTLISTED', 'SELECTED'].includes(app.status) && (
@@ -253,6 +321,12 @@ const FieldSection = ({ fieldData, searchQ, onAction, onView }) => {
                                                         className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors" title="Reject">
                                                         <X size={13} />
                                                     </button>
+                                                )}
+                                                {/* Show doc status for post-SELECTED stages */}
+                                                {['DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED', 'HIRED'].includes(app.status) && (
+                                                    <span className="text-[9px] font-black text-indigo-600 uppercase bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                                        PRTI Handling
+                                                    </span>
                                                 )}
                                                 <button onClick={() => onView(app)}
                                                     className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-colors flex items-center gap-1">

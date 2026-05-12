@@ -24,12 +24,14 @@ enum ApplicationStatus {
   SUBMITTED
   SHORTLISTED
   UNDER_COMMITTEE_REVIEW
-  SELECTED        // HOD final selection (was APPROVED)
-  APPROVED        // Legacy — kept for backward compatibility
-  REPORTED        // Student physically reported to PRTI; roll number generated here
+  SELECTED            // HOD final selection (was APPROVED)
+  APPROVED            // Legacy — kept for backward compatibility
+  REPORTED            // Student physically reported to PRTI; roll number generated here (MONETARY)
   REJECTED
   WAITLISTED
-  HIRED           // All joining formalities complete
+  DOCUMENTS_PENDING   // NON_STIPEND: docs upload unlocked after SELECTED
+  DOCUMENTS_VERIFIED  // NON_STIPEND: PRTI verified all docs
+  HIRED               // All joining formalities complete; roll number generated for NON_STIPEND
   ONGOING
   COMPLETED
 }
@@ -118,6 +120,39 @@ model StudentProfile {
 
   @@index([userId])
   @@index([collegeName])
+}
+
+// ── Master configuration for NON_STIPEND (Learning) internships ──────────────
+
+model DepartmentMaster {
+  id         String        @id @default(uuid())
+  name       String        @unique  // e.g., "SLDC"
+  code       String        @unique  // short code, e.g., "SLDC"
+  deptNumber Int           @unique  // sequential, immutable — used in roll number
+  isActive   Boolean       @default(true)
+  createdBy  String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  fields     FieldMaster[]
+}
+
+// Append-only: fieldNumber is immutable once assigned — roll number stability depends on it
+model FieldMaster {
+  id          String           @id @default(uuid())
+  departmentId String
+  fieldCode   String           @unique  // e.g., "SLDC-SCADA-001", immutable
+  fieldName   String
+  fieldNumber Int              // sequential within dept, IMMUTABLE — used in roll number
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  department       DepartmentMaster @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  internshipFields InternshipField[]
+
+  @@unique([departmentId, fieldNumber])
+  @@index([departmentId])
 }
 
 model InternshipBatch {
@@ -289,6 +324,7 @@ model InternshipField {
   id                String   @id @default(uuid())
   internshipId      String?
   departmentGroupId String?
+  fieldMasterId     String?  // links to FieldMaster for NON_STIPEND — stable reference
   fieldName         String
   description       String?
   vacancies         Int      @default(0)
@@ -298,6 +334,7 @@ model InternshipField {
 
   internship      Internship?                @relation(fields: [internshipId], references: [id], onDelete: Cascade)
   departmentGroup InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
+  fieldMaster     FieldMaster?               @relation(fields: [fieldMasterId], references: [id], onDelete: SetNull)
   applications    Application[]
 }
 

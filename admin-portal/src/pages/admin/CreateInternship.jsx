@@ -92,8 +92,32 @@ const CreateInternshipForm = () => {
         shortlistingRatio: 2     // 1:N — for every 1 opening, shortlist N candidates per tier
     });
 
-    const isGroup = formData.internshipMode === 'GROUP';
+    const [standalone, setStandalone] = useState(false); // true = no master program
+
+    const isGroup    = formData.internshipMode === 'GROUP';
     const totalSteps = isGroup ? 3 : 5;
+    const isLearning = formData.internshipType === 'NON_STIPEND';
+
+    // ─── FieldMaster for NON_STIPEND ──────────────────────────────────────────
+    const [masterFields, setMasterFields] = useState([]);
+    const [pickedFieldId, setPickedFieldId] = useState('');
+
+    React.useEffect(() => {
+        if (!isLearning || !formData.department) { setMasterFields([]); return; }
+        // Find matching DepartmentMaster by name
+        api.get('/admin/dept-master').then(res => {
+            const allDepts = res.data.data || [];
+            const match = allDepts.find(d =>
+                d.name.toUpperCase() === formData.department.toUpperCase() ||
+                d.code.toUpperCase() === formData.department.toUpperCase()
+            );
+            if (match) {
+                setMasterFields(match.fields?.filter(f => f.isActive) || []);
+            } else {
+                setMasterFields([]);
+            }
+        }).catch(() => setMasterFields([]));
+    }, [isLearning, formData.department]);
 
     // ─── Sub-states (SINGLE mode) ─────────────────────────────────────────────
     const [fieldInput, setFieldInput] = useState({ fieldName: '', description: '', vacancies: '', locations: [] });
@@ -113,7 +137,10 @@ const CreateInternshipForm = () => {
     const [docTypeInput, setDocTypeInput] = useState('PDF');
     const [docMandatoryInput, setDocMandatoryInput] = useState(true);
 
-    const totalOpenings = roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0;
+    const fieldsTotalOpenings = formData.fields.reduce((sum, f) => sum + (parseInt(f.vacancies) || 0), 0);
+    const totalOpenings = isLearning
+        ? fieldsTotalOpenings
+        : (roles.reduce((sum, r) => sum + r.openings, 0) || parseInt(formData.manualOpenings) || 0);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -165,7 +192,7 @@ const CreateInternshipForm = () => {
         const errors = [];
 
         if (step === 1) {
-            if (!formData.batchId) errors.push('batchId');
+            if (!standalone && !formData.batchId) errors.push('batchId');
             if (!formData.title) errors.push('title');
             if (!formData.duration) errors.push('duration');
             if (!formData.description) errors.push('description');
@@ -176,7 +203,7 @@ const CreateInternshipForm = () => {
         if (isGroup) {
             if (step === 2 && formData.participatingDepts.length === 0) errors.push('participatingDepts');
         } else {
-            if (step === 2 && !formData.manualOpenings) errors.push('manualOpenings');
+            if (step === 2 && !isLearning && !formData.manualOpenings) errors.push('manualOpenings');
             if (step === 3) {
                 if (formData.internshipType !== 'NON_STIPEND' && roles.length === 0) errors.push('roles');
                 if (formData.internshipType === 'NON_STIPEND' && formData.fields.length === 0) errors.push('fields');
@@ -202,7 +229,7 @@ const CreateInternshipForm = () => {
         setError('');
         try {
             const payload = {
-                batchId: formData.batchId,
+                ...(standalone ? {} : { batchId: formData.batchId }),
                 title: formData.title,
                 description: formData.description,
                 duration: formData.duration,
@@ -242,8 +269,10 @@ const CreateInternshipForm = () => {
         e.preventDefault();
         setLoading(true);
         try {
+            const { batchId: _bid, ...restFormData } = formData;
             const payload = {
-                ...formData,
+                ...restFormData,
+                ...(standalone ? {} : { batchId: formData.batchId }),
                 openingsCount: totalOpenings,
                 roles: roles.map(r => r.name).join(', '),
                 rolesData: roles,
@@ -253,7 +282,15 @@ const CreateInternshipForm = () => {
                 requirements: formData.requirementTags.join(', '),
                 preferredColleges: formData.preferredColleges,
                 internshipType: formData.internshipType,
-                fields: formData.internshipType === 'NON_STIPEND' ? formData.fields : []
+                fields: formData.internshipType === 'NON_STIPEND'
+                    ? formData.fields.map(f => ({
+                        fieldName: f.fieldName,
+                        description: f.description || null,
+                        vacancies: f.vacancies,
+                        locations: f.locations,
+                        fieldMasterId: f.fieldMasterId || null
+                      }))
+                    : []
             };
 
             await api.post('/admin/internships', payload);
@@ -334,36 +371,7 @@ const CreateInternshipForm = () => {
                             </p>
                         </div>
 
-                        {/* ── Row 1: Batch + Title ── */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <InputField label="Master Program (Batch)" required tooltip="Select the master program this internship belongs to." error={validationErrors.includes('batchId')}>
-                                <Select
-                                    value={formData.batchId}
-                                    onChange={v => { setFormData({ ...formData, batchId: v }); setValidationErrors(prev => prev.filter(e => e !== 'batchId')); }}
-                                    options={[
-                                        { value: '', label: '-- Select Master Program --' },
-                                        ...batches.map(b => ({ value: b.id, label: b.title }))
-                                    ]}
-                                    size="lg"
-                                    disabled={loadingBatches}
-                                />
-                            </InputField>
-
-                            <InputField label="Internship Posting Title" required
-                                hint={isGroup ? 'e.g. Summer Internship 2026' : 'e.g. Graduate Engineer Trainee (Electrical)'}
-                                error={validationErrors.includes('title')}>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    value={formData.title}
-                                    onChange={handleChange}
-                                    placeholder={isGroup ? 'e.g. Summer Internship 2026' : 'Enter specific title for this posting...'}
-                                    className={`admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 ${validationErrors.includes('title') ? 'border-error/50' : ''}`}
-                                />
-                            </InputField>
-                        </div>
-
-                        {/* ── Row 2: Operational Mode — prominent card toggle ── */}
+                        {/* ── Row 1: Operational Mode — at top ── */}
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-3">
                                 Operational Mode <span className="text-error">*</span>
@@ -439,6 +447,70 @@ const CreateInternshipForm = () => {
                                     </div>
                                 </button>
                             </div>
+                        </div>
+
+                        {/* ── Row 2: Master Program linkage — inline toggle pill ── */}
+                        <div className="flex items-center justify-between p-4 bg-surface-container rounded-xl border border-outline-variant/15">
+                            <div className="flex items-center gap-3">
+                                <span className={`material-symbols-outlined text-xl ${standalone ? 'text-amber-500' : 'text-primary'}`}>
+                                    {standalone ? 'flash_on' : 'folder_managed'}
+                                </span>
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-wider text-on-surface">
+                                        {standalone ? 'Independent Internship' : 'Under Master Program'}
+                                    </p>
+                                    <p className="text-[10px] text-outline font-medium">
+                                        {standalone
+                                            ? 'Not linked to any batch — standalone ad-hoc posting'
+                                            : 'Will be grouped under an existing master programme / batch'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setStandalone(prev => !prev);
+                                    if (!standalone) setFormData(p => ({ ...p, batchId: '' }));
+                                    setValidationErrors([]);
+                                    setError('');
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none flex-shrink-0
+                                    ${standalone ? 'bg-amber-500' : 'bg-primary'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform
+                                    ${standalone ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+
+                        {/* ── Row 3: Title + optional Batch ── */}
+                        <div className={`grid grid-cols-1 gap-8 ${!standalone ? 'md:grid-cols-2' : ''}`}>
+                            {!standalone && (
+                                <InputField label="Master Program (Batch)" required tooltip="Select the master program this internship belongs to." error={validationErrors.includes('batchId')}>
+                                    <Select
+                                        value={formData.batchId}
+                                        onChange={v => { setFormData({ ...formData, batchId: v }); setValidationErrors(prev => prev.filter(e => e !== 'batchId')); }}
+                                        options={[
+                                            { value: '', label: '-- Select Master Program --' },
+                                            ...batches.map(b => ({ value: b.id, label: b.title }))
+                                        ]}
+                                        size="lg"
+                                        disabled={loadingBatches}
+                                    />
+                                </InputField>
+                            )}
+
+                            <InputField label="Internship Posting Title" required
+                                hint={isGroup ? 'e.g. Summer Internship 2026' : 'e.g. Graduate Engineer Trainee (Electrical)'}
+                                error={validationErrors.includes('title')}>
+                                <input
+                                    type="text"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    placeholder={isGroup ? 'e.g. Summer Internship 2026' : 'Enter specific title for this posting...'}
+                                    className={`admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 ${validationErrors.includes('title') ? 'border-error/50' : ''}`}
+                                />
+                            </InputField>
                         </div>
 
                         {/* ── Row 3: Mode-specific fields — animated in ── */}
@@ -808,67 +880,82 @@ const CreateInternshipForm = () => {
                             <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Define vacancy volume and custom application questions.</p>
                         </div>
 
-                        <div className="p-8 bg-white border border-outline-variant/10 rounded-xl">
-                            <InputField label="Total Available Seats" required hint="Total number of students you can accommodate" error={validationErrors.includes('manualOpenings')}>
-                                <div className="flex items-center gap-6">
-                                    <input type="number" name="manualOpenings" value={formData.manualOpenings} onChange={handleChange}
-                                        placeholder="000"
-                                        className={`admin-input text-3xl font-black text-primary w-40 border-outline-variant/20 focus:border-primary/30 ${validationErrors.includes('manualOpenings') ? 'border-error/50' : ''}`} />
-                                    <div className="flex-1 p-4 bg-primary/5 rounded-lg border border-primary/10 text-[10px] font-bold text-primary/70 leading-relaxed uppercase tracking-wide">
-                                        <div className="flex items-center gap-2 mb-1 text-primary">
-                                            <span className="material-symbols-outlined text-sm">lightbulb</span>
-                                            <span>Manual Selection</span>
-                                        </div>
-                                        Define capacity for planning purposes.
-                                    </div>
-                                </div>
-                            </InputField>
-                        </div>
-
-                        <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
-                            <div className="flex items-center gap-3 mb-6">
-                                <span className="material-symbols-outlined text-primary">pie_chart</span>
+                        {isLearning ? (
+                            <div className="p-6 bg-emerald-50 border border-emerald-200/60 rounded-xl flex items-start gap-4">
+                                <span className="material-symbols-outlined text-emerald-600 text-xl mt-0.5">calculate</span>
                                 <div>
-                                    <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Seat Distribution Tracker</h3>
-                                    <p className="text-[10px] text-outline/70 font-bold uppercase mt-1 tracking-widest">Must equal 100%.</p>
+                                    <p className="text-sm font-black text-emerald-800 uppercase tracking-wide mb-1">Seats Auto-Calculated from Fields</p>
+                                    <p className="text-[11px] text-emerald-700 font-medium leading-relaxed">
+                                        For Learning Internships, total seats are the sum of vacancies across all fields you define in the next step.
+                                        No manual seat count is needed here.
+                                    </p>
                                 </div>
                             </div>
-                            <div className="space-y-6 mb-8">
-                                <InputField label={`Preferred Colleges: ${formData.quotaPercentages.preferred}%`} hint={`${Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.preferred / 100))} seats`}>
-                                    <input type="range" min="0" max="100" value={formData.quotaPercentages.preferred}
-                                        onChange={e => { const pref = parseInt(e.target.value) || 0; let prem = formData.quotaPercentages.premier; if (pref + prem > 100) prem = 100 - pref; setFormData(prev => ({ ...prev, quotaPercentages: { preferred: pref, premier: prem, normal: 100 - pref - prem } })); }}
-                                        className="w-full h-2 bg-amber-100 rounded-lg appearance-none cursor-pointer accent-amber-500" />
-                                </InputField>
-                                <InputField label={`Premier (IIT/NIT): ${formData.quotaPercentages.premier}%`} hint={`${Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.premier / 100))} seats`}>
-                                    <input type="range" min="0" max={100 - formData.quotaPercentages.preferred} value={formData.quotaPercentages.premier}
-                                        onChange={e => { const prem = parseInt(e.target.value) || 0; setFormData(prev => ({ ...prev, quotaPercentages: { ...prev.quotaPercentages, premier: prem, normal: 100 - prev.quotaPercentages.preferred - prem } })); }}
-                                        className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
-                                </InputField>
-                                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-1">Remaining Colleges</p>
-                                        <p className="text-xs font-medium text-emerald-600">{Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.normal / 100))} seats allocated</p>
-                                    </div>
-                                    <span className="text-2xl font-black text-emerald-600">{formData.quotaPercentages.normal}%</span>
+                        ) : (
+                            <>
+                                <div className="p-8 bg-white border border-outline-variant/10 rounded-xl">
+                                    <InputField label="Total Available Seats" required hint="Total number of students you can accommodate" error={validationErrors.includes('manualOpenings')}>
+                                        <div className="flex items-center gap-6">
+                                            <input type="number" name="manualOpenings" value={formData.manualOpenings} onChange={handleChange}
+                                                placeholder="000"
+                                                className={`admin-input text-3xl font-black text-primary w-40 border-outline-variant/20 focus:border-primary/30 ${validationErrors.includes('manualOpenings') ? 'border-error/50' : ''}`} />
+                                            <div className="flex-1 p-4 bg-primary/5 rounded-lg border border-primary/10 text-[10px] font-bold text-primary/70 leading-relaxed uppercase tracking-wide">
+                                                <div className="flex items-center gap-2 mb-1 text-primary">
+                                                    <span className="material-symbols-outlined text-sm">lightbulb</span>
+                                                    <span>Manual Selection</span>
+                                                </div>
+                                                Define capacity for planning purposes.
+                                            </div>
+                                        </div>
+                                    </InputField>
                                 </div>
-                            </div>
-                            {(() => {
-                                const total = formData.quotaPercentages.preferred + formData.quotaPercentages.premier + formData.quotaPercentages.normal;
-                                return (
-                                    <div>
-                                        <div className="flex justify-between items-end mb-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-outline">Distribution Overview</span>
-                                            <span className="text-xs font-black text-emerald-600">{total}% Allocated</span>
-                                        </div>
-                                        <div className="w-full h-3 rounded-full flex overflow-hidden bg-surface-container-high border border-outline-variant/10">
-                                            <div className="bg-amber-400 h-full transition-all" style={{ width: `${formData.quotaPercentages.preferred}%` }} />
-                                            <div className="bg-indigo-500 h-full transition-all" style={{ width: `${formData.quotaPercentages.premier}%` }} />
-                                            <div className="bg-emerald-500 h-full transition-all" style={{ width: `${formData.quotaPercentages.normal}%` }} />
+
+                                <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <span className="material-symbols-outlined text-primary">pie_chart</span>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Seat Distribution Tracker</h3>
+                                            <p className="text-[10px] text-outline/70 font-bold uppercase mt-1 tracking-widest">Must equal 100%.</p>
                                         </div>
                                     </div>
-                                );
-                            })()}
-                        </div>
+                                    <div className="space-y-6 mb-8">
+                                        <InputField label={`Preferred Colleges: ${formData.quotaPercentages.preferred}%`} hint={`${Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.preferred / 100))} seats`}>
+                                            <input type="range" min="0" max="100" value={formData.quotaPercentages.preferred}
+                                                onChange={e => { const pref = parseInt(e.target.value) || 0; let prem = formData.quotaPercentages.premier; if (pref + prem > 100) prem = 100 - pref; setFormData(prev => ({ ...prev, quotaPercentages: { preferred: pref, premier: prem, normal: 100 - pref - prem } })); }}
+                                                className="w-full h-2 bg-amber-100 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+                                        </InputField>
+                                        <InputField label={`Premier (IIT/NIT): ${formData.quotaPercentages.premier}%`} hint={`${Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.premier / 100))} seats`}>
+                                            <input type="range" min="0" max={100 - formData.quotaPercentages.preferred} value={formData.quotaPercentages.premier}
+                                                onChange={e => { const prem = parseInt(e.target.value) || 0; setFormData(prev => ({ ...prev, quotaPercentages: { ...prev.quotaPercentages, premier: prem, normal: 100 - prev.quotaPercentages.preferred - prem } })); }}
+                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                                        </InputField>
+                                        <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-1">Remaining Colleges</p>
+                                                <p className="text-xs font-medium text-emerald-600">{Math.floor((formData.manualOpenings || 0) * (formData.quotaPercentages.normal / 100))} seats allocated</p>
+                                            </div>
+                                            <span className="text-2xl font-black text-emerald-600">{formData.quotaPercentages.normal}%</span>
+                                        </div>
+                                    </div>
+                                    {(() => {
+                                        const total = formData.quotaPercentages.preferred + formData.quotaPercentages.premier + formData.quotaPercentages.normal;
+                                        return (
+                                            <div>
+                                                <div className="flex justify-between items-end mb-2">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-outline">Distribution Overview</span>
+                                                    <span className="text-xs font-black text-emerald-600">{total}% Allocated</span>
+                                                </div>
+                                                <div className="w-full h-3 rounded-full flex overflow-hidden bg-surface-container-high border border-outline-variant/10">
+                                                    <div className="bg-amber-400 h-full transition-all" style={{ width: `${formData.quotaPercentages.preferred}%` }} />
+                                                    <div className="bg-indigo-500 h-full transition-all" style={{ width: `${formData.quotaPercentages.premier}%` }} />
+                                                    <div className="bg-emerald-500 h-full transition-all" style={{ width: `${formData.quotaPercentages.normal}%` }} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            </>
+                        )}
 
                         <div className="mt-8 p-8 bg-surface-container rounded-xl border border-outline-variant/10">
                             <div className="flex items-center gap-3 mb-6">
@@ -980,72 +1067,116 @@ const CreateInternshipForm = () => {
                         ) : (
                             <>
                                 <div>
-                                    <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 3: <span className="text-primary/60 font-medium">Available Fields</span></h2>
-                                    <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">Define technical fields and locations for Non-Stipend internship.</p>
+                                    <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">Step 3: <span className="text-primary/60 font-medium">Learning Fields</span></h2>
+                                    <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">
+                                        {masterFields.length > 0 ? 'Select configured fields from the Department Master.' : 'Define technical fields and locations for this Learning Internship.'}
+                                    </p>
                                 </div>
-                                <div className={`p-8 bg-white border rounded-xl space-y-6 ${validationErrors.includes('fields') ? 'border-error/50 bg-error/5 shadow-lg shadow-error/5 animate-shake' : 'border-outline-variant/10 shadow-sm'}`}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                <div className={`p-6 bg-white border rounded-xl space-y-5 ${validationErrors.includes('fields') ? 'border-error/50' : 'border-outline-variant/10 shadow-sm'}`}>
+                                    {/* FieldMaster picker (if configured) */}
+                                    {masterFields.length > 0 ? (
+                                        <div className="space-y-4">
+                                            <InputField label="Select Field from Master" hint={`${masterFields.length} field(s) configured for ${formData.department}`}>
+                                                <select
+                                                    value={pickedFieldId}
+                                                    onChange={e => {
+                                                        const f = masterFields.find(m => m.id === e.target.value);
+                                                        setPickedFieldId(e.target.value);
+                                                        if (f) setFieldInput(prev => ({ ...prev, fieldName: f.fieldName, description: '', fieldMasterId: f.id, fieldCode: f.fieldCode }));
+                                                    }}
+                                                    className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 w-full"
+                                                >
+                                                    <option value="">-- Select a field --</option>
+                                                    {masterFields.map(f => (
+                                                        <option key={f.id} value={f.id}>
+                                                            {f.fieldCode} — {f.fieldName}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </InputField>
+                                        </div>
+                                    ) : (
+                                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs font-bold text-amber-700">
+                                            No FieldMaster configured for "{formData.department}". Go to <strong>Dept &amp; Fields</strong> to set them up, or enter manually below.
+                                        </div>
+                                    )}
+
+                                    {/* Manual or pre-filled field name */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <InputField label="Field Name">
-                                            <input type="text" value={fieldInput.fieldName} onChange={e => setFieldInput({ ...fieldInput, fieldName: e.target.value })}
-                                                placeholder="e.g. Transmission Operations" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                            <input type="text" value={fieldInput.fieldName}
+                                                onChange={e => setFieldInput({ ...fieldInput, fieldName: e.target.value })}
+                                                placeholder="e.g. Grid Operations"
+                                                readOnly={!!pickedFieldId && masterFields.length > 0}
+                                                className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
                                         </InputField>
-                                        <InputField label="Vacancies">
-                                            <input type="number" min="1" value={fieldInput.vacancies} onChange={e => setFieldInput({ ...fieldInput, vacancies: e.target.value })}
+                                        <InputField label="Total Vacancies">
+                                            <input type="number" min="1" value={fieldInput.vacancies}
+                                                onChange={e => setFieldInput({ ...fieldInput, vacancies: e.target.value })}
                                                 className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
                                         </InputField>
                                     </div>
-                                    <InputField label="Field Description">
-                                        <textarea value={fieldInput.description} onChange={e => setFieldInput({ ...fieldInput, description: e.target.value })}
-                                            rows="2" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
-                                    </InputField>
-                                    <div className="space-y-4">
+
+                                    <div className="space-y-3">
                                         <InputField label="Available Locations">
-                                            <div className="flex gap-4">
+                                            <div className="flex gap-3">
                                                 <input type="text" value={locationInput} onChange={e => setLocationInput(e.target.value)}
-                                                    placeholder="e.g. Vijayawada" className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30" />
+                                                    placeholder="e.g. Vijayawada"
+                                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), locationInput.trim() && (setFieldInput({ ...fieldInput, locations: [...fieldInput.locations, locationInput.trim()] }), setLocationInput('')))}
+                                                    className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 flex-1" />
                                                 <button type="button" onClick={() => { if (locationInput.trim()) { setFieldInput({ ...fieldInput, locations: [...fieldInput.locations, locationInput.trim()] }); setLocationInput(''); } }}
-                                                    className="h-[46px] px-6 bg-primary/10 text-primary rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-primary/20 transition-all">Add Location</button>
+                                                    className="px-5 bg-primary/10 text-primary rounded-lg font-bold text-[10px] uppercase hover:bg-primary/20 transition-all">Add</button>
                                             </div>
                                         </InputField>
                                         <div className="flex flex-wrap gap-2">
                                             {fieldInput.locations.map((loc, i) => (
-                                                <span key={i} className="px-3 py-1 bg-surface-variant text-outline rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                                                    {loc} <button onClick={() => setFieldInput({ ...fieldInput, locations: fieldInput.locations.filter((_, idx) => idx !== i) })} className="text-error">×</button>
+                                                <span key={i} className="px-3 py-1 bg-primary/5 text-primary rounded-lg text-[10px] font-bold uppercase border border-primary/10 flex items-center gap-1.5">
+                                                    {loc} <button type="button" onClick={() => setFieldInput({ ...fieldInput, locations: fieldInput.locations.filter((_, idx) => idx !== i) })} className="text-error/60 hover:text-error">×</button>
                                                 </span>
                                             ))}
                                         </div>
                                     </div>
+
                                     <button type="button" onClick={() => {
-                                        if (fieldInput.fieldName && fieldInput.vacancies && fieldInput.locations.length > 0) {
-                                            setFormData({ ...formData, fields: [...formData.fields, fieldInput] });
-                                            setFieldInput({ fieldName: '', description: '', vacancies: '', locations: [] });
-                                        } else {
-                                            alert('Please fill all field details and add at least one location');
+                                        if (!fieldInput.fieldName || !fieldInput.vacancies || fieldInput.locations.length === 0) {
+                                            alert('Please fill field name, vacancies, and add at least one location.');
+                                            return;
                                         }
-                                    }} className="w-full py-4 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-md">
+                                        setFormData({ ...formData, fields: [...formData.fields, { ...fieldInput }] });
+                                        setFieldInput({ fieldName: '', description: '', vacancies: '', locations: [] });
+                                        setPickedFieldId('');
+                                    }} className="w-full py-3.5 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/90 transition-all">
                                         <span className="material-symbols-outlined text-sm">add</span> Add Field to Internship
                                     </button>
                                 </div>
+
+                                {/* Added fields list */}
                                 <div className="space-y-3">
                                     {formData.fields.length === 0 ? (
-                                        <div className="p-12 border border-dashed border-outline-variant/30 rounded-xl text-center bg-surface-container-high/20">
-                                            <span className="material-symbols-outlined text-outline/30 text-4xl mb-2">account_tree</span>
-                                            <p className="text-outline/50 font-bold uppercase text-[10px] tracking-widest leading-loose">No fields defined. Define at least one technical field to proceed.</p>
+                                        <div className="p-10 border border-dashed border-outline-variant/30 rounded-xl text-center bg-surface-container-high/20">
+                                            <span className="material-symbols-outlined text-outline/30 text-4xl mb-2">schema</span>
+                                            <p className="text-outline/50 font-bold uppercase text-[10px] tracking-widest">Add at least one field to proceed.</p>
                                         </div>
                                     ) : formData.fields.map((f, i) => (
-                                        <div key={i} className="p-5 bg-white border border-outline-variant/10 rounded-xl shadow-sm group relative">
-                                            <div className="flex justify-between items-start mb-4">
+                                        <div key={i} className="p-5 bg-white border border-outline-variant/10 rounded-xl shadow-sm">
+                                            <div className="flex justify-between items-start mb-3">
                                                 <div>
-                                                    <h3 className="font-bold text-primary text-lg tracking-tight uppercase">{f.fieldName}</h3>
-                                                    <p className="text-[10px] text-outline/60 font-bold uppercase tracking-widest mt-1">{f.vacancies} Vacancies available</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="font-bold text-primary text-base tracking-tight uppercase">{f.fieldName}</h3>
+                                                        {f.fieldCode && (
+                                                            <span className="text-[9px] font-mono text-outline/50 bg-primary/5 border border-primary/10 px-1.5 py-0.5 rounded">{f.fieldCode}</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-outline/60 font-bold uppercase tracking-widest mt-0.5">{f.vacancies} Vacancies</p>
                                                 </div>
-                                                <button onClick={() => setFormData({ ...formData, fields: formData.fields.filter((_, idx) => idx !== i) })} className="text-error hover:bg-error/10 p-2 rounded-lg transition-colors">
-                                                    <span className="material-symbols-outlined">delete</span>
+                                                <button onClick={() => setFormData({ ...formData, fields: formData.fields.filter((_, idx) => idx !== i) })} className="text-error/50 hover:text-error p-1.5 rounded-lg hover:bg-error/5 transition-colors">
+                                                    <span className="material-symbols-outlined text-lg">delete</span>
                                                 </button>
                                             </div>
-                                            <div className="flex flex-wrap gap-2">
+                                            <div className="flex flex-wrap gap-1.5">
                                                 {f.locations.map((loc, li) => (
-                                                    <span key={li} className="px-2 py-1 bg-primary/5 text-primary rounded-md text-[9px] font-bold uppercase tracking-wider border border-primary/10">{loc}</span>
+                                                    <span key={li} className="px-2 py-0.5 bg-primary/5 text-primary rounded text-[9px] font-bold uppercase border border-primary/10">{loc}</span>
                                                 ))}
                                             </div>
                                         </div>

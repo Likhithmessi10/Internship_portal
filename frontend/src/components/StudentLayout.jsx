@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import api from '../utils/api';
+import api, { MEDIA_URL } from '../utils/api';
 
 const StudentLayout = ({ children }) => {
     const { user, logout } = useAuth();
@@ -99,8 +99,11 @@ const StudentLayout = ({ children }) => {
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
                     {!isSidebarCollapsed ? (
                         <div className="p-4 bg-slate-50 dark:bg-slate-950/50 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-3 group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shrink-0">
-                                {profile?.fullName?.charAt(0) || user?.email?.charAt(0)}
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shrink-0 overflow-hidden">
+                                {profile?.photoUrl
+                                    ? <img src={`${MEDIA_URL}/${profile.photoUrl}`} alt="Profile" className="w-full h-full object-cover" />
+                                    : (profile?.fullName?.charAt(0) || user?.email?.charAt(0))
+                                }
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-black text-indigo-900 dark:text-white truncate">

@@ -156,17 +156,7 @@ const applyForInternship = async (req, res) => {
                 }))
             });
 
-            // Sync passport photo to student profile if uploaded
-            const passportFile = req.files.find(f => {
-                const meta = requiredDocs.find(d => d.id === f.fieldname);
-                return meta?.id === 'PASSPORT_PHOTO' || meta?.label?.toLowerCase().includes('passport');
-            });
-            if (passportFile) {
-                await prisma.studentProfile.update({
-                    where: { id: profile.id },
-                    data: { photoUrl: passportFile.path }
-                });
-            }
+
         }
 
         res.status(201).json({

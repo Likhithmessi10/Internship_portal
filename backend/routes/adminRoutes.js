@@ -36,7 +36,8 @@ const {
     getHodPsApplications,
     getHodLearningApplications,
     addGroupField,
-    deleteGroupField
+    deleteGroupField,
+    assignApplicationMentor
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
@@ -52,6 +53,11 @@ const {
     deleteProblemStatement,
     assignPsMentor
 } = require('../controllers/hodProblemStatementController');
+const {
+    getDepartments, createDepartment, updateDepartment,
+    getFields, createField, updateField,
+    requestDocuments, verifyDocuments, getLearningPendingDocs
+} = require('../controllers/deptFieldController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -88,6 +94,19 @@ router.get('/hod/group-submissions', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHo
 router.get('/hod/ps-applications', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodPsApplications);
 // HOD: Learning Internship (NON_STIPEND) applications for their dept
 router.get('/hod/learning-applications', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodLearningApplications);
+
+// ── Department & Field Master (Learning Internship configuration) ─────────────
+router.get('/dept-master',                    authorize('ADMIN', 'CE_PRTI', 'HOD'), getDepartments);
+router.post('/dept-master',                   authorize('ADMIN', 'CE_PRTI'), createDepartment);
+router.put('/dept-master/:id',                authorize('ADMIN', 'CE_PRTI'), updateDepartment);
+router.get('/dept-master/:deptId/fields',     authorize('ADMIN', 'CE_PRTI', 'HOD'), getFields);
+router.post('/dept-master/:deptId/fields',    authorize('ADMIN', 'CE_PRTI'), createField);
+router.put('/dept-master/:deptId/fields/:fieldId', authorize('ADMIN', 'CE_PRTI'), updateField);
+
+// ── PRTI Document Verification Flow (Learning Internships) ───────────────────
+router.get('/learning/pending-docs',                  authorize('ADMIN', 'CE_PRTI'), getLearningPendingDocs);
+router.post('/applications/:id/request-documents',    authorize('ADMIN', 'CE_PRTI'), requestDocuments);
+router.post('/applications/:id/verify-documents',     authorize('ADMIN', 'CE_PRTI'), verifyDocuments);
 // GROUP NON_STIPEND: field management per dept group
 router.post('/internships/:id/groups/:groupId/fields', authorize('ADMIN', 'CE_PRTI', 'HOD'), addGroupField);
 router.delete('/internships/:id/groups/:groupId/fields/:fieldId', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteGroupField);
@@ -116,7 +135,8 @@ const { submitEvaluation } = require('../controllers/prtiController');
 router.get('/internships/:id/applications', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), getApplications);
 router.get('/internships/:id/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), exportApplications);
 router.get('/applications/rejected', authorize('ADMIN', 'HOD'), getRejectedApplications);
-router.put('/applications/:id', authorize('ADMIN', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), updateApplicationStatus);
+router.put('/applications/:id', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), updateApplicationStatus);
+router.put('/applications/:id/mentor', authorize('ADMIN', 'CE_PRTI', 'HOD'), assignApplicationMentor);
 router.post('/applications/:id/evaluate', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), submitEvaluation);
 
 // Stipend Management

@@ -26,6 +26,8 @@ import PRTICommitteeDashboard from './pages/admin/prti/PRTICommitteeDashboard';
 import PRTICommitteeManagement from './pages/admin/prti/PRTICommitteeManagement';
 import PrtiBatches from './pages/admin/prti/PrtiBatches';
 import PrtiBatchDetail from './pages/admin/prti/PrtiBatchDetail';
+import PrtiDeptFieldConfig from './pages/admin/prti/PrtiDeptFieldConfig';
+import PrtiLearningInterns from './pages/admin/prti/PrtiLearningInterns';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
@@ -120,6 +122,16 @@ function App() {
           <Route path="/prti/batches/:id" element={
             <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
               <AdminLayout><PrtiBatchDetail /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/dept-config" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiDeptFieldConfig /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/learning-interns" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiLearningInterns /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/prti/committee" element={

@@ -32,14 +32,12 @@ const createInternship = async (req, res) => {
             evaluationQuestions, preferredColleges
         } = req.body;
 
-        if (!batchId) {
-            return res.status(400).json({ success: false, message: 'Batch ID (Master Program) is required' });
-        }
-
-        // Verify Batch exists
-        const batch = await prisma.internshipBatch.findUnique({ where: { id: batchId } });
-        if (!batch) {
-            return res.status(404).json({ success: false, message: 'Invalid Master Program selected' });
+        // batchId is optional — internship can be standalone (no master program)
+        if (batchId) {
+            const batch = await prisma.internshipBatch.findUnique({ where: { id: batchId } });
+            if (!batch) {
+                return res.status(404).json({ success: false, message: 'Invalid Master Program selected' });
+            }
         }
 
         const isGroupMode = req.body.internshipMode === 'GROUP';
@@ -103,7 +101,7 @@ const createInternship = async (req, res) => {
         });
 
         res.status(201).json({ success: true, data: internship });
-        await createAuditLog('CREATE_INTERNSHIP', req.user.email, `Created ${title} in batch ${batch.title}`, internship.id);
+        await createAuditLog('CREATE_INTERNSHIP', req.user.email, `Created ${title}${batchId ? ` in batch ${batchId}` : ' (standalone)'}`, internship.id);
     } catch (error) {
         console.error('Create internship error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -973,6 +971,17 @@ const updateCommitteeDetails = async (req, res) => {
             });
         }
 
+        // 3b. For NON_STIPEND internships: propagate mentor to all HIRED/VERIFIED applications
+        const effectiveMentorId = mentorId || membersData?.mentorId;
+        if (effectiveMentorId && internship.internshipType === 'NON_STIPEND') {
+            const propagateWhere = {
+                internshipId,
+                status: { in: ['HIRED', 'DOCUMENTS_VERIFIED', 'ONGOING', 'COMPLETED'] }
+            };
+            if (departmentGroupId) propagateWhere.departmentGroupId = departmentGroupId;
+            await prisma.application.updateMany({ where: propagateWhere, data: { mentorId: effectiveMentorId } });
+        }
+
         // 4. Email Trigger Logic
         const appWhere = { internshipId, status: { in: ['SHORTLISTED'] } };
         if (departmentGroupId) appWhere.departmentGroupId = departmentGroupId;
@@ -1751,9 +1760,10 @@ const getHodLearningApplications = async (req, res) => {
 
         const appInclude = {
             student: { include: { user: { select: { email: true } } } },
-            internship: { select: { id: true, title: true, internshipType: true, internshipMode: true, duration: true } },
+            internship: { select: { id: true, title: true, internshipType: true, internshipMode: true, duration: true, department: true } },
             field: true,
-            departmentGroup: { select: { id: true, department: true, title: true } }
+            departmentGroup: { select: { id: true, department: true, title: true } },
+            mentor: { select: { id: true, name: true, email: true } }
         };
 
         // SINGLE NON_STIPEND — dept matches Internship.department directly
@@ -1928,6 +1938,32 @@ const getHodPsApplications = async (req, res) => {
     }
 };
 
+/**
+ * Assign mentor to an application without changing status
+ * PUT /admin/applications/:id/mentor
+ */
+const assignApplicationMentor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { mentorId } = req.body;
+        if (!mentorId) return res.status(400).json({ success: false, message: 'mentorId required' });
+
+        const app = await prisma.application.findUnique({ where: { id } });
+        if (!app) return res.status(404).json({ success: false, message: 'Application not found' });
+
+        // Verify the target user is a MENTOR in the same department as the HOD making the request
+        const mentor = await prisma.user.findFirst({
+            where: { id: mentorId, role: 'MENTOR', department: req.user.department }
+        });
+        if (!mentor) return res.status(400).json({ success: false, message: 'Mentor not found in your department' });
+
+        await prisma.application.update({ where: { id }, data: { mentorId } });
+        res.json({ success: true, message: 'Mentor assigned', mentor: { id: mentor.id, name: mentor.name } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -1965,5 +2001,6 @@ module.exports = {
     getHodPsApplications,
     getHodLearningApplications,
     addGroupField,
-    deleteGroupField
+    deleteGroupField,
+    assignApplicationMentor
 };

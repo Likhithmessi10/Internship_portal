@@ -147,10 +147,11 @@ const SingleRoleCard = ({ internship, item }) => {
                 </div>
 
                 <h2 className="text-xl lg:text-2xl font-black font-rajdhani text-gray-900 dark:text-white mb-2 line-clamp-2 leading-tight group-hover:text-[#003087] dark:group-hover:text-blue-400 transition-colors">
-                    {item.roleName}
+                    {internship.title}
                 </h2>
-                <div className="text-[11px] font-extrabold text-gray-400 dark:text-slate-500 tracking-wide mb-4 line-clamp-1">
-                    PART OF: <span className="text-[#003087] dark:text-blue-400 opacity-80">{internship.title}</span>
+                <div className="text-[11px] font-extrabold text-gray-400 dark:text-slate-500 tracking-wide mb-4 line-clamp-1 flex items-center gap-1.5">
+                    <Briefcase size={10} className="shrink-0" />
+                    <span className="text-[#003087] dark:text-blue-400 opacity-80">{item.roleName}</span>
                 </div>
 
                 <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mb-6 line-clamp-3 leading-relaxed flex-grow">

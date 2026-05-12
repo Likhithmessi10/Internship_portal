@@ -221,10 +221,24 @@ const uploadJoiningDocuments = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Application not found' });
         }
 
-        if (!['SELECTED', 'REPORTED', 'HIRED'].includes(application.status)) {
+        // Full application needed to check internship type
+        const appFull = await prisma.application.findFirst({
+            where: { id: applicationId },
+            include: { internship: { select: { internshipType: true } } }
+        });
+        const isLearning = appFull?.internship?.internshipType === 'NON_STIPEND';
+
+        // MONETARY: unlock at REPORTED/HIRED; NON_STIPEND: unlock at DOCUMENTS_PENDING
+        const unlockStatuses = isLearning
+            ? ['DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED', 'HIRED']
+            : ['SELECTED', 'REPORTED', 'HIRED'];
+
+        if (!unlockStatuses.includes(application.status)) {
             return res.status(403).json({
                 success: false,
-                message: 'Joining documents can only be uploaded after your reporting has been confirmed by PRTI'
+                message: isLearning
+                    ? 'Documents can be uploaded once PRTI has triggered document collection.'
+                    : 'Joining documents can only be uploaded after your reporting has been confirmed by PRTI'
             });
         }
 
@@ -232,12 +246,16 @@ const uploadJoiningDocuments = async (req, res) => {
             return res.status(400).json({ success: false, message: 'No files uploaded' });
         }
 
-        const JOINING_DOC_TYPES = new Set(['NOC', 'BOND', 'UNDERTAKING']);
+        // NON_STIPEND adds INSURANCE to the required set
+        const MONETARY_DOC_TYPES  = new Set(['NOC', 'BOND', 'UNDERTAKING']);
+        const LEARNING_DOC_TYPES  = new Set(['NOC', 'BOND', 'UNDERTAKING', 'INSURANCE']);
+        const JOINING_DOC_TYPES   = isLearning ? LEARNING_DOC_TYPES : MONETARY_DOC_TYPES;
+
         const invalidDocs = req.files.filter(f => !JOINING_DOC_TYPES.has(f.fieldname));
         if (invalidDocs.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: `Invalid document type(s): ${invalidDocs.map(f => f.fieldname).join(', ')}. Allowed: NOC, BOND, UNDERTAKING`
+                message: `Invalid document type(s): ${invalidDocs.map(f => f.fieldname).join(', ')}. Allowed: ${[...JOINING_DOC_TYPES].join(', ')}`
             });
         }
 

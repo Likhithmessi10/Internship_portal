@@ -35,6 +35,14 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             label: 'Master Programs',
             icon: 'folder_open',
             path: '/prti/batches'
+        }, {
+            label: 'Dept & Fields',
+            icon: 'schema',
+            path: '/prti/dept-config'
+        }, {
+            label: 'Learning Interns',
+            icon: 'school',
+            path: '/prti/learning-interns'
         }] : []),
         ...(!isPRTI ? [{ 
             label: 'Applications', 

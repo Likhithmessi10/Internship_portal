@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma');
 
+// Legacy dept map kept for backward-compatibility with existing MONETARY roll numbers
 const DEPT_MAP = {
     'SLDC': '01',
     'TRANSMISSION': '02',
@@ -19,79 +20,95 @@ const DEPT_MAP = {
 };
 
 /**
- * Generate a roll number in format YYDDGGNNN
- * YY - Year (2 digits)
- * DD - Department Code (2 digits)
- * GG - Batch/Group Code (2 digits)
- * NNN - Sequence Number (3 digits)
+ * MONETARY roll number — format: YYDDGGNNN
+ * YY  = year (2 digits)
+ * DD  = department code (2 digits, from DEPT_MAP)
+ * GG  = batch index within year (2 digits)
+ * NNN = sequential count (3 digits)
  */
 const generatePortalRollNumber = async (applicationId, tx = null) => {
     const db = tx || prisma;
 
-    // 1. Fetch application details
+    const application = await db.application.findUnique({
+        where: { id: applicationId },
+        include: { internship: { include: { batch: true } }, departmentGroup: true }
+    });
+
+    if (!application) throw new Error('Application not found');
+
+    const year = new Date(application.internship.createdAt).getFullYear();
+    const YY = String(year).slice(-2);
+
+    const deptName = application.departmentGroup?.department || application.internship.department;
+    const DD = DEPT_MAP[deptName?.toUpperCase()] || '00';
+
+    const batchId = application.internship.batchId;
+    let GG = '01';
+    if (batchId) {
+        const yearStart = new Date(year, 0, 1);
+        const yearEnd   = new Date(year, 11, 31);
+        const batches   = await db.internshipBatch.findMany({
+            where: { createdAt: { gte: yearStart, lte: yearEnd } },
+            orderBy: { createdAt: 'asc' },
+            select: { id: true }
+        });
+        const index = batches.findIndex(b => b.id === batchId);
+        GG = String(index !== -1 ? index + 1 : 1).padStart(2, '0');
+    }
+
+    const prefix = `${YY}${DD}${GG}`;
+    const count = await db.studentProfile.count({ where: { rollNumber: { startsWith: prefix } } });
+    return `${prefix}${String(count + 1).padStart(3, '0')}`;
+};
+
+/**
+ * NON_STIPEND (Learning) roll number — format: YYDDFFNNN
+ * YY  = year (2 digits)
+ * DD  = DepartmentMaster.deptNumber (2 digits, stable)
+ * FF  = FieldMaster.fieldNumber within dept (2 digits, stable)
+ * NNN = sequential count of hired interns for this field (3 digits)
+ *
+ * Example: SLDC (01) + SCADA (01) + 3rd hire → 260101003
+ */
+const generateLearningRollNumber = async (applicationId, tx = null) => {
+    const db = tx || prisma;
+
     const application = await db.application.findUnique({
         where: { id: applicationId },
         include: {
-            internship: {
-                include: { batch: true }
-            },
+            internship: true,
+            field: { include: { fieldMaster: { include: { department: true } } } },
             departmentGroup: true
         }
     });
 
     if (!application) throw new Error('Application not found');
 
-    // 2. Extract Year (YY)
-    // Use the internship creation year or batch year if available
     const year = new Date(application.internship.createdAt).getFullYear();
     const YY = String(year).slice(-2);
 
-    // 3. Get Department Code (DD)
-    const deptName = application.departmentGroup?.department || application.internship.department;
-    const DD = DEPT_MAP[deptName.toUpperCase()] || '00';
-
-    // 4. Get Batch/Group Code (GG)
-    // We'll use a simple deterministic mapping for batches based on their creation order in that year
-    const batchId = application.internship.batchId;
-    let GG = '01';
-    
-    if (batchId) {
-        const yearStart = new Date(year, 0, 1);
-        const yearEnd = new Date(year, 11, 31);
-        
-        const batches = await db.internshipBatch.findMany({
-            where: {
-                createdAt: {
-                    gte: yearStart,
-                    lte: yearEnd
-                }
-            },
-            orderBy: { createdAt: 'asc' },
-            select: { id: true }
-        });
-        
-        const index = batches.findIndex(b => b.id === batchId);
-        GG = String(index !== -1 ? index + 1 : 1).padStart(2, '0');
+    // Resolve FieldMaster from the application's field
+    const fieldMaster = application.field?.fieldMaster;
+    if (!fieldMaster) {
+        // Fallback: use plain dept name + field position if no FieldMaster linked
+        const deptName = application.departmentGroup?.department || application.internship.department || 'XX';
+        const DD = DEPT_MAP[deptName.toUpperCase()] || '99';
+        const prefix = `L${YY}${DD}00`;
+        const count = await db.studentProfile.count({ where: { rollNumber: { startsWith: prefix } } });
+        return `${prefix}${String(count + 1).padStart(3, '0')}`;
     }
 
-    // 5. Calculate Sequence Number (NNN)
-    const prefix = `${YY}${DD}${GG}`;
-    
-    // Count how many students in this profile table already have a roll number with this prefix
-    const count = await db.studentProfile.count({
-        where: {
-            rollNumber: {
-                startsWith: prefix
-            }
-        }
-    });
+    const DD = String(fieldMaster.department.deptNumber).padStart(2, '0');
+    const FF = String(fieldMaster.fieldNumber).padStart(2, '0');
 
-    const NNN = String(count + 1).padStart(3, '0');
-
-    return `${prefix}${NNN}`;
+    // Prefix includes 'L' to distinguish from MONETARY roll numbers
+    const prefix = `L${YY}${DD}${FF}`;
+    const count = await db.studentProfile.count({ where: { rollNumber: { startsWith: prefix } } });
+    return `${prefix}${String(count + 1).padStart(3, '0')}`;
 };
 
 module.exports = {
     generatePortalRollNumber,
+    generateLearningRollNumber,
     DEPT_MAP
 };

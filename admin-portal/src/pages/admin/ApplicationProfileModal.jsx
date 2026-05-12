@@ -177,7 +177,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
             }
         }
 
-        const nextStatus = isNonStipend ? 'SELECTED' : 'SHORTLISTED';
+        const nextStatus = 'SHORTLISTED';
 
         if (user?.role === 'HOD' && !isNonStipend) {
             if (!mentorIdInput) {
@@ -517,7 +517,29 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
 
                                     <div className="flex gap-4">
                                         <button onClick={handleForwardCommittee} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
-                                            {isNonStipend ? 'Select Candidate' : 'Shortlist Candidate'} <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
+                                            Shortlist Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
+                                        </button>
+                                        <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+                                            Reject Candidate
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* NON_STIPEND: Select Candidate from SHORTLISTED (HOD/Admin step) */}
+                        {isNonStipend && status === 'SHORTLISTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
+                            <div className="pt-8 mt-4 border-t border-outline-variant/10 dark:border-slate-800">
+                                <div className="bg-surface-container-high dark:bg-slate-800/50 p-8 rounded-lg border border-outline-variant/10 dark:border-slate-800 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <span className="material-symbols-outlined text-emerald-600 text-lg">how_to_reg</span>
+                                        <h4 className="text-[10px] font-bold text-emerald-700 dark:text-white uppercase tracking-[0.2em]">Candidate Selection</h4>
+                                    </div>
+                                    <p className="text-[11px] text-outline font-medium mb-6">Candidate is shortlisted. Confirm selection to move them to the document collection stage.</p>
+                                    <div className="flex gap-4">
+                                        <button onClick={() => updateStatus('SELECTED')}
+                                            className="flex-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 group">
+                                            Select Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">verified</span>
                                         </button>
                                         <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
                                             Reject Candidate
