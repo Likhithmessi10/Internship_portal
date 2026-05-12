@@ -12,7 +12,7 @@ const getMentorInternships = async (req, res) => {
         const applications = await prisma.application.findMany({
             where: {
                 mentorId,
-                status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
+                status: { in: ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
             },
             include: {
                 internship: {
@@ -89,7 +89,7 @@ const getInternshipInterns = async (req, res) => {
                 where: {
                     mentorId,
                     internshipId,
-                    status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
+                    status: { in: ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
                 },
                 skip,
                 take: limit,
@@ -114,7 +114,7 @@ const getInternshipInterns = async (req, res) => {
                 where: {
                     mentorId,
                     internshipId,
-                    status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
+                    status: { in: ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
                 }
             })
         ]);
@@ -170,7 +170,7 @@ const createTask = async (req, res) => {
         const whereClause = {
             mentorId,
             internshipId,
-            status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
+            status: { in: ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
         };
 
         // If specific students selected, filter further

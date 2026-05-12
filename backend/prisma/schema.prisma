@@ -24,10 +24,12 @@ enum ApplicationStatus {
   SUBMITTED
   SHORTLISTED
   UNDER_COMMITTEE_REVIEW
-  APPROVED
+  SELECTED        // HOD final selection (was APPROVED)
+  APPROVED        // Legacy — kept for backward compatibility
+  REPORTED        // Student physically reported to PRTI; roll number generated here
   REJECTED
   WAITLISTED
-  HIRED
+  HIRED           // All joining formalities complete
   ONGOING
   COMPLETED
 }
@@ -76,6 +78,7 @@ model User {
   studentProfile StudentProfile?
   mentoredApps   Application[]   @relation("MentorApps")
   workAssignments WorkAssignment[] @relation("MentorWork")
+  mentoredPs     InternshipDepartmentProblemStatement[] @relation("PsMentor")
 }
 
 model StudentProfile {
@@ -130,7 +133,7 @@ model InternshipBatch {
 
 model Internship {
   id                   String    @id @default(uuid())
-  batchId              String?   // Link to master folder
+  batchId              String?
   title                String
   department           String
   description          String
@@ -142,13 +145,20 @@ model Internship {
   duration             String
   openingsCount        Int
   isActive             Boolean   @default(true)
+  // publishStatus controls student visibility for GROUP internships:
+  // DRAFT → PENDING_HOD_INPUTS → LIVE (auto on all HODs submitted, or PRTI publishes)
+  // SINGLE internships default to LIVE immediately.
+  publishStatus        String    @default("LIVE") // DRAFT | PENDING_HOD_INPUTS | LIVE
   applicationDeadline  DateTime?
   quotaPercentages     Json?
   priorityCollege      String?
   priorityCollegeQuota Int?      @default(0)
-  requiredDocuments    Json?
-  stipendType          String?   @default("NON_COLLABORATIVE") // COLLABORATIVE or NON_COLLABORATIVE
-  stipendAmount        Float?    // Amount in INR (optional, for collaborative)
+  requiredDocuments    Json?     // Apply-time docs defined by PRTI (dynamic)
+  stipendType          String?   @default("NON_COLLABORATIVE")
+  // Per-category stipend amounts for MONETARY internships.
+  // Keys map to CollegeCategory enum values: IIT, NIT, IIIT, CENTRAL, STATE, PRIVATE, OTHER
+  // Example: { "IIT": 25000, "NIT": 20000, "STATE": 12000, "PRIVATE": 8000 }
+  stipendAmounts       Json?     // replaces the single stipendAmount field
   shortlistingRatio    Int?      @default(2)
   preferredColleges    Json?     @default("[]")
   topColleges          Json?     @default("[]")
@@ -157,92 +167,121 @@ model Internship {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   internshipType       String?   @default("STIPEND") // STIPEND, COLLABORATIVE, NON_STIPEND
-  internshipMode       String?   @default("SINGLE") // SINGLE or GROUP
+  internshipMode       String?   @default("SINGLE")  // SINGLE or GROUP
   shortlistLimit       Int?      @default(50)
 
-  batch        InternshipBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
-  applications Application[]
-  fields       InternshipField[]
-  committee    Committee?
+  batch              InternshipBatch?                        @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  applications       Application[]
+  fields             InternshipField[]
+  committee          Committee?
   evaluationCriteria InternshipEvaluationCriteria[]
-  departmentGroups InternshipDepartmentGroup[]
+  departmentGroups   InternshipDepartmentGroup[]
+  problemStatements  InternshipDepartmentProblemStatement[]
 }
 
 model InternshipDepartmentGroup {
   id                String    @id @default(uuid())
   internshipId      String
   department        String
-  title             String    // e.g. "Electrical Engineering Trainee"
+  title             String
   description       String?
   openings          Int       @default(0)
-  rolesData         Json?     // [{name, openings}]
-  skillsRequired    String?   // comma-separated skills
+  rolesData         Json?
+  skillsRequired    String?
   expectations      String?
   preferredColleges Json?     @default("[]")
-  quotaPercentages  Json?     // {preferred, premier, normal}
-  problemStatements Json?     @default("[]")
+  quotaPercentages  Json?
   customQuestions   Json?     @default("[]")
+  // HOD submission tracking
+  hodSubmitted      Boolean   @default(false)
+  hodSubmittedAt    DateTime?
+  notifiedAt        DateTime? // When PRTI notified this dept's HOD
+  internshipType    String?   @default("STIPEND")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  internshipType    String?   @default("STIPEND")
   internship        Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
   applications      Application[]
   fields            InternshipField[]
   committee         Committee?
+  problemStatements InternshipDepartmentProblemStatement[]
 
   @@unique([internshipId, department])
   @@index([internshipId])
 }
 
+// Problem statements submitted by HODs for each department group
+model InternshipDepartmentProblemStatement {
+  id                    String   @id @default(uuid())
+  departmentGroupId     String
+  internshipId          String
+  title                 String
+  description           String?
+  requirements          String?
+  vacancies             Int      @default(0)
+  locations             Json?    @default("[]") // For NON_STIPEND: available locations
+  problemStatementNumber Int?                   // Sequential order within dept group
+  mentorId              String?                 // Mentor assigned to oversee this PS
+  createdBy             String?                 // HOD user ID
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  departmentGroup InternshipDepartmentGroup @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
+  internship      Internship                @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  mentor          User?                     @relation("PsMentor", fields: [mentorId], references: [id])
+  applications    Application[]
+
+  @@index([departmentGroupId])
+  @@index([internshipId])
+}
+
 model Application {
-  id              String              @id @default(uuid())
-  trackingId      String              @unique
-  studentId       String
-  internshipId    String
-  departmentGroupId String?           // For GROUP mode: links to specific department group
-  fieldId         String?           // For NON_STIPEND mode: links to specific field
-  status          ApplicationStatus   @default(SUBMITTED)
-  resumeMatchScore Float?             @default(0)
-  isResumeProcessed Boolean           @default(false)
-  score           Float?              @default(0)
-  committeeFinalScore Float?          @default(0)
-  assignedRole     String?
-  preferredCircle  String?
-  preferredLocation String?  // User requirement for explicit preferred location
-  sop              String?  // User requirement for Statement of Purpose
-  duration         String?
-  startDate       DateTime?
-  joiningDate     DateTime?
-  endDate         DateTime?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  category        InternshipCategory?
-  shortlistCategory String?
-  domain          String?
-  mentorId        String?
-  questionAnswers Json?
-  scoreBreakdown  Json?
-  parsedResumeText String?
-  extractedSkills  Json?
-  extractedProjects Json?
+  id                  String              @id @default(uuid())
+  trackingId          String              @unique
+  studentId           String
+  internshipId        String
+  departmentGroupId   String?
+  problemStatementId  String?             // For GROUP mode: specific problem statement selected
+  fieldId             String?
+  status              ApplicationStatus   @default(SUBMITTED)
+  score               Float?              @default(0)
+  committeeFinalScore Float?              @default(0)
+  assignedRole        String?
+  stipendAmount       Float?              // Locked at SELECTED: amount based on student's college category
+  preferredCircle     String?
+  preferredLocation   String?
+  sop                 String?
+  duration            String?
+  startDate           DateTime?
+  joiningDate         DateTime?
+  endDate             DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  category            InternshipCategory?
+  shortlistCategory   String?
+  domain              String?
+  mentorId            String?
+  questionAnswers     Json?
+  scoreBreakdown      Json?
 
-  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  internship Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  departmentGroup InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id])
-  field          InternshipField?           @relation(fields: [fieldId], references: [id])
-  mentor     User?          @relation("MentorApps", fields: [mentorId], references: [id])
+  student          StudentProfile                         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internship       Internship                             @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  departmentGroup  InternshipDepartmentGroup?             @relation(fields: [departmentGroupId], references: [id])
+  problemStatement InternshipDepartmentProblemStatement? @relation(fields: [problemStatementId], references: [id])
+  field            InternshipField?                       @relation(fields: [fieldId], references: [id])
+  mentor           User?                                  @relation("MentorApps", fields: [mentorId], references: [id])
 
-  documents  Document[]
-  stipend    Stipend?
-  attendance Attendance?
-  workAssignments WorkAssignment[]
+  documents        Document[]
+  stipend          Stipend?
+  attendance       Attendance?
+  workAssignments  WorkAssignment[]
   evaluationScores EvaluationScore[]
 
   @@unique([studentId, internshipId, assignedRole, fieldId])
   @@index([studentId])
   @@index([internshipId])
   @@index([departmentGroupId])
+  @@index([problemStatementId])
   @@index([status])
 }
 
@@ -253,13 +292,13 @@ model InternshipField {
   fieldName         String
   description       String?
   vacancies         Int      @default(0)
-  locations         Json?    @default("[]") // Array of strings
+  locations         Json?    @default("[]")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  internship        Internship? @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  departmentGroup   InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
-  applications      Application[]
+  internship      Internship?                @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  departmentGroup InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
+  applications    Application[]
 }
 
 model Document {
@@ -276,7 +315,6 @@ model Document {
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
-
 model InternshipEvaluationCriteria {
   id           String     @id @default(uuid())
   internshipId String
@@ -285,8 +323,8 @@ model InternshipEvaluationCriteria {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  scores       EvaluationScore[]
+  internship Internship      @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  scores     EvaluationScore[]
 }
 
 model EvaluationScore {
@@ -300,12 +338,11 @@ model EvaluationScore {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  question      InternshipEvaluationCriteria @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  application Application                  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  question    InternshipEvaluationCriteria @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([applicationId, memberId, questionId])
 }
-
 
 model Stipend {
   id             String @id @default(uuid())
@@ -325,7 +362,7 @@ model Attendance {
   applicationId String  @unique
   daysAttended  Int     @default(0)
   totalDays     Int     @default(0)
-  attendanceLog Json?   // [{date: "2026-03-15", present: true, hours: 8, markedAt: "..."}]
+  attendanceLog Json?
   mentorReview  String?
   meetsMinimum  Boolean @default(false)
   minimumDays   Int     @default(20)
@@ -340,7 +377,6 @@ model PortalConfiguration {
   updatedAt       DateTime @updatedAt
 }
 
-
 model OtpVerification {
   id         String   @id @default(uuid())
   rollNumber String   @unique
@@ -350,33 +386,26 @@ model OtpVerification {
 }
 
 model DocumentConfiguration {
-  id        String @id @default("singleton")
-  documents Json   // [{id, label, type, mandatory}]
+  id        String   @id @default("singleton")
+  documents Json
   updatedAt DateTime @updatedAt
 }
 
 model Committee {
   id                String    @id @default(uuid())
-  internshipId      String?   @unique // For SINGLE mode
-  departmentGroupId String?   @unique // For GROUP mode
+  internshipId      String?   @unique
+  departmentGroupId String?   @unique
   meetLink          String?
   interviewDate     DateTime?
-  
-  // Committee structure:
-  // Member 1 (Permanent): HOD of the department
-  // Member 2 (Assigned): Mentor (assigned by HOD, same department)
-  // Member 3 (Editable): PRTI Representative (selected by PRTI member)
-  hodId         String?   // Permanent - HOD of department
-  mentorId      String?   // Assigned by HOD
-  prtiMemberId  String?   // Editable by PRTI
-  
-  membersData   Json?     // Store additional member details
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  hodId             String?
+  mentorId          String?
+  prtiMemberId      String?
+  membersData       Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  internship        Internship? @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  departmentGroup   InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
+  internship      Internship?                @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  departmentGroup InternshipDepartmentGroup? @relation(fields: [departmentGroupId], references: [id], onDelete: Cascade)
 }
 
 model aishe_colleges {
@@ -408,72 +437,40 @@ model AuditLog {
 }
 
 model WorkAssignment {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   applicationId String
   mentorId      String
   studentId     String
   title         String
   description   String
   dueDate       DateTime?
-  status        String   @default("SUBMITTED") // PENDING -> SUBMITTED
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status        String    @default("PENDING") // PENDING | SUBMITTED
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  mentor        User        @relation("MentorWork", fields: [mentorId], references: [id])
-  student       StudentProfile @relation("InternWork", fields: [studentId], references: [id])
-  submissions   TaskSubmission[]
+  application Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  mentor      User           @relation("MentorWork", fields: [mentorId], references: [id])
+  student     StudentProfile @relation("InternWork", fields: [studentId], references: [id])
+  submissions TaskSubmission[]
 }
 
 model TaskSubmission {
-  id              String   @id @default(uuid())
-  workAssignmentId String @unique
-  workAssignment  WorkAssignment @relation(fields: [workAssignmentId], references: [id], onDelete: Cascade)
-  
-  studentId       String
-  submissionDate  DateTime @default(now())
-  submissionText  String?
-  attachmentUrl   String?
-  attachmentType  String?  // PDF, DOC, ZIP, etc.
-  
-  status          String   @default("SUBMITTED") // SUBMITTED
-  mentorFeedback  String?
-  mentorRating    Int?     // 1-5 scale
-  reviewedAt      DateTime?
-  reviewedBy      String?
-  
-  createdAt       DateTime @updatedAt
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(uuid())
+  workAssignmentId String   @unique
+  workAssignment   WorkAssignment @relation(fields: [workAssignmentId], references: [id], onDelete: Cascade)
+  studentId        String
+  submissionDate   DateTime @default(now())
+  submissionText   String?
+  attachmentUrl    String?
+  attachmentType   String?
+  status           String   @default("SUBMITTED")
+  mentorFeedback   String?
+  mentorRating     Int?
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([workAssignmentId])
   @@index([studentId])
-}
-
-enum JobStatus {
-  PENDING
-  CLAIMED
-  RUNNING
-  COMPLETED
-  FAILED
-  DEAD_LETTER
-}
-
-model Job {
-  id          String    @id @default(uuid())
-  type        String    // RESUME_MATCH_SCORE
-  status      JobStatus @default(PENDING)
-  payload     Json?
-  result      Json?
-  error       String?
-  attempts    Int       @default(0)
-  maxAttempts Int       @default(3)
-  fingerprint String?   // Remove @unique to allow repeat runs
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  startedAt   DateTime?
-  completedAt DateTime?
-
-  @@index([status])
-  @@index([createdAt])
 }

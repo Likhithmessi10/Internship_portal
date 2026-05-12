@@ -44,110 +44,131 @@ const getSeatCaps = (openingsCount = 0, quotaPercentages = {}) => {
     return { PREFERRED: preferredCap, PREMIER: premierCap, REGULAR: regularCap };
 };
 
+// Statuses that consume a seat allocation slot
+const SEAT_CONSUMING = [STATUS.SELECTED, STATUS.APPROVED, STATUS.REPORTED, STATUS.HIRED, STATUS.ONGOING];
+
 /**
- * atomic application status transition with validation and audit trail
+ * Atomic application status transition with seat enforcement and audit trail.
+ * Roll number is generated when transitioning TO REPORTED (physical reporting).
  */
 const transitionApplicationStatus = async (applicationId, toStatus, user, auditDetails = '', existingTx = null) => {
     const logic = async (tx) => {
-        // 1. Fetch current application and its internship boundaries
         const application = await tx.application.findUnique({
             where: { id: applicationId },
             include: {
-                internship: true,
+                internship: {
+                    include: { evaluationCriteria: true }
+                },
                 departmentGroup: true,
+                problemStatement: true,
                 student: {
-                    select: {
-                        collegeName: true,
-                        collegeCategory: true
-                    }
+                    select: { collegeName: true, collegeCategory: true }
                 }
             }
         });
 
-        if (!application) {
-            throw new Error('Application not found');
+        if (!application) throw new Error('Application not found');
+
+        if (!canTransition(application.status, toStatus, user.role, application.internship?.internshipType)) {
+            throw new Error(
+                `Invalid status transition from ${application.status} to ${toStatus} for role ${user.role}`
+            );
         }
 
-        // 2. Validate transition against state machine
-        if (!canTransition(application.status, toStatus, user.role)) {
-            throw new Error(`Invalid status transition from ${application.status} to ${toStatus} for role ${user.role}`);
-        }
-
-        // 3. Seat Limit Enforcement (Requirement 3: Fix approval race condition)
-        const SEAT_CONSUMING = [STATUS.APPROVED, STATUS.HIRED, STATUS.ONGOING];
-        
-        // If moving TO a seat-consuming status FROM a non-consuming one
+        // ── Seat Limit Enforcement ────────────────────────────────────────────
         if (SEAT_CONSUMING.includes(toStatus) && !SEAT_CONSUMING.includes(application.status)) {
-            // Determine active entity (group vs parent)
-            const targetEntity = application.departmentGroup || application.internship;
-            const targetOpenings = targetEntity.openings ?? targetEntity.openingsCount;
 
-            const activeCount = await tx.application.count({
-                where: {
-                    ...(application.departmentGroup 
-                        ? { departmentGroupId: application.departmentGroupId } 
-                        : { internshipId: application.internshipId, departmentGroupId: null }),
-                    status: { in: SEAT_CONSUMING }
-                }
-            });
-
-            if (activeCount >= targetOpenings) {
-                throw new Error(`Allocation Failed: No seats remaining. All ${targetOpenings} slots are filled for this role/department.`);
-            }
-
-            // Enforce category quotas from internship creation (preferred/premier/regular)
-            const caps = getSeatCaps(targetOpenings, targetEntity.quotaPercentages || {});
-            const targetBucket = getApplicationBucket(application, targetEntity);
-            const targetCap = caps[targetBucket] ?? 0;
-
-            if (targetCap <= 0) {
-                throw new Error(`Allocation Failed: No seats allocated for ${targetBucket} category as per configured distribution.`);
-            }
-
-            const activeApps = await tx.application.findMany({
-                where: {
-                    ...(application.departmentGroup 
-                        ? { departmentGroupId: application.departmentGroupId } 
-                        : { internshipId: application.internshipId, departmentGroupId: null }),
-                    status: { in: SEAT_CONSUMING }
-                },
-                include: {
-                    student: {
-                        select: {
-                            collegeName: true,
-                            collegeCategory: true
-                        }
+            if (application.problemStatementId && application.problemStatement) {
+                // Problem-statement-level seat check (GROUP internships)
+                const psVacancies = application.problemStatement.vacancies || 0;
+                const psCount = await tx.application.count({
+                    where: {
+                        problemStatementId: application.problemStatementId,
+                        status: { in: SEAT_CONSUMING }
                     }
+                });
+                if (psCount >= psVacancies) {
+                    throw new Error(
+                        `Allocation Failed: All ${psVacancies} seats for "${application.problemStatement.title}" are filled.`
+                    );
                 }
-            });
+            } else {
+                // Department-group or internship-level seat check
+                const targetEntity = application.departmentGroup || application.internship;
+                const targetOpenings = targetEntity.openings ?? targetEntity.openingsCount;
 
-            const usedInBucket = activeApps.filter(a => getApplicationBucket(a, targetEntity) === targetBucket).length;
-            if (usedInBucket >= targetCap) {
-                throw new Error(
-                    `Allocation Failed: ${targetBucket} quota is full (${usedInBucket}/${targetCap}). Approvals must follow configured seat distribution.`
-                );
+                const activeCount = await tx.application.count({
+                    where: {
+                        ...(application.departmentGroup
+                            ? { departmentGroupId: application.departmentGroupId }
+                            : { internshipId: application.internshipId, departmentGroupId: null }),
+                        status: { in: SEAT_CONSUMING }
+                    }
+                });
+
+                if (activeCount >= targetOpenings) {
+                    throw new Error(
+                        `Allocation Failed: No seats remaining. All ${targetOpenings} slots are filled for this role/department.`
+                    );
+                }
+
+                // Category quota enforcement
+                const caps = getSeatCaps(targetOpenings, targetEntity.quotaPercentages || {});
+                const targetBucket = getApplicationBucket(application, targetEntity);
+                const targetCap = caps[targetBucket] ?? 0;
+
+                if (targetCap <= 0) {
+                    throw new Error(
+                        `Allocation Failed: No seats allocated for ${targetBucket} category as per configured distribution.`
+                    );
+                }
+
+                const activeApps = await tx.application.findMany({
+                    where: {
+                        ...(application.departmentGroup
+                            ? { departmentGroupId: application.departmentGroupId }
+                            : { internshipId: application.internshipId, departmentGroupId: null }),
+                        status: { in: SEAT_CONSUMING }
+                    },
+                    include: {
+                        student: { select: { collegeName: true, collegeCategory: true } }
+                    }
+                });
+
+                const usedInBucket = activeApps.filter(
+                    a => getApplicationBucket(a, targetEntity) === targetBucket
+                ).length;
+
+                if (usedInBucket >= targetCap) {
+                    throw new Error(
+                        `Allocation Failed: ${targetBucket} quota is full (${usedInBucket}/${targetCap}).`
+                    );
+                }
             }
         }
 
-        // 4. Committee Scoring Completion Enforcement
-        if ([STATUS.APPROVED, STATUS.REJECTED, STATUS.WAITLISTED].includes(toStatus) && application.status === STATUS.UNDER_COMMITTEE_REVIEW) {
+        // ── Committee Scoring Completion Check ───────────────────────────────
+        if (
+            [STATUS.SELECTED, STATUS.APPROVED, STATUS.REJECTED, STATUS.WAITLISTED].includes(toStatus) &&
+            application.status === STATUS.UNDER_COMMITTEE_REVIEW
+        ) {
             const criteriaCount = application.internship.evaluationCriteria?.length || 0;
             if (criteriaCount > 0) {
                 const scores = await tx.evaluationScore.findMany({ where: { applicationId } });
                 const roles = new Set(scores.map(s => s.role));
-                
-                // Must have HOD, Mentor, and some form of PRTI/Committee Member
                 const hasPrti = roles.has('CE_PRTI') || roles.has('COMMITTEE_MEMBER');
                 const hasHod = roles.has('HOD');
                 const hasMentor = roles.has('MENTOR');
 
                 if (!hasPrti || !hasHod || !hasMentor) {
-                    throw new Error(`Incomplete Evaluation: Approval/Rejection requires scores from HOD, Mentor, and PRTI Representative. Missing roles: ${[!hasHod && 'HOD', !hasMentor && 'Mentor', !hasPrti && 'PRTI'].filter(Boolean).join(', ')}`);
+                    throw new Error(
+                        `Incomplete Evaluation: Requires scores from HOD, Mentor, and PRTI. Missing: ${[!hasHod && 'HOD', !hasMentor && 'Mentor', !hasPrti && 'PRTI'].filter(Boolean).join(', ')}`
+                    );
                 }
             }
         }
 
-        // 5. Perform update
+        // ── Perform Update ───────────────────────────────────────────────────
         const updated = await tx.application.update({
             where: { id: applicationId },
             data: {
@@ -158,8 +179,9 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
             }
         });
 
-        // 5b. Generate Roll Number if status is HIRED and student doesn't have one
-        if (toStatus === STATUS.HIRED) {
+        // ── Roll Number Generation (at REPORTED — monetary internships only) ────
+        // NON_STIPEND (Learning Internships) skip REPORTED entirely; no roll number needed.
+        if (toStatus === STATUS.REPORTED && application.internship?.internshipType !== 'NON_STIPEND') {
             const student = await tx.studentProfile.findUnique({
                 where: { id: application.studentId }
             });
@@ -167,18 +189,15 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
             if (student && !student.rollNumber) {
                 const { generatePortalRollNumber } = require('./rollNumberService');
                 const newRollNumber = await generatePortalRollNumber(applicationId, tx);
-                
                 await tx.studentProfile.update({
                     where: { id: application.studentId },
                     data: { rollNumber: newRollNumber }
                 });
-                
-                // Add to audit details
-                auditDetails += ` Generated Roll Number: ${newRollNumber}.`;
+                auditDetails += ` Roll Number Generated: ${newRollNumber}.`;
             }
         }
 
-        // 6. Create Audit Log
+        // ── Audit Log ────────────────────────────────────────────────────────
         await tx.auditLog.create({
             data: {
                 action: 'STATUS_TRANSITION',
@@ -191,15 +210,7 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
         return updated;
     };
 
-    if (existingTx) {
-        return await logic(existingTx);
-    } else {
-        return await prisma.$transaction(logic);
-    }
+    return existingTx ? logic(existingTx) : prisma.$transaction(logic);
 };
 
-
-module.exports = {
-    transitionApplicationStatus,
-    STATUS
-};
+module.exports = { transitionApplicationStatus, STATUS, SEAT_CONSUMING };

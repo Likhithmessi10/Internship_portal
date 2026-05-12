@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "claude-dashboard@claude-dashboard": true
+  }
+}

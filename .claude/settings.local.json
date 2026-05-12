@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(claude-dashboard:setup)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\mukka\\\\Desktop\\\\internship portal\" -Directory)",
+      "Bash(Select-Object Name)"
+    ]
+  }
+}

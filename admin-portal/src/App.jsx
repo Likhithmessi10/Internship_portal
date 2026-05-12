@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useState } from 'react';
 
@@ -25,11 +25,13 @@ import PrtiAuditLogs from './pages/admin/prti/PrtiAuditLogs';
 import PRTICommitteeDashboard from './pages/admin/prti/PRTICommitteeDashboard';
 import PRTICommitteeManagement from './pages/admin/prti/PRTICommitteeManagement';
 import PrtiBatches from './pages/admin/prti/PrtiBatches';
+import PrtiBatchDetail from './pages/admin/prti/PrtiBatchDetail';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodCommittees from './pages/admin/hod/HodCommittees';
 import HodMeetings from './pages/admin/hod/HodMeetings';
 import HodSelection from './pages/admin/hod/HodSelection';
+import HodProblemStatements from './pages/admin/hod/HodProblemStatements';
 import MentorDashboard from './pages/admin/mentor/MentorDashboard';
 import MentorApplications from './pages/admin/mentor/MentorApplications';
 import MentorCommittees from './pages/admin/mentor/MentorCommittees';
@@ -49,8 +51,6 @@ const AdminLayout = ({ children }) => {
     </div>
   );
 };
-
-const APTRANSCO_ROLES = ['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
 
 // Root redirection is handled by AdminLanding directly.
 
@@ -117,6 +117,11 @@ function App() {
               <AdminLayout><PrtiBatches /></AdminLayout>
             </ProtectedRoute>
           } />
+          <Route path="/prti/batches/:id" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiBatchDetail /></AdminLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/prti/committee" element={
             <ProtectedRoute allowedRoles={['CE_PRTI', 'COMMITTEE_MEMBER', 'ADMIN', 'HOD', 'MENTOR']}>
               <AdminLayout><PRTICommitteeDashboard /></AdminLayout>
@@ -155,6 +160,11 @@ function App() {
           <Route path="/hod/meetings" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
               <AdminLayout><HodMeetings /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/problem-statements" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
+              <AdminLayout><HodProblemStatements /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/mentor/dashboard" element={

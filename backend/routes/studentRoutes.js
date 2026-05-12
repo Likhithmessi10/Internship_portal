@@ -1,5 +1,5 @@
 const express = require('express');
-const { upsertProfile, getProfile, upsertStipend } = require('../controllers/studentController');
+const { upsertProfile, getProfile, upsertStipend, uploadJoiningDocuments } = require('../controllers/studentController');
 const {
     submitWork,
     getStudentWork,
@@ -8,12 +8,15 @@ const {
 } = require('../controllers/workSubmissionController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const fileValidator = require('../middleware/fileValidator');
 
 const router = express.Router();
 
 router.post('/profile', protect, upload.single('photo'), upsertProfile);
 router.get('/profile', protect, getProfile);
 router.post('/applications/:id/stipend', protect, authorize('STUDENT'), upsertStipend);
+// Joining documents (NOC, BOND, UNDERTAKING) — unlocked only after REPORTED status
+router.post('/applications/:id/joining-documents', protect, authorize('STUDENT'), upload.any(), fileValidator, uploadJoiningDocuments);
 // Student Work Management
 router.get('/work', protect, authorize('STUDENT'), getStudentWork);
 router.post('/work/submit/:assignmentId', protect, authorize('STUDENT'), upload.single('file'), submitWork);

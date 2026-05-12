@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom';
 import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
 import {
-    Briefcase, Users, CheckCircle, ChevronRight, Star, Activity, AlertCircle
+    Briefcase, Users, CheckCircle, ChevronRight, Star, Activity, AlertCircle, Clock, UserPlus
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import StatsDetailModal from '../../../components/ui/StatsDetailModal';
 import CreateMentorModal from './CreateMentorModal';
-import { UserPlus } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, color, subtext }) => (
     <div className={`glass-card bg-white/50 dark:bg-indigo-950/40 border-l-4 ${color} dark:border-white/5 premium-shadow rounded-3xl p-6 hover:-translate-y-1 transition-all duration-300 group`}>
@@ -31,6 +30,7 @@ const HodDashboard = () => {
     const [internships, setInternships] = useState([]);
     const [hiredInterns, setHiredInterns] = useState([]);
     const [applications, setApplications] = useState([]);
+    const [pendingSubmissions, setPendingSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedStat, setSelectedStat] = useState(null);
     const [showCreateMentor, setShowCreateMentor] = useState(false);
@@ -76,6 +76,14 @@ const HodDashboard = () => {
 
                 setInternships(liveInts);
                 setApplications(allApps);
+
+                // Fetch pending GROUP internship problem-statement requests
+                try {
+                    const psRes = await api.get('/admin/hod/pending-group-submissions');
+                    setPendingSubmissions(psRes.data.data || []);
+                } catch {
+                    // non-fatal — HOD may have no pending items
+                }
             } catch (err) {
                 console.error('Failed to fetch HOD dashboard data', err);
             } finally {
@@ -122,6 +130,34 @@ const HodDashboard = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Pending problem-statement submissions banner */}
+            {pendingSubmissions.length > 0 && (
+                <section className="animate-in fade-in duration-300">
+                    <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                                <Clock size={20} className="text-amber-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-amber-800">
+                                    {pendingSubmissions.length} pending problem statement{pendingSubmissions.length > 1 ? 's' : ''} required
+                                </p>
+                                <p className="text-[11px] text-amber-700 font-medium mt-0.5">
+                                    PRTI has requested your department's problem statements for:{' '}
+                                    {pendingSubmissions.map(g => g.internship?.title).join(', ')}
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            to="/hod/problem-statements"
+                            className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors shadow-sm"
+                        >
+                            Submit Now <ChevronRight size={14} />
+                        </Link>
+                    </div>
+                </section>
+            )}
 
             {/* Stats */}
             {/* Bento Grid Stats */}

@@ -73,7 +73,14 @@ const LandingPage = () => {
                 // Flatten all roles across all internships in all batches for the marquee
                 const allRoles = batches.flatMap(batch => 
                   (batch.internships || []).flatMap(internship => {
-                    const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
+                    let roles = [];
+                    if (internship.internshipType === 'NON_STIPEND') {
+                      roles = (internship.fields || []).map(f => ({ name: f.fieldName }));
+                      if (roles.length === 0) roles = [{ name: internship.title }];
+                    } else {
+                      roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
+                    }
+                    
                     return roles.map(role => ({
                       ...internship,
                       displayRole: role.name
@@ -144,23 +151,41 @@ const LandingPage = () => {
                   </div>
                 </div>
                 <div className="internships-grid">
-                  {(batch.internships || []).map((internship, idx) => {
-                    if (!internship) return null;
-                    const roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
-                    return roles.map((role, rIdx) => (
-                      <div key={`${internship.id || idx}-${idx}-${rIdx}`} className="internship-card">
-                        <div className="card-dept">{internship.department}</div>
-                        <h3 className="card-title">{role.name}</h3>
-                        <div className="card-subtitle">Part of: {internship.title}</div>
-                        <p className="card-desc">{(internship.description || '').substring(0, 100)}...</p>
-                        <div className="card-meta">
-                          <span className="card-meta-item"><MapPin size={14} /> {internship.location || 'Multiple Locations'}</span>
-                          <span className="card-meta-item"><Clock size={14} /> {internship.duration}</span>
-                        </div>
-                        <button className="btn-outline" onClick={() => navigate('/student/register')}>View & Apply →</button>
-                      </div>
-                    ));
-                  })}
+                    {(batch.internships || []).map((internship, idx) => {
+                      if (!internship) return null;
+                      
+                      // Derive roles: For NON_STIPEND, use fields. For others, use rolesData or roles string.
+                      let roles = [];
+                      if (internship.internshipType === 'NON_STIPEND') {
+                        roles = (internship.fields || []).map(f => ({ 
+                          name: f.fieldName, 
+                          fieldId: f.id,
+                          description: f.description 
+                        }));
+                        // Fallback to title if no fields
+                        if (roles.length === 0) roles = [{ name: internship.title }];
+                      } else {
+                        roles = internship.rolesData || (internship.roles ? internship.roles.split(',').map(r => ({ name: r.trim() })) : [{ name: internship.title }]);
+                      }
+
+                      return roles.map((role, rIdx) => {
+                        const applyPath = `/student/register?internshipId=${internship.id}` + (role.fieldId ? `&fieldId=${role.fieldId}` : '');
+                        
+                        return (
+                          <div key={`${internship.id || idx}-${idx}-${rIdx}`} className="internship-card">
+                            <div className="card-dept">{internship.department}</div>
+                            <h3 className="card-title">{role.name}</h3>
+                            <div className="card-subtitle">Part of: {internship.title}</div>
+                            <p className="card-desc">{(role.description || internship.description || '').substring(0, 100)}...</p>
+                            <div className="card-meta">
+                              <span className="card-meta-item"><MapPin size={14} /> {internship.location || 'Multiple Locations'}</span>
+                              <span className="card-meta-item"><Clock size={14} /> {internship.duration}</span>
+                            </div>
+                            <button className="btn-outline" onClick={() => navigate(applyPath)}>View & Apply →</button>
+                          </div>
+                        );
+                      });
+                    })}
                 </div>
               </div>
             ))}

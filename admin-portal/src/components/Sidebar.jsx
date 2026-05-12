@@ -51,6 +51,11 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             icon: 'event_available',
             path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : (isMentor ? '/mentor/meetings' : '/meetings'))
         },
+        ...(isHOD ? [{
+            label: 'Problem Statements',
+            icon: 'assignment',
+            path: '/hod/problem-statements'
+        }] : []),
         ...(!isPRTI && !isMentor ? [{
             label: 'Selection',
             icon: 'how_to_reg',

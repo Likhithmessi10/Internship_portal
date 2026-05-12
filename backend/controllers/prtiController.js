@@ -1,31 +1,27 @@
-const { PrismaClient } = require('@prisma/client');
 const prisma = require('../lib/prisma');
+const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
 
 /**
- * Get all applications for PRTI Committee evaluation
+ * Get applications for committee evaluation
  * GET /api/v1/prti/committees/applications
  */
 const getCommitteeApplications = async (req, res) => {
     try {
         const { status, internshipId } = req.query;
-        const targetStatus = status;
 
         const whereClause = {};
 
-        // If no status or generic pending, show both Shortlisted and Under Review
-        if (!targetStatus || targetStatus === 'PENDING' || targetStatus === 'SUBMITTED') {
+        if (!status || status === 'PENDING' || status === 'SUBMITTED') {
             whereClause.status = { in: ['SHORTLISTED', 'UNDER_COMMITTEE_REVIEW'] };
-        } else if (targetStatus !== 'ALL') {
-            whereClause.status = targetStatus;
+        } else if (status === 'ALL') {
+            // no filter
+        } else {
+            whereClause.status = status;
         }
 
-        if (internshipId) {
-            whereClause.internshipId = internshipId;
-        }
+        if (internshipId) whereClause.internshipId = internshipId;
 
-        // Global roles (ADMIN, CE_PRTI, COMMITTEE_MEMBER) see all relevant applications (filtered by status)
-        // Others (HOD, MENTOR) see only those they are assigned to in the committee
-        const isGlobalRole = req.user.role === 'ADMIN' || req.user.role === 'CE_PRTI' || req.user.role === 'COMMITTEE_MEMBER';
+        const isGlobalRole = ['ADMIN', 'CE_PRTI', 'COMMITTEE_MEMBER'].includes(req.user.role);
 
         if (!isGlobalRole) {
             whereClause.OR = [
@@ -49,42 +45,26 @@ const getCommitteeApplications = async (req, res) => {
             ];
         }
 
-        console.log(
-            `[getCommitteeApplications] Role: ${req.user.role}, Dept: ${req.user.department}, Status: ${targetStatus}, Filter:`,
-            JSON.stringify(whereClause)
-        );
-
         const applications = await prisma.application.findMany({
             where: whereClause,
             include: {
                 student: {
                     select: {
-                        fullName: true,
-                        phone: true,
-                        collegeName: true,
-                        cgpa: true,
-                        branch: true,
-                        yearOfStudy: true,
+                        fullName: true, phone: true, collegeName: true,
+                        cgpa: true, branch: true, yearOfStudy: true,
                         photoUrl: true,
                         user: { select: { email: true } }
                     }
                 },
                 internship: {
                     select: {
-                        title: true,
-                        department: true,
-                        duration: true,
-                        evaluationCriteria: true,
-                        committee: true
+                        title: true, department: true, duration: true,
+                        evaluationCriteria: true, committee: true
                     }
                 },
-                mentor: {
-                    select: {
-                        name: true,
-                        email: true,
-                        department: true
-                    }
-                },
+                departmentGroup: { select: { id: true, department: true, title: true } },
+                problemStatement: { select: { id: true, title: true, vacancies: true } },
+                mentor: { select: { name: true, email: true, department: true } },
                 evaluationScores: true,
                 documents: true
             },
@@ -104,7 +84,7 @@ const getCommitteeApplications = async (req, res) => {
  */
 const submitEvaluation = async (req, res) => {
     try {
-        const { applicationId, scores } = req.body; // scores is an array of { questionId, score, comments }
+        const { applicationId, scores } = req.body;
         const evaluatorId = req.user.id;
         const evaluatorRole = req.user.role;
 
@@ -114,12 +94,9 @@ const submitEvaluation = async (req, res) => {
 
         const application = await prisma.application.findUnique({
             where: { id: applicationId },
-            include: { 
+            include: {
                 internship: {
-                    include: {
-                        committee: true,
-                        evaluationCriteria: true
-                    }
+                    include: { committee: true, evaluationCriteria: true }
                 }
             }
         });
@@ -134,18 +111,15 @@ const submitEvaluation = async (req, res) => {
         }
 
         const isHod = committee.hodId === evaluatorId;
-        // Mentor can be assigned either at committee level or per-application (HOD shortlisting flow).
         const isMentor = committee.mentorId === evaluatorId || application.mentorId === evaluatorId;
         const isAssignedPrtiRep = committee.prtiMemberId === evaluatorId;
         const isAdmin = evaluatorRole === 'ADMIN';
         const isGlobalCommitteeRole = evaluatorRole === 'CE_PRTI' || evaluatorRole === 'COMMITTEE_MEMBER';
 
-        // CE_PRTI/COMMITTEE_MEMBER are treated as global committee roles (same as listing endpoint),
-        // so they can score even if not explicitly set as committee.prtiMemberId.
         if (!isHod && !isMentor && !isAssignedPrtiRep && !isAdmin && !isGlobalCommitteeRole) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Unauthorized: You are not a member of the committee for this internship' 
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized: You are not a member of the committee for this internship'
             });
         }
 
@@ -156,11 +130,8 @@ const submitEvaluation = async (req, res) => {
             else storageRole = 'CE_PRTI';
         }
 
-        // Validate and Upsert all scores in a transaction
         await prisma.$transaction(async (tx) => {
-            // Update status if it's currently SHORTLISTED
             if (application.status === 'SHORTLISTED') {
-                console.log(`[Evaluation] Transitioning Application ${applicationId} to UNDER_COMMITTEE_REVIEW`);
                 await tx.application.update({
                     where: { id: applicationId },
                     data: { status: 'UNDER_COMMITTEE_REVIEW' }
@@ -171,7 +142,6 @@ const submitEvaluation = async (req, res) => {
                 if (s.score === undefined || s.score < 0 || s.score > 50) {
                     throw new Error(`Score must be between 0 and 50 for question ${s.questionId}`);
                 }
-                
                 await tx.evaluationScore.upsert({
                     where: {
                         applicationId_memberId_questionId: {
@@ -197,14 +167,11 @@ const submitEvaluation = async (req, res) => {
                 });
             }
 
-            // Recalculate Final Score
-            const allScores = await tx.evaluationScore.findMany({
-                where: { applicationId }
-            });
-
+            // Recalculate final score
+            const allScores = await tx.evaluationScore.findMany({ where: { applicationId } });
             const criteria = application.internship.evaluationCriteria;
             let totalFinalScore = 0;
-            let breakdown = {};
+            const breakdown = {};
 
             for (const q of criteria) {
                 const questionScores = allScores.filter(s => s.questionId === q.id);
@@ -215,8 +182,6 @@ const submitEvaluation = async (req, res) => {
                 }
             }
 
-            console.log(`[Evaluation] Application ${applicationId} Final Score Recalculated: ${totalFinalScore}`);
-
             await tx.application.update({
                 where: { id: applicationId },
                 data: {
@@ -226,48 +191,40 @@ const submitEvaluation = async (req, res) => {
             });
         });
 
-        // Get all evaluations to return updated state
-        const allEvaluations = await prisma.evaluationScore.findMany({
-            where: { applicationId }
-        });
-
-        res.status(200).json({ 
-            success: true, 
+        const allEvaluations = await prisma.evaluationScore.findMany({ where: { applicationId } });
+        res.status(200).json({
+            success: true,
             message: 'Evaluation scores submitted successfully',
-            data: { 
-                applicationId, 
-                evaluatorId,
-                evaluations: allEvaluations
-            }
+            data: { applicationId, evaluatorId, evaluations: allEvaluations }
         });
     } catch (error) {
-        console.error('[Evaluation] DB Write Failure:', error);
-        res.status(500).json({ success: false, message: error.message || 'Server Error during evaluation submission' });
+        console.error('[Evaluation] Error:', error);
+        res.status(500).json({ success: false, message: error.message || 'Server Error' });
     }
 };
 
 /**
- * PRTI Member gives final approval (Committee Head)
+ * HOD gives final candidate selection after committee evaluation
+ * Sets status to SELECTED (not HIRED — reporting comes later).
  * POST /api/v1/prti/committees/approve
  */
 const giveFinalApproval = async (req, res) => {
     try {
         const { applicationId, approved, assignedRole, rejectionReason } = req.body;
-        const evaluatorId = req.user.id;
         const evaluatorRole = req.user.role;
 
-        // HOD makes final approval
-        if (evaluatorRole !== 'HOD') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Only HOD can give final approval and select the candidate' 
+        if (evaluatorRole !== 'HOD' && evaluatorRole !== 'ADMIN') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only HOD can make the final selection'
             });
         }
 
         const application = await prisma.application.findUnique({
             where: { id: applicationId },
-            include: { 
-                internship: true
+            include: {
+                internship: { include: { evaluationCriteria: true } },
+                student: { select: { collegeCategory: true, fullName: true } }
             }
         });
 
@@ -275,81 +232,81 @@ const giveFinalApproval = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Application not found' });
         }
 
-        if (application.status !== 'SHORTLISTED' && application.status !== 'APPROVED') {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Application is not ready for final approval' 
+        if (!['UNDER_COMMITTEE_REVIEW', 'SHORTLISTED'].includes(application.status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Application is not ready for final selection'
             });
         }
 
-        // Check if all 3 committee members have submitted scores
+        // Verify all 3 committee members have scored all criteria
         const criteriaCount = application.internship.evaluationCriteria?.length || 0;
         const allScores = await prisma.evaluationScore.findMany({ where: { applicationId } });
-        
-        const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
-        const hodScores = allScores.filter(s => s.role === 'HOD');
+
+        const prtiScores  = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
+        const hodScores   = allScores.filter(s => s.role === 'HOD');
         const mentorScores = allScores.filter(s => s.role === 'MENTOR');
 
-        const hasPrti = criteriaCount > 0 && prtiScores.length >= criteriaCount;
-        const hasHod = criteriaCount > 0 && hodScores.length >= criteriaCount;
-        const hasMentor = criteriaCount > 0 && mentorScores.length >= criteriaCount;
-
-        if (!hasPrti || !hasHod || !hasMentor) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'All 3 committee members must complete evaluation before final approval' 
+        if (
+            criteriaCount > 0 &&
+            (prtiScores.length < criteriaCount || hodScores.length < criteriaCount || mentorScores.length < criteriaCount)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'All 3 committee members must complete evaluation before final selection'
             });
         }
 
-        // Use pre-calculated committeeFinalScore
         const avgScore = application.committeeFinalScore || 0;
 
-        const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
-
         const result = await prisma.$transaction(async (tx) => {
-            const application = await tx.application.findUnique({
-                where: { id: applicationId },
-                include: { internship: true }
-            });
-
-            if (!application) throw new Error('Application not found');
-            
             if (approved) {
-                // Atomic seat check
-                const totalHiredCount = await tx.application.count({
-                    where: {
-                        internshipId: application.internshipId,
-                        status: { in: ['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'] }
-                    }
-                });
+                if (!assignedRole) throw new Error('Assigned role is mandatory for selection');
 
-                if (totalHiredCount >= application.internship.openingsCount) {
-                    throw new Error(`Internship Full: All ${application.internship.openingsCount} openings have been filled.`);
-                }
+                // Resolve per-category stipend amount and lock it on the application
+                const stipendAmounts = application.internship.stipendAmounts || {};
+                const collegeCategory = application.student?.collegeCategory || 'OTHER';
+                const resolvedStipend = stipendAmounts[collegeCategory]
+                    ?? stipendAmounts['OTHER']
+                    ?? null;
 
-                if (!assignedRole) throw new Error('Assigned role is mandatory for approval');
-
-                // Update application using workflow service logic (but inside this tx)
-                // Since our service uses its own tx, we'll implement it inline or refactor service to accept tx
                 await tx.application.update({
                     where: { id: applicationId },
                     data: {
-                        status: 'HIRED',
+                        status: 'SELECTED',
                         assignedRole,
-                        score: Math.round(avgScore)
+                        score: Math.round(avgScore),
+                        stipendAmount: resolvedStipend ? parseFloat(resolvedStipend) : null
                     }
                 });
-                
+
                 await tx.auditLog.create({
                     data: {
-                        action: 'FINAL_APPROVAL',
+                        action: 'CANDIDATE_SELECTED',
                         userEmail: req.user.email,
-                        details: `Approved application ${application.trackingId} for role ${assignedRole}`,
+                        details: `Selected ${application.trackingId} for role: ${assignedRole}`,
                         target: applicationId
                     }
                 });
 
-                return { success: true, message: 'Application approved successfully' };
+                // Notify student of selection
+                const studentUser = await tx.studentProfile.findUnique({
+                    where: { id: application.studentId },
+                    include: { user: { select: { email: true } } }
+                });
+                if (studentUser?.user?.email) {
+                    const { sendEmail } = require('../services/mailService');
+                    sendEmail(
+                        studentUser.user.email,
+                        'Congratulations — You have been selected for APTRANSCO Internship',
+                        `<h3>Dear ${studentUser.fullName},</h3>
+                        <p>Congratulations! You have been <strong>selected</strong> for the APTRANSCO internship program.</p>
+                        <p>Please report physically to PRTI at the earliest. You will receive further instructions once your reporting is confirmed.</p>
+                        <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
+                    ).catch(() => {});
+                }
+
+                return { success: true, message: 'Candidate selected successfully' };
             } else {
                 await tx.application.update({
                     where: { id: applicationId },
@@ -367,6 +324,86 @@ const giveFinalApproval = async (req, res) => {
 };
 
 /**
+ * PRTI marks a candidate as physically reported.
+ * Generates roll number and transitions SELECTED → REPORTED.
+ * POST /api/v1/prti/committees/mark-reported
+ */
+const markReported = async (req, res) => {
+    try {
+        const { applicationId } = req.body;
+
+        if (!['CE_PRTI', 'ADMIN'].includes(req.user.role)) {
+            return res.status(403).json({ success: false, message: 'Only CE_PRTI can mark reporting' });
+        }
+
+        const application = await prisma.application.findUnique({
+            where: { id: applicationId },
+            include: {
+                student: { include: { user: { select: { email: true } } } }
+            }
+        });
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        if (application.status !== 'SELECTED' && application.status !== 'APPROVED') {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot mark reported: application status is ${application.status}. Expected SELECTED.`
+            });
+        }
+
+        // transitionApplicationStatus handles roll number generation at REPORTED
+        const updated = await transitionApplicationStatus(
+            applicationId,
+            'REPORTED',
+            req.user,
+            'Physical reporting confirmed by PRTI.'
+        );
+
+        // Fetch updated roll number
+        const student = await prisma.studentProfile.findUnique({
+            where: { id: application.studentId },
+            select: { rollNumber: true, fullName: true }
+        });
+
+        // Notify student to upload joining documents
+        const studentEmail = application.student?.user?.email;
+        if (studentEmail) {
+            const { sendEmail } = require('../services/mailService');
+            sendEmail(
+                studentEmail,
+                'Reporting Confirmed — Upload Your Joining Documents',
+                `<h3>Dear ${student?.fullName || 'Student'},</h3>
+                <p>Your physical reporting to APTRANSCO has been confirmed.</p>
+                <p><strong>Your Roll Number: ${student?.rollNumber || 'Will be communicated separately'}</strong></p>
+                <p>Please log in to the portal and upload the following joining documents:</p>
+                <ul>
+                    <li>No Objection Certificate (NOC) from your college</li>
+                    <li>Bond / Service Agreement</li>
+                    <li>Undertaking Form</li>
+                </ul>
+                <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
+            ).catch(() => {});
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Candidate marked as reported. Roll number generated.',
+            data: {
+                applicationId,
+                status: updated.status,
+                rollNumber: student?.rollNumber
+            }
+        });
+    } catch (error) {
+        console.error('Mark reported error:', error.message);
+        res.status(400).json({ success: false, message: error.message || 'Server Error' });
+    }
+};
+
+/**
  * Get committee evaluation status for an internship
  * GET /api/v1/prti/committees/:internshipId/status
  */
@@ -377,26 +414,14 @@ const getCommitteeStatus = async (req, res) => {
         const applications = await prisma.application.findMany({
             where: {
                 internshipId,
-                status: 'SHORTLISTED'
+                status: { in: ['SHORTLISTED', 'UNDER_COMMITTEE_REVIEW'] }
             },
             include: {
-                internship: {
-                    select: {
-                        evaluationCriteria: true
-                    }
-                },
+                internship: { select: { evaluationCriteria: true } },
                 student: {
-                    select: {
-                        fullName: true,
-                        user: { select: { email: true } }
-                    }
+                    select: { fullName: true, user: { select: { email: true } } }
                 },
-                mentor: {
-                    select: {
-                        name: true,
-                        department: true
-                    }
-                },
+                mentor: { select: { name: true, department: true } },
                 evaluationScores: true
             }
         });
@@ -404,34 +429,33 @@ const getCommitteeStatus = async (req, res) => {
         const evaluationStatus = applications.map(app => {
             const allScores = app.evaluationScores || [];
             const criteriaCount = app.internship?.evaluationCriteria?.length || 0;
-            
-            const prtiScores = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
-            const hodScores = allScores.filter(s => s.role === 'HOD');
+
+            const prtiScores  = allScores.filter(s => s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER');
+            const hodScores   = allScores.filter(s => s.role === 'HOD');
             const mentorScores = allScores.filter(s => s.role === 'MENTOR');
 
-            const hasPrti = criteriaCount > 0 && prtiScores.length >= criteriaCount;
-            const hasHod = criteriaCount > 0 && hodScores.length >= criteriaCount;
+            const hasPrti   = criteriaCount > 0 && prtiScores.length >= criteriaCount;
+            const hasHod    = criteriaCount > 0 && hodScores.length >= criteriaCount;
             const hasMentor = criteriaCount > 0 && mentorScores.length >= criteriaCount;
-
-            const submittedCount = [hasPrti, hasHod, hasMentor].filter(Boolean).length;
+            const allDone   = hasPrti && hasHod && hasMentor;
 
             return {
                 applicationId: app.id,
                 studentName: app.student.fullName,
                 mentorName: app.mentor?.name || 'Not Assigned',
                 scores: {
-                    prtiComplete: hasPrti,
-                    hodComplete: hasHod,
+                    prtiComplete:   hasPrti,
+                    hodComplete:    hasHod,
                     mentorComplete: hasMentor,
-                    average: app.committeeFinalScore
+                    average:        app.committeeFinalScore
                 },
-                allScoresSubmitted: submittedCount === 3,
-                readyForApproval: submittedCount === 3
+                allScoresSubmitted: allDone,
+                readyForApproval:   allDone
             };
         });
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             data: {
                 internshipId,
                 totalApplications: applications.length,
@@ -450,5 +474,6 @@ module.exports = {
     getCommitteeApplications,
     submitEvaluation,
     giveFinalApproval,
+    markReported,
     getCommitteeStatus
 };

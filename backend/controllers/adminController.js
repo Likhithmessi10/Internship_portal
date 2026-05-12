@@ -28,7 +28,7 @@ const createInternship = async (req, res) => {
         const {
             batchId, title, department, description, roles, rolesData, requirements,
             expectations, location, duration, openingsCount, applicationDeadline,
-            requiredDocuments, stipendType, stipendAmount, customQuestions,
+            requiredDocuments, stipendType, stipendAmounts, customQuestions,
             evaluationQuestions, preferredColleges
         } = req.body;
 
@@ -42,6 +42,8 @@ const createInternship = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Invalid Master Program selected' });
         }
 
+        const isGroupMode = req.body.internshipMode === 'GROUP';
+
         let targetDepartment = department;
         if (req.user.role === 'HOD' || req.user.role === 'MENTOR') {
             if (!req.user.department) {
@@ -50,9 +52,11 @@ const createInternship = async (req, res) => {
             targetDepartment = req.user.department;
         }
 
-        if (!targetDepartment) {
+        // GROUP internships span multiple departments — no single department required
+        if (!targetDepartment && !isGroupMode) {
             return res.status(400).json({ success: false, message: 'Department is required' });
         }
+        if (!targetDepartment) targetDepartment = 'ALL';
 
         const internship = await prisma.internship.create({
             data: {
@@ -70,12 +74,15 @@ const createInternship = async (req, res) => {
                 applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
                 requiredDocuments: requiredDocuments || null,
                 stipendType: stipendType || 'NON_COLLABORATIVE',
-                stipendAmount: stipendAmount ? parseFloat(stipendAmount) : null,
+                // stipendAmounts: { IIT: 25000, NIT: 20000, STATE: 12000, PRIVATE: 8000, ... }
+                stipendAmounts: stipendAmounts || null,
                 customQuestions: customQuestions || [],
                 preferredColleges: preferredColleges || [],
                 quotaPercentages: req.body.quotaPercentages || null,
                 internshipType: req.body.internshipType || 'STIPEND',
                 internshipMode: req.body.internshipMode || 'SINGLE',
+                // GROUP internships start as DRAFT — visible only after HODs submit and PRTI publishes
+                publishStatus: (req.body.internshipMode === 'GROUP') ? 'DRAFT' : 'LIVE',
                 fields: {
                     create: (req.body.fields || []).map(f => ({
                         fieldName: f.fieldName,
@@ -208,10 +215,12 @@ const getAllInternships = async (req, res) => {
                     batch: { select: { id: true, title: true } },
                     departmentGroups: {
                         include: {
-                            _count: { select: { applications: true } }
+                            _count: { select: { applications: true } },
+                            fields: true
                         },
                         orderBy: { department: 'asc' }
-                    }
+                    },
+                    fields: true
                 }
             }),
             prisma.internship.count({ where: whereClause })
@@ -220,8 +229,8 @@ const getAllInternships = async (req, res) => {
         const result = internships.map(i => ({
             ...i,
             applicationsCount: i._count.applications,
-            hiredCount: i.applications.filter(a => ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
-            remainingOpenings: Math.max(0, i.openingsCount - i.applications.filter(a => ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length),
+            hiredCount: i.applications.filter(a => ['SELECTED', 'APPROVED', 'REPORTED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length,
+            remainingOpenings: Math.max(0, i.openingsCount - i.applications.filter(a => ['SELECTED', 'APPROVED', 'REPORTED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length),
             applications: undefined,
             _count: undefined,
             departmentGroups: i.departmentGroups.map(g => ({
@@ -552,14 +561,22 @@ const updateApplicationStatus = async (req, res) => {
         const applicationId = req.params.id;
 
         // 1. Strict Enum Enforcement
-        const allowed = ['SUBMITTED', 'SHORTLISTED', 'APPROVED', 'REJECTED', 'HIRED', 'ONGOING', 'COMPLETED'];
+        const allowed = [
+            'SUBMITTED', 'SHORTLISTED', 'UNDER_COMMITTEE_REVIEW',
+            'SELECTED', 'APPROVED', 'REPORTED',
+            'REJECTED', 'WAITLISTED', 'HIRED', 'ONGOING', 'COMPLETED'
+        ];
         if (!allowed.includes(status)) {
             return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${allowed.join(', ')}` });
         }
 
         const application = await prisma.application.findUnique({
             where: { id: applicationId },
-            include: { student: { include: { user: true } }, internship: true }
+            include: {
+                student: { include: { user: true } },
+                internship: true,
+                departmentGroup: true
+            }
         });
 
         if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
@@ -568,14 +585,15 @@ const updateApplicationStatus = async (req, res) => {
         const student = application.student;
 
         // 2. Mentor Verification (if provided)
+        // For GROUP internships, internship.department = 'ALL', so use the dept group's department
         let mentorUser = null;
         if (mentorId) {
+            const mentorDept = internship.internshipMode === 'GROUP'
+                ? (application.departmentGroup?.department || req.user.department)
+                : internship.department;
+
             mentorUser = await prisma.user.findFirst({
-                where: {
-                    id: mentorId,
-                    role: 'MENTOR',
-                    department: internship.department
-                }
+                where: { id: mentorId, role: 'MENTOR', department: mentorDept }
             });
 
             if (!mentorUser) {
@@ -631,8 +649,16 @@ const updateApplicationStatus = async (req, res) => {
         if (studentEmail && !studentEmail.endsWith('@aptransco.portal')) {
             if (status === 'REJECTED') {
                 emailService.sendStatusUpdate(studentEmail, student.fullName, 'Rejected', 'Your application was not selected.');
-            } else if (status === 'APPROVED' || status === 'HIRED') {
+            } else if (status === 'SELECTED' || status === 'APPROVED') {
                 emailService.sendInterviewPass(studentEmail, student.fullName);
+            } else if (status === 'REPORTED') {
+                const { sendEmail } = require('../services/mailService');
+                sendEmail(studentEmail, 'Reporting Confirmed — Upload Joining Documents',
+                    `<h3>Dear ${student.fullName},</h3>
+                    <p>Your physical reporting to APTRANSCO has been confirmed. Your Roll Number has been generated.</p>
+                    <p>Please log in to the portal and upload your <strong>joining documents</strong> (NOC, Bond, Undertaking) to complete your onboarding.</p>
+                    <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
+                ).catch(() => {});
             }
         }
 
@@ -1070,7 +1096,7 @@ const updateStipendDetails = async (req, res) => {
 const getAllInterns = async (req, res) => {
     try {
         const whereClause = {
-            status: { in: ['APPROVED', 'HIRED', 'ONGOING', 'COMPLETED'] }
+            status: { in: ['SELECTED', 'APPROVED', 'REPORTED', 'HIRED', 'ONGOING', 'COMPLETED'] }
         };
 
         // Role-based filtering
@@ -1202,43 +1228,67 @@ const getWorkAssignments = async (req, res) => {
 const getMentorMeetings = async (req, res) => {
     try {
         const userId = req.user.id;
-        const role = req.user.role;
+        const role   = req.user.role;
 
-        let whereClause = {};
-
+        let committeeWhere = {};
         if (role === 'HOD') {
-            whereClause.hodId = userId;
+            committeeWhere.hodId = userId;
         } else if (role === 'MENTOR') {
-            whereClause.mentorId = userId;
+            committeeWhere.mentorId = userId;
         } else if (role === 'CE_PRTI') {
-            whereClause.prtiMemberId = userId;
+            committeeWhere.prtiMemberId = userId;
         } else if (role !== 'ADMIN') {
-            // Other roles might be part of committee membersData
-            whereClause.OR = [
-                { hodId: userId },
-                { mentorId: userId },
-                { prtiMemberId: userId }
-            ];
+            committeeWhere.OR = [{ hodId: userId }, { mentorId: userId }, { prtiMemberId: userId }];
         }
 
+        // SINGLE internship committees (existing)
         const committees = await prisma.committee.findMany({
-            where: whereClause,
+            where: committeeWhere,
             include: {
                 internship: {
-                    select: {
-                        id: true,
-                        title: true,
-                        department: true,
-                        location: true
-                    }
+                    select: { id: true, title: true, department: true, location: true, internshipMode: true }
                 }
             },
             orderBy: { interviewDate: 'asc' }
         });
 
-        res.status(200).json({ success: true, data: committees });
+        // GROUP internship: PS-level mentor assignments
+        let psAssignments = [];
+        if (role === 'MENTOR' || role === 'ADMIN') {
+            const problemStatements = await prisma.internshipDepartmentProblemStatement.findMany({
+                where: { mentorId: userId },
+                include: {
+                    internship: {
+                        select: { id: true, title: true, internshipMode: true }
+                    },
+                    departmentGroup: {
+                        select: { id: true, department: true, title: true }
+                    },
+                    _count: { select: { applications: true } }
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+            psAssignments = problemStatements.map(ps => ({
+                _type: 'PS_ASSIGNMENT',
+                id: ps.id,
+                psNumber: ps.problemStatementNumber,
+                psTitle: ps.title,
+                vacancies: ps.vacancies,
+                applicationsCount: ps._count.applications,
+                department: ps.departmentGroup?.department,
+                internship: ps.internship,
+                departmentGroup: ps.departmentGroup
+            }));
+        }
+
+        // Tag SINGLE committees for easier rendering
+        const taggedCommittees = committees
+            .filter(c => c.internship?.internshipMode !== 'GROUP') // exclude old GROUP committee stubs
+            .map(c => ({ _type: 'COMMITTEE', ...c }));
+
+        res.status(200).json({ success: true, data: [...taggedCommittees, ...psAssignments] });
     } catch (error) {
-        console.error('Admin controller error:', error.message);
+        console.error('getMentorMeetings error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -1258,9 +1308,12 @@ const addDepartmentGroup = async (req, res) => {
         }
 
         const { department, title, description, openings, rolesData, skillsRequired, expectations,
-                preferredColleges, quotaPercentages, problemStatements, customQuestions } = req.body;
+                preferredColleges, quotaPercentages, problemStatements, customQuestions, internshipType } = req.body;
 
         if (!department) return res.status(400).json({ success: false, message: 'Department is required' });
+
+        // Use the internshipType from the request body; fall back to the parent internship's type
+        const resolvedType = internshipType || internship.internshipType || 'COLLABORATIVE';
 
         const group = await prisma.internshipDepartmentGroup.create({
             data: {
@@ -1274,18 +1327,42 @@ const addDepartmentGroup = async (req, res) => {
                 expectations: expectations || null,
                 preferredColleges: preferredColleges || [],
                 quotaPercentages: quotaPercentages || null,
-                problemStatements: problemStatements || [],
                 customQuestions: customQuestions || [],
+                internshipType: resolvedType,
+                notifiedAt: new Date()
             }
         });
 
         // Create committee stub
         await prisma.committee.create({ data: { departmentGroupId: group.id } });
 
-        // Update parent openings
+        // If internship was DRAFT, move to PENDING_HOD_INPUTS now that a dept group exists
+        if (internship.publishStatus === 'DRAFT') {
+            await prisma.internship.update({
+                where: { id: req.params.id },
+                data: { publishStatus: 'PENDING_HOD_INPUTS' }
+            });
+        }
+
+        // Update parent openings total
         const allGroups = await prisma.internshipDepartmentGroup.findMany({ where: { internshipId: req.params.id } });
         const totalOpenings = allGroups.reduce((s, g) => s + g.openings, 0);
         await prisma.internship.update({ where: { id: req.params.id }, data: { openingsCount: totalOpenings } });
+
+        // Notify HOD of this department about the new internship
+        const hodUser = await prisma.user.findFirst({ where: { role: 'HOD', department } });
+        if (hodUser) {
+            const { sendEmail } = require('../services/mailService');
+            sendEmail(
+                hodUser.email,
+                `Action Required: Submit Problem Statements for ${internship.title}`,
+                `<h3>Dear ${hodUser.name || 'HOD'},</h3>
+                <p>APTRANSCO has created a new internship program: <strong>${internship.title}</strong></p>
+                <p>Your department (<strong>${department}</strong>) has been included. Please log in to the APTRANSCO Internship Portal and submit problem statements for your department.</p>
+                <p>The internship will go live for students only after all departments submit their problem statements.</p>
+                <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
+            ).catch(err => console.error('HOD notify fail:', err.message));
+        }
 
         res.status(201).json({ success: true, data: group });
     } catch (error) {
@@ -1437,6 +1514,420 @@ const searchInternByRollNumber = async (req, res) => {
     }
 };
 
+/**
+ * @desc    PRTI: full batch detail — all internships with dept groups + problem statements
+ * @route   GET /api/v1/admin/batches/:id/details
+ * @access  Private (ADMIN, CE_PRTI)
+ */
+const getBatchDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const batch = await prisma.internshipBatch.findUnique({ where: { id } });
+        if (!batch) return res.status(404).json({ success: false, message: 'Batch not found' });
+
+        const internships = await prisma.internship.findMany({
+            where: { batchId: id },
+            include: {
+                departmentGroups: {
+                    include: {
+                        problemStatements: { orderBy: { problemStatementNumber: 'asc' } },
+                        fields: true,
+                        _count: { select: { applications: true } }
+                    },
+                    orderBy: [{ hodSubmitted: 'asc' }, { department: 'asc' }]
+                },
+                _count: { select: { applications: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // Submission progress metrics only track COLLABORATIVE GROUP internships
+        const collabGroups        = internships.filter(i => i.internshipType === 'COLLABORATIVE').flatMap(i => i.departmentGroups);
+        const totalGroups         = collabGroups.length;
+        const submittedGroups     = collabGroups.filter(g => g.hodSubmitted).length;
+        const totalVacancies      = internships.reduce((s, i) => s + (i.openingsCount || 0), 0);
+        const totalProblemStmts   = collabGroups.reduce((s, g) => s + g.problemStatements.length, 0);
+
+        console.log(`[Batch Details] "${batch.title}": ${internships.length} internship(s), ${submittedGroups}/${totalGroups} groups submitted`);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                batch,
+                internships: internships.map(i => ({
+                    ...i,
+                    applicationsCount: i._count.applications,
+                    _count: undefined,
+                    departmentGroups: i.departmentGroups.map(g => ({
+                        ...g,
+                        applicationsCount: g._count.applications,
+                        _count: undefined
+                    }))
+                })),
+                summary: {
+                    totalInternships: internships.length,
+                    totalGroups,
+                    submittedGroups,
+                    pendingGroups: totalGroups - submittedGroups,
+                    totalVacancies,
+                    totalProblemStmts
+                }
+            }
+        });
+    } catch (error) {
+        console.error('getBatchDetails error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    HOD: fetch all GROUP internship dept-groups that are still pending submission
+ * @route   GET /api/v1/admin/hod/pending-group-submissions
+ * @access  Private (HOD, ADMIN, CE_PRTI)
+ *
+ * Queries InternshipDepartmentGroup.department (group-level field) — NOT
+ * Internship.department (which is 'ALL' for GROUP internships and would never match).
+ */
+const getHodPendingSubmissions = async (req, res) => {
+    try {
+        const { role, department } = req.user;
+
+        const whereClause = {
+            hodSubmitted: false,
+            internship: { isActive: true, internshipMode: 'GROUP', internshipType: 'COLLABORATIVE' }
+        };
+
+        if (role === 'HOD') {
+            if (!department) {
+                return res.status(400).json({ success: false, message: 'HOD department not set' });
+            }
+            whereClause.department = department;
+        }
+
+        const pendingGroups = await prisma.internshipDepartmentGroup.findMany({
+            where: whereClause,
+            include: {
+                internship: {
+                    select: {
+                        id: true, title: true, description: true, duration: true,
+                        internshipType: true, applicationDeadline: true, createdAt: true,
+                        publishStatus: true,
+                        batch: { select: { title: true } }
+                    }
+                },
+                problemStatements: { orderBy: { problemStatementNumber: 'asc' } }
+            },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        console.log(`[HOD Pending] dept="${department}" → ${pendingGroups.length} pending group(s)`);
+
+        res.status(200).json({ success: true, data: pendingGroups });
+    } catch (error) {
+        console.error('getHodPendingSubmissions error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    HOD: fetch ALL GROUP internship dept-groups (pending + submitted) for their dept
+ * @route   GET /api/v1/admin/hod/group-submissions
+ * @access  Private (HOD, ADMIN, CE_PRTI)
+ *
+ * This is the correct query for the problem-statements page.  The previous approach
+ * called GET /admin/internships and tried to extract groups from it, but GROUP
+ * internships have Internship.department = 'ALL' which never matches HOD's dept
+ * filter — so submitted groups silently disappeared after the first submission.
+ * Querying InternshipDepartmentGroup directly (by group.department) fixes this.
+ */
+const getHodGroupSubmissions = async (req, res) => {
+    try {
+        const { role, department } = req.user;
+
+        const whereClause = {
+            internship: { isActive: true, internshipMode: 'GROUP', internshipType: 'COLLABORATIVE' }
+        };
+
+        if (role === 'HOD') {
+            if (!department) {
+                return res.status(400).json({ success: false, message: 'HOD department not set' });
+            }
+            whereClause.department = department;
+        }
+
+        const groups = await prisma.internshipDepartmentGroup.findMany({
+            where: whereClause,
+            include: {
+                internship: {
+                    select: {
+                        id: true, title: true, description: true, duration: true,
+                        internshipType: true, applicationDeadline: true, createdAt: true,
+                        publishStatus: true,
+                        batch: { select: { title: true } }
+                    }
+                },
+                problemStatements: { orderBy: { problemStatementNumber: 'asc' } }
+            },
+            // Pending first, then submitted; within each bucket sort by creation time
+            orderBy: [{ hodSubmitted: 'asc' }, { createdAt: 'asc' }]
+        });
+
+        const pending = groups.filter(g => !g.hodSubmitted).length;
+        const submitted = groups.filter(g => g.hodSubmitted).length;
+        console.log(`[HOD Group Submissions] dept="${department}" → ${pending} pending, ${submitted} submitted`);
+
+        res.status(200).json({ success: true, data: groups });
+    } catch (error) {
+        console.error('getHodGroupSubmissions error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    PRTI: get department-wise submission progress for a GROUP internship
+ * @route   GET /api/v1/admin/internships/:id/group-progress
+ * @access  Private (ADMIN, CE_PRTI)
+ */
+const getGroupInternshipProgress = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const internship = await prisma.internship.findUnique({
+            where: { id },
+            include: {
+                departmentGroups: {
+                    include: {
+                        problemStatements: { orderBy: { problemStatementNumber: 'asc' } },
+                        _count: { select: { applications: true } }
+                    },
+                    orderBy: { department: 'asc' }
+                },
+                batch: { select: { title: true } }
+            }
+        });
+
+        if (!internship) {
+            return res.status(404).json({ success: false, message: 'Internship not found' });
+        }
+
+        const total = internship.departmentGroups.length;
+        const submitted = internship.departmentGroups.filter(g => g.hodSubmitted).length;
+
+        console.log(`[Group Progress] "${internship.title}": ${submitted}/${total} depts submitted`);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                id: internship.id,
+                title: internship.title,
+                publishStatus: internship.publishStatus,
+                batch: internship.batch,
+                total,
+                submitted,
+                pending: total - submitted,
+                groups: internship.departmentGroups.map(g => ({
+                    ...g,
+                    applicationsCount: g._count.applications,
+                    _count: undefined
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('getGroupInternshipProgress error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    HOD: applications for Learning Internships (NON_STIPEND) in their dept
+ * @route   GET /api/v1/admin/hod/learning-applications
+ * @access  Private (HOD, ADMIN, CE_PRTI)
+ */
+const getHodLearningApplications = async (req, res) => {
+    try {
+        const hodDept = req.user.department;
+        if (!hodDept) return res.status(400).json({ success: false, message: 'HOD department not set' });
+
+        const appInclude = {
+            student: { include: { user: { select: { email: true } } } },
+            internship: { select: { id: true, title: true, internshipType: true, internshipMode: true, duration: true } },
+            field: true,
+            departmentGroup: { select: { id: true, department: true, title: true } }
+        };
+
+        // SINGLE NON_STIPEND — dept matches Internship.department directly
+        const singleApps = await prisma.application.findMany({
+            where: {
+                internship: {
+                    internshipType: 'NON_STIPEND',
+                    internshipMode: 'SINGLE',
+                    department: hodDept,
+                    isActive: true
+                }
+            },
+            include: appInclude,
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // GROUP NON_STIPEND — dept matches InternshipDepartmentGroup.department
+        const groupApps = await prisma.application.findMany({
+            where: {
+                internship: { internshipType: 'NON_STIPEND', internshipMode: 'GROUP', isActive: true },
+                departmentGroup: { department: hodDept }
+            },
+            include: appInclude,
+            orderBy: { createdAt: 'desc' }
+        });
+
+        res.status(200).json({ success: true, data: [...singleApps, ...groupApps] });
+    } catch (error) {
+        console.error('getHodLearningApplications error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Add a field to a GROUP NON_STIPEND dept group (or internship for SINGLE)
+ * @route   POST /api/v1/admin/internships/:id/groups/:groupId/fields
+ * @access  Private (ADMIN, CE_PRTI, HOD)
+ */
+const addGroupField = async (req, res) => {
+    try {
+        const { id: internshipId, groupId } = req.params;
+        const { fieldName, description, vacancies, locations } = req.body;
+
+        if (!fieldName) return res.status(400).json({ success: false, message: 'Field name is required' });
+
+        const group = await prisma.internshipDepartmentGroup.findUnique({ where: { id: groupId } });
+        if (!group || group.internshipId !== internshipId) {
+            return res.status(404).json({ success: false, message: 'Department group not found' });
+        }
+
+        const field = await prisma.internshipField.create({
+            data: {
+                departmentGroupId: groupId,
+                fieldName,
+                description: description || null,
+                vacancies: parseInt(vacancies) || 0,
+                locations: locations || []
+            }
+        });
+
+        // Recalculate group + parent internship openings
+        const allFields = await prisma.internshipField.findMany({ where: { departmentGroupId: groupId } });
+        const groupTotal = allFields.reduce((s, f) => s + f.vacancies, 0);
+        await prisma.internshipDepartmentGroup.update({ where: { id: groupId }, data: { openings: groupTotal } });
+
+        const allGroups = await prisma.internshipDepartmentGroup.findMany({ where: { internshipId } });
+        await prisma.internship.update({
+            where: { id: internshipId },
+            data: { openingsCount: allGroups.reduce((s, g) => s + g.openings, 0) }
+        });
+
+        res.status(201).json({ success: true, data: field });
+    } catch (error) {
+        console.error('addGroupField error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Delete a field from a GROUP dept group
+ * @route   DELETE /api/v1/admin/internships/:id/groups/:groupId/fields/:fieldId
+ */
+const deleteGroupField = async (req, res) => {
+    try {
+        const { id: internshipId, groupId, fieldId } = req.params;
+
+        const field = await prisma.internshipField.findUnique({
+            where: { id: fieldId },
+            include: { _count: { select: { applications: true } } }
+        });
+        if (!field || field.departmentGroupId !== groupId) {
+            return res.status(404).json({ success: false, message: 'Field not found' });
+        }
+        if (field._count.applications > 0) {
+            return res.status(400).json({ success: false, message: 'Cannot delete field with existing applications' });
+        }
+
+        await prisma.internshipField.delete({ where: { id: fieldId } });
+
+        // Recalculate openings
+        const allFields = await prisma.internshipField.findMany({ where: { departmentGroupId: groupId } });
+        const groupTotal = allFields.reduce((s, f) => s + f.vacancies, 0);
+        await prisma.internshipDepartmentGroup.update({ where: { id: groupId }, data: { openings: groupTotal } });
+
+        const allGroups = await prisma.internshipDepartmentGroup.findMany({ where: { internshipId } });
+        await prisma.internship.update({
+            where: { id: internshipId },
+            data: { openingsCount: allGroups.reduce((s, g) => s + g.openings, 0) }
+        });
+
+        res.status(200).json({ success: true, message: 'Field deleted' });
+    } catch (error) {
+        console.error('deleteGroupField error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Get HOD's dept problem statements with nested applications (for Applications page)
+ * @route   GET /api/v1/admin/hod/ps-applications
+ * @access  Private (HOD, ADMIN, CE_PRTI)
+ */
+const getHodPsApplications = async (req, res) => {
+    try {
+        const hodDept = req.user.department;
+        if (!hodDept) return res.status(400).json({ success: false, message: 'HOD department not set' });
+
+        const groups = await prisma.internshipDepartmentGroup.findMany({
+            where: {
+                department: hodDept,
+                internship: { internshipMode: 'GROUP', internshipType: 'COLLABORATIVE' }
+            },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                internship: {
+                    select: {
+                        id: true, title: true, publishStatus: true, internshipType: true,
+                        duration: true, shortlistingRatio: true, preferredColleges: true
+                    }
+                },
+                problemStatements: {
+                    orderBy: { problemStatementNumber: 'asc' },
+                    include: {
+                        mentor: { select: { id: true, name: true, email: true } },
+                        applications: {
+                            orderBy: { createdAt: 'desc' },
+                            include: {
+                                student: {
+                                    include: {
+                                        user: { select: { email: true, name: true } }
+                                    }
+                                },
+                                documents: true,
+                                stipend: true,
+                                mentor: { select: { name: true, email: true } },
+                                departmentGroup: { select: { id: true, department: true, title: true } },
+                                internship: {
+                                    include: { evaluationCriteria: { orderBy: { createdAt: 'asc' } } }
+                                },
+                                evaluationScores: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        res.status(200).json({ success: true, data: groups });
+    } catch (error) {
+        console.error('getHodPsApplications error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createInternship,
     getAllInternships,
@@ -1466,5 +1957,13 @@ module.exports = {
     getBatches,
     createBatch,
     deleteBatch,
-    searchInternByRollNumber
+    searchInternByRollNumber,
+    getBatchDetails,
+    getHodPendingSubmissions,
+    getHodGroupSubmissions,
+    getGroupInternshipProgress,
+    getHodPsApplications,
+    getHodLearningApplications,
+    addGroupField,
+    deleteGroupField
 };

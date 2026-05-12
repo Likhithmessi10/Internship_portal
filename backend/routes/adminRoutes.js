@@ -28,7 +28,15 @@ const {
     getBatches,
     createBatch,
     deleteBatch,
-    searchInternByRollNumber
+    searchInternByRollNumber,
+    getBatchDetails,
+    getHodPendingSubmissions,
+    getHodGroupSubmissions,
+    getGroupInternshipProgress,
+    getHodPsApplications,
+    getHodLearningApplications,
+    addGroupField,
+    deleteGroupField
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
@@ -37,6 +45,13 @@ const {
     getAttendance,
     bulkMarkAttendance
 } = require('../controllers/attendanceController');
+const {
+    submitProblemStatement,
+    getProblemStatements,
+    updateProblemStatement,
+    deleteProblemStatement,
+    assignPsMentor
+} = require('../controllers/hodProblemStatementController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -52,6 +67,7 @@ router.put('/config', authorize('ADMIN'), updatePortalConfig);
 
 // Internship Management
 router.get('/batches', getBatches);
+router.get('/batches/:id/details', authorize('ADMIN', 'CE_PRTI'), getBatchDetails);
 router.post('/batches', authorize('ADMIN', 'CE_PRTI'), createBatch);
 router.delete('/batches/:id', authorize('ADMIN', 'CE_PRTI'), deleteBatch);
 
@@ -64,10 +80,32 @@ router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI'), deleteInternshi
 router.put('/internships/:id/toggle', toggleInternship);
 router.put('/internships/:id/deadline', extendDeadline);
 
+// HOD: pending GROUP internship problem-statement submissions (used by dashboard banner)
+router.get('/hod/pending-group-submissions', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodPendingSubmissions);
+// HOD: ALL group submissions — pending + submitted (used by problem-statements page)
+router.get('/hod/group-submissions', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodGroupSubmissions);
+// HOD: problem statements with nested applications (used by Applications page)
+router.get('/hod/ps-applications', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodPsApplications);
+// HOD: Learning Internship (NON_STIPEND) applications for their dept
+router.get('/hod/learning-applications', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodLearningApplications);
+// GROUP NON_STIPEND: field management per dept group
+router.post('/internships/:id/groups/:groupId/fields', authorize('ADMIN', 'CE_PRTI', 'HOD'), addGroupField);
+router.delete('/internships/:id/groups/:groupId/fields/:fieldId', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteGroupField);
+
+// PRTI: department-wise submission progress for a GROUP internship
+router.get('/internships/:id/group-progress', authorize('ADMIN', 'CE_PRTI'), getGroupInternshipProgress);
+
 // Department Group CRUD (for GROUP internships)
 router.post('/internships/:id/groups', authorize('ADMIN', 'CE_PRTI'), addDepartmentGroup);
-router.put('/internships/:id/groups/:groupId', authorize('ADMIN', 'CE_PRTI'), updateDepartmentGroup);
+router.put('/internships/:id/groups/:groupId', authorize('ADMIN', 'CE_PRTI', 'HOD'), updateDepartmentGroup);
 router.delete('/internships/:id/groups/:groupId', authorize('ADMIN', 'CE_PRTI'), deleteDepartmentGroup);
+
+// Problem Statements (HOD submits for their dept group)
+router.get('/internships/:id/groups/:groupId/problem-statements', authorize('ADMIN', 'CE_PRTI', 'HOD'), getProblemStatements);
+router.post('/internships/:id/groups/:groupId/problem-statements', authorize('ADMIN', 'CE_PRTI', 'HOD'), submitProblemStatement);
+router.put('/internships/:id/groups/:groupId/problem-statements/:psId', authorize('ADMIN', 'CE_PRTI', 'HOD'), updateProblemStatement);
+router.delete('/internships/:id/groups/:groupId/problem-statements/:psId', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteProblemStatement);
+router.put('/internships/:id/groups/:groupId/problem-statements/:psId/mentor', authorize('ADMIN', 'CE_PRTI', 'HOD'), assignPsMentor);
 
 // Committee Management
 router.get('/internships/:id/committee', getCommitteeDetails);

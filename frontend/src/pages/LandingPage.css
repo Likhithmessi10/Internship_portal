@@ -62,7 +62,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(0, 48, 135, 0.3);
+  background: #00266b;
   padding: 12px 20px;
   font-size: 11px;
   font-weight: 800;
@@ -117,10 +117,10 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #004dc7;
   padding: 10px 18px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   white-space: nowrap;
   flex-shrink: 0;
   transition: all 0.2s ease;
@@ -128,21 +128,21 @@
 }
 
 .scroll-item:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #0056e0;
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .scroll-dept {
   font-size: 10px;
   font-weight: 800;
-  color: #D4A017;
+  color: #003087;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   padding: 3px 10px;
-  background: rgba(212, 160, 23, 0.15);
+  background: #D4A017;
   border-radius: 4px;
-  border: 1px solid rgba(212, 160, 23, 0.3);
+  border: 1px solid #c19214;
 }
 
 .scroll-title {
@@ -155,11 +155,11 @@
 .scroll-openings {
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  background: #003a9d;
   padding: 3px 10px;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @keyframes scroll-left {

@@ -259,6 +259,17 @@ const getPublicInternships = async (req, res, next) => {
                             { applicationDeadline: { gte: new Date() } }
                         ]
                     },
+                    include: {
+                        fields: true,
+                        departmentGroups: {
+                            include: {
+                                fields: true,
+                                problemStatements: {
+                                    orderBy: { problemStatementNumber: 'asc' }
+                                }
+                            }
+                        }
+                    },
                     orderBy: { createdAt: 'desc' }
                 }
             },

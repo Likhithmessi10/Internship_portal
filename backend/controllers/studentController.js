@@ -1,7 +1,5 @@
 const prisma = require('../lib/prisma');
 
-const crypto = require('crypto');
-
 /**
  * @desc    Create or Update Student Profile
  * @route   POST /api/v1/students/profile
@@ -9,7 +7,6 @@ const crypto = require('crypto');
  */
 const upsertProfile = async (req, res) => {
     try {
-        console.log('>>> Profile update payload:', JSON.stringify(req.body, null, 2));
         const userId = req.user.id;
 
         // Ensure user is a student
@@ -141,7 +138,8 @@ const getProfile = async (req, res) => {
                         internship: true,
                         stipend: true,
                         mentor: { select: { name: true, email: true, phone: true } },
-                        attendance: true
+                        attendance: true,
+                        documents: true
                     }
                 }
             }
@@ -154,7 +152,7 @@ const getProfile = async (req, res) => {
         // Ensure each hired/active application has an attendance object (even if empty)
         // to prevent frontend "missing property" issues
         for (const app of profile.applications) {
-            if (['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status) && !app.attendance) {
+            if (['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'].includes(app.status) && !app.attendance) {
                 app.attendance = {
                     daysAttended: 0,
                     totalDays: 0,
@@ -204,8 +202,82 @@ const upsertStipend = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Upload joining documents (NOC, BOND, UNDERTAKING) after reporting
+ * @route   POST /api/v1/students/applications/:id/joining-documents
+ * @access  Private (Student)
+ *
+ * These documents are unlocked only after the student's status is REPORTED or HIRED.
+ */
+const uploadJoiningDocuments = async (req, res) => {
+    try {
+        const applicationId = req.params.id;
+
+        const application = await prisma.application.findFirst({
+            where: { id: applicationId, student: { userId: req.user.id } }
+        });
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        if (!['SELECTED', 'REPORTED', 'HIRED'].includes(application.status)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Joining documents can only be uploaded after your reporting has been confirmed by PRTI'
+            });
+        }
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, message: 'No files uploaded' });
+        }
+
+        const JOINING_DOC_TYPES = new Set(['NOC', 'BOND', 'UNDERTAKING']);
+        const invalidDocs = req.files.filter(f => !JOINING_DOC_TYPES.has(f.fieldname));
+        if (invalidDocs.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid document type(s): ${invalidDocs.map(f => f.fieldname).join(', ')}. Allowed: NOC, BOND, UNDERTAKING`
+            });
+        }
+
+        // Upsert each document (replace if already uploaded)
+        for (const file of req.files) {
+            const existing = await prisma.document.findFirst({
+                where: { applicationId, type: file.fieldname }
+            });
+
+            if (existing) {
+                await prisma.document.update({
+                    where: { id: existing.id },
+                    data: { url: file.path, uploadedAt: new Date() }
+                });
+            } else {
+                await prisma.document.create({
+                    data: {
+                        applicationId,
+                        type: file.fieldname,
+                        url: file.path,
+                        label: { NOC: 'No Objection Certificate', BOND: 'Bond / Service Agreement', UNDERTAKING: 'Undertaking Form' }[file.fieldname] || file.fieldname
+                    }
+                });
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Joining documents uploaded successfully',
+            uploadedTypes: req.files.map(f => f.fieldname)
+        });
+    } catch (error) {
+        console.error('Upload joining docs error:', error.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     upsertProfile,
     getProfile,
-    upsertStipend
+    upsertStipend,
+    uploadJoiningDocuments
 };

@@ -1,8 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
 
 /**
  * Submit work for an assignment
@@ -58,7 +55,7 @@ const submitWork = async (req, res) => {
             },
             create: {
                 workAssignmentId: assignmentId,
-                studentId: assignment.application.student.userId,
+                studentId: assignment.application.studentId, // StudentProfile.id, not User.id
                 submissionText,
                 attachmentUrl,
                 attachmentType,
@@ -104,7 +101,7 @@ const getStudentWork = async (req, res) => {
             include: {
                 applications: {
                     where: {
-                        status: 'APPROVED'
+                        status: { in: ['REPORTED', 'HIRED', 'ONGOING', 'COMPLETED'] }
                     }
                 }
             }

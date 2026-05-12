@@ -113,6 +113,14 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
     const [overallComments, setOverallComments] = useState('');
     const [submittingEval, setSubmittingEval] = useState(false);
 
+    const isNonStipend = internship?.internshipType === 'NON_STIPEND' || application?.internship?.internshipType === 'NON_STIPEND';
+
+    useEffect(() => {
+        if (isNonStipend && !selectedRole) {
+            setSelectedRole(application.field?.fieldName || internship?.title || '');
+        }
+    }, [isNonStipend, application.field?.fieldName, internship?.title, selectedRole]);
+
     // Destructure application properties early to avoid "cannot access before initialization"
     if (!application) return null;
     const { student, documents, status, trackingId, createdAt } = application;
@@ -169,14 +177,16 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
             }
         }
 
-        if (user?.role === 'HOD') {
+        const nextStatus = isNonStipend ? 'SELECTED' : 'SHORTLISTED';
+
+        if (user?.role === 'HOD' && !isNonStipend) {
             if (!mentorIdInput) {
                 setWarning('HOD must assign a mentor to shortlist the candidate.');
                 return;
             }
-            updateStatus('SHORTLISTED', { mentorId: mentorIdInput });
+            updateStatus(nextStatus, { mentorId: mentorIdInput });
         } else {
-            updateStatus('SHORTLISTED');
+            updateStatus(nextStatus);
         }
     };
 
@@ -217,8 +227,10 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
     const handleHire = () => {
         if (!selectedRole && internship?.rolesData?.length > 0) return setWarning('Assign a role.');
         if (!joiningDate || !endDate) return setWarning('Specify Joining and End dates.');
-        // rollNumber is now strictly handled by the system on the backend
-        updateStatus('APPROVED', { joiningDate, endDate, assignedRole: selectedRole });
+        
+        // For non-stipend, PRTI/Admin hires officially from SELECTED status
+        const targetStatus = 'HIRED'; 
+        updateStatus(targetStatus, { joiningDate, endDate, assignedRole: selectedRole });
     };
 
 
@@ -265,11 +277,11 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-[0.15em] border ${internship?.category === 'MONETARY'
+                            <span className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-[0.15em] border ${!isNonStipend
                                 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                                 : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
                                 }`}>
-                                {internship?.category === 'MONETARY' ? 'MONETARY' : 'NON-MONETARY'}
+                                {!isNonStipend ? 'MONETARY' : 'NON-MONETARY'}
                             </span>
                             <span className="px-3 py-1 bg-primary/10 dark:bg-indigo-900/30 rounded text-[10px] font-bold text-primary dark:text-indigo-300 uppercase tracking-[0.15em] border border-primary/20 dark:border-indigo-800/50">{status}</span>
                             <button onClick={onClose} className="w-10 h-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-outline dark:text-slate-500 transition-colors">
@@ -435,6 +447,21 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                 )}
                             </div>
                         </section>
+                        
+                        {/* Joining Documents (Visible once uploaded) */}
+                        {(getDoc('NOC', 'No Objection Certificate') || getDoc('BOND', 'Bond / Service Agreement') || getDoc('UNDERTAKING', 'Undertaking Form')) && (
+                            <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="material-symbols-outlined text-teal-600 dark:text-teal-400 text-xl">fact_check</span>
+                                    <h3 className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest pt-1">Joining Documents</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <DocRow doc={getDoc('NOC', 'No Objection Certificate')} label="NOC Certificate" onView={openViewer} />
+                                    <DocRow doc={getDoc('BOND', 'Bond / Service Agreement')} label="Service Bond" onView={openViewer} />
+                                    <DocRow doc={getDoc('UNDERTAKING', 'Undertaking Form')} label="Undertaking" onView={openViewer} />
+                                </div>
+                            </section>
+                        )}
 
                         {/* Stipend / Bank Details (Instructor Requirement) */}
                         {application.stipend && (
@@ -466,7 +493,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                         <h4 className="text-[10px] font-bold text-primary dark:text-white uppercase tracking-[0.2em]">Application Review</h4>
                                     </div>
 
-                                    {user?.role === 'HOD' && (
+                                    {user?.role === 'HOD' && internship?.internshipType !== 'NON_STIPEND' && (
                                         <div className="mb-6 space-y-2">
                                             <label className="text-[10px] font-bold text-outline dark:text-slate-500 uppercase tracking-widest ml-1">Assign Mentor (Required for Shortlisting)</label>
                                             <select
@@ -490,7 +517,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
 
                                     <div className="flex gap-4">
                                         <button onClick={handleForwardCommittee} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
-                                            Shortlist Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
+                                            {isNonStipend ? 'Select Candidate' : 'Shortlist Candidate'} <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
                                         </button>
                                         <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
                                             Reject Candidate
@@ -500,137 +527,138 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                             </div>
                         )}
 
-                        {['SHORTLISTED', 'UNDER_COMMITTEE_REVIEW'].includes(status) && ['ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'].includes(user?.role) && (
+                        {(['SHORTLISTED', 'UNDER_COMMITTEE_REVIEW', 'SELECTED'].includes(status) || (isNonStipend && ['SUBMITTED', 'SHORTLISTED', 'SELECTED', 'APPROVED'].includes(status))) && ['ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'].includes(user?.role) && (
                             <div className="pt-8 mt-4 border-t border-outline-variant/10 dark:border-slate-800">
                                 
-                                {/* Committee Evaluation Section */}
-                                <div className="bg-surface-container-high dark:bg-slate-800/50 p-8 rounded-lg border border-outline-variant/10 dark:border-slate-800 shadow-sm mb-6 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500/50"></div>
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div className="flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">star_rate</span>
-                                            <h4 className="text-[10px] font-bold text-blue-600 dark:text-white uppercase tracking-[0.2em]">Committee Evaluation</h4>
-                                        </div>
-                                        {application.committeeFinalScore > 0 && (
+                                {!isNonStipend && (
+                                    <div className="bg-surface-container-high dark:bg-slate-800/50 p-8 rounded-lg border border-outline-variant/10 dark:border-slate-800 shadow-sm mb-6 relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500/50"></div>
+                                        <div className="flex items-center justify-between mb-6">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] uppercase font-bold text-outline">Avg Score:</span>
-                                                <span className="text-sm font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border border-blue-100 dark:border-blue-800">
-                                                        {Number(application.committeeFinalScore).toFixed(1)} / {(evaluationCriteria?.length || 0) * 50}
-                                                </span>
+                                                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">star_rate</span>
+                                                <h4 className="text-[10px] font-bold text-blue-600 dark:text-white uppercase tracking-[0.2em]">Committee Evaluation</h4>
+                                            </div>
+                                            {application.committeeFinalScore > 0 && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] uppercase font-bold text-outline">Avg Score:</span>
+                                                    <span className="text-sm font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border border-blue-100 dark:border-blue-800">
+                                                            {Number(application.committeeFinalScore).toFixed(1)} / {(evaluationCriteria?.length || 0) * 50}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Existing Evaluations List */}
+                                        {application.evaluationScores?.length > 0 && (
+                                            <div className="mb-6 space-y-3">
+                                                <p className="text-[10px] font-bold text-outline uppercase tracking-widest">Submitted Scores</p>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    {(() => {
+                                                        const scores = application.evaluationScores || [];
+                                                        const roles = ['HOD', 'MENTOR', 'CE_PRTI'];
+                                                        const criteriaCount = evaluationCriteria?.length || 0;
+                                                        const totalMax = criteriaCount * 50;
+
+                                                        const roleTotals = roles.map(r => {
+                                                            const roleScores = scores.filter(s => r === 'CE_PRTI' ? (s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER') : s.role === r);
+                                                            const total = roleScores.reduce((acc, s) => acc + (Number(s.score) || 0), 0);
+                                                            const distinct = new Set(roleScores.map(s => s.questionId)).size;
+                                                            const complete = criteriaCount > 0 && distinct >= criteriaCount;
+                                                            return { role: r, total, complete };
+                                                        });
+
+                                                        return roleTotals.map((rt) => (
+                                                            <div key={rt.role} className="p-3 bg-white dark:bg-slate-900 border border-outline-variant/20 rounded flex items-center justify-between">
+                                                                <div>
+                                                                    <p className="text-[10px] font-bold text-primary dark:text-white uppercase">{rt.role.replace('_', ' ')}</p>
+                                                                    <p className={`text-[9px] font-bold mt-1 ${rt.complete ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                                        {rt.complete ? 'Complete' : 'Pending'}
+                                                                    </p>
+                                                                </div>
+                                                                <span className="font-bold text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">
+                                                                    {rt.total} / {totalMax}
+                                                                </span>
+                                                            </div>
+                                                        ));
+                                                    })()}
+                                                </div>
                                             </div>
                                         )}
-                                    </div>
 
-                                    {/* Existing Evaluations List */}
-                                    {application.evaluationScores?.length > 0 && (
-                                        <div className="mb-6 space-y-3">
-                                            <p className="text-[10px] font-bold text-outline uppercase tracking-widest">Submitted Scores</p>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                {(() => {
-                                                    const scores = application.evaluationScores || [];
-                                                    const roles = ['HOD', 'MENTOR', 'CE_PRTI'];
-                                                    const criteriaCount = evaluationCriteria?.length || 0;
-                                                    const totalMax = criteriaCount * 50;
-
-                                                    const roleTotals = roles.map(r => {
-                                                        const roleScores = scores.filter(s => r === 'CE_PRTI' ? (s.role === 'CE_PRTI' || s.role === 'COMMITTEE_MEMBER') : s.role === r);
-                                                        const total = roleScores.reduce((acc, s) => acc + (Number(s.score) || 0), 0);
-                                                        const distinct = new Set(roleScores.map(s => s.questionId)).size;
-                                                        const complete = criteriaCount > 0 && distinct >= criteriaCount;
-                                                        return { role: r, total, complete };
-                                                    });
-
-                                                    return roleTotals.map((rt) => (
-                                                        <div key={rt.role} className="p-3 bg-white dark:bg-slate-900 border border-outline-variant/20 rounded flex items-center justify-between">
-                                                            <div>
-                                                                <p className="text-[10px] font-bold text-primary dark:text-white uppercase">{rt.role.replace('_', ' ')}</p>
-                                                                <p className={`text-[9px] font-bold mt-1 ${rt.complete ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                                    {rt.complete ? 'Complete' : 'Pending'}
-                                                                </p>
+                                        {/* Multi-Question Evaluation Form for Current User */}
+                                        {(() => {
+                                            const criteriaCount = internship?.evaluationCriteria?.length || 0;
+                                            const myDistinct = new Set((application.evaluationScores || []).filter(s => s.memberId === user?.id).map(s => s.questionId)).size;
+                                            const hasSubmitted = criteriaCount > 0 && myDistinct >= criteriaCount;
+                                            return !hasSubmitted;
+                                        })() ? (
+                                            <div className="bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-6 shadow-sm">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <p className="text-[10px] font-bold text-primary dark:text-white uppercase tracking-widest">Score each criteria (0-50)</p>
+                                                    <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded uppercase">Total Score: {Object.values(evalScores).reduce((a, b) => a + Number(b || 0), 0)}</span>
+                                                </div>
+                                                
+                                                <div className="space-y-6">
+                                                    {evaluationCriteria?.map((q, idx) => (
+                                                        <div key={q.id} className="p-4 bg-surface-container-low/30 rounded-xl border border-outline-variant/10">
+                                                            <div className="flex justify-between items-start mb-3">
+                                                                <div className="flex-1">
+                                                                    <span className="text-[9px] font-bold text-outline uppercase block mb-1">Criterion {idx + 1}</span>
+                                                                    <p className="text-sm font-bold text-primary dark:text-white">{q.question}</p>
+                                                                </div>
+                                                                <div className="w-24 ml-4">
+                                                                    <label className="text-[9px] font-bold text-outline uppercase block mb-1">Score (0-50)</label>
+                                                                    <input 
+                                                                        type="number" min="0" max="50" step="1" 
+                                                                        value={evalScores[q.id] || ''} 
+                                                                        onChange={e => setEvalScores({...evalScores, [q.id]: e.target.value})} 
+                                                                        className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 rounded px-3 py-2 text-sm font-bold text-primary dark:text-white focus:outline-blue-500" 
+                                                                        placeholder="0-50" 
+                                                                    />
+                                                                </div>
                                                             </div>
-                                                            <span className="font-bold text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">
-                                                                {rt.total} / {totalMax}
-                                                            </span>
-                                                        </div>
-                                                    ));
-                                                })()}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Multi-Question Evaluation Form for Current User */}
-                                    {(() => {
-                                        const criteriaCount = internship?.evaluationCriteria?.length || 0;
-                                        const myDistinct = new Set((application.evaluationScores || []).filter(s => s.memberId === user?.id).map(s => s.questionId)).size;
-                                        const hasSubmitted = criteriaCount > 0 && myDistinct >= criteriaCount;
-                                        return !hasSubmitted;
-                                    })() ? (
-                                        <div className="bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-6 shadow-sm">
-                                            <div className="flex items-center justify-between mb-6">
-                                                <p className="text-[10px] font-bold text-primary dark:text-white uppercase tracking-widest">Score each criteria (0-50)</p>
-                                                <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded uppercase">Total Score: {Object.values(evalScores).reduce((a, b) => a + Number(b || 0), 0)}</span>
-                                            </div>
-                                            
-                                            <div className="space-y-6">
-                                                {evaluationCriteria?.map((q, idx) => (
-                                                    <div key={q.id} className="p-4 bg-surface-container-low/30 rounded-xl border border-outline-variant/10">
-                                                        <div className="flex justify-between items-start mb-3">
-                                                            <div className="flex-1">
-                                                                <span className="text-[9px] font-bold text-outline uppercase block mb-1">Criterion {idx + 1}</span>
-                                                                <p className="text-sm font-bold text-primary dark:text-white">{q.question}</p>
-                                                            </div>
-                                                            <div className="w-24 ml-4">
-                                                                <label className="text-[9px] font-bold text-outline uppercase block mb-1">Score (0-50)</label>
+                                                            <div className="mt-2">
                                                                 <input 
-                                                                    type="number" min="0" max="50" step="1" 
-                                                                    value={evalScores[q.id] || ''} 
-                                                                    onChange={e => setEvalScores({...evalScores, [q.id]: e.target.value})} 
-                                                                    className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 rounded px-3 py-2 text-sm font-bold text-primary dark:text-white focus:outline-blue-500" 
-                                                                    placeholder="0-50" 
+                                                                    type="text" 
+                                                                    value={evalComments[q.id] || ''} 
+                                                                    onChange={e => setEvalComments({...evalComments, [q.id]: e.target.value})} 
+                                                                    className="w-full bg-white/50 dark:bg-slate-800/50 border border-outline-variant/10 rounded px-3 py-1.5 text-[11px] font-medium text-primary dark:text-white placeholder:text-outline/30 focus:outline-blue-400" 
+                                                                    placeholder="Comments for this criterion..." 
                                                                 />
                                                             </div>
                                                         </div>
-                                                        <div className="mt-2">
-                                                            <input 
-                                                                type="text" 
-                                                                value={evalComments[q.id] || ''} 
-                                                                onChange={e => setEvalComments({...evalComments, [q.id]: e.target.value})} 
-                                                                className="w-full bg-white/50 dark:bg-slate-800/50 border border-outline-variant/10 rounded px-3 py-1.5 text-[11px] font-medium text-primary dark:text-white placeholder:text-outline/30 focus:outline-blue-400" 
-                                                                placeholder="Comments for this criterion..." 
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                                    ))}
+                                                </div>
 
-                                            <div className="mt-8 pt-6 border-t border-outline-variant/10">
-                                                <label className="text-[10px] font-bold text-outline uppercase block mb-2">Overall Recommendation / Comments</label>
-                                                <textarea 
-                                                    value={overallComments}
-                                                    onChange={e => setOverallComments(e.target.value)}
-                                                    className="w-full bg-surface-container-low/30 border border-outline-variant/10 rounded-xl p-4 text-sm font-medium text-primary dark:text-white focus:outline-blue-500 min-h-[100px]"
-                                                    placeholder="Provide your final thoughts on this candidate..."
-                                                />
-                                            </div>
+                                                <div className="mt-8 pt-6 border-t border-outline-variant/10">
+                                                    <label className="text-[10px] font-bold text-outline uppercase block mb-2">Overall Recommendation / Comments</label>
+                                                    <textarea 
+                                                        value={overallComments}
+                                                        onChange={e => setOverallComments(e.target.value)}
+                                                        className="w-full bg-surface-container-low/30 border border-outline-variant/10 rounded-xl p-4 text-sm font-medium text-primary dark:text-white focus:outline-blue-500 min-h-[100px]"
+                                                        placeholder="Provide your final thoughts on this candidate..."
+                                                    />
+                                                </div>
 
-                                            <button onClick={handleEvaluationSubmit} disabled={submittingEval} className="mt-6 w-full bg-blue-600 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 group disabled:opacity-50">
-                                                {submittingEval ? 'SUBMITTING SCORES...' : 'SUBMIT FINAL EVALUATION'}
-                                                <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">send</span>
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-                                            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mb-4">
-                                                <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-3xl">verified</span>
+                                                <button onClick={handleEvaluationSubmit} disabled={submittingEval} className="mt-6 w-full bg-blue-600 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 group disabled:opacity-50">
+                                                    {submittingEval ? 'SUBMITTING SCORES...' : 'SUBMIT FINAL EVALUATION'}
+                                                    <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">send</span>
+                                                </button>
                                             </div>
-                                            <h5 className="text-sm font-black text-emerald-900 dark:text-white uppercase tracking-widest mb-1">Evaluation Submitted</h5>
-                                            <p className="text-xs text-emerald-600 dark:text-emerald-500 font-bold uppercase opacity-70">Your scores have been recorded for the committee review</p>
-                                        </div>
-                                    )}
-                                </div>
+                                        ) : (
+                                            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+                                                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mb-4">
+                                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-3xl">verified</span>
+                                                </div>
+                                                <h5 className="text-sm font-black text-emerald-900 dark:text-white uppercase tracking-widest mb-1">Evaluation Submitted</h5>
+                                                <p className="text-xs text-emerald-600 dark:text-emerald-500 font-bold uppercase opacity-70">Your scores have been recorded for the committee review</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
-                                {/* Institutional Onboarding (Only for HOD/ADMIN) */}
-                                {['ADMIN', 'HOD'].includes(user?.role) && (
+                                {/* Institutional Onboarding (Only for PRTI/ADMIN in SELECTED/APPROVED status) */}
+                                {['ADMIN', 'CE_PRTI'].includes(user?.role) && ['SELECTED', 'APPROVED'].includes(status) && (
                                 <div className="bg-surface-container-high dark:bg-slate-800/50 p-8 rounded-lg border border-outline-variant/10 dark:border-slate-800 shadow-sm relative overflow-hidden">
                                     {/* Accent bar for confirmation */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/50"></div>
@@ -649,6 +677,11 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                                 onChange={e => setSelectedRole(e.target.value)}
                                             >
                                                 <option value="">Choose Position</option>
+                                                {internship?.internshipType === 'NON_STIPEND' && (
+                                                    <option value={application.field?.fieldName || internship.title}>
+                                                        {application.field?.fieldName || internship.title} (Default)
+                                                    </option>
+                                                )}
                                                 {!internship?.rolesData?.length && internship?.roles?.split(',')?.map(r => (
                                                     <option key={r.trim()} value={r.trim()}>{r.trim()}</option>
                                                 ))}
@@ -689,15 +722,23 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-4">
-                                        <button onClick={handleHire}
-                                            disabled={internship?.rolesData?.length > 0 && !selectedRole}
-                                            className="flex-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 group disabled:opacity-50">
-                                            Authorize & Hire Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">verified_user</span>
-                                        </button>
-                                        <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
-                                            Reject Candidate
-                                        </button>
+                                    <div className="flex flex-col gap-4">
+                                        {isNonStipend && status === 'SELECTED' && (!getDoc('NOC', 'No Objection Certificate') || !getDoc('BOND', 'Bond / Service Agreement') || !getDoc('UNDERTAKING', 'Undertaking Form')) && (
+                                            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-amber-600 text-sm">warning</span>
+                                                <p className="text-[9px] font-bold text-amber-700 dark:text-amber-500 uppercase tracking-widest">Joining documents are incomplete. Verify manually before hiring.</p>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-4">
+                                            <button onClick={handleHire}
+                                                disabled={internship?.rolesData?.length > 0 && !selectedRole}
+                                                className="flex-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 group disabled:opacity-50">
+                                                Authorize & Mark as Hired <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">verified_user</span>
+                                            </button>
+                                            <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+                                                Reject Candidate
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 )}
