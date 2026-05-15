@@ -30,10 +30,12 @@ import PrtiDeptFieldConfig from './pages/admin/prti/PrtiDeptFieldConfig';
 import PrtiLearningInterns from './pages/admin/prti/PrtiLearningInterns';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
+import HodFieldConfig from './pages/admin/hod/HodFieldConfig';
 import HodCommittees from './pages/admin/hod/HodCommittees';
 import HodMeetings from './pages/admin/hod/HodMeetings';
 import HodSelection from './pages/admin/hod/HodSelection';
 import HodProblemStatements from './pages/admin/hod/HodProblemStatements';
+import HodReports from './pages/admin/hod/HodReports';
 import MentorDashboard from './pages/admin/mentor/MentorDashboard';
 import MentorApplications from './pages/admin/mentor/MentorApplications';
 import MentorCommittees from './pages/admin/mentor/MentorCommittees';
@@ -115,12 +117,12 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/prti/batches" element={
-            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN', 'HOD']}>
               <AdminLayout><PrtiBatches /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/prti/batches/:id" element={
-            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN', 'HOD']}>
               <AdminLayout><PrtiBatchDetail /></AdminLayout>
             </ProtectedRoute>
           } />
@@ -150,7 +152,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/hod/applications" element={
-            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['HOD', 'CE_PRTI', 'ADMIN']}>
               <AdminLayout><HodApplications /></AdminLayout>
             </ProtectedRoute>
           } />
@@ -165,18 +167,28 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/hod/selection" element={
-            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['HOD', 'CE_PRTI', 'ADMIN']}>
               <AdminLayout><HodSelection /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/hod/meetings" element={
-            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['HOD', 'CE_PRTI', 'ADMIN']}>
               <AdminLayout><HodMeetings /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/field-config" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+              <AdminLayout><HodFieldConfig /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/hod/problem-statements" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
               <AdminLayout><HodProblemStatements /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/reports" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
+              <AdminLayout><HodReports /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/mentor/dashboard" element={

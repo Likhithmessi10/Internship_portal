@@ -1,0 +1,12 @@
+node_modules
+.env
+uploads
+*.log
+logs/
+scratch/
+accounts.txt
+check_mukkamala.js
+debug_search.js
+migrate_batches.js
+update_mukkamala.js
+update_nulu_roll.js

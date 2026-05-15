@@ -3,8 +3,19 @@ import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import {
     MapPin, Users, Briefcase, Search, ArrowRight,
-    Clock, IndianRupee, ClipboardList
+    Clock, IndianRupee, ClipboardList, Zap
 } from 'lucide-react';
+
+// ── Fuzzy specialization match ────────────────────────────────────────────────
+const tokenize = (s = '') => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+const fuzzyMatch = (studentBranch = '', fieldSpecializations = []) => {
+    if (!studentBranch || !fieldSpecializations?.length) return false;
+    const branchTokens = tokenize(studentBranch);
+    return fieldSpecializations.some(spec => {
+        const specTokens = tokenize(spec);
+        return branchTokens.some(bt => specTokens.some(st => bt.includes(st) || st.includes(bt)));
+    });
+};
 
 const formatStipendRange = (stipendAmounts) => {
     if (!stipendAmounts || typeof stipendAmounts !== 'object') return null;
@@ -103,7 +114,7 @@ const GroupCollabCard = ({ internship }) => {
 };
 
 // ── Card for SINGLE internship (role-based) ───────────────────────────────────
-const SingleRoleCard = ({ internship, item }) => {
+const SingleRoleCard = ({ internship, item, isMatch }) => {
     const stipendRange = formatStipendRange(internship.stipendAmounts);
     const applyUrl = `/student/internships/${internship.id}/apply`
         + `?role=${encodeURIComponent(item.roleName)}`
@@ -116,8 +127,13 @@ const SingleRoleCard = ({ internship, item }) => {
         item.department === 'HR' ? 'bg-[#D4A017]' : 'bg-[#003087]';
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[#003087]/20 dark:hover:border-blue-500/30 transition-all duration-300 flex flex-col h-full group overflow-hidden relative">
-            <div className={`h-2.5 w-full ${deptColor}`} />
+        <div className={`bg-white dark:bg-slate-800 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group overflow-hidden relative ${isMatch ? 'border-violet-300 dark:border-violet-600 ring-2 ring-violet-300/40' : 'border-gray-100 dark:border-slate-700 hover:border-[#003087]/20 dark:hover:border-blue-500/30'}`}>
+            {isMatch && (
+                <div className="absolute top-4 right-4 z-10 flex items-center gap-1 px-2.5 py-1 bg-violet-600 text-white text-[9px] font-black uppercase rounded-full shadow-md">
+                    <Zap size={9} /> Matches Your Profile
+                </div>
+            )}
+            <div className={`h-2.5 w-full ${isMatch ? 'bg-violet-500' : deptColor}`} />
 
             <div className="p-6 lg:p-7 flex-grow flex flex-col">
                 <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
@@ -164,7 +180,9 @@ const SingleRoleCard = ({ internship, item }) => {
                             <MapPin size={14} className="text-[#003087] dark:text-blue-400" />
                         </div>
                         {item.isNonStipend
-                            ? (Array.isArray(item.locations) && item.locations.length > 0 ? item.locations.join(', ') : 'Multiple')
+                            ? (Array.isArray(item.locations) && item.locations.length > 0
+                                ? item.locations.map(l => typeof l === 'string' ? l : (l?.name || '')).join(', ')
+                                : 'Multiple')
                             : (internship.location || 'Multiple Locations')}
                     </div>
                     <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
@@ -205,23 +223,35 @@ const InternshipList = () => {
     const [internships, setInternships] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [specFilter, setSpecFilter] = useState('');
+    const [studentBranch, setStudentBranch] = useState('');
+    const [appliedFieldIds, setAppliedFieldIds] = useState(new Set());
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
-        const fetchInternships = async () => {
+        const fetchAll = async () => {
             setLoading(true);
             try {
-                const res = await api.get(`/internships?page=${page}&limit=20`);
-                setInternships(res.data.data);
-                setTotalPages(res.data.totalPages || 1);
-            } catch {
-                // silent
-            } finally {
-                setLoading(false);
-            }
+                const [intRes, profileRes] = await Promise.allSettled([
+                    api.get(`/internships?page=${page}&limit=20`),
+                    api.get('/students/profile')
+                ]);
+                if (intRes.status === 'fulfilled') {
+                    setInternships(intRes.value.data.data);
+                    setTotalPages(intRes.value.data.totalPages || 1);
+                }
+                if (profileRes.status === 'fulfilled') {
+                    const profile = profileRes.value.data.data;
+                    setStudentBranch(profile?.branch || '');
+                    // Build set of already-applied fieldIds
+                    const fieldIds = new Set((profile?.applications || []).map(a => a.fieldId).filter(Boolean));
+                    setAppliedFieldIds(fieldIds);
+                }
+            } catch { /* silent */ }
+            finally { setLoading(false); }
         };
-        fetchInternships();
+        fetchAll();
     }, [page]);
 
     if (loading) return (
@@ -250,9 +280,7 @@ const InternshipList = () => {
                     (g.problemStatements || []).some(ps => ps.title.toLowerCase().includes(q))
                 );
             if (matches) {
-                cards.push(
-                    <GroupCollabCard key={internship.id} internship={internship} />
-                );
+                cards.push({ key: internship.id, isMatch: false, alreadyApplied: false, element: <GroupCollabCard key={internship.id} internship={internship} /> });
             }
             return;
         }
@@ -271,6 +299,7 @@ const InternshipList = () => {
                         groupId: group.id,
                         fieldId: field.id,
                         locations: field.locations || [],
+                        specializations: field.specializations || [],
                         isNonStipend: true
                     });
                 });
@@ -301,6 +330,7 @@ const InternshipList = () => {
                     openings: field.vacancies || 'N/A',
                     fieldId: field.id,
                     locations: field.locations || [],
+                    specializations: field.specializations || [],
                     isNonStipend: true
                 });
             });
@@ -319,34 +349,68 @@ const InternshipList = () => {
 
         items.forEach((item, idx) => {
             const q = searchTerm.toLowerCase();
-            const matches = !q
+            const textMatch = !q
                 || item.roleName?.toLowerCase().includes(q)
                 || item.department?.toLowerCase().includes(q)
-                || internship.title?.toLowerCase().includes(q);
-            if (matches) {
-                cards.push(
-                    <SingleRoleCard key={`${internship.id}-${idx}`} internship={internship} item={item} />
-                );
+                || internship.title?.toLowerCase().includes(q)
+                || (item.specializations || []).some(s => s.toLowerCase().includes(q));
+
+            const specMatch = fuzzyMatch(studentBranch, item.specializations || []);
+
+            // Specialization filter
+            const specFilterMatch = !specFilter || (item.specializations || []).some(s =>
+                s.toLowerCase().includes(specFilter.toLowerCase())
+            );
+
+            if (textMatch && specFilterMatch) {
+                cards.push({
+                    key: `${internship.id}-${idx}`,
+                    isMatch: specMatch,
+                    alreadyApplied: appliedFieldIds.has(item.fieldId),
+                    element: (
+                        <SingleRoleCard
+                            key={`${internship.id}-${idx}`}
+                            internship={internship}
+                            item={item}
+                            isMatch={specMatch}
+                        />
+                    )
+                });
             }
         });
     });
+    // Sort: matched internships first
+    cards.sort((a, b) => (b.isMatch ? 1 : 0) - (a.isMatch ? 1 : 0));
 
     return (
         <div className="w-full py-4 transition-colors duration-300">
-            {/* Search */}
-            <div className="mb-8">
-                <div className="relative w-full md:max-w-md">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Search size={16} className="text-slate-400" />
+            {/* Search + Spec Filter */}
+            <div className="mb-6 space-y-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1 max-w-md">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Search size={16} className="text-slate-400" />
+                        </div>
+                        <input type="text" placeholder="Search internships or departments..."
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                            value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Search internships or departments..."
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                    />
+                    <select value={specFilter} onChange={e => setSpecFilter(e.target.value)}
+                        className="pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">All Specializations</option>
+                        {[...new Set(internships.flatMap(i =>
+                            (i.departmentGroups || []).flatMap(g =>
+                                (g.fields || []).flatMap(f => Array.isArray(f.specializations) ? f.specializations : [])
+                            )
+                        ))].map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
                 </div>
+                {studentBranch && cards.some(c => c.isMatch) && (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 rounded-xl text-sm font-bold text-violet-700 dark:text-violet-300">
+                        <Zap size={14} className="text-violet-500" />
+                        {cards.filter(c => c.isMatch).length} internship{cards.filter(c => c.isMatch).length !== 1 ? 's' : ''} match your branch ({studentBranch}) — shown first
+                    </div>
+                )}
             </div>
 
             {/* Grid */}
@@ -356,18 +420,16 @@ const InternshipList = () => {
                         <Briefcase size={36} className="text-gray-300 dark:text-slate-600" />
                     </div>
                     <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 font-rajdhani">No internships found</h3>
-                    {searchTerm && (
-                        <button
-                            onClick={() => setSearchTerm('')}
-                            className="mt-4 font-bold text-[#003087] dark:text-blue-400 hover:underline text-sm"
-                        >
-                            Clear search
+                    {(searchTerm || specFilter) && (
+                        <button onClick={() => { setSearchTerm(''); setSpecFilter(''); }}
+                            className="mt-4 font-bold text-[#003087] dark:text-blue-400 hover:underline text-sm">
+                            Clear filters
                         </button>
                     )}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                    {cards}
+                    {cards.map(c => c.element)}
                 </div>
             )}
 

@@ -15,6 +15,7 @@ const {
     updateCommitteeDetails,
     getUsersByRole,
     updateUserRole,
+    deleteUser,
     getStipendDetails,
     updateStipendDetails,
     getAllInterns,
@@ -37,7 +38,8 @@ const {
     getHodLearningApplications,
     addGroupField,
     deleteGroupField,
-    assignApplicationMentor
+    assignApplicationMentor,
+    setFieldHeldSeats
 } = require('../controllers/adminController');
 const { getAuditLogs } = require('../controllers/auditController');
 const { getSystemHealth } = require('../controllers/systemController');
@@ -54,11 +56,12 @@ const {
     assignPsMentor
 } = require('../controllers/hodProblemStatementController');
 const {
-    getDepartments, createDepartment, updateDepartment,
-    getFields, createField, updateField,
-    requestDocuments, verifyDocuments, getLearningPendingDocs
+    getDepartments, createDepartment, updateDepartment, deleteDepartment,
+    getFields, createField, updateField, deleteField,
+    requestDocuments, verifyDocuments, getLearningPendingDocs, resequenceDepts
 } = require('../controllers/deptFieldController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { getApplicationWorkLogs, exportApplicationWorkLogs, exportInternshipWorkLogs } = require('../controllers/workLogController');
 
 const router = express.Router();
 
@@ -73,17 +76,28 @@ router.put('/config', authorize('ADMIN'), updatePortalConfig);
 
 // Internship Management
 router.get('/batches', getBatches);
-router.get('/batches/:id/details', authorize('ADMIN', 'CE_PRTI'), getBatchDetails);
-router.post('/batches', authorize('ADMIN', 'CE_PRTI'), createBatch);
-router.delete('/batches/:id', authorize('ADMIN', 'CE_PRTI'), deleteBatch);
+router.get('/batches/:id/details', authorize('ADMIN', 'CE_PRTI', 'HOD'), getBatchDetails);
+router.post('/batches', authorize('ADMIN', 'CE_PRTI', 'HOD'), createBatch);
+router.delete('/batches/:id', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteBatch);
 
 router.get('/internships', getAllInternships);
 router.get('/interns/all', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), getAllInterns);
 router.get('/interns/search/:rollNumber', authorize('ADMIN', 'CE_PRTI', 'HOD'), searchInternByRollNumber);
 router.get('/meetings', authorize('ADMIN', 'CE_PRTI', 'HOD'), getMeetings);
 router.post('/internships', createInternship);
-router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI'), deleteInternship);
+router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteInternship);
 router.put('/internships/:id/toggle', toggleInternship);
+router.put('/internships/:id/publish', authorize('ADMIN', 'CE_PRTI', 'HOD'), async (req, res) => {
+    try {
+        await require('../lib/prisma').internship.update({
+            where: { id: req.params.id },
+            data: { publishStatus: 'LIVE' }
+        });
+        res.json({ success: true, message: 'Internship published' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 router.put('/internships/:id/deadline', extendDeadline);
 
 // HOD: pending GROUP internship problem-statement submissions (used by dashboard banner)
@@ -96,26 +110,30 @@ router.get('/hod/ps-applications', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodP
 router.get('/hod/learning-applications', authorize('ADMIN', 'CE_PRTI', 'HOD'), getHodLearningApplications);
 
 // ── Department & Field Master (Learning Internship configuration) ─────────────
-router.get('/dept-master',                    authorize('ADMIN', 'CE_PRTI', 'HOD'), getDepartments);
-router.post('/dept-master',                   authorize('ADMIN', 'CE_PRTI'), createDepartment);
-router.put('/dept-master/:id',                authorize('ADMIN', 'CE_PRTI'), updateDepartment);
-router.get('/dept-master/:deptId/fields',     authorize('ADMIN', 'CE_PRTI', 'HOD'), getFields);
-router.post('/dept-master/:deptId/fields',    authorize('ADMIN', 'CE_PRTI'), createField);
-router.put('/dept-master/:deptId/fields/:fieldId', authorize('ADMIN', 'CE_PRTI'), updateField);
+router.post('/dept-master/resequence',                  authorize('ADMIN', 'CE_PRTI'), resequenceDepts);
+router.get('/dept-master',                              authorize('ADMIN', 'CE_PRTI', 'HOD'), getDepartments);
+router.post('/dept-master',                             authorize('ADMIN', 'CE_PRTI'), createDepartment);
+router.put('/dept-master/:id',                          authorize('ADMIN', 'CE_PRTI'), updateDepartment);
+router.delete('/dept-master/:id',                       authorize('ADMIN', 'CE_PRTI'), deleteDepartment);
+router.get('/dept-master/:deptId/fields',               authorize('ADMIN', 'CE_PRTI', 'HOD'), getFields);
+router.post('/dept-master/:deptId/fields',              authorize('ADMIN', 'CE_PRTI', 'HOD'), createField);
+router.put('/dept-master/:deptId/fields/:fieldId',      authorize('ADMIN', 'CE_PRTI', 'HOD'), updateField);
+router.delete('/dept-master/:deptId/fields/:fieldId',   authorize('ADMIN', 'CE_PRTI'), deleteField);
 
 // ── PRTI Document Verification Flow (Learning Internships) ───────────────────
 router.get('/learning/pending-docs',                  authorize('ADMIN', 'CE_PRTI'), getLearningPendingDocs);
-router.post('/applications/:id/request-documents',    authorize('ADMIN', 'CE_PRTI'), requestDocuments);
-router.post('/applications/:id/verify-documents',     authorize('ADMIN', 'CE_PRTI'), verifyDocuments);
+router.post('/applications/:id/request-documents',    authorize('ADMIN', 'CE_PRTI', 'HOD'), requestDocuments);
+router.post('/applications/:id/verify-documents',     authorize('ADMIN', 'CE_PRTI', 'HOD'), verifyDocuments);
 // GROUP NON_STIPEND: field management per dept group
 router.post('/internships/:id/groups/:groupId/fields', authorize('ADMIN', 'CE_PRTI', 'HOD'), addGroupField);
 router.delete('/internships/:id/groups/:groupId/fields/:fieldId', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteGroupField);
+router.patch('/internships/:id/groups/:groupId/fields/:fieldId/held-seats', authorize('ADMIN', 'CE_PRTI', 'HOD'), setFieldHeldSeats);
 
 // PRTI: department-wise submission progress for a GROUP internship
 router.get('/internships/:id/group-progress', authorize('ADMIN', 'CE_PRTI'), getGroupInternshipProgress);
 
 // Department Group CRUD (for GROUP internships)
-router.post('/internships/:id/groups', authorize('ADMIN', 'CE_PRTI'), addDepartmentGroup);
+router.post('/internships/:id/groups', authorize('ADMIN', 'CE_PRTI', 'HOD'), addDepartmentGroup);
 router.put('/internships/:id/groups/:groupId', authorize('ADMIN', 'CE_PRTI', 'HOD'), updateDepartmentGroup);
 router.delete('/internships/:id/groups/:groupId', authorize('ADMIN', 'CE_PRTI'), deleteDepartmentGroup);
 
@@ -137,6 +155,34 @@ router.get('/internships/:id/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMM
 router.get('/applications/rejected', authorize('ADMIN', 'HOD'), getRejectedApplications);
 router.put('/applications/:id', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), updateApplicationStatus);
 router.put('/applications/:id/mentor', authorize('ADMIN', 'CE_PRTI', 'HOD'), assignApplicationMentor);
+// PRTI: approve a batch of selected applications (unlocks doc request + hire for HOD)
+router.post('/applications/prti-approve-batch', authorize('ADMIN', 'CE_PRTI'), async (req, res) => {
+    try {
+        const { applicationIds } = req.body;
+        if (!Array.isArray(applicationIds) || applicationIds.length === 0)
+            return res.status(400).json({ success: false, message: 'applicationIds array required' });
+        await require('../lib/prisma').application.updateMany({
+            where: { id: { in: applicationIds }, status: 'SELECTED' },
+            data: { prtiApproved: true }
+        });
+        res.json({ success: true, message: `${applicationIds.length} application(s) approved by PRTI` });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.put('/applications/:id/prti-note', authorize('ADMIN', 'CE_PRTI'), async (req, res) => {
+    try {
+        const { note } = req.body;
+        const updated = await require('../lib/prisma').application.update({
+            where: { id: req.params.id },
+            data: { prtiNote: note ?? null }
+        });
+        res.json({ success: true, data: { prtiNote: updated.prtiNote } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 router.post('/applications/:id/evaluate', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), submitEvaluation);
 
 // Stipend Management
@@ -146,6 +192,7 @@ router.put('/applications/:id/stipend', authorize('ADMIN', 'HOD', 'COMMITTEE_MEM
 // User Management
 router.get('/users', getUsersByRole);
 router.put('/users/:id/role', authorize('ADMIN', 'CE_PRTI'), updateUserRole);
+router.delete('/users/:id', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteUser);
 
 // Infrastructure & Diagnostics
 router.get('/audit-logs', authorize('ADMIN', 'CE_PRTI'), getAuditLogs);
@@ -155,6 +202,26 @@ router.get('/system/health', authorize('ADMIN', 'CE_PRTI'), getSystemHealth);
 router.get('/meetings/my', getMentorMeetings);
 router.post('/work/assign', assignWork);
 router.get('/work/assignments', getWorkAssignments);
+
+// HOD: update required documents for a dept group
+router.put('/internships/:id/groups/:groupId/required-docs', authorize('ADMIN', 'CE_PRTI', 'HOD'), async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const { requiredDocuments } = req.body;
+        await require('../lib/prisma').internshipDepartmentGroup.update({
+            where: { id: groupId },
+            data: { requiredDocuments: Array.isArray(requiredDocuments) ? requiredDocuments : [] }
+        });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Work Logs
+router.get('/applications/:id/work-logs',        authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), getApplicationWorkLogs);
+router.get('/applications/:id/work-logs/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportApplicationWorkLogs);
+router.get('/internships/:id/work-logs/export',  authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportInternshipWorkLogs);
 
 // Attendance Management
 router.post('/attendance/mark', markAttendance);

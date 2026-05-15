@@ -7,21 +7,21 @@ const { logFailedLogin, logSuccessfulLogin } = require('../utils/auditLogger');
 const prisma = require('../lib/prisma');
 
 // Generate Access Token
-const generateAccessToken = (id, email, role, department, phone) => {
+const generateAccessToken = (id, email, role, department, phone, name) => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, email, role, department, phone }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, email, role, department, phone, name }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRY || '2h'
     });
 };
 
 // Generate Refresh Token
-const generateRefreshToken = (id, email, role, department, phone) => {
+const generateRefreshToken = (id, email, role, department, phone, name) => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, email, role, department, phone }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, email, role, department, phone, name }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d'
     });
 };
@@ -69,8 +69,8 @@ const register = async (req, res) => {
         });
 
         // Generate tokens
-        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
-        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone, user.name);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone, user.name);
 
         res.status(201).json({
             success: true,
@@ -97,7 +97,7 @@ const register = async (req, res) => {
  */
 const registerAdmin = async (req, res) => {
     try {
-        const { password, role, name, department } = req.body;
+        const { password, role, name, department, phone, designation, mentorField, mentorLocation } = req.body;
         const email = req.body.email?.trim().toLowerCase();
 
         if (!['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'].includes(role)) {
@@ -127,13 +127,17 @@ const registerAdmin = async (req, res) => {
                 email,
                 password: hashedPassword,
                 role,
-                name: name || null,
-                department: department || null
+                name:           name           || null,
+                department:     department     || null,
+                phone:          phone          || null,
+                designation:    designation    || null,
+                mentorField:    mentorField    || null,
+                mentorLocation: mentorLocation || null,
             }
         });
 
-        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
-        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone, user.name);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone, user.name);
 
         res.status(201).json({
             success: true,
@@ -184,8 +188,8 @@ const login = async (req, res) => {
         }
 
         // Generate tokens
-        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
-        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone);
+        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone, user.name);
+        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone, user.name);
 
         // Log successful login
         await logSuccessfulLogin(email, ipAddress);
@@ -227,7 +231,7 @@ const refreshToken = async (req, res) => {
         // Verify user still exists
         const user = await prisma.user.findUnique({ 
             where: { id: decoded.id },
-            select: { id: true, email: true, role: true, department: true, phone: true }
+            select: { id: true, email: true, role: true, department: true, phone: true, name: true }
         });
         
         if (!user) {
@@ -235,7 +239,7 @@ const refreshToken = async (req, res) => {
         }
 
         // Generate new access token
-        const newAccessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone);
+        const newAccessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone, user.name);
 
         res.status(200).json({
             success: true,
@@ -263,7 +267,7 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
-            select: { id: true, email: true, role: true, department: true, name: true, phone: true, createdAt: true }
+            select: { id: true, email: true, role: true, department: true, name: true, phone: true, designation: true, mentorField: true, mentorLocation: true, photoUrl: true, createdAt: true }
         });
 
         res.status(200).json({

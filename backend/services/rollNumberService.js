@@ -63,12 +63,12 @@ const generatePortalRollNumber = async (applicationId, tx = null) => {
 
 /**
  * NON_STIPEND (Learning) roll number — format: YYDDFFNNN
- * YY  = year (2 digits)
+ * YY  = 2-digit year
  * DD  = DepartmentMaster.deptNumber (2 digits, stable)
  * FF  = FieldMaster.fieldNumber within dept (2 digits, stable)
- * NNN = sequential count of hired interns for this field (3 digits)
+ * NNN = sequential count of hired interns for this year+dept+field (3 digits)
  *
- * Example: SLDC (01) + SCADA (01) + 3rd hire → 260101003
+ * Example: SLDC (01) + SCADA (01) + 3rd hire in 2026 → 260101003
  */
 const generateLearningRollNumber = async (applicationId, tx = null) => {
     const db = tx || prisma;
@@ -84,16 +84,15 @@ const generateLearningRollNumber = async (applicationId, tx = null) => {
 
     if (!application) throw new Error('Application not found');
 
-    const year = new Date(application.internship.createdAt).getFullYear();
-    const YY = String(year).slice(-2);
+    const YY = String(new Date(application.internship.createdAt).getFullYear()).slice(-2);
 
     // Resolve FieldMaster from the application's field
     const fieldMaster = application.field?.fieldMaster;
     if (!fieldMaster) {
-        // Fallback: use plain dept name + field position if no FieldMaster linked
+        // Fallback: use plain dept name lookup if no FieldMaster linked
         const deptName = application.departmentGroup?.department || application.internship.department || 'XX';
         const DD = DEPT_MAP[deptName.toUpperCase()] || '99';
-        const prefix = `L${YY}${DD}00`;
+        const prefix = `${YY}${DD}00`;
         const count = await db.studentProfile.count({ where: { rollNumber: { startsWith: prefix } } });
         return `${prefix}${String(count + 1).padStart(3, '0')}`;
     }
@@ -101,8 +100,7 @@ const generateLearningRollNumber = async (applicationId, tx = null) => {
     const DD = String(fieldMaster.department.deptNumber).padStart(2, '0');
     const FF = String(fieldMaster.fieldNumber).padStart(2, '0');
 
-    // Prefix includes 'L' to distinguish from MONETARY roll numbers
-    const prefix = `L${YY}${DD}${FF}`;
+    const prefix = `${YY}${DD}${FF}`;
     const count = await db.studentProfile.count({ where: { rollNumber: { startsWith: prefix } } });
     return `${prefix}${String(count + 1).padStart(3, '0')}`;
 };

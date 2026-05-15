@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { MEDIA_URL } from '../../utils/api';
-import { User, Mail, Shield, Building, Lock, Eye, EyeOff, Save, KeyRound, Camera, Upload } from 'lucide-react';
+import { User, Mail, Shield, Building, Lock, Eye, EyeOff, Save, KeyRound, Camera, MapPin, Briefcase, BookOpen } from 'lucide-react';
 import WarningCard from '../../components/ui/WarningCard';
 
 const Profile = () => {
@@ -169,6 +169,33 @@ const Profile = () => {
                                     <div className="min-w-0">
                                         <p className="text-[9px] font-black text-outline uppercase tracking-tight">Department</p>
                                         <p className="text-xs font-bold text-primary truncate">{user?.department}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {user?.designation && (
+                                <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
+                                    <Briefcase size={16} className="text-primary/60" />
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Designation</p>
+                                        <p className="text-xs font-bold text-primary truncate">{user.designation}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {user?.mentorField && (
+                                <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
+                                    <BookOpen size={16} className="text-primary/60" />
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Field</p>
+                                        <p className="text-xs font-bold text-primary truncate">{user.mentorField}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {user?.mentorLocation && (
+                                <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
+                                    <MapPin size={16} className="text-primary/60" />
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Location</p>
+                                        <p className="text-xs font-bold text-primary truncate">{user.mentorLocation}</p>
                                     </div>
                                 </div>
                             )}

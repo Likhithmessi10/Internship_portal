@@ -1,5 +1,7 @@
 const prisma = require('../lib/prisma');
-const { getResumeFileFromUploads } = require('../services/doclingService');
+
+const getResumeFileFromUploads = (files) =>
+    (files || []).find(f => f.fieldname === 'RESUME' || f.fieldname === 'resume' || f.originalname?.toLowerCase().includes('resume'));
 
 /**
  * @desc    Apply to an internship
@@ -96,7 +98,8 @@ const applyForInternship = async (req, res) => {
                     return res.status(400).json({ success: false, message: 'Invalid field selected' });
                 }
                 const fieldLocations = Array.isArray(field.locations) ? field.locations : [];
-                if (!fieldLocations.includes(preferredLocation)) {
+                const locationNames = fieldLocations.map(l => typeof l === 'string' ? l : (l?.name || ''));
+                if (locationNames.length > 0 && !locationNames.includes(preferredLocation)) {
                     return res.status(400).json({ success: false, message: `Location ${preferredLocation} is not available for ${field.fieldName}` });
                 }
                 duplicateWhere.fieldId = fieldId;
@@ -146,6 +149,42 @@ const applyForInternship = async (req, res) => {
             }
         });
 
+        // ── Auto-assign mentor by field + location ───────────────────────────
+        if (internship.internshipType === 'NON_STIPEND' && fieldId && preferredLocation) {
+            try {
+                const dept = internship.internshipMode === 'GROUP'
+                    ? (await prisma.internshipDepartmentGroup.findUnique({ where: { id: departmentGroupId } }))?.department
+                    : internship.department;
+
+                if (dept) {
+                    const autoMentor = await prisma.user.findFirst({
+                        where: {
+                            role:           'MENTOR',
+                            department:     dept,
+                            mentorLocation: preferredLocation,
+                            mentorField: {
+                                // match field name loosely
+                                not: null
+                            }
+                        }
+                    });
+
+                    // Filter by field name after fetch to allow partial/flexible matching
+                    const fieldRecord = await prisma.internshipField.findUnique({ where: { id: fieldId } });
+                    const matchedMentor = autoMentor && fieldRecord
+                        && autoMentor.mentorField?.toLowerCase() === fieldRecord.fieldName?.toLowerCase()
+                        ? autoMentor : null;
+
+                    if (matchedMentor) {
+                        await prisma.application.update({
+                            where: { id: application.id },
+                            data: { mentorId: matchedMentor.id }
+                        });
+                    }
+                }
+            } catch { /* auto-assign is best-effort, never block application */ }
+        }
+
         // Store uploaded documents
         if (req.files && req.files.length > 0) {
             await prisma.document.createMany({
@@ -155,8 +194,6 @@ const applyForInternship = async (req, res) => {
                     url: file.path
                 }))
             });
-
-
         }
 
         res.status(201).json({

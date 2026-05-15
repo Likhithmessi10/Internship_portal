@@ -196,9 +196,13 @@ const getAllInternships = async (req, res) => {
             whereClause.batchId = req.query.batchId;
         }
 
-        // For HOD/MENTOR: show internships from their dept
+        // For HOD/MENTOR: show internships from their dept.
+        // GROUP internships store department='ALL' — match via departmentGroups relation.
         if (req.user.role !== 'ADMIN' && req.user.role !== 'CE_PRTI' && req.user.department) {
-            whereClause.department = req.user.department;
+            whereClause.OR = [
+                { department: req.user.department },
+                { internshipMode: 'GROUP', departmentGroups: { some: { department: req.user.department } } }
+            ];
         }
 
         const [internships, total] = await Promise.all([
@@ -257,29 +261,43 @@ const getAllInternships = async (req, res) => {
 const deleteInternship = async (req, res) => {
     try {
         const { id } = req.params;
+        const { password } = req.body;
 
-        // Find the internship first
+        // Password verification is required for all roles
+        if (!password) {
+            return res.status(400).json({ success: false, message: 'Password is required to delete an internship.' });
+        }
+
+        const bcrypt = require('bcrypt');
+        const requestingUser = await prisma.user.findUnique({ where: { id: req.user.id } });
+        const passwordMatch  = await bcrypt.compare(password, requestingUser.password);
+        if (!passwordMatch) {
+            return res.status(401).json({ success: false, message: 'Incorrect password. Deletion not authorised.' });
+        }
+
         const internship = await prisma.internship.findUnique({
-            where: { id }
+            where: { id },
+            include: { departmentGroups: { select: { department: true } } }
         });
 
         if (!internship) {
-            return res.status(404).json({
-                success: false,
-                message: 'Internship not found'
-            });
+            return res.status(404).json({ success: false, message: 'Internship not found' });
         }
 
-        // Delete the internship (Cascade should handle related records in Prisma)
-        await prisma.internship.delete({ where: { id } });
+        // HOD may only delete internships that belong to their department
+        if (req.user.role === 'HOD') {
+            const dept = req.user.department;
+            const inDept = internship.department === dept ||
+                internship.departmentGroups.some(g => g.department === dept);
+            if (!inDept) {
+                return res.status(403).json({ success: false, message: 'You can only delete internships in your department.' });
+            }
+        }
 
-        // Audit Log
+        await prisma.internship.delete({ where: { id } });
         await createAuditLog('DELETE_INTERNSHIP', req.user.email, `Deleted internship: ${internship.title}`, id);
 
-        res.status(200).json({
-            success: true,
-            message: 'Internship deleted successfully'
-        });
+        res.status(200).json({ success: true, message: 'Internship deleted successfully' });
     } catch (error) {
         console.error('Delete internship error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -457,6 +475,8 @@ const getApplications = async (req, res) => {
 
         const allApplications = await prisma.application.findMany({
             where: whereClause,
+            take: limit,
+            skip,
             include: {
                 student: {
                     include: { user: { select: { email: true, name: true } } }
@@ -466,7 +486,8 @@ const getApplications = async (req, res) => {
                 attendance: true,
                 stipend: true,
                 departmentGroup: { select: { id: true, department: true, title: true } },
-                field: true
+                field: true,
+                internship: { select: { id: true, title: true, internshipType: true, shortlistingRatio: true, department: true } }
             }
         });
 
@@ -555,14 +576,15 @@ const getRejectedApplications = async (req, res) => {
  */
 const updateApplicationStatus = async (req, res) => {
     try {
-        const { status, assignedRole, rollNumber, joiningDate, endDate, mentorId } = req.body;
+        const { status, assignedRole, joiningDate, endDate, mentorId, isHeldSeat, fieldId: overrideFieldId, preferredLocation: overrideLocation } = req.body;
         const applicationId = req.params.id;
 
         // 1. Strict Enum Enforcement
         const allowed = [
             'SUBMITTED', 'SHORTLISTED', 'UNDER_COMMITTEE_REVIEW',
             'SELECTED', 'APPROVED', 'REPORTED',
-            'REJECTED', 'WAITLISTED', 'HIRED', 'ONGOING', 'COMPLETED'
+            'REJECTED', 'WAITLISTED', 'DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED',
+            'HIRED', 'ONGOING', 'COMPLETED'
         ];
         if (!allowed.includes(status)) {
             return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${allowed.join(', ')}` });
@@ -622,6 +644,14 @@ const updateApplicationStatus = async (req, res) => {
             if (joiningDate) metadataUpdates.joiningDate = new Date(joiningDate);
             if (endDate) metadataUpdates.endDate = new Date(endDate);
             if (mentorId) metadataUpdates.mentorId = mentorId;
+            if (isHeldSeat !== undefined) metadataUpdates.isHeldSeat = !!isHeldSeat;
+            // HOD field/location reassignment at shortlisting
+            if (overrideFieldId) metadataUpdates.fieldId = overrideFieldId;
+            if (overrideLocation !== undefined) metadataUpdates.preferredLocation = overrideLocation;
+            // When PRTI directly selects a candidate, auto-approve so HOD can request docs immediately
+            if (status === 'SELECTED' && req.user.role === 'CE_PRTI') {
+                metadataUpdates.prtiApproved = true;
+            }
 
             if (Object.keys(metadataUpdates).length > 0) {
                 await tx.application.update({
@@ -645,18 +675,56 @@ const updateApplicationStatus = async (req, res) => {
 
         const studentEmail = student.user?.email;
         if (studentEmail && !studentEmail.endsWith('@aptransco.portal')) {
-            if (status === 'REJECTED') {
-                emailService.sendStatusUpdate(studentEmail, student.fullName, 'Rejected', 'Your application was not selected.');
-            } else if (status === 'SELECTED' || status === 'APPROVED') {
-                emailService.sendInterviewPass(studentEmail, student.fullName);
-            } else if (status === 'REPORTED') {
-                const { sendEmail } = require('../services/mailService');
-                sendEmail(studentEmail, 'Reporting Confirmed — Upload Joining Documents',
-                    `<h3>Dear ${student.fullName},</h3>
-                    <p>Your physical reporting to APTRANSCO has been confirmed. Your Roll Number has been generated.</p>
-                    <p>Please log in to the portal and upload your <strong>joining documents</strong> (NOC, Bond, Undertaking) to complete your onboarding.</p>
-                    <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
-                ).catch(() => {});
+            const {
+                sendShortlistingEmail, sendSelectionEmail,
+                sendHiringEmail, sendRejectionEmail
+            } = require('../services/mailService');
+
+            const fieldName = result.field?.fieldName || result.assignedRole;
+            const location  = result.preferredLocation;
+
+            if (status === 'SHORTLISTED') {
+                sendShortlistingEmail(studentEmail, {
+                    studentName:     student.fullName,
+                    internshipTitle: internship.title,
+                    fieldName,
+                    department:      application.departmentGroup?.department || internship.department,
+                }).catch(() => {});
+            } else if (status === 'SELECTED') {
+                sendSelectionEmail(studentEmail, {
+                    studentName:     student.fullName,
+                    internshipTitle: internship.title,
+                    fieldName,
+                    location,
+                }).catch(() => {});
+            } else if (status === 'HIRED') {
+                const mentorRecord = mentorId
+                    ? await prisma.user.findUnique({ where: { id: mentorId }, select: { name: true } })
+                    : null;
+                sendHiringEmail(studentEmail, {
+                    studentName:     student.fullName,
+                    internshipTitle: internship.title,
+                    fieldName,
+                    location,
+                    joiningDate:     result.joiningDate,
+                    endDate:         result.endDate,
+                    rollNumber:      student.rollNumber,
+                    mentorName:      mentorRecord?.name,
+                }).catch(() => {});
+            } else if (status === 'REJECTED') {
+                // Check if the field has other locations the student hasn't tried
+                let hasAlternateLocations = false;
+                if (result.fieldId) {
+                    const field = await prisma.internshipField.findUnique({ where: { id: result.fieldId } });
+                    const fieldLocs = Array.isArray(field?.locations) ? field.locations : [];
+                    hasAlternateLocations = fieldLocs.length > 1;
+                }
+                sendRejectionEmail(studentEmail, {
+                    studentName:     student.fullName,
+                    internshipTitle: internship.title,
+                    fieldName,
+                    hasAlternateLocations,
+                }).catch(() => {});
             }
         }
 
@@ -790,6 +858,7 @@ const getPortalConfig = async (req, res) => {
         // If no config exists, create default config with departments
         if (!config) {
             const defaultDepartments = [
+                'PRTI',
                 'TRANSMISSION',
                 'PLANNING AND POWER SYSTEMS',
                 'SLDC',
@@ -812,6 +881,14 @@ const getPortalConfig = async (req, res) => {
                     authorizedTotal: 100,
                     departments: defaultDepartments
                 }
+            });
+        }
+
+        // Ensure 'PRTI' is always present in the department list
+        if (config && Array.isArray(config.departments) && !config.departments.includes('PRTI')) {
+            config = await prisma.portalConfiguration.update({
+                where: { id: 'singleton' },
+                data: { departments: ['PRTI', ...config.departments] }
             });
         }
 
@@ -1031,13 +1108,32 @@ const getUsersByRole = async (req, res) => {
 
         const users = await prisma.user.findMany({
             where: whereClause,
-            select: { id: true, name: true, email: true, department: true },
+            select: { id: true, name: true, email: true, department: true, designation: true, mentorField: true, mentorLocation: true, phone: true },
             orderBy: { name: 'asc' }
         });
         res.status(200).json({ success: true, data: users });
     } catch (error) {
         console.error('Admin controller error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+/**
+ * @desc    Delete a MENTOR user (HOD can only delete mentors from own dept)
+ * @route   DELETE /api/v1/admin/users/:id
+ */
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const target = await prisma.user.findUnique({ where: { id } });
+        if (!target) return res.status(404).json({ success: false, message: 'User not found' });
+        if (target.role !== 'MENTOR') return res.status(403).json({ success: false, message: 'Only MENTOR accounts can be deleted this way' });
+        if (req.user.role === 'HOD' && target.department !== req.user.department)
+            return res.status(403).json({ success: false, message: 'You can only delete mentors from your own department' });
+        await prisma.user.delete({ where: { id } });
+        res.json({ success: true, message: 'Mentor deleted' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
@@ -1109,7 +1205,10 @@ const getAllInterns = async (req, res) => {
         };
 
         // Role-based filtering
-        if (req.user.role === 'HOD' || req.user.role === 'MENTOR') {
+        if (req.user.role === 'MENTOR') {
+            // Mentors see only their own assigned interns
+            whereClause.mentorId = req.user.id;
+        } else if (req.user.role === 'HOD') {
             if (req.user.department) {
                 whereClause.OR = [
                     { internship: { department: req.user.department } },
@@ -1121,10 +1220,11 @@ const getAllInterns = async (req, res) => {
         const interns = await prisma.application.findMany({
             where: whereClause,
             include: {
-                student: true,
+                student: { include: { user: { select: { email: true } } } },
                 internship: { select: { title: true, department: true, location: true } },
                 mentor: { select: { name: true, email: true } },
-                departmentGroup: { select: { department: true } }
+                departmentGroup: { select: { department: true } },
+                field: { select: { fieldName: true, locations: true } }
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -1317,7 +1417,7 @@ const addDepartmentGroup = async (req, res) => {
         }
 
         const { department, title, description, openings, rolesData, skillsRequired, expectations,
-                preferredColleges, quotaPercentages, problemStatements, customQuestions, internshipType } = req.body;
+                preferredColleges, quotaPercentages, customQuestions, internshipType } = req.body;
 
         if (!department) return res.status(400).json({ success: false, message: 'Department is required' });
 
@@ -1345,8 +1445,9 @@ const addDepartmentGroup = async (req, res) => {
         // Create committee stub
         await prisma.committee.create({ data: { departmentGroupId: group.id } });
 
-        // If internship was DRAFT, move to PENDING_HOD_INPUTS now that a dept group exists
-        if (internship.publishStatus === 'DRAFT') {
+        // For COLLABORATIVE: move to PENDING_HOD_INPUTS so HODs can submit PSes
+        // For NON_STIPEND: stay DRAFT until frontend explicitly publishes after fields are added
+        if (internship.publishStatus === 'DRAFT' && internship.internshipType === 'COLLABORATIVE') {
             await prisma.internship.update({
                 where: { id: req.params.id },
                 data: { publishStatus: 'PENDING_HOD_INPUTS' }
@@ -1358,19 +1459,21 @@ const addDepartmentGroup = async (req, res) => {
         const totalOpenings = allGroups.reduce((s, g) => s + g.openings, 0);
         await prisma.internship.update({ where: { id: req.params.id }, data: { openingsCount: totalOpenings } });
 
-        // Notify HOD of this department about the new internship
-        const hodUser = await prisma.user.findFirst({ where: { role: 'HOD', department } });
-        if (hodUser) {
-            const { sendEmail } = require('../services/mailService');
-            sendEmail(
-                hodUser.email,
-                `Action Required: Submit Problem Statements for ${internship.title}`,
-                `<h3>Dear ${hodUser.name || 'HOD'},</h3>
-                <p>APTRANSCO has created a new internship program: <strong>${internship.title}</strong></p>
-                <p>Your department (<strong>${department}</strong>) has been included. Please log in to the APTRANSCO Internship Portal and submit problem statements for your department.</p>
-                <p>The internship will go live for students only after all departments submit their problem statements.</p>
-                <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
-            ).catch(err => console.error('HOD notify fail:', err.message));
+        // Only notify HODs for COLLABORATIVE — NON_STIPEND goes live directly without HOD inputs
+        if (internship.internshipType === 'COLLABORATIVE') {
+            const hodUser = await prisma.user.findFirst({ where: { role: 'HOD', department } });
+            if (hodUser) {
+                const { sendEmail } = require('../services/mailService');
+                sendEmail(
+                    hodUser.email,
+                    `Action Required: Submit Problem Statements for ${internship.title}`,
+                    `<h3>Dear ${hodUser.name || 'HOD'},</h3>
+                    <p>APTRANSCO has created a new internship program: <strong>${internship.title}</strong></p>
+                    <p>Your department (<strong>${department}</strong>) has been included. Please log in to the APTRANSCO Internship Portal and submit problem statements for your department.</p>
+                    <p>The internship will go live for students only after all departments submit their problem statements.</p>
+                    <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
+                ).catch(err => console.error('HOD notify fail:', err.message));
+            }
         }
 
         res.status(201).json({ success: true, data: group });
@@ -1777,7 +1880,7 @@ const getHodLearningApplications = async (req, res) => {
                 }
             },
             include: appInclude,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'asc' }
         });
 
         // GROUP NON_STIPEND — dept matches InternshipDepartmentGroup.department
@@ -1787,7 +1890,7 @@ const getHodLearningApplications = async (req, res) => {
                 departmentGroup: { department: hodDept }
             },
             include: appInclude,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'asc' }
         });
 
         res.status(200).json({ success: true, data: [...singleApps, ...groupApps] });
@@ -1805,7 +1908,7 @@ const getHodLearningApplications = async (req, res) => {
 const addGroupField = async (req, res) => {
     try {
         const { id: internshipId, groupId } = req.params;
-        const { fieldName, description, vacancies, locations } = req.body;
+        const { fieldName, fieldMasterId, description, vacancies, locations, specializations } = req.body;
 
         if (!fieldName) return res.status(400).json({ success: false, message: 'Field name is required' });
 
@@ -1814,13 +1917,30 @@ const addGroupField = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Department group not found' });
         }
 
+        // locations can be string[] (legacy) or {name, vacancies}[] (new format)
+        const normalizedLocations = (locations || []).map(l =>
+            typeof l === 'string' ? { name: l, vacancies: 0 } : l
+        );
+        const computedVacancies = normalizedLocations.length > 0
+            ? normalizedLocations.reduce((s, l) => s + (parseInt(l.vacancies) || 0), 0)
+            : parseInt(vacancies) || 0;
+
+        // Inherit specializations from FieldMaster if linked; else use provided
+        let resolvedSpecializations = Array.isArray(specializations) ? specializations : [];
+        if (fieldMasterId && resolvedSpecializations.length === 0) {
+            const master = await prisma.fieldMaster.findUnique({ where: { id: fieldMasterId }, select: { specializations: true } });
+            if (Array.isArray(master?.specializations)) resolvedSpecializations = master.specializations;
+        }
+
         const field = await prisma.internshipField.create({
             data: {
                 departmentGroupId: groupId,
                 fieldName,
+                fieldMasterId: fieldMasterId || null,
                 description: description || null,
-                vacancies: parseInt(vacancies) || 0,
-                locations: locations || []
+                vacancies: computedVacancies,
+                locations: normalizedLocations,
+                specializations: resolvedSpecializations
             }
         });
 
@@ -1948,17 +2068,53 @@ const assignApplicationMentor = async (req, res) => {
         const { mentorId } = req.body;
         if (!mentorId) return res.status(400).json({ success: false, message: 'mentorId required' });
 
-        const app = await prisma.application.findUnique({ where: { id } });
+        const app = await prisma.application.findUnique({
+            where: { id },
+            include: { departmentGroup: { select: { department: true } }, internship: { select: { department: true } } }
+        });
         if (!app) return res.status(404).json({ success: false, message: 'Application not found' });
 
-        // Verify the target user is a MENTOR in the same department as the HOD making the request
-        const mentor = await prisma.user.findFirst({
-            where: { id: mentorId, role: 'MENTOR', department: req.user.department }
-        });
-        if (!mentor) return res.status(400).json({ success: false, message: 'Mentor not found in your department' });
+        // HOD can only assign mentors from their own department
+        // ADMIN / CE_PRTI can assign any mentor (no dept restriction)
+        const isHod = req.user.role === 'HOD';
+        const mentorWhere = { id: mentorId, role: 'MENTOR' };
+        if (isHod) mentorWhere.department = req.user.department;
+
+        const mentor = await prisma.user.findFirst({ where: mentorWhere });
+        if (!mentor) {
+            const hint = isHod
+                ? `No mentor with that ID found in your department (${req.user.department}). Make sure the user has been assigned the MENTOR role.`
+                : 'Mentor not found or does not have MENTOR role.';
+            return res.status(400).json({ success: false, message: hint });
+        }
 
         await prisma.application.update({ where: { id }, data: { mentorId } });
         res.json({ success: true, message: 'Mentor assigned', mentor: { id: mentor.id, name: mentor.name } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * Update held seats count for a specific field
+ * PATCH /admin/internships/:id/groups/:groupId/fields/:fieldId/held-seats
+ */
+const setFieldHeldSeats = async (req, res) => {
+    try {
+        const { fieldId } = req.params;
+        const { heldSeats } = req.body;
+        if (heldSeats === undefined || heldSeats < 0) {
+            return res.status(400).json({ success: false, message: 'heldSeats must be a non-negative integer' });
+        }
+        const field = await prisma.internshipField.findUnique({ where: { id: fieldId } });
+        if (!field) return res.status(404).json({ success: false, message: 'Field not found' });
+
+        const updated = await prisma.internshipField.update({
+            where: { id: fieldId },
+            data: { heldSeats: parseInt(heldSeats) }
+        });
+        await createAuditLog('SET_HELD_SEATS', req.user.email, `Field ${field.fieldName}: heldSeats → ${heldSeats}`, fieldId);
+        res.json({ success: true, data: updated });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -1979,6 +2135,7 @@ module.exports = {
     getCommitteeDetails,
     updateCommitteeDetails,
     getUsersByRole,
+    deleteUser,
     updateUserRole,
     getStipendDetails,
     updateStipendDetails,
@@ -2002,5 +2159,6 @@ module.exports = {
     getHodLearningApplications,
     addGroupField,
     deleteGroupField,
-    assignApplicationMentor
+    assignApplicationMentor,
+    setFieldHeldSeats
 };

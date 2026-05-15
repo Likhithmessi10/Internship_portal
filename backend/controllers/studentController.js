@@ -293,9 +293,54 @@ const uploadJoiningDocuments = async (req, res) => {
     }
 };
 
+/**
+ * Student reapplies for a different location on the same rejected field
+ * PUT /students/applications/:id/reapply-location
+ */
+const reapplyLocation = async (req, res) => {
+    const prisma = require('../lib/prisma');
+    try {
+        const { id } = req.params;
+        const { preferredLocation } = req.body;
+        if (!preferredLocation) return res.status(400).json({ success: false, message: 'preferredLocation is required' });
+
+        const app = await prisma.application.findUnique({
+            where: { id },
+            include: {
+                internship: { select: { internshipType: true } },
+                field: { select: { locations: true } },
+                student: { select: { userId: true } }
+            }
+        });
+
+        if (!app) return res.status(404).json({ success: false, message: 'Application not found' });
+        if (app.student.userId !== req.user.id) return res.status(403).json({ success: false, message: 'Forbidden' });
+        if (app.status !== 'REJECTED') return res.status(400).json({ success: false, message: 'Only rejected applications can request a location change' });
+        if (app.internship.internshipType !== 'NON_STIPEND') return res.status(400).json({ success: false, message: 'Only Learning Internship applications support location reapply' });
+
+        const fieldLocs = Array.isArray(app.field?.locations) ? app.field.locations : [];
+        if (fieldLocs.length > 0 && !fieldLocs.includes(preferredLocation)) {
+            return res.status(400).json({ success: false, message: `Location must be one of: ${fieldLocs.join(', ')}` });
+        }
+        if (preferredLocation === app.preferredLocation) {
+            return res.status(400).json({ success: false, message: 'Choose a different location from your previous choice' });
+        }
+
+        const updated = await prisma.application.update({
+            where: { id },
+            data: { status: 'SUBMITTED', preferredLocation }
+        });
+
+        res.json({ success: true, data: updated, message: 'Application resubmitted for the new location.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 module.exports = {
     upsertProfile,
     getProfile,
     upsertStipend,
-    uploadJoiningDocuments
+    uploadJoiningDocuments,
+    reapplyLocation,
 };

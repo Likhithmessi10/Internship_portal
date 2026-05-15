@@ -1,191 +1,373 @@
-import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Moon, Sun, Globe, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '../utils/api';
+import {
+    Moon, Sun, Globe, LogOut, ChevronLeft, ChevronRight,
+    LayoutDashboard, FolderOpen, Settings2, GraduationCap,
+    FileText, CheckSquare, Users, Calendar, BarChart3,
+    Search, PlusCircle, ClipboardList, UserCheck,
+    Building2, ChevronDown, Lock
+} from 'lucide-react';
+import { MONETARY_ENABLED } from '../config/features';
 
+// ── Per-role nav config ───────────────────────────────────────────────────────
+// Items/sections marked  monetary:true  are hidden when MONETARY_ENABLED=false.
+const NAV = {
+    CE_PRTI: [
+        {
+            section: 'Overview',
+            items: [
+                { label: 'Dashboard', icon: LayoutDashboard, path: '/prti/dashboard' },
+            ]
+        },
+        {
+            section: 'Programs',
+            items: [
+                { label: 'Master Programs', icon: FolderOpen, path: '/prti/batches' },
+                { label: 'Dept & Fields',   icon: Settings2,  path: '/prti/dept-config' },
+            ]
+        },
+        {
+            section: 'Interns',
+            items: [
+                { label: 'Applications',     icon: FileText,      path: '/hod/applications' },
+                { label: 'Learning Interns', icon: GraduationCap, path: '/prti/learning-interns' },
+                { label: 'Selection',        icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
+            ]
+        },
+        {
+            section: 'Coordination',
+            items: [
+                { label: 'Problem Statements', icon: ClipboardList, path: '/hod/problem-statements', monetary: true },
+                { label: 'Committees',         icon: Users,         path: '/hod/committees',          monetary: true },
+                { label: 'Meetings',           icon: Calendar,      path: '/prti/meetings',      monetary: true },
+            ]
+        },
+        {
+            section: 'System',
+            items: [
+                { label: 'Reports',          icon: BarChart3, path: '/prti/reports' },
+                { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+            ]
+        },
+    ],
+    HOD: [
+        {
+            section: 'Overview',
+            items: [
+                { label: 'Dashboard', icon: LayoutDashboard, path: '/hod/dashboard' },
+            ]
+        },
+        {
+            section: 'Programs',
+            items: [
+                { label: 'Master Programs', icon: FolderOpen, path: '/prti/batches' },
+            ]
+        },
+        {
+            section: 'My Department',
+            items: [
+                { label: 'Applications',       icon: FileText,      path: '/hod/applications' },
+                { label: 'Field Configuration', icon: Settings2,    path: '/hod/field-config' },
+                { label: 'Problem Statements', icon: ClipboardList, path: '/hod/problem-statements', monetary: true },
+                { label: 'Selection',          icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
+            ]
+        },
+        {
+            section: 'Coordination',
+            items: [
+                { label: 'Committees', icon: Users,    path: '/hod/committees', monetary: true },
+                { label: 'Meetings',   icon: Calendar, path: '/hod/meetings',   monetary: true },
+            ]
+        },
+        {
+            section: 'System',
+            items: [
+                { label: 'Reports',          icon: BarChart3, path: '/hod/reports' },
+                { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+            ]
+        },
+    ],
+    MENTOR: [
+        {
+            section: 'Overview',
+            items: [
+                { label: 'Dashboard', icon: LayoutDashboard, path: '/mentor/dashboard' },
+            ]
+        },
+        {
+            section: 'My Work',
+            items: [
+                { label: 'My Interns',  icon: UserCheck, path: '/mentor/applications' },
+                { label: 'Committees',  icon: Users,     path: '/mentor/committees', monetary: true },
+                { label: 'Meetings',    icon: Calendar,  path: '/mentor/meetings',  monetary: true },
+                { label: 'Reports',     icon: BarChart3, path: '/mentor/reports' },
+            ]
+        },
+    ],
+    ADMIN: [
+        {
+            section: 'Overview',
+            items: [
+                { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+            ]
+        },
+        {
+            section: 'Programs',
+            items: [
+                { label: 'Master Programs', icon: FolderOpen, path: '/prti/batches' },
+                { label: 'Dept & Fields',   icon: Settings2,  path: '/prti/dept-config' },
+            ]
+        },
+        {
+            section: 'Interns',
+            items: [
+                { label: 'Applications',     icon: FileText,      path: '/hod/applications' },
+                { label: 'Learning Interns', icon: GraduationCap, path: '/prti/learning-interns' },
+                { label: 'Selection',        icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
+            ]
+        },
+        {
+            section: 'Coordination',
+            items: [
+                { label: 'Committees', icon: Users,    path: '/hod/committees', monetary: true },
+                { label: 'Meetings',   icon: Calendar, path: '/prti/meetings' },
+            ]
+        },
+        {
+            section: 'System',
+            items: [
+                { label: 'Reports',          icon: BarChart3, path: '/prti/reports' },
+                { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+            ]
+        },
+    ],
+};
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
 const Sidebar = ({ isCollapsed, onToggle }) => {
     const { user, logout } = useAuth();
     const { isDarkMode, toggleTheme } = useTheme();
     const { lang, toggleLanguage } = useLanguage();
-    const location = useLocation();
+    const navigate = useNavigate();
+    const [profileOpen, setProfileOpen] = useState(false);
 
-    const isAdmin = user?.role === 'ADMIN';
-    const isHOD = user?.role === 'HOD';
-    const isPRTI = user?.role === 'CE_PRTI';
-    const isMentor = user?.role === 'MENTOR';
+    const [changePassOpen, setChangePassOpen] = useState(false);
+    const [cpForm, setCpForm]   = useState({ current: '', next: '', confirm: '' });
+    const [cpError, setCpError] = useState('');
+    const [cpOk, setCpOk]       = useState(false);
 
-    // Get user display name - prioritize name field, fallback to email prefix
-    const getDisplayName = () => {
-        if (user?.name) return user.name;
-        if (user?.email) return user.email.split('@')[0];
-        return 'User';
+    const handleChangePass = async (e) => {
+        e.preventDefault();
+        setCpError('');
+        if (cpForm.next !== cpForm.confirm) { setCpError('Passwords do not match.'); return; }
+        try {
+            await api.put('/auth/reset-password', { currentPassword: cpForm.current, newPassword: cpForm.next });
+            setCpOk(true);
+            setTimeout(() => { setChangePassOpen(false); setCpOk(false); setCpForm({ current: '', next: '', confirm: '' }); }, 1500);
+        } catch (err) {
+            setCpError(err.response?.data?.message || 'Failed to change password.');
+        }
     };
 
-    const displayName = getDisplayName();
+    const role = user?.role || 'HOD';
+    const sections = (NAV[role] || NAV.HOD)
+        .map(s => ({ ...s, items: s.items.filter(i => MONETARY_ENABLED || !i.monetary) }))
+        .filter(s => s.items.length > 0);
 
-    const menuItems = [
-        {
-            label: 'Dashboard',
-            icon: 'dashboard',
-            path: isAdmin ? '/admin/dashboard' : (isPRTI ? '/prti/dashboard' : `/${user?.role?.toLowerCase()}/dashboard`)
-        },
-        ...(isPRTI || isAdmin ? [{
-            label: 'Master Programs',
-            icon: 'folder_open',
-            path: '/prti/batches'
-        }, {
-            label: 'Dept & Fields',
-            icon: 'schema',
-            path: '/prti/dept-config'
-        }, {
-            label: 'Learning Interns',
-            icon: 'school',
-            path: '/prti/learning-interns'
-        }] : []),
-        ...(!isPRTI ? [{ 
-            label: 'Applications', 
-            icon: 'description', 
-            path: isHOD ? '/hod/applications' : (isMentor ? '/mentor/applications' : '/internships/past') 
-        }] : []),
-        {
-            label: 'Committees',
-            icon: 'account_tree',
-            path: isHOD ? '/hod/committees' : (isMentor ? '/mentor/committees' : '/committees')
-        },
-        {
-            label: 'Meetings',
-            icon: 'event_available',
-            path: isPRTI ? '/prti/meetings' : (isHOD ? '/hod/meetings' : (isMentor ? '/mentor/meetings' : '/meetings'))
-        },
-        ...(isHOD ? [{
-            label: 'Problem Statements',
-            icon: 'assignment',
-            path: '/hod/problem-statements'
-        }] : []),
-        ...(!isPRTI && !isMentor ? [{
-            label: 'Selection',
-            icon: 'how_to_reg',
-            path: isHOD ? '/hod/selection' : '/admin/selection',
-            highlight: true
-        }] : []),
-        {
-            label: 'Reports',
-            icon: 'assessment',
-            path: isPRTI ? '/prti/reports' : (isHOD ? '/hod/reports' : (isMentor ? '/mentor/reports' : '/reports'))
-        },
-        ...((isAdmin || isPRTI || isHOD) ? [{
-            label: 'Candidate Search',
-            icon: 'person_search',
-            path: '/admin/search'
-        }] : []),
-    ];
+    const canCreateInternship = ['ADMIN', 'CE_PRTI', 'HOD'].includes(role);
+
+    const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+    const roleLabel = {
+        ADMIN: 'Super Admin',
+        CE_PRTI: 'CE · PRTI',
+        HOD: user?.department ? `HOD · ${user.department}` : 'HOD',
+        MENTOR: user?.department ? `Mentor · ${user.department}` : 'Mentor',
+        COMMITTEE_MEMBER: 'Committee',
+    }[role] || role;
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen border-r border-outline/10 bg-slate-100 dark:bg-slate-900 font-inter antialiased tracking-tight flex flex-col z-50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-            {/* Toggle Button */}
+    <>
+        <aside className={`fixed left-0 top-0 h-screen border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col z-50 transition-all duration-300 ${isCollapsed ? 'w-[72px]' : 'w-60'}`}>
+
+            {/* Collapse toggle */}
             <button
                 onClick={() => onToggle(!isCollapsed)}
-                className="absolute -right-3 top-4 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors z-50"
+                className="absolute -right-3 top-5 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors z-50"
             >
-                {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                {isCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
             </button>
 
-            <div className={`px-6 py-6 ${isCollapsed ? 'px-4' : ''}`}>
-                <div className="flex items-center gap-3">
-                    <img src="/logo.png" alt="AP TRANSCO" className="w-14 h-16 object-contain flex-shrink-0 rounded-lg border border-outline/20 shadow-sm" />
-                    {!isCollapsed && (
-                        <div className="pl-1">
-                            <h1 className="text-base font-black tracking-widest uppercase text-sky-950 dark:text-sky-50 leading-tight">AP Transco</h1>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Internship Portal</p>
-                        </div>
-                    )}
-                </div>
+            {/* Logo */}
+            <div className={`flex items-center gap-3 px-4 py-5 border-b border-slate-100 dark:border-slate-800 ${isCollapsed ? 'justify-center px-2' : ''}`}>
+                <img src="/logo.png" alt="AP TRANSCO" className="w-9 h-9 object-contain rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex-shrink-0" />
+                {!isCollapsed && (
+                    <div>
+                        <p className="text-[11px] font-black tracking-widest uppercase text-slate-800 dark:text-slate-100 leading-tight">AP Transco</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Internship Portal</p>
+                    </div>
+                )}
             </div>
 
-            <nav className="flex-1 space-y-1 px-2 overflow-y-auto">
-                {menuItems.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) =>
-                                `flex items-center gap-4 h-12 transition-all duration-200 rounded-lg ${isActive
-                                    ? 'text-sky-900 dark:text-sky-400 font-semibold border-l-4 border-sky-900 dark:border-sky-400 pl-4 bg-white/50 dark:bg-white/5 opacity-90'
-                                    : 'text-slate-500 dark:text-slate-400 pl-5 hover:text-sky-800 dark:hover:text-sky-200 hover:bg-slate-200 dark:hover:bg-slate-800'
-                                } ${isCollapsed ? 'justify-center px-2' : ''}`
-                            }
-                            title={isCollapsed ? item.label : ''}
-                        >
-                            <span className="material-symbols-outlined flex-shrink-0">{item.icon}</span>
-                            {!isCollapsed && <span className="text-sm">{item.label}</span>}
-                        </NavLink>
-                    );
-                })}
+            {/* Nav sections */}
+            <nav className="flex-1 overflow-y-auto py-3 space-y-1 scrollbar-thin">
+                {sections.map((section) => (
+                    <div key={section.section} className={`${isCollapsed ? 'px-1' : 'px-3'}`}>
+                        {/* Section label */}
+                        {!isCollapsed && (
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-600 px-2 pt-4 pb-1.5 first:pt-1">
+                                {section.section}
+                            </p>
+                        )}
+                        {isCollapsed && (
+                            <div className="border-t border-slate-100 dark:border-slate-800 my-2 first:hidden" />
+                        )}
+
+                        {section.items.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <NavLink
+                                    key={item.path}
+                                    to={item.path}
+                                    title={isCollapsed ? item.label : undefined}
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-3 rounded-xl transition-all duration-150 mb-0.5
+                                        ${isCollapsed ? 'h-10 w-10 justify-center mx-auto' : 'px-3 py-2.5'}
+                                        ${isActive
+                                            ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                                            : item.highlight
+                                                ? 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
+                                        }`
+                                    }
+                                >
+                                    <Icon size={16} className="flex-shrink-0" />
+                                    {!isCollapsed && (
+                                        <span className="text-[13px] font-semibold">{item.label}</span>
+                                    )}
+                                </NavLink>
+                            );
+                        })}
+                    </div>
+                ))}
             </nav>
 
-            <div className={`px-4 py-4 ${isCollapsed ? 'px-2' : ''}`}>
-                {(isAdmin || isPRTI || isHOD) && (
-                    <NavLink
-                        to="/internships/new"
-                        className={`bg-primary-container text-white py-3 rounded-lg flex items-center justify-center gap-2 font-medium shadow-md hover:opacity-90 transition-all text-sm no-underline hover:text-white ${isCollapsed ? 'px-2' : ''}`}
-                        title={isCollapsed ? 'New Internship' : ''}
+            {/* Bottom area */}
+            <div className={`border-t border-slate-100 dark:border-slate-800 p-3 space-y-2 ${isCollapsed ? 'px-1' : ''}`}>
+                {/* New Internship button */}
+                {canCreateInternship && (
+                    <button
+                        onClick={() => navigate('/internships/new')}
+                        title={isCollapsed ? 'New Internship' : undefined}
+                        className={`w-full flex items-center gap-2 bg-primary text-white rounded-xl font-semibold text-[12px] shadow-sm hover:bg-primary/90 transition-all
+                            ${isCollapsed ? 'h-10 justify-center' : 'px-3 py-2.5'}`}
                     >
-                        <span className="material-symbols-outlined text-sm flex-shrink-0">add_circle</span>
-                        {!isCollapsed && <span>New Internship</span>}
-                    </NavLink>
+                        <PlusCircle size={15} className="flex-shrink-0" />
+                        {!isCollapsed && 'New Internship'}
+                    </button>
                 )}
 
-                {/* Theme, Language, and User Profile Section */}
-                <div className={`pt-4 border-t border-outline/20 ${isCollapsed ? 'hidden' : ''}`}>
-                    {/* User Profile with Theme and Language Toggle */}
-                    <div className="relative group mt-3">
-                        <div className="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl cursor-pointer hover:bg-surface-container-high transition-colors">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                {user?.photoUrl ? (
-                                    <img src={user.photoUrl} alt={displayName} className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-lg font-black text-primary">{displayName.charAt(0).toUpperCase()}</span>
-                                )}
+                {/* User profile */}
+                {!isCollapsed ? (
+                    <div className="relative">
+                        <button
+                            onClick={() => setProfileOpen(v => !v)}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {user?.photoUrl
+                                    ? <img src={user.photoUrl} alt={displayName} className="w-full h-full object-cover" />
+                                    : <span className="text-sm font-black text-primary">{displayName.charAt(0).toUpperCase()}</span>
+                                }
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs font-black text-primary truncate">{displayName}</p>
-                                <p className="text-[8px] text-outline font-bold uppercase tracking-tight truncate">{user?.role?.replace('_', ' ') || 'Role'}</p>
+                            <div className="flex-1 text-left min-w-0">
+                                <p className="text-[12px] font-bold text-slate-800 dark:text-slate-100 truncate">{displayName}</p>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">{roleLabel}</p>
                             </div>
-                            {/* Theme and Language Toggle */}
-                            <div className="flex items-center gap-1">
-                                <button onClick={toggleTheme} className="p-2 text-outline hover:bg-surface-container-high rounded-lg transition-colors" title={isDarkMode ? 'Light Mode' : 'Dark Mode'}>
-                                    {isDarkMode ? <Sun size={16} className="text-on-surface" /> : <Moon size={16} className="text-outline" />}
+                            <ChevronDown size={13} className={`text-slate-400 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {profileOpen && (
+                            <div className="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-1.5 z-50">
+                                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
+                                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200">{displayName}</p>
+                                    <p className="text-[9px] text-slate-400 truncate">{user?.email}</p>
+                                </div>
+                                <div className="flex items-center gap-1 px-2 py-1">
+                                    <button onClick={toggleTheme} title={isDarkMode ? 'Light mode' : 'Dark mode'}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold transition-colors">
+                                        {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
+                                        {isDarkMode ? 'Light' : 'Dark'}
+                                    </button>
+                                    <button onClick={toggleLanguage}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold transition-colors">
+                                        <Globe size={13} />
+                                        {lang === 'en' ? 'EN' : 'TE'}
+                                    </button>
+                                </div>
+                                <NavLink to="/profile"
+                                    onClick={() => setProfileOpen(false)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors no-underline">
+                                    <Building2 size={13} /> My Profile
+                                </NavLink>
+                                <button onClick={() => { setChangePassOpen(true); setProfileOpen(false); }}
+                                    className="flex items-center gap-2 w-full px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors">
+                                    <Lock size={13} /> Change Password
                                 </button>
-                                <button onClick={toggleLanguage} className="p-2 text-outline hover:bg-surface-container-high rounded-lg transition-colors flex items-center gap-1" title="Toggle Language">
-                                    <Globe size={14} className="text-outline" />
-                                    <span className="text-[9px] font-bold uppercase">{lang === 'en' ? 'EN' : 'TE'}</span>
+                                <button onClick={logout}
+                                    className="flex items-center gap-2 w-full px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[11px] font-semibold text-red-500 transition-colors">
+                                    <LogOut size={13} /> Sign Out
                                 </button>
                             </div>
-                        </div>
-                        {/* Dropdown Menu */}
-                        <div className="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-outline-variant/10 p-2 opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all transform scale-95 group-hover:scale-100">
-                            <div className="px-4 py-3 border-b border-outline-variant/10 mb-2">
-                                <p className="text-sm font-bold text-primary">{displayName}</p>
-                                <p className="text-[9px] text-outline font-medium truncate">{user?.email}</p>
-                            </div>
-                            <NavLink to="/profile" className="w-full text-left px-4 py-2.5 text-xs font-bold text-primary hover:bg-primary/5 rounded-xl flex items-center gap-2 transition-colors no-underline">
-                                <span className="material-symbols-outlined text-base">account_circle</span>
-                                My Profile
-                            </NavLink>
-                            <button onClick={logout} className="w-full text-left px-4 py-2.5 text-xs font-bold text-error hover:bg-error/5 rounded-xl flex items-center gap-2 transition-colors">
-                                <LogOut size={16} />
-                                Sign Out
-                            </button>
-                        </div>
+                        )}
                     </div>
-                </div>
-
-
+                ) : (
+                    <button onClick={logout} title="Sign Out"
+                        className="w-10 h-10 mx-auto flex items-center justify-center rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 transition-colors">
+                        <LogOut size={16} />
+                    </button>
+                )}
             </div>
         </aside>
+
+        {/* Change Password Modal */}
+        {changePassOpen && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-2">
+                            <Lock size={16} className="text-primary" />
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-100">Change Password</p>
+                        </div>
+                        <button onClick={() => setChangePassOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">✕</button>
+                    </div>
+                    <form onSubmit={handleChangePass} className="px-6 py-5 space-y-4">
+                        {cpError && <p className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2 rounded-lg">{cpError}</p>}
+                        {cpOk   && <p className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 rounded-lg">Password changed ✓</p>}
+                        {[
+                            { key: 'current', label: 'Current Password' },
+                            { key: 'next',    label: 'New Password' },
+                            { key: 'confirm', label: 'Confirm New Password' },
+                        ].map(({ key, label }) => (
+                            <div key={key} className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-outline dark:text-slate-400">{label}</label>
+                                <input type="password" required value={cpForm[key]}
+                                    onChange={e => setCpForm(p => ({ ...p, [key]: e.target.value }))}
+                                    className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                            </div>
+                        ))}
+                        <button type="submit"
+                            className="w-full py-2.5 bg-primary text-white text-xs font-black uppercase rounded-xl hover:bg-primary/90 transition-colors">
+                            Update Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+        )}
+    </>
     );
 };
 

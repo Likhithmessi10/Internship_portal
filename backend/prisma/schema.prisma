@@ -72,8 +72,11 @@ model User {
   name       String?
   role       Role     @default(STUDENT)
   department String?
-  phone      String?  @map("phone_number")
-  photoUrl   String?
+  phone          String?  @map("phone_number")
+  photoUrl       String?
+  designation    String?  // job title / designation (for mentors)
+  mentorField    String?  // field name this mentor handles (for auto-assignment)
+  mentorLocation String?  // location this mentor is based at (for auto-assignment)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -117,6 +120,7 @@ model StudentProfile {
 
   applications Application[]
   workAssignments WorkAssignment[] @relation("InternWork")
+  workLogs        WorkLog[]
 
   @@index([userId])
   @@index([collegeName])
@@ -144,6 +148,8 @@ model FieldMaster {
   fieldCode   String           @unique  // e.g., "SLDC-SCADA-001", immutable
   fieldName   String
   fieldNumber Int              // sequential within dept, IMMUTABLE — used in roll number
+  specializations Json?        @default("[]") // fixed target branches for this field
+  locations   Json?            @default("[]") // default posting locations for this field
   isActive    Boolean          @default(true)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -227,6 +233,7 @@ model InternshipDepartmentGroup {
   preferredColleges Json?     @default("[]")
   quotaPercentages  Json?
   customQuestions   Json?     @default("[]")
+  requiredDocuments Json?     @default("[]") // HOD-configurable docs required after selection
   // HOD submission tracking
   hodSubmitted      Boolean   @default(false)
   hodSubmittedAt    DateTime?
@@ -296,6 +303,9 @@ model Application {
   shortlistCategory   String?
   domain              String?
   mentorId            String?
+  isHeldSeat          Boolean  @default(false)  // true = HOD discretionary hold seat
+  prtiApproved        Boolean  @default(false)  // PRTI verified this selection; unlocks doc request + hire
+  prtiNote            String?                   // PRTI feedback visible to HOD
   questionAnswers     Json?
   scoreBreakdown      Json?
 
@@ -311,6 +321,7 @@ model Application {
   attendance       Attendance?
   workAssignments  WorkAssignment[]
   evaluationScores EvaluationScore[]
+  workLogs         WorkLog[]
 
   @@unique([studentId, internshipId, assignedRole, fieldId])
   @@index([studentId])
@@ -328,7 +339,9 @@ model InternshipField {
   fieldName         String
   description       String?
   vacancies         Int      @default(0)
+  heldSeats         Int      @default(0)   // reserved seats HOD can fill by discretion
   locations         Json?    @default("[]")
+  specializations   Json?    @default("[]") // e.g. ["Electrical", "Power Systems"]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -509,5 +522,23 @@ model TaskSubmission {
   updatedAt        DateTime @updatedAt
 
   @@index([workAssignmentId])
+  @@index([studentId])
+}
+
+model WorkLog {
+  id            String   @id @default(uuid())
+  applicationId String
+  studentId     String
+  date          DateTime @db.Date
+  description   String   @db.Text
+  hoursWorked   Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+
+  @@unique([applicationId, date])
+  @@index([applicationId])
   @@index([studentId])
 }

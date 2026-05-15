@@ -83,14 +83,20 @@ const AdminApplicationReview = () => {
                 api.get(`/internships/${id}`),
                 api.get(`/admin/internships/${id}/applications`)
             ]);
-            setInternship(intRes.data.data);
+            const intData = intRes.data.data;
+            // HOD users reviewing NON_STIPEND internships should use the dedicated HOD Applications page
+            if (user?.role === 'HOD' && intData?.internshipType === 'NON_STIPEND') {
+                navigate('/hod/applications', { replace: true });
+                return;
+            }
+            setInternship(intData);
             setApplications(appRes.data.data);
         } catch {
             setError('Failed to load data');
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, user?.role, navigate]);
 
     useEffect(() => { fetchData(); }, [id, fetchData]);
 

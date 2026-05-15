@@ -2,13 +2,25 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../../../utils/api';
 import {
     Plus, ChevronDown, ChevronUp, CheckCircle, XCircle,
-    Loader2, AlertCircle, BookOpen, Tag
+    Loader2, AlertCircle, BookOpen, Tag, Trash2
 } from 'lucide-react';
 import departmentsData from '../../../data/departments.json';
 
+const PRESET_SPECIALIZATIONS = [
+    'Electrical Engineering', 'Power Systems', 'Substation Engineering', 'SCADA', 'Protection Relays',
+    'Mechanical Engineering', 'Civil Engineering', 'Information Technology', 'Computer Science',
+    'Electronics & Communication', 'Instrumentation', 'Human Resources', 'Finance & Accounts',
+    'Legal', 'Administration', 'Telecom'
+];
+
 // ── Field row ─────────────────────────────────────────────────────────────────
-const FieldRow = ({ field, deptId, onToggle }) => {
-    const [toggling, setToggling] = useState(false);
+const FieldRow = ({ field, deptId, onToggle, onDelete }) => {
+    const [toggling, setToggling]     = useState(false);
+    const [deleting, setDeleting]     = useState(false);
+    const [editingSpecs, setEditingSpecs] = useState(false);
+    const [specs, setSpecs]           = useState(Array.isArray(field.specializations) ? field.specializations : []);
+    const [specInput, setSpecInput]   = useState('');
+    const [savingSpecs, setSavingSpecs] = useState(false);
 
     const handleToggle = async () => {
         setToggling(true);
@@ -20,36 +32,118 @@ const FieldRow = ({ field, deptId, onToggle }) => {
         } finally { setToggling(false); }
     };
 
+    const handleDelete = async () => {
+        if (!window.confirm(`Delete field "${field.fieldName}" (${field.fieldCode})? This cannot be undone.`)) return;
+        setDeleting(true);
+        try {
+            await api.delete(`/admin/dept-master/${deptId}/fields/${field.id}`);
+            onDelete();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to delete field.');
+        } finally { setDeleting(false); }
+    };
+
+    const saveSpecs = async () => {
+        setSavingSpecs(true);
+        try {
+            await api.put(`/admin/dept-master/${deptId}/fields/${field.id}`, { specializations: specs });
+            setEditingSpecs(false);
+            onToggle();
+        } catch { alert('Failed to save specializations.'); }
+        finally { setSavingSpecs(false); }
+    };
+
+    const addSpec = (val) => {
+        const v = val.trim();
+        if (v && !specs.includes(v)) setSpecs(s => [...s, v]);
+        setSpecInput('');
+    };
+
     return (
+        <>
         <tr className={`border-b border-outline-variant/10 transition-colors ${field.isActive ? '' : 'opacity-50'}`}>
             <td className="px-4 py-3">
                 <span className="inline-flex items-center gap-1 text-[10px] font-black text-primary/60 bg-primary/5 border border-primary/10 px-2 py-0.5 rounded font-mono">
                     {field.fieldCode}
                 </span>
             </td>
-            <td className="px-4 py-3 text-sm font-bold text-slate-800">{field.fieldName}</td>
-            <td className="px-4 py-3 text-[10px] font-black text-outline uppercase tracking-widest">
-                #{field.fieldNumber}
+            <td className="px-4 py-3">
+                <p className="text-sm font-bold text-slate-800">{field.fieldName}</p>
+                {specs.length > 0 && !editingSpecs && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                        {specs.map(s => (
+                            <span key={s} className="px-1.5 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-bold rounded border border-violet-200">{s}</span>
+                        ))}
+                    </div>
+                )}
             </td>
+            <td className="px-4 py-3 text-[10px] font-black text-outline uppercase tracking-widest">#{field.fieldNumber}</td>
             <td className="px-4 py-3">
                 {field.isActive
                     ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase border border-emerald-200"><CheckCircle size={9} /> Active</span>
                     : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase border border-slate-200"><XCircle size={9} /> Inactive</span>}
             </td>
             <td className="px-4 py-3 text-right">
-                <button
-                    onClick={handleToggle}
-                    disabled={toggling}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
-                        field.isActive
-                            ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                    }`}
-                >
-                    {toggling ? <Loader2 size={11} className="animate-spin inline" /> : field.isActive ? 'Deactivate' : 'Activate'}
-                </button>
+                <div className="flex items-center justify-end gap-2">
+                    <button onClick={() => setEditingSpecs(v => !v)}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-all">
+                        {specs.length > 0 ? `${specs.length} Specs` : '+ Specs'}
+                    </button>
+                    <button onClick={handleToggle} disabled={toggling || deleting}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
+                            field.isActive ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                        }`}>
+                        {toggling ? <Loader2 size={11} className="animate-spin inline" /> : field.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button onClick={handleDelete} disabled={deleting || toggling}
+                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-all disabled:opacity-50">
+                        {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                    </button>
+                </div>
             </td>
         </tr>
+        {editingSpecs && (
+            <tr className="border-b border-violet-100 bg-violet-50/40">
+                <td colSpan={5} className="px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-violet-700 mb-2">
+                        Specializations for {field.fieldName} — students with matching branch will see this field highlighted
+                    </p>
+                    <div className="flex gap-2 mb-2">
+                        <select value="" onChange={e => e.target.value && addSpec(e.target.value)}
+                            className="text-xs border border-violet-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none flex-1 max-w-xs">
+                            <option value="">Add from presets…</option>
+                            {PRESET_SPECIALIZATIONS.filter(s => !specs.includes(s)).map(s => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                        </select>
+                        <input value={specInput} onChange={e => setSpecInput(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSpec(specInput))}
+                            placeholder="or type custom…"
+                            className="text-xs border border-violet-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none flex-1 max-w-xs" />
+                        <button type="button" onClick={() => addSpec(specInput)}
+                            className="px-3 py-1.5 bg-violet-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-violet-700">Add</button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                        {specs.map((s, i) => (
+                            <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-white text-violet-700 text-[10px] font-bold border border-violet-300 rounded-lg">
+                                {s}
+                                <button onClick={() => setSpecs(prev => prev.filter((_, idx) => idx !== i))} className="text-violet-400 hover:text-red-500 font-black">×</button>
+                            </span>
+                        ))}
+                        {specs.length === 0 && <span className="text-[10px] text-slate-400 font-bold">No specializations yet — all students will see this field</span>}
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={saveSpecs} disabled={savingSpecs}
+                            className="px-4 py-1.5 bg-violet-600 text-white text-[10px] font-black uppercase rounded-lg disabled:opacity-50 hover:bg-violet-700 flex items-center gap-1">
+                            {savingSpecs ? <Loader2 size={11} className="animate-spin" /> : null} Save Specializations
+                        </button>
+                        <button onClick={() => { setEditingSpecs(false); setSpecs(Array.isArray(field.specializations) ? field.specializations : []); }}
+                            className="px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600">Cancel</button>
+                    </div>
+                </td>
+            </tr>
+        )}
+        </>
     );
 };
 
@@ -113,6 +207,7 @@ const DeptCard = ({ dept, onRefresh }) => {
     const [open, setOpen]         = useState(false);
     const [showAddField, setShowAddField] = useState(false);
     const [toggling, setToggling] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const activeFields   = dept.fields.filter(f => f.isActive).length;
     const inactiveFields = dept.fields.filter(f => !f.isActive).length;
@@ -125,6 +220,18 @@ const DeptCard = ({ dept, onRefresh }) => {
         } catch {
             alert('Failed to update department.');
         } finally { setToggling(false); }
+    };
+
+    const handleDeleteDept = async (e) => {
+        e.stopPropagation();
+        if (!window.confirm(`Delete department "${dept.name}"? All its fields will also be deleted. This cannot be undone.`)) return;
+        setDeleting(true);
+        try {
+            await api.delete(`/admin/dept-master/${dept.id}`);
+            onRefresh();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to delete department.');
+        } finally { setDeleting(false); }
     };
 
     return (
@@ -151,12 +258,20 @@ const DeptCard = ({ dept, onRefresh }) => {
                 <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={e => { e.stopPropagation(); handleToggleDept(); }}
-                        disabled={toggling}
+                        disabled={toggling || deleting}
                         className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
                             dept.isActive ? 'bg-slate-100 text-slate-500 hover:bg-slate-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                         }`}
                     >
                         {toggling ? <Loader2 size={11} className="animate-spin inline" /> : dept.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button
+                        onClick={handleDeleteDept}
+                        disabled={deleting || toggling}
+                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-all disabled:opacity-50"
+                        title="Delete department"
+                    >
+                        {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                     </button>
                     {open ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
                 </div>
@@ -172,14 +287,14 @@ const DeptCard = ({ dept, onRefresh }) => {
                             <table className="w-full text-left min-w-[500px]">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-outline-variant/10">
-                                        {['Field Code', 'Field Name', 'Seq #', 'Status', ''].map(h => (
+                                        {['Field Code', 'Field Name & Specializations', 'Seq #', 'Status', ''].map(h => (
                                             <th key={h} className="px-4 py-2.5 text-[10px] font-black text-outline uppercase tracking-widest">{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {dept.fields.map(f => (
-                                        <FieldRow key={f.id} field={f} deptId={dept.id} onToggle={onRefresh} />
+                                        <FieldRow key={f.id} field={f} deptId={dept.id} onToggle={onRefresh} onDelete={onRefresh} />
                                     ))}
                                 </tbody>
                             </table>
@@ -294,6 +409,7 @@ const PrtiDeptFieldConfig = () => {
     const [newDept, setNewDept]         = useState({ name: '', code: '' });
     const [saving, setSaving]           = useState(false);
     const [addError, setAddError]       = useState('');
+    const [resequencing, setResequencing] = useState(false);
 
     const fetchDepts = useCallback(async () => {
         setLoading(true);
@@ -319,6 +435,28 @@ const PrtiDeptFieldConfig = () => {
 
     // Apply showAll filter only to master depts
     const visibleMaster = showAll ? masterDepts : masterDepts.filter(d => d.isActive);
+
+    const handleResequence = async (force = false) => {
+        const msg = force
+            ? 'FINAL WARNING: Some students already have roll numbers. Re-sequencing will make those roll numbers inconsistent with the new numbering. Proceed?'
+            : 'Re-sequence department and field numbers to fill gaps?\n\nThis renumbers all departments (1, 2, 3...) and fields within each department. Only proceed if no students have been hired with Learning Internship roll numbers yet.';
+        if (!window.confirm(msg)) return;
+        setResequencing(true);
+        try {
+            await api.post('/admin/dept-master/resequence', { force });
+            await fetchDepts();
+        } catch (err) {
+            const data = err.response?.data;
+            if (err.response?.status === 409 && data?.hiredCount) {
+                // Offer force option
+                if (window.confirm(`${data.message}\n\nDo you want to force re-sequence anyway?`)) {
+                    await handleResequence(true);
+                }
+            } else {
+                alert(data?.message || 'Re-sequencing failed.');
+            }
+        } finally { setResequencing(false); }
+    };
 
     const handleAddDept = async (e) => {
         e.preventDefault();

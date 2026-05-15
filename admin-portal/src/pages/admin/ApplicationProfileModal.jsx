@@ -425,27 +425,46 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                         <section>
                             <div className="flex items-center gap-2 mb-4">
                                 <span className="material-symbols-outlined text-primary dark:text-indigo-400 text-xl">description</span>
-                                <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Documentation Pool</h3>
+                                <h3 className="text-xs font-bold text-primary dark:text-white uppercase tracking-widest pt-1">Submitted at Application</h3>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {internship?.requiredDocuments && internship.requiredDocuments.length > 0 ? (
-                                    internship.requiredDocuments.map(reqDoc => {
-                                        let doc = getDoc(reqDoc.id, reqDoc.label);
-                                        if (!doc) {
-                                            if (reqDoc.id === 'NOC_LETTER') doc = getDoc('PRINCIPAL_LETTER', 'Principal Letter');
-                                            else if (reqDoc.id === 'PRINCIPAL_LETTER') doc = getDoc('NOC_LETTER', 'NOC Letter');
-                                        }
-                                        return <DocRow key={reqDoc.id} doc={doc} label={reqDoc.label} onView={openViewer} />;
-                                    })
-                                ) : (
-                                    <>
+                            {internship?.internshipType === 'NON_STIPEND' ? (() => {
+                                // Joining doc types submitted after selection — exclude from apply-time view
+                                const JOINING_TYPES = ['NOC', 'BOND', 'UNDERTAKING', 'INSURANCE', 'PRINCIPAL_LETTER', 'HOD_LETTER', 'NOC_LETTER'];
+                                const appDocs = (documents || []).filter(d => !JOINING_TYPES.includes(d.type));
+                                if (appDocs.length === 0) return (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <DocRow doc={resumeDoc} label="Resume / CV" onView={openViewer} />
-                                        <DocRow doc={nocDoc} label="Principal Letter" onView={openViewer} />
-                                        <DocRow doc={hodDoc} label="HOD Letter" onView={openViewer} />
-                                        <DocRow doc={markDoc} label="Mark Sheet" onView={openViewer} />
-                                    </>
-                                )}
-                            </div>
+                                        {photoDoc && <DocRow doc={photoDoc} label="Passport Photo" onView={openViewer} />}
+                                    </div>
+                                );
+                                return (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {appDocs.map(doc => (
+                                            <DocRow key={doc.id} doc={doc} label={doc.label || doc.type} onView={openViewer} />
+                                        ))}
+                                    </div>
+                                );
+                            })() : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {internship?.requiredDocuments && internship.requiredDocuments.length > 0 ? (
+                                        internship.requiredDocuments.map(reqDoc => {
+                                            let doc = getDoc(reqDoc.id, reqDoc.label);
+                                            if (!doc) {
+                                                if (reqDoc.id === 'NOC_LETTER') doc = getDoc('PRINCIPAL_LETTER', 'Principal Letter');
+                                                else if (reqDoc.id === 'PRINCIPAL_LETTER') doc = getDoc('NOC_LETTER', 'NOC Letter');
+                                            }
+                                            return <DocRow key={reqDoc.id} doc={doc} label={reqDoc.label} onView={openViewer} />;
+                                        })
+                                    ) : (
+                                        <>
+                                            <DocRow doc={resumeDoc} label="Resume / CV" onView={openViewer} />
+                                            <DocRow doc={nocDoc} label="Principal Letter" onView={openViewer} />
+                                            <DocRow doc={hodDoc} label="HOD Letter" onView={openViewer} />
+                                            <DocRow doc={markDoc} label="Mark Sheet" onView={openViewer} />
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </section>
                         
                         {/* Joining Documents (Visible once uploaded) */}
@@ -766,36 +785,54 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                 )}
                             </div>
                         )}
-                        {status === 'APPROVED' && (
+                        {/* Hired / Approved summary panel */}
+                        {['HIRED', 'APPROVED', 'ONGOING', 'COMPLETED'].includes(status) && (
                             <div className="mt-8 pt-8 border-t border-outline-variant/10 dark:border-slate-800 flex flex-col gap-6">
-                                <div className="flex items-center gap-4 p-6 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
-                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-2xl">check_circle</span>
+                                <div className="flex items-center gap-4 p-5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
+                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-2xl">verified_user</span>
                                     <div>
-                                        <p className="text-xs font-bold text-emerald-900 dark:text-white uppercase tracking-widest leading-none">Onboarding Complete</p>
-                                        <p className="text-[10px] text-emerald-600 dark:text-emerald-500 font-bold mt-1 uppercase opacity-70">Institutional access granted</p>
+                                        <p className="text-xs font-bold text-emerald-900 dark:text-white uppercase tracking-widest leading-none">
+                                            {status === 'HIRED' ? 'Intern Hired' : status === 'ONGOING' ? 'Internship Ongoing' : status === 'COMPLETED' ? 'Internship Completed' : 'Onboarding Complete'}
+                                        </p>
+                                        <p className="text-[10px] text-emerald-600 dark:text-emerald-500 font-bold mt-1 uppercase opacity-70">Appointment details below</p>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                     {application.assignedRole && (
-                                        <div className="p-4 bg-surface-container-lowest dark:bg-slate-800/50 border border-outline-variant/10 dark:border-slate-700 rounded-lg">
-                                            <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-outline dark:text-slate-500 mb-1">Target Designation</p>
+                                        <div className="p-4 bg-surface-container-lowest dark:bg-slate-800/50 border border-outline-variant/10 dark:border-slate-700 rounded-xl">
+                                            <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-outline dark:text-slate-500 mb-1">Field / Position</p>
                                             <p className="text-xs font-bold text-primary dark:text-white">{application.assignedRole}</p>
                                         </div>
                                     )}
-                                    {(application.joiningDate || application.endDate) && (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {application.joiningDate && (
-                                                <div className="px-3 py-1 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/30 rounded-lg shadow-sm">
-                                                    <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500">Joining</p>
-                                                    <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400">{new Date(application.joiningDate).toLocaleDateString()}</p>
-                                                </div>
-                                            )}
-                                            {application.endDate && (
-                                                <div className="px-3 py-1 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/30 rounded-lg shadow-sm">
-                                                    <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500">End Date</p>
-                                                    <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400">{new Date(application.endDate).toLocaleDateString()}</p>
-                                                </div>
-                                            )}
+                                    <div className="p-4 bg-surface-container-lowest dark:bg-slate-800/50 border border-outline-variant/10 dark:border-slate-700 rounded-xl">
+                                        <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-outline dark:text-slate-500 mb-1">Appointed Location</p>
+                                        <p className="text-xs font-bold text-primary dark:text-white">
+                                            {application.preferredLocation || application.field?.locations?.[0] || '—'}
+                                        </p>
+                                    </div>
+                                    {application.mentor && (
+                                        <div className="p-4 bg-surface-container-lowest dark:bg-slate-800/50 border border-outline-variant/10 dark:border-slate-700 rounded-xl">
+                                            <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-outline dark:text-slate-500 mb-1">Assigned Mentor</p>
+                                            <p className="text-xs font-bold text-primary dark:text-white">{application.mentor?.name || application.mentor?.email}</p>
+                                        </div>
+                                    )}
+                                    {application.joiningDate && (
+                                        <div className="p-4 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/30 rounded-xl">
+                                            <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500 mb-1">Joining Date</p>
+                                            <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400">{new Date(application.joiningDate).toLocaleDateString()}</p>
+                                        </div>
+                                    )}
+                                    {application.endDate && (
+                                        <div className="p-4 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/30 rounded-xl">
+                                            <p className="text-[9px] uppercase font-black tracking-widest text-emerald-500 mb-1">End Date</p>
+                                            <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400">{new Date(application.endDate).toLocaleDateString()}</p>
+                                        </div>
+                                    )}
+                                    {student?.rollNumber && (
+                                        <div className="p-4 bg-white dark:bg-slate-800 border border-primary/20 dark:border-indigo-800/30 rounded-xl">
+                                            <p className="text-[9px] uppercase font-black tracking-widest text-primary/60 mb-1">Roll Number</p>
+                                            <p className="text-xs font-bold text-primary dark:text-indigo-300">{student.rollNumber}</p>
                                         </div>
                                     )}
                                 </div>

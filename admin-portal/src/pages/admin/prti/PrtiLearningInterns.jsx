@@ -1,237 +1,351 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../../utils/api';
-import { CheckCircle, XCircle, FileText, Loader2, AlertCircle, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    CheckCircle, FileText, Loader2, AlertCircle,
+    ChevronDown, ChevronUp, MessageSquare, Send, Eye, X, Users, Play, UserCheck
+} from 'lucide-react';
+
+const locName = l => (typeof l === 'string' ? l : (l?.name || ''));
 
 const MEDIA_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1').replace('/api/v1', '');
 
-const STATUS_STYLE = {
-    SELECTED:           'bg-indigo-100 text-indigo-700 border-indigo-200',
-    DOCUMENTS_PENDING:  'bg-amber-100 text-amber-700 border-amber-200',
-    DOCUMENTS_VERIFIED: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+const STAGE_STYLE = {
+    SUBMITTED:           'bg-slate-100  text-slate-600  border-slate-200',
+    SELECTED:            'bg-indigo-100 text-indigo-700 border-indigo-200',
+    DOCUMENTS_PENDING:   'bg-amber-100  text-amber-700  border-amber-200',
+    DOCUMENTS_VERIFIED:  'bg-teal-100   text-teal-700   border-teal-200',
+    HIRED:               'bg-emerald-100 text-emerald-700 border-emerald-200',
+    REJECTED:            'bg-red-100    text-red-600    border-red-200',
 };
 
-const STAGE_LABEL = {
-    SELECTED:           'Awaiting Doc Request',
-    DOCUMENTS_PENDING:  'Docs Submitted — Pending Review',
-    DOCUMENTS_VERIFIED: 'Docs Verified — Ready to Hire',
+const STAGE_LABELS = {
+    SUBMITTED: 'Applied', SELECTED: 'HOD Selected', DOCUMENTS_PENDING: 'Docs Requested',
+    DOCUMENTS_VERIFIED: 'Docs Verified', HIRED: 'Hired', REJECTED: 'Rejected'
 };
 
-const DocLink = ({ doc }) => {
-    if (!doc) return <span className="text-slate-400 text-[11px]">Not uploaded</span>;
+// ── PRTI feedback note ────────────────────────────────────────────────────────
+const PrtiNoteEditor = ({ app, onSaved }) => {
+    const [open, setOpen]     = useState(false);
+    const [note, setNote]     = useState(app.prtiNote || '');
+    const [saving, setSaving] = useState(false);
+
+    const save = async () => {
+        setSaving(true);
+        try {
+            await api.put(`/admin/applications/${app.id}/prti-note`, { note });
+            onSaved(note);
+            setOpen(false);
+        } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+        finally { setSaving(false); }
+    };
+
     return (
-        <a href={`${MEDIA_URL}/${doc.url}`} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline">
-            <FileText size={12} /> {doc.type}
-        </a>
+        <div>
+            {!open ? (
+                <button onClick={() => setOpen(true)}
+                    className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                        app.prtiNote ? 'text-amber-600 hover:text-amber-800' : 'text-slate-400 hover:text-primary'}`}>
+                    <MessageSquare size={12} />
+                    {app.prtiNote ? 'Edit PRTI Note' : '+ Add Feedback for HOD'}
+                </button>
+            ) : (
+                <div className="space-y-2 mt-2">
+                    <textarea value={note} onChange={e => setNote(e.target.value)}
+                        rows={2} placeholder="Write feedback or instruction for the HOD…"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                    <div className="flex gap-2">
+                        <button onClick={save} disabled={saving}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-50">
+                            {saving ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />} Save
+                        </button>
+                        <button onClick={() => { setOpen(false); setNote(app.prtiNote || ''); }}
+                            className="text-[10px] font-bold text-slate-400 hover:text-slate-600">Cancel</button>
+                    </div>
+                </div>
+            )}
+            {!open && app.prtiNote && (
+                <p className="mt-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                    "{app.prtiNote}"
+                </p>
+            )}
+        </div>
     );
 };
 
-const CandidateCard = ({ app, onRefresh }) => {
-    const [open, setOpen]         = useState(false);
-    const [loading, setLoading]   = useState(false);
-    const [rejectReason, setRejectReason] = useState('');
-    const [showReject, setShowReject] = useState(false);
-    const [hireOpen, setHireOpen] = useState(false);
-    const [joiningDate, setJoiningDate] = useState('');
-    const [endDate, setEndDate]   = useState('');
+// ── Inline select panel for PRTI ─────────────────────────────────────────────
+const PrtiSelectPanel = ({ app, fieldLocations, locationFilledMap = {}, onConfirm, onCancel, saving }) => {
+    const [location, setLocation] = useState(app.preferredLocation || locName(fieldLocations[0]) || '');
 
-    const student   = app.student;
-    const dept      = app.field?.fieldMaster?.department?.name || app.departmentGroup?.department || '—';
-    const fieldName = app.field?.fieldName || '—';
-    const docs      = app.documents || [];
-
-    const joiningDocs = docs.filter(d => ['NOC', 'BOND', 'UNDERTAKING', 'INSURANCE', 'NOC_LETTER', 'PRINCIPAL_LETTER'].includes(d.type));
-    const allDocsPresent = joiningDocs.length >= 3;
-
-    const handleRequestDocs = async () => {
-        setLoading(true);
-        try {
-            await api.post(`/admin/applications/${app.id}/request-documents`);
-            onRefresh();
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed');
-        } finally { setLoading(false); }
-    };
-
-    const handleVerify = async () => {
-        setLoading(true);
-        try {
-            await api.post(`/admin/applications/${app.id}/verify-documents`, { action: 'approve' });
-            onRefresh();
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed');
-        } finally { setLoading(false); }
-    };
-
-    const handleReject = async () => {
-        if (!rejectReason.trim()) return;
-        setLoading(true);
-        try {
-            await api.post(`/admin/applications/${app.id}/verify-documents`, { action: 'reject', reason: rejectReason });
-            setShowReject(false);
-            setRejectReason('');
-            onRefresh();
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed');
-        } finally { setLoading(false); }
-    };
-
-    const handleHire = async () => {
-        if (!joiningDate || !endDate) { alert('Set joining and end dates'); return; }
-        setLoading(true);
-        try {
-            await api.put(`/admin/applications/${app.id}`, {
-                status: 'HIRED',
-                joiningDate,
-                endDate,
-                assignedRole: fieldName
-            });
-            setHireOpen(false);
-            onRefresh();
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed');
-        } finally { setLoading(false); }
-    };
+    const selected = fieldLocations.find(l => locName(l) === location);
+    const totalVac = typeof selected === 'object' ? (selected?.vacancies ?? null) : null;
+    const filled   = locationFilledMap[location] || 0;
+    const remaining = totalVac !== null ? totalVac - filled : null;
+    const isFull    = remaining !== null && remaining <= 0;
 
     return (
-        <div className="border border-outline-variant/15 rounded-2xl overflow-hidden bg-white">
-            {/* Card header */}
-            <div className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
-                onClick={() => setOpen(v => !v)}>
-                <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary text-sm shrink-0">
-                        {student?.fullName?.charAt(0) || '?'}
-                    </div>
-                    <div className="min-w-0">
-                        <p className="text-sm font-black text-primary truncate">{student?.fullName || '—'}</p>
-                        <p className="text-[10px] font-bold text-outline uppercase tracking-wider truncate">
-                            {student?.collegeName} · {dept} · {fieldName}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                    {app.rollNumber && (
-                        <span className="font-mono text-[10px] font-black text-primary/60 bg-primary/5 border border-primary/10 px-2 py-0.5 rounded">
-                            {app.rollNumber}
-                        </span>
-                    )}
-                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase border ${STATUS_STYLE[app.status] || 'bg-slate-100 text-slate-500'}`}>
-                        {STAGE_LABEL[app.status] || app.status}
-                    </span>
-                    {open ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
-                </div>
+        <div className="mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl space-y-2">
+            <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Assign Location</p>
+            <div className="space-y-1.5">
+                {fieldLocations.map(l => {
+                    const name   = locName(l);
+                    const total  = typeof l === 'object' ? (l?.vacancies ?? null) : null;
+                    const gone   = locationFilledMap[name] || 0;
+                    const left   = total !== null ? total - gone : null;
+                    const full   = left !== null && left <= 0;
+                    const nearly = left !== null && left > 0 && left <= Math.ceil((total || 1) * 0.25);
+                    return (
+                        <label key={name}
+                            className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors
+                                ${full ? 'opacity-50 cursor-not-allowed border-red-200 bg-red-50' :
+                                  location === name ? 'border-indigo-400 bg-indigo-100' :
+                                  'border-slate-200 bg-white hover:border-indigo-300'}`}>
+                            <div className="flex items-center gap-2">
+                                <input type="radio" name="prti-loc" value={name} checked={location === name}
+                                    disabled={full}
+                                    onChange={() => !full && setLocation(name)}
+                                    className="accent-indigo-600" />
+                                <span className="text-xs font-bold text-slate-700">{name}</span>
+                            </div>
+                            {total !== null && (
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border
+                                    ${full    ? 'bg-red-100 text-red-600 border-red-200' :
+                                      nearly  ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                               'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                                    {left}/{total} available
+                                </span>
+                            )}
+                        </label>
+                    );
+                })}
             </div>
+            {isFull && (
+                <p className="text-[10px] font-bold text-red-600">All seats for this location are filled.</p>
+            )}
+            <div className="flex gap-2 pt-1">
+                <button
+                    onClick={() => onConfirm(location)}
+                    disabled={saving || !location || isFull}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-50 hover:bg-indigo-700 transition-colors"
+                >
+                    {saving ? <Loader2 size={10} className="animate-spin" /> : <UserCheck size={10} />}
+                    Confirm Selection
+                </button>
+                <button onClick={onCancel} className="text-[10px] font-bold text-slate-400 hover:text-slate-600">Cancel</button>
+            </div>
+        </div>
+    );
+};
 
-            {/* Expanded detail */}
+// ── Field group with PRTI controls ────────────────────────────────────────────
+const FieldGroup = ({ fieldName, fieldId, apps, onOverride, onSelect, onBulkProceed, onNoteUpdate }) => {
+    const [open, setOpen]          = useState(true);
+    const [proceeding, setProceed] = useState(false);
+    const [selectingAppId, setSelectingAppId] = useState(null);
+    const [selectSaving, setSelectSaving]     = useState(false);
+
+    const selectedApps    = apps.filter(a => a.status === 'SELECTED');
+    const submittedApps   = apps.filter(a => a.status === 'SUBMITTED');
+    const docsApps        = apps.filter(a => ['DOCUMENTS_PENDING','DOCUMENTS_VERIFIED'].includes(a.status));
+    const hiredApps       = apps.filter(a => ['HIRED','ONGOING','COMPLETED'].includes(a.status));
+    const rejectedApps    = apps.filter(a => a.status === 'REJECTED');
+
+    const fieldLocations = (() => {
+        const raw = apps.find(a => a.field?.locations)?.field?.locations;
+        return Array.isArray(raw) ? raw : [];
+    })();
+
+    const SEAT_CONSUMING = ['SELECTED', 'DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED', 'HIRED', 'ONGOING', 'COMPLETED'];
+    const locationFilledMap = {};
+    apps.forEach(a => {
+        if (SEAT_CONSUMING.includes(a.status) && a.preferredLocation) {
+            locationFilledMap[a.preferredLocation] = (locationFilledMap[a.preferredLocation] || 0) + 1;
+        }
+    });
+
+    // True when every location with defined vacancies is full — hide Select buttons entirely
+    const allLocationsFull = fieldLocations.length > 0 && fieldLocations.every(l => {
+        const name  = locName(l);
+        const total = typeof l === 'object' ? (l?.vacancies ?? null) : null;
+        if (total === null) return false;
+        return (locationFilledMap[name] || 0) >= total;
+    });
+
+    const handlePrtiSelect = async (app, location) => {
+        setSelectSaving(true);
+        try {
+            await onSelect(app.id, app.field?.id, location);
+            setSelectingAppId(null);
+        } catch { /* error shown by parent */ }
+        finally { setSelectSaving(false); }
+    };
+
+    const handleProceed = async () => {
+        if (selectedApps.length === 0) return;
+        if (!window.confirm(`Approve ${selectedApps.length} selected candidate(s) for ${fieldName}? HOD will then be able to request joining documents from them.`)) return;
+        setProceed(true);
+        try {
+            await api.post('/admin/applications/prti-approve-batch', {
+                applicationIds: selectedApps.map(a => a.id)
+            });
+            onBulkProceed();
+            alert(`${selectedApps.length} selection(s) approved. HOD can now request documents.`);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to approve.');
+        } finally { setProceed(false); }
+    };
+
+    const totalVacancies = apps[0]?.field?.vacancies || 0;
+
+    return (
+        <div className="border border-outline-variant/15 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
+            <button type="button" onClick={() => setOpen(v => !v)}
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                    <span className="text-sm font-black text-primary dark:text-slate-100">{fieldName}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">{apps.length} total · {hiredApps.length}/{totalVacancies} hired</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    {selectedApps.length > 0 && (
+                        <button onClick={e => { e.stopPropagation(); handleProceed(); }} disabled={proceeding}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                            {proceeding ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
+                            Approve Selections ({selectedApps.length})
+                        </button>
+                    )}
+                    {open ? <ChevronUp size={15} className="text-slate-400" /> : <ChevronDown size={15} className="text-slate-400" />}
+                </div>
+            </button>
+
             {open && (
-                <div className="border-t border-outline-variant/10 px-5 py-5 space-y-5 bg-slate-50/50">
-                    <div className="text-[10px] font-bold text-outline uppercase tracking-wider">
-                        {student?.user?.email} · Roll: {student?.rollNumber || 'Not assigned'}
-                    </div>
-
-                    {/* Documents */}
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">
-                            Joining Documents ({joiningDocs.length} uploaded)
-                        </p>
-                        {joiningDocs.length === 0 ? (
-                            <p className="text-[11px] text-slate-400 font-bold">No joining documents uploaded yet.</p>
-                        ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {joiningDocs.map(doc => (
-                                    <a key={doc.id} href={`${MEDIA_URL}/${doc.url}`} target="_blank" rel="noreferrer"
-                                        className="flex items-center gap-2 p-3 bg-white border border-outline-variant/15 rounded-xl hover:border-primary/30 transition-colors group">
-                                        <FileText size={14} className="text-primary/50 shrink-0 group-hover:text-primary transition-colors" />
-                                        <div className="min-w-0">
-                                            <p className="text-[10px] font-black text-primary uppercase truncate">{doc.type.replace(/_/g, ' ')}</p>
-                                            {doc.verified && (
-                                                <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-1">
-                                                    <CheckCircle size={8} /> Verified
+                <div className="border-t border-outline-variant/10">
+                    {/* HOD Selections — PRTI can unselect */}
+                    {selectedApps.length > 0 && (
+                        <div className="px-5 py-4 bg-indigo-50/40 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-800">
+                            <p className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-3">
+                                HOD Selections ({selectedApps.length})
+                            </p>
+                            <div className="space-y-2">
+                                {selectedApps.map(app => (
+                                    <div key={app.id} className="flex items-center justify-between gap-3 p-3 bg-white dark:bg-slate-900 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0">
+                                                {app.student?.fullName?.charAt(0) || '?'}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">{app.student?.fullName}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase truncate">
+                                                    {app.student?.collegeName} · CGPA {app.student?.cgpa?.toFixed(2)} · {app.preferredLocation || '—'}
                                                 </p>
-                                            )}
+                                            </div>
                                         </div>
-                                    </a>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${STAGE_STYLE[app.status]}`}>
+                                                {STAGE_LABELS[app.status]}
+                                            </span>
+                                            {app.prtiApproved && (
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase border bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                    ✓ PRTI Approved
+                                                </span>
+                                            )}
+                                            <button onClick={() => onOverride(app.id)}
+                                                className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 text-[9px] font-black uppercase rounded-lg hover:bg-amber-600 hover:text-white transition-colors border border-amber-200" title="Return to pool — HOD can select someone else">
+                                                <X size={10} /> Unselect
+                                            </button>
+                                            <PrtiNoteEditor app={app} onSaved={note => onNoteUpdate(app.id, note)} />
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-3 pt-2 border-t border-outline-variant/10">
-                        {app.status === 'SELECTED' && (
-                            <button onClick={handleRequestDocs} disabled={loading}
-                                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm">
-                                {loading ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
-                                Request Documents from Student
-                            </button>
-                        )}
-
-                        {app.status === 'DOCUMENTS_PENDING' && (
-                            <>
-                                {!allDocsPresent && (
-                                    <div className="w-full flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-bold text-amber-700">
-                                        <AlertCircle size={13} /> Only {joiningDocs.length} document(s) uploaded. Minimum 3 expected.
-                                    </div>
-                                )}
-                                <button onClick={handleVerify} disabled={loading}
-                                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm">
-                                    {loading ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
-                                    Verify &amp; Approve Documents
-                                </button>
-                                {!showReject ? (
-                                    <button onClick={() => setShowReject(true)}
-                                        className="px-5 py-2.5 border border-red-300 text-red-600 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-50 flex items-center gap-2 transition-colors">
-                                        <XCircle size={12} /> Reject Documents
-                                    </button>
-                                ) : (
-                                    <div className="w-full flex items-center gap-2">
-                                        <input value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-                                            placeholder="Reason for rejection..."
-                                            className="flex-1 border border-outline-variant/20 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-200" />
-                                        <button onClick={handleReject} disabled={loading || !rejectReason.trim()}
-                                            className="px-4 py-2 bg-red-600 text-white rounded-xl font-bold text-[10px] uppercase hover:bg-red-700 disabled:opacity-50 flex items-center gap-1 transition-colors">
-                                            {loading ? <Loader2 size={11} className="animate-spin" /> : 'Send'}
-                                        </button>
-                                        <button onClick={() => setShowReject(false)}
-                                            className="px-3 py-2 text-slate-400 hover:text-slate-600 font-bold text-sm transition-colors">Cancel</button>
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {app.status === 'DOCUMENTS_VERIFIED' && (
-                            !hireOpen ? (
-                                <button onClick={() => setHireOpen(true)}
-                                    className="px-5 py-2.5 bg-primary text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-primary/90 flex items-center gap-2 transition-colors shadow-sm">
-                                    <CheckCircle size={12} /> Authorize &amp; Hire
-                                </button>
-                            ) : (
-                                <div className="w-full space-y-3">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-outline mb-1 block">Joining Date</label>
-                                            <input type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)}
-                                                className="w-full border border-outline-variant/20 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    {/* Applicant Pool — PRTI can select directly */}
+                    {submittedApps.length > 0 && (
+                        <div className="px-5 py-4 bg-slate-50/60 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-700">
+                            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+                                Applicant Pool ({submittedApps.length})
+                            </p>
+                            <div className="space-y-2">
+                                {submittedApps.map(app => (
+                                    <div key={app.id} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-black text-slate-500 text-xs shrink-0">
+                                                    {app.student?.fullName?.charAt(0) || '?'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">{app.student?.fullName}</p>
+                                                    <p className="text-[9px] font-bold text-slate-400 uppercase truncate">
+                                                        {app.student?.collegeName} · CGPA {app.student?.cgpa?.toFixed(2)} · Applied: {app.preferredLocation || '—'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${STAGE_STYLE[app.status]}`}>
+                                                    {STAGE_LABELS[app.status]}
+                                                </span>
+                                                {selectingAppId !== app.id && !allLocationsFull && (
+                                                    <button
+                                                        onClick={() => setSelectingAppId(app.id)}
+                                                        className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-lg hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-200"
+                                                    >
+                                                        <UserCheck size={10} /> Select
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-outline mb-1 block">End Date</label>
-                                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                                                className="w-full border border-outline-variant/20 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                                        {selectingAppId === app.id && (
+                                            <PrtiSelectPanel
+                                                app={app}
+                                                fieldLocations={fieldLocations}
+                                                locationFilledMap={locationFilledMap}
+                                                saving={selectSaving}
+                                                onConfirm={loc => handlePrtiSelect(app, loc)}
+                                                onCancel={() => setSelectingAppId(null)}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Docs / Hired section (view only) */}
+                    {[...docsApps, ...hiredApps].length > 0 && (
+                        <div className="px-5 py-4">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
+                                In Progress ({docsApps.length + hiredApps.length})
+                            </p>
+                            <div className="space-y-1.5">
+                                {[...docsApps, ...hiredApps].map(app => (
+                                    <div key={app.id} className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{app.student?.fullName}</span>
+                                            <span className="text-[9px] text-slate-400 truncate hidden sm:block">{app.student?.collegeName}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {app.student?.rollNumber && (
+                                                <span className="font-mono text-[9px] font-black text-primary/60 bg-primary/5 border border-primary/10 px-1.5 py-0.5 rounded">
+                                                    {app.student.rollNumber}
+                                                </span>
+                                            )}
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${STAGE_STYLE[app.status]}`}>
+                                                {STAGE_LABELS[app.status]}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={handleHire} disabled={loading || !joiningDate || !endDate}
-                                            className="flex-1 bg-primary text-white rounded-xl font-bold text-[10px] uppercase tracking-widest py-3 hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-sm">
-                                            {loading ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
-                                            Confirm Hire
-                                        </button>
-                                        <button onClick={() => setHireOpen(false)}
-                                            className="px-5 py-3 text-slate-500 hover:text-slate-700 font-bold text-[10px] uppercase transition-colors">Cancel</button>
-                                    </div>
-                                </div>
-                            )
-                        )}
-                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Rejected */}
+                    {rejectedApps.length > 0 && (
+                        <div className="px-5 py-3 border-t border-outline-variant/10">
+                            <p className="text-[10px] font-bold text-red-500 uppercase">{rejectedApps.length} rejected</p>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -240,87 +354,149 @@ const CandidateCard = ({ app, onRefresh }) => {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 const PrtiLearningInterns = () => {
-    const [apps, setApps]         = useState([]);
-    const [loading, setLoading]   = useState(true);
-    const [filter, setFilter]     = useState('ALL');
+    const [apps, setApps]       = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [filter, setFilter]   = useState('ALL');
 
     const fetchApps = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/learning/pending-docs');
-            setApps(res.data.data || []);
+            // Fetch all NON_STIPEND internships then all their applications
+            const intRes = await api.get('/admin/internships?limit=100');
+            const internships = (intRes.data.data || []).filter(i => i.internshipType === 'NON_STIPEND');
+            const settled = await Promise.allSettled(
+                internships.map(i => api.get(`/admin/internships/${i.id}/applications?limit=500`))
+            );
+            const all = settled
+                .filter(r => r.status === 'fulfilled')
+                .flatMap(r => r.value.data.data || []);
+            setApps(all);
         } catch { /* silent */ }
         finally { setLoading(false); }
     }, []);
 
     useEffect(() => { fetchApps(); }, [fetchApps]);
 
-    const FILTERS = [
-        { key: 'ALL', label: 'All' },
-        { key: 'SELECTED', label: 'Awaiting Doc Request' },
-        { key: 'DOCUMENTS_PENDING', label: 'Docs Submitted' },
-        { key: 'DOCUMENTS_VERIFIED', label: 'Verified — Ready to Hire' },
+    const handleOverride = async (appId) => {
+        if (!window.confirm('Return this candidate to the applicant pool? They will go back to SUBMITTED status — HOD can then pick someone else.')) return;
+        try {
+            await api.put(`/admin/applications/${appId}`, { status: 'SUBMITTED' });
+            fetchApps();
+        } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    };
+
+    const handleNoteUpdate = (appId, note) => {
+        setApps(prev => prev.map(a => a.id === appId ? { ...a, prtiNote: note } : a));
+    };
+
+    const handleSelect = async (appId, fieldId, location) => {
+        try {
+            await api.put(`/admin/applications/${appId}`, {
+                status: 'SELECTED',
+                ...(fieldId && { fieldId }),
+                ...(location && { preferredLocation: location }),
+            });
+            fetchApps();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Selection failed');
+            throw err;
+        }
+    };
+
+    // Group by internship → field
+    const grouped = {};
+    apps.forEach(app => {
+        const intId  = app.internship?.id || 'unknown';
+        const intTitle = app.internship?.title || 'Unknown';
+        if (!grouped[intId]) grouped[intId] = { title: intTitle, dept: app.departmentGroup?.department || app.internship?.department, fields: {} };
+        const fKey   = app.field?.id || 'no-field';
+        const fLabel = app.field?.fieldName || 'General';
+        if (!grouped[intId].fields[fKey]) grouped[intId].fields[fKey] = { label: fLabel, apps: [] };
+        grouped[intId].fields[fKey].apps.push(app);
+    });
+
+    const FILTER_OPTS = [
+        { key: 'ALL', label: 'All', count: apps.length },
+        { key: 'SUBMITTED', label: 'Pending', count: apps.filter(a => a.status === 'SUBMITTED').length },
+        { key: 'SELECTED', label: 'HOD Selected', count: apps.filter(a => a.status === 'SELECTED').length },
+        { key: 'DOCUMENTS_PENDING', label: 'Docs Pending', count: apps.filter(a => a.status === 'DOCUMENTS_PENDING').length },
+        { key: 'HIRED', label: 'Hired', count: apps.filter(a => ['HIRED','ONGOING','COMPLETED'].includes(a.status)).length },
     ];
 
-    const visible = filter === 'ALL' ? apps : apps.filter(a => a.status === filter);
-
-    const counts = {
-        ALL: apps.length,
-        SELECTED: apps.filter(a => a.status === 'SELECTED').length,
-        DOCUMENTS_PENDING: apps.filter(a => a.status === 'DOCUMENTS_PENDING').length,
-        DOCUMENTS_VERIFIED: apps.filter(a => a.status === 'DOCUMENTS_VERIFIED').length,
+    const applyFilter = (fieldApps) => {
+        if (filter === 'ALL') return fieldApps;
+        if (filter === 'HIRED') return fieldApps.filter(a => ['HIRED','ONGOING','COMPLETED'].includes(a.status));
+        return fieldApps.filter(a => a.status === filter);
     };
+
+    const selectedTotal = apps.filter(a => a.status === 'SELECTED').length;
 
     return (
         <div className="max-w-5xl mx-auto pb-24 space-y-8">
             <header>
-                <span className="text-[10px] font-bold tracking-widest text-outline uppercase mb-1 block">Learning Internship Management</span>
+                <span className="text-[10px] font-bold tracking-widest text-outline uppercase mb-1 block">PRTI Oversight</span>
                 <h1 className="text-3xl font-black text-primary tracking-tight">Learning Intern Pipeline</h1>
                 <p className="text-sm text-outline/60 font-medium mt-1">
-                    Manage document collection and hiring for selected NON_STIPEND candidates.
+                    Review HOD selections. Override if needed or proceed to request documents.
                 </p>
             </header>
 
-            {/* Summary strip */}
-            <div className="grid grid-cols-4 gap-4">
-                {[
-                    { key: 'SELECTED', label: 'Awaiting Request', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                    { key: 'DOCUMENTS_PENDING', label: 'Docs Submitted', color: 'text-amber-600', bg: 'bg-amber-50' },
-                    { key: 'DOCUMENTS_VERIFIED', label: 'Docs Verified', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                    { key: 'ALL', label: 'Total Pipeline', color: 'text-primary', bg: 'bg-primary/5' },
-                ].map(s => (
-                    <button key={s.key} onClick={() => setFilter(s.key)}
-                        className={`p-4 rounded-2xl border transition-all text-left ${filter === s.key ? `${s.bg} border-current ring-2 ring-current/20` : 'bg-surface-container-low border-outline-variant/10 hover:border-outline-variant/30'}`}>
-                        <p className={`text-2xl font-black ${s.color}`}>{counts[s.key]}</p>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest ${filter === s.key ? s.color : 'text-outline'}`}>{s.label}</p>
+            {/* KPI strip */}
+            <div className="flex flex-wrap gap-3">
+                {FILTER_OPTS.map(f => (
+                    <button key={f.key} onClick={() => setFilter(f.key)}
+                        className={`px-4 py-2.5 rounded-xl border text-left transition-all ${filter === f.key ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-slate-800 border-outline-variant/20 hover:border-primary/30'}`}>
+                        <p className={`text-xl font-black ${filter === f.key ? 'text-white' : 'text-primary'}`}>{f.count}</p>
+                        <p className={`text-[9px] font-bold uppercase tracking-widest ${filter === f.key ? 'text-white/70' : 'text-outline'}`}>{f.label}</p>
                     </button>
                 ))}
             </div>
 
-            {/* Filter tabs */}
-            <div className="flex items-center gap-2 flex-wrap">
-                {FILTERS.map(f => (
-                    <button key={f.key} onClick={() => setFilter(f.key)}
-                        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${filter === f.key ? 'bg-primary text-white border-primary' : 'bg-white text-outline border-outline-variant/20 hover:border-primary/30'}`}>
-                        {f.label} ({counts[f.key]})
-                    </button>
-                ))}
-            </div>
+            {selectedTotal > 0 && (
+                <div className="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-2xl">
+                    <AlertCircle size={18} className="text-indigo-600 shrink-0" />
+                    <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                        {selectedTotal} candidate{selectedTotal !== 1 ? 's' : ''} selected by HODs are awaiting PRTI review. Click <strong>Proceed — Request Docs</strong> per field to send document requests, or <strong>Override</strong> to reject a selection.
+                    </p>
+                </div>
+            )}
 
             {loading ? (
-                <div className="flex justify-center py-16">
-                    <Loader2 size={28} className="animate-spin text-primary/30" />
-                </div>
-            ) : visible.length === 0 ? (
-                <div className="py-20 text-center border border-dashed border-outline-variant/30 rounded-2xl">
-                    <CheckCircle size={36} className="text-slate-300 mx-auto mb-3" />
-                    <p className="font-bold text-slate-400 text-sm uppercase tracking-widest">No candidates in this stage.</p>
-                </div>
+                <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary/30" /></div>
             ) : (
-                <div className="space-y-3">
-                    {visible.map(app => (
-                        <CandidateCard key={app.id} app={app} onRefresh={fetchApps} />
+                <div className="space-y-6">
+                    {Object.entries(grouped).map(([intId, intData]) => (
+                        <div key={intId}>
+                            <div className="flex items-center gap-3 mb-3">
+                                <h2 className="text-sm font-black text-primary">{intData.title}</h2>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">{intData.dept}</span>
+                            </div>
+                            <div className="space-y-3">
+                                {Object.entries(intData.fields).map(([fKey, fData]) => {
+                                    const filtered = applyFilter(fData.apps);
+                                    if (filtered.length === 0 && filter !== 'ALL') return null;
+                                    return (
+                                        <FieldGroup
+                                            key={fKey}
+                                            fieldName={fData.label}
+                                            fieldId={fKey}
+                                            apps={filtered.length > 0 ? filtered : fData.apps}
+                                            onOverride={handleOverride}
+                                            onSelect={handleSelect}
+                                            onBulkProceed={fetchApps}
+                                            onNoteUpdate={handleNoteUpdate}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
                     ))}
+                    {Object.keys(grouped).length === 0 && (
+                        <div className="py-20 text-center border border-dashed border-outline-variant/30 rounded-2xl">
+                            <CheckCircle size={36} className="text-slate-300 mx-auto mb-3" />
+                            <p className="font-bold text-slate-400 text-sm uppercase tracking-widest">No NON_STIPEND internship applications found.</p>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

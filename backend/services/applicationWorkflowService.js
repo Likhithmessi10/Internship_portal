@@ -45,7 +45,12 @@ const getSeatCaps = (openingsCount = 0, quotaPercentages = {}) => {
 };
 
 // Statuses that consume a seat allocation slot
-const SEAT_CONSUMING = [STATUS.SELECTED, STATUS.APPROVED, STATUS.REPORTED, STATUS.HIRED, STATUS.ONGOING];
+// DOCUMENTS_PENDING/VERIFIED must be included so moving to docs stage doesn't free the seat
+const SEAT_CONSUMING = [
+    STATUS.SELECTED, STATUS.APPROVED, STATUS.REPORTED,
+    STATUS.DOCUMENTS_PENDING, STATUS.DOCUMENTS_VERIFIED,
+    STATUS.HIRED, STATUS.ONGOING
+];
 
 /**
  * Atomic application status transition with seat enforcement and audit trail.
@@ -112,37 +117,65 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
                     );
                 }
 
-                // Category quota enforcement
-                const caps = getSeatCaps(targetOpenings, targetEntity.quotaPercentages || {});
-                const targetBucket = getApplicationBucket(application, targetEntity);
-                const targetCap = caps[targetBucket] ?? 0;
-
-                if (targetCap <= 0) {
-                    throw new Error(
-                        `Allocation Failed: No seats allocated for ${targetBucket} category as per configured distribution.`
+                // ── Per-location seat enforcement for NON_STIPEND ────────────
+                const isNonStipend = application.internship?.internshipType === 'NON_STIPEND';
+                if (isNonStipend && application.fieldId && application.preferredLocation) {
+                    const field = await tx.internshipField.findUnique({ where: { id: application.fieldId } });
+                    const locations = Array.isArray(field?.locations) ? field.locations : [];
+                    const locObj = locations.find(l =>
+                        (typeof l === 'string' ? l : l?.name) === application.preferredLocation
                     );
+                    const locVacancies = typeof locObj === 'object' ? (locObj?.vacancies ?? null) : null;
+
+                    if (locVacancies !== null && locVacancies > 0) {
+                        const locCount = await tx.application.count({
+                            where: {
+                                fieldId:           application.fieldId,
+                                preferredLocation: application.preferredLocation,
+                                status:            { in: SEAT_CONSUMING }
+                            }
+                        });
+                        if (locCount >= locVacancies) {
+                            throw new Error(
+                                `Allocation Failed: All ${locVacancies} seats for location "${application.preferredLocation}" are filled.`
+                            );
+                        }
+                    }
                 }
 
-                const activeApps = await tx.application.findMany({
-                    where: {
-                        ...(application.departmentGroup
-                            ? { departmentGroupId: application.departmentGroupId }
-                            : { internshipId: application.internshipId, departmentGroupId: null }),
-                        status: { in: SEAT_CONSUMING }
-                    },
-                    include: {
-                        student: { select: { collegeName: true, collegeCategory: true } }
+                // Category quota enforcement — skip for NON_STIPEND (first-come-first-served, no tiers)
+                if (!isNonStipend) {
+                    const caps = getSeatCaps(targetOpenings, targetEntity.quotaPercentages || {});
+                    const targetBucket = getApplicationBucket(application, targetEntity);
+                    const targetCap = caps[targetBucket] ?? 0;
+
+                    if (targetCap <= 0) {
+                        throw new Error(
+                            `Allocation Failed: No seats allocated for ${targetBucket} category as per configured distribution.`
+                        );
                     }
-                });
 
-                const usedInBucket = activeApps.filter(
-                    a => getApplicationBucket(a, targetEntity) === targetBucket
-                ).length;
+                    const activeApps = await tx.application.findMany({
+                        where: {
+                            ...(application.departmentGroup
+                                ? { departmentGroupId: application.departmentGroupId }
+                                : { internshipId: application.internshipId, departmentGroupId: null }),
+                            status: { in: SEAT_CONSUMING }
+                        },
+                        include: {
+                            student: { select: { collegeName: true, collegeCategory: true } }
+                        }
+                    });
 
-                if (usedInBucket >= targetCap) {
-                    throw new Error(
-                        `Allocation Failed: ${targetBucket} quota is full (${usedInBucket}/${targetCap}).`
-                    );
+                    const usedInBucket = activeApps.filter(
+                        a => getApplicationBucket(a, targetEntity) === targetBucket
+                    ).length;
+
+                    if (usedInBucket >= targetCap) {
+                        throw new Error(
+                            `Allocation Failed: ${targetBucket} quota is full (${usedInBucket}/${targetCap}).`
+                        );
+                    }
                 }
             }
         }

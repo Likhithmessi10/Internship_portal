@@ -406,12 +406,15 @@ const InternshipApplication = () => {
                                             >
                                                 <option value="">-- Select Preferred Location --</option>
                                                 {(() => {
-                                                    // For GROUP NON_STIPEND with problem statement, use PS locations
                                                     const ps = availableProblemStatements.find(p => p.id === problemStatementId);
                                                     const locs = ps?.locations || selectedField?.locations || [];
-                                                    return locs.map(loc => (
-                                                        <option key={loc} value={loc}>{loc}</option>
-                                                    ));
+                                                    return locs.map(loc => {
+                                                        const name = typeof loc === 'string' ? loc : (loc?.name || '');
+                                                        const vac  = typeof loc === 'object' && loc?.vacancies ? ` — ${loc.vacancies} vacancies` : '';
+                                                        return (
+                                                            <option key={name} value={name}>{name}{vac}</option>
+                                                        );
+                                                    });
                                                 })()}
                                             </select>
                                         </div>
