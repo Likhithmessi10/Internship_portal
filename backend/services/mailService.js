@@ -66,6 +66,16 @@ const notifyWorkAssignment = (studentEmail, studentName, mentorName, workTitle, 
         `<p>Hello ${studentName},</p><p>Your mentor <strong>${mentorName}</strong> has assigned you: <strong>${workTitle}</strong></p><p>${description}</p><p>Best Regards,<br>APTRANSCO</p>`
     );
 
+const notifyPrtiInternshipCreated = (to, data) => {
+    const { subject, html } = templates.internshipCreatedPrtiEmail(data);
+    return sendEmail(to, subject, html);
+};
+
+const notifyPrtiJoiningIn5Days = (to, data) => {
+    const { subject, html } = templates.joiningReminderPrtiEmail(data);
+    return sendEmail(to, subject, html);
+};
+
 module.exports = {
     sendEmail,
     sendShortlistingEmail,
@@ -76,4 +86,6 @@ module.exports = {
     sendHodGroupNotification,
     notifyMentorAssignment,
     notifyWorkAssignment,
+    notifyPrtiInternshipCreated,
+    notifyPrtiJoiningIn5Days,
 };

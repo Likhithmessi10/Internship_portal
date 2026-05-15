@@ -337,10 +337,51 @@ const reapplyLocation = async (req, res) => {
     }
 };
 
+/**
+ * Student confirms willingness to join and sets their joining/end dates
+ * PUT /students/applications/:id/confirm-joining
+ */
+const confirmJoining = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { joiningDate, endDate } = req.body;
+
+        if (!joiningDate || !endDate) {
+            return res.status(400).json({ success: false, message: 'joiningDate and endDate are required' });
+        }
+
+        const app = await prisma.application.findUnique({
+            where: { id },
+            include: { student: { select: { userId: true } } }
+        });
+        if (!app) return res.status(404).json({ success: false, message: 'Application not found' });
+        if (app.student.userId !== req.user.id) {
+            return res.status(403).json({ success: false, message: 'Forbidden' });
+        }
+        if (app.status !== 'HIRED') {
+            return res.status(400).json({ success: false, message: 'Only HIRED applications can confirm joining' });
+        }
+
+        const updated = await prisma.application.update({
+            where: { id },
+            data: {
+                joiningDate: new Date(joiningDate),
+                endDate: new Date(endDate),
+            }
+        });
+
+        res.json({ success: true, data: updated, message: 'Joining confirmed successfully.' });
+    } catch (err) {
+        console.error('Confirm joining error:', err.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     upsertProfile,
     getProfile,
     upsertStipend,
     uploadJoiningDocuments,
     reapplyLocation,
+    confirmJoining,
 };

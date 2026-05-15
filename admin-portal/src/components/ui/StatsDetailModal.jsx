@@ -6,22 +6,11 @@ const StatsDetailModal = ({ title, data = [], type, onClose }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredData = data.filter(item => {
-        const searchStr = searchTerm.toLowerCase();
-        if (type === 'DEPARTMENTS') return item.toLowerCase().includes(searchStr);
-        if (type === 'INTERNS') return (
-            item.student?.fullName?.toLowerCase().includes(searchStr) ||
-            item.student?.email?.toLowerCase().includes(searchStr) ||
-            item.internship?.title?.toLowerCase().includes(searchStr)
-        );
-        if (type === 'PROGRAMS') return (
-            item.title?.toLowerCase().includes(searchStr) ||
-            item.department?.toLowerCase().includes(searchStr) ||
-            item.location?.toLowerCase().includes(searchStr)
-        );
-        if (type === 'APPLICATIONS') return (
-            item.student?.fullName?.toLowerCase().includes(searchStr) ||
-            item.internship?.title?.toLowerCase().includes(searchStr)
-        );
+        const q = searchTerm.toLowerCase();
+        if (type === 'DEPARTMENTS')  return item.toLowerCase().includes(q);
+        if (type === 'INTERNS')      return item.student?.fullName?.toLowerCase().includes(q) || item.internship?.title?.toLowerCase().includes(q);
+        if (type === 'PROGRAMS')     return item.title?.toLowerCase().includes(q) || item.department?.toLowerCase().includes(q);
+        if (type === 'APPLICATIONS') return item.student?.fullName?.toLowerCase().includes(q) || item.internship?.title?.toLowerCase().includes(q);
         return true;
     });
 
@@ -29,66 +18,62 @@ const StatsDetailModal = ({ title, data = [], type, onClose }) => {
         switch (type) {
             case 'DEPARTMENTS':
                 return (
-                    <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-outline-variant/10 hover:border-primary/30 transition-all group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                <Building2 size={18} />
-                            </div>
-                            <span className="font-bold text-primary text-sm uppercase tracking-tight">{item}</span>
+                    <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary/40 hover:bg-primary/5 transition-all group">
+                        <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
+                            <Building2 size={16} />
                         </div>
-                        <ChevronRight size={16} className="text-outline opacity-0 group-hover:opacity-100 transition-all" />
+                        <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">{item}</span>
+                        <ChevronRight size={14} className="text-slate-300 group-hover:text-primary ml-auto transition-colors" />
                     </div>
                 );
             case 'INTERNS':
                 return (
-                    <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-outline-variant/10 hover:border-emerald-500/30 transition-all group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 font-black text-xs uppercase">
+                    <div key={index} className="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-400/40 transition-all">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center font-black text-emerald-600 dark:text-emerald-400 text-sm shrink-0">
                                 {item.student?.fullName?.charAt(0)}
                             </div>
-                            <div>
-                                <p className="font-bold text-primary text-sm leading-tight">{item.student?.fullName}</p>
-                                <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">{item.internship?.title} • {item.internship?.department}</p>
+                            <div className="min-w-0">
+                                <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{item.student?.fullName}</p>
+                                <p className="text-[10px] text-slate-400 font-medium truncate">{item.internship?.title} · {item.internship?.department}</p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded uppercase">Active</span>
-                        </div>
+                        <span className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full uppercase shrink-0">Active</span>
                     </div>
                 );
             case 'PROGRAMS':
                 return (
-                    <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-outline-variant/10 hover:border-sky-500/30 transition-all group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 group-hover:bg-sky-600 group-hover:text-white transition-all">
-                                <Briefcase size={18} />
+                    <div key={index} className="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-sky-400/40 transition-all">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 bg-sky-100 dark:bg-sky-900/30 rounded-lg flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+                                <Briefcase size={15} />
                             </div>
-                            <div>
-                                <p className="font-bold text-primary text-sm leading-tight uppercase tracking-tight">{item.title}</p>
-                                <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">{item.department} • {item.location}</p>
+                            <div className="min-w-0">
+                                <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{item.title}</p>
+                                <p className="text-[10px] text-slate-400 font-medium truncate">{item.department} · {item.location || 'Multiple'}</p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm font-black text-primary">{item.applicationsCount || 0}</p>
-                            <p className="text-[9px] text-outline font-bold uppercase tracking-widest leading-none">Pool Size</p>
+                        <div className="text-right shrink-0">
+                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{item.applicationsCount || 0}</p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Apps</p>
                         </div>
                     </div>
                 );
             case 'APPLICATIONS':
                 return (
-                    <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-outline-variant/10 hover:border-amber-500/30 transition-all group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
-                                <FileText size={18} />
+                    <div key={index} className="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-amber-400/40 transition-all">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 shrink-0">
+                                <FileText size={15} />
                             </div>
-                            <div>
-                                <p className="font-bold text-primary text-sm leading-tight">{item.student?.fullName}</p>
-                                <p className="text-[10px] text-outline font-medium uppercase tracking-tighter mt-0.5">Applied for: {item.internship?.title}</p>
+                            <div className="min-w-0">
+                                <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{item.student?.fullName}</p>
+                                <p className="text-[10px] text-slate-400 font-medium truncate">{item.internship?.title}</p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <span className="text-[10px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded uppercase">{item.status || 'PENDING'}</span>
-                        </div>
+                        <span className="text-[10px] font-black bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full uppercase shrink-0">
+                            {item.status || 'Pending'}
+                        </span>
                     </div>
                 );
             default:
@@ -97,97 +82,97 @@ const StatsDetailModal = ({ title, data = [], type, onClose }) => {
     };
 
     const handleExport = () => {
-        // Mock export logic - convert filteredData to CSV and download
-        const headers = ["Title", "Details"];
-        let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
-        
+        let csv = 'data:text/csv;charset=utf-8,Title,Details\n';
         filteredData.forEach(item => {
-            if (type === 'DEPARTMENTS') csvContent += `"${item}","Department"\n`;
-            else if (type === 'INTERNS') csvContent += `"${item.student?.fullName}","${item.internship?.title}"\n`;
-            else if (type === 'PROGRAMS') csvContent += `"${item.title}","${item.department}"\n`;
-            else if (type === 'APPLICATIONS') csvContent += `"${item.student?.fullName}","${item.internship?.title}"\n`;
+            if (type === 'DEPARTMENTS')  csv += `"${item}","Department"\n`;
+            if (type === 'INTERNS')      csv += `"${item.student?.fullName}","${item.internship?.title}"\n`;
+            if (type === 'PROGRAMS')     csv += `"${item.title}","${item.department}"\n`;
+            if (type === 'APPLICATIONS') csv += `"${item.student?.fullName}","${item.internship?.title}"\n`;
         });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `${title.replace(/\s+/g, '_')}_List.csv`);
-        document.body.appendChild(link);
+        const link = document.createElement('a');
+        link.href = encodeURI(csv);
+        link.download = `${title?.replace(/\s+/g, '_')}.csv`;
         link.click();
-        document.body.removeChild(link);
     };
 
+    const TypeIcon = type === 'DEPARTMENTS' ? Building2 : type === 'INTERNS' ? Users : type === 'PROGRAMS' ? Briefcase : FileText;
+
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-            <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
-                {/* Modal Header */}
-                <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-white dark:bg-slate-900">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                            {type === 'DEPARTMENTS' && <Building2 size={24} />}
-                            {type === 'INTERNS' && <Users size={24} />}
-                            {type === 'PROGRAMS' && <Briefcase size={24} />}
-                            {type === 'APPLICATIONS' && <FileText size={24} />}
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black text-primary uppercase tracking-tight leading-none">{title}</h3>
-                            <p className="text-[11px] font-bold text-outline uppercase tracking-widest mt-1">Detailed Institutional Record View</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-3 hover:bg-red-50 hover:text-red-600 rounded-full transition-all text-outline">
-                        <X size={20} />
-                    </button>
-                </div>
+        <>
+            {/* Backdrop */}
+            <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
 
-                {/* Toolbar */}
-                <div className="px-8 py-4 bg-surface-container-low flex items-center gap-4 border-b border-outline-variant/10">
-                    <div className="relative flex-1 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors" size={16} />
-                        <input
-                            type="text"
-                            placeholder={`Search ${title?.toLowerCase()}...`}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-3 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all uppercase placeholder:normal-case italic"
-                        />
-                    </div>
-                    <button 
-                        onClick={handleExport}
-                        className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-2xl text-[10px] font-black text-primary hover:bg-primary hover:text-white transition-all uppercase tracking-widest"
-                    >
-                        <Download size={14} /> Export
-                    </button>
-                </div>
-
-                {/* List Area */}
-                <div className="flex-1 p-10 overflow-y-auto space-y-12 custom-scrollbar">
-                    {filteredData.length > 0 ? (
-                        filteredData.map((item, idx) => renderItem(item, idx))
-                    ) : (
-                        <div className="py-20 text-center space-y-4">
-                            <div className="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mx-auto text-outline/30">
-                                <Search size={32} />
+            {/* Modal — centred, never taller than viewport */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                <div
+                    className="pointer-events-auto w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col"
+                    style={{ maxHeight: 'calc(100vh - 2rem)' }}
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                <TypeIcon size={18} />
                             </div>
                             <div>
-                                <p className="text-sm font-black text-primary uppercase tracking-tight">No results found</p>
-                                <p className="text-xs font-bold text-outline uppercase tracking-widest mt-1">Try adjusting your search criteria</p>
+                                <h3 className="text-base font-black text-slate-800 dark:text-white">{title}</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{filteredData.length} records</p>
                             </div>
                         </div>
-                    )}
-                </div>
+                        <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 transition-colors">
+                            <X size={18} />
+                        </button>
+                    </div>
 
-                {/* Footer */}
-                <div className="p-6 px-8 bg-surface-container-low border-t border-outline-variant/10 flex justify-between items-center">
-                    <span className="text-[10px] font-black text-outline uppercase tracking-widest">
-                        Showing {filteredData.length} Records
-                    </span>
-                    <button onClick={onClose} className="px-8 py-3 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
-                        Close View
-                    </button>
+                    {/* Search + Export */}
+                    <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-100 dark:border-slate-700 shrink-0">
+                        <div className="relative flex-1">
+                            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder={`Search ${title?.toLowerCase()}…`}
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="w-full pl-8 pr-3 py-2 text-xs font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors shrink-0"
+                        >
+                            <Download size={12} /> Export
+                        </button>
+                    </div>
+
+                    {/* Scrollable list */}
+                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+                        {filteredData.length > 0
+                            ? filteredData.map((item, idx) => renderItem(item, idx))
+                            : (
+                                <div className="py-16 text-center">
+                                    <Search size={28} className="text-slate-300 mx-auto mb-3" />
+                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No results found</p>
+                                </div>
+                            )
+                        }
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100 dark:border-slate-700 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            {filteredData.length} of {data.length} records
+                        </span>
+                        <button
+                            onClick={onClose}
+                            className="px-5 py-2 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary/90 transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>,
+        </>,
         document.body
     );
 };

@@ -4,7 +4,7 @@ import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
 import {
     TrendingUp, Users, Briefcase, AlertCircle,
-    Filter, Activity, Trash2, CheckCircle, Search
+    Filter, Activity, Trash2, CheckCircle, Search, Lock
 } from 'lucide-react';
 import StatsDetailModal from '../../../components/ui/StatsDetailModal';
 
@@ -20,7 +20,11 @@ const PrtiDashboard = () => {
     const [allInterns, setAllInterns] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedStat, setSelectedStat] = useState(null);
+    const [selectedStat,   setSelectedStat]   = useState(null);
+    const [deleteTarget,   setDeleteTarget]   = useState(null); // { id, title }
+    const [deletePassword, setDeletePassword] = useState('');
+    const [deleteError,    setDeleteError]    = useState('');
+    const [deleteLoading,  setDeleteLoading]  = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -56,22 +60,26 @@ const PrtiDashboard = () => {
         fetchData();
     }, []);
 
-    const handleDelete = async (id, title) => {
-        if (!window.confirm(`Are you sure you want to delete "${title}"? This will delete all applications and related data. This action cannot be undone.`)) {
-            return;
-        }
+    const openDeleteModal = (id, title) => {
+        setDeleteTarget({ id, title });
+        setDeletePassword('');
+        setDeleteError('');
+    };
 
+    const handleDeleteConfirm = async () => {
+        if (!deletePassword) { setDeleteError('Enter your password to confirm.'); return; }
+        setDeleteLoading(true);
+        setDeleteError('');
         try {
-            await api.delete(`/admin/internships/${id}`);
-            setInternships(prev => prev.filter(i => i.id !== id));
-            // Update stats
-            setStats(prev => ({
-                ...prev,
-                activePrograms: prev.activePrograms - 1
-            }));
+            await api.delete(`/admin/internships/${deleteTarget.id}`, { data: { password: deletePassword } });
+            setInternships(prev => prev.filter(i => i.id !== deleteTarget.id));
+            setStats(prev => ({ ...prev, activePrograms: Math.max(0, prev.activePrograms - 1) }));
+            setDeleteTarget(null);
+            setDeletePassword('');
         } catch (err) {
-            console.error('Failed to delete internship', err);
-            alert(err.response?.data?.message || 'Failed to delete internship');
+            setDeleteError(err.response?.data?.message || 'Deletion failed.');
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
@@ -230,8 +238,8 @@ const PrtiDashboard = () => {
                                                 </Link>
                                                 <button className="p-1.5 hover:bg-surface-container-high rounded-lg text-outline transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
                                                 <button
-                                                    onClick={() => handleDelete(int.id, int.title)}
-                                                    className="p-1.5 hover:bg-error/10 rounded-lg text-outline hover:text-error transition-colors"
+                                                    onClick={() => openDeleteModal(int.id, int.title)}
+                                                    className="p-1.5 hover:bg-red-50 rounded-lg text-outline hover:text-red-600 transition-colors"
                                                     title="Delete Internship"
                                                 >
                                                     <Trash2 size={18} />
@@ -260,6 +268,60 @@ const PrtiDashboard = () => {
                     data={selectedStat.data}
                     onClose={() => setSelectedStat(null)}
                 />
+            )}
+
+            {/* Delete confirmation modal */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-red-200 dark:border-red-800 overflow-hidden">
+                        <div className="px-6 py-5 border-b border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-900/20 flex items-center gap-3">
+                            <Trash2 size={18} className="text-red-500 shrink-0" />
+                            <div>
+                                <p className="text-sm font-black text-red-700 dark:text-red-400">Delete Internship</p>
+                                <p className="text-[11px] text-red-500 font-medium truncate max-w-[260px]">{deleteTarget.title}</p>
+                            </div>
+                        </div>
+                        <div className="px-6 py-5 space-y-4">
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed">
+                                This will permanently delete the internship and all its applications, documents, and data. Enter your password to confirm.
+                            </p>
+                            {deleteError && (
+                                <p className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2 rounded-lg">
+                                    {deleteError}
+                                </p>
+                            )}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-outline dark:text-slate-400 flex items-center gap-1.5">
+                                    <Lock size={10} /> Your Password
+                                </label>
+                                <input
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    value={deletePassword}
+                                    onChange={e => setDeletePassword(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleDeleteConfirm()}
+                                    autoFocus
+                                    className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-800"
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-1">
+                                <button
+                                    onClick={handleDeleteConfirm}
+                                    disabled={deleteLoading || !deletePassword}
+                                    className="flex-1 py-2.5 bg-red-600 text-white text-xs font-black uppercase rounded-xl hover:bg-red-700 disabled:opacity-40 transition-colors"
+                                >
+                                    {deleteLoading ? 'Deleting…' : 'Confirm Delete'}
+                                </button>
+                                <button
+                                    onClick={() => { setDeleteTarget(null); setDeletePassword(''); setDeleteError(''); }}
+                                    className="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-xs font-bold hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

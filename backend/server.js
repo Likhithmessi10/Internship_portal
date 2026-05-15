@@ -73,11 +73,56 @@ app.use(errorHandler);
 // ============================================
 // SERVER STARTUP
 // ============================================
+// ── Daily job: email PRTI for interns joining in 5 days ──────────────────────
+const { notifyPrtiJoiningIn5Days } = require('./services/mailService');
+
+const runJoiningReminders = async () => {
+    try {
+        const target = new Date();
+        target.setDate(target.getDate() + 5);
+        const dayStart = new Date(target); dayStart.setHours(0, 0, 0, 0);
+        const dayEnd   = new Date(target); dayEnd.setHours(23, 59, 59, 999);
+
+        const apps = await prisma.application.findMany({
+            where: {
+                joiningDate: { gte: dayStart, lte: dayEnd },
+                status: { in: ['HIRED', 'ONGOING'] },
+            },
+            include: {
+                student: { select: { fullName: true } },
+                internship: { select: { title: true } },
+                field:      { select: { fieldName: true } },
+            }
+        });
+
+        if (apps.length === 0) return;
+
+        const prtiUsers = await prisma.user.findMany({ where: { role: 'CE_PRTI' }, select: { email: true } });
+        for (const u of prtiUsers) {
+            for (const app of apps) {
+                notifyPrtiJoiningIn5Days(u.email, {
+                    studentName:      app.student?.fullName || 'Unknown',
+                    internshipTitle:  app.internship?.title || 'Unknown',
+                    joiningDate:      app.joiningDate,
+                    fieldName:        app.field?.fieldName,
+                    location:         app.preferredLocation,
+                }).catch(() => {});
+            }
+        }
+        console.log(`📧 Joining reminders sent for ${apps.length} intern(s).`);
+    } catch (err) {
+        console.error('Joining reminder job error:', err.message);
+    }
+};
+
 const startServer = async () => {
     try {
         await prisma.$connect();
         console.log('✅ Connected to PostgreSQL Database via Prisma');
 
+        // Run joining reminder check immediately and then every 24 hours
+        runJoiningReminders();
+        setInterval(runJoiningReminders, 24 * 60 * 60 * 1000);
 
         app.listen(PORT, () => {
             console.log(`🚀 Server listening on port ${PORT}`);
@@ -89,6 +134,12 @@ const startServer = async () => {
     }
 }
 
-startServer();
+// Only start HTTP server when run directly — not when imported by tests
+if (require.main === module) {
+    startServer();
+} else {
+    // Tests import this file; just connect Prisma, no port binding
+    prisma.$connect().catch(err => console.error('Prisma connect error:', err.message));
+}
 
 module.exports = app;

@@ -165,7 +165,7 @@ const CreateInternshipForm = () => {
         if (step === 1) {
             if (!formData.batchId) errors.push('batchId');
             if (!formData.title.trim()) errors.push('title');
-            if (!formData.duration) errors.push('duration');
+            if (!formData.duration && formData.internshipType !== 'NON_STIPEND') errors.push('duration');
             if (!formData.description.trim()) errors.push('description');
         }
         if (step === 2 && formData.participatingDepts.length === 0) errors.push('participatingDepts');
@@ -336,21 +336,23 @@ const CreateInternshipForm = () => {
 
                         {/* Duration + Type */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <InputField label="Duration" required error={validationErrors.includes('duration')}>
-                                <Select
-                                    value={formData.duration}
-                                    onChange={v => { setFormData(p => ({ ...p, duration: v })); setValidationErrors(p => p.filter(e => e !== 'duration')); }}
-                                    options={[
-                                        { value: '', label: '-- Select Duration --' },
-                                        { value: '4 Weeks', label: '4 Weeks' },
-                                        { value: '6 Weeks', label: '6 Weeks' },
-                                        { value: '8 Weeks', label: '8 Weeks' },
-                                        { value: '3 Months', label: '3 Months' },
-                                        { value: '6 Months', label: '6 Months' },
-                                    ]}
-                                    size="lg"
-                                />
-                            </InputField>
+                            {formData.internshipType !== 'NON_STIPEND' && (
+                                <InputField label="Duration" required error={validationErrors.includes('duration')}>
+                                    <Select
+                                        value={formData.duration}
+                                        onChange={v => { setFormData(p => ({ ...p, duration: v })); setValidationErrors(p => p.filter(e => e !== 'duration')); }}
+                                        options={[
+                                            { value: '', label: '-- Select Duration --' },
+                                            { value: '4 Weeks', label: '4 Weeks' },
+                                            { value: '6 Weeks', label: '6 Weeks' },
+                                            { value: '8 Weeks', label: '8 Weeks' },
+                                            { value: '3 Months', label: '3 Months' },
+                                            { value: '6 Months', label: '6 Months' },
+                                        ]}
+                                        size="lg"
+                                    />
+                                </InputField>
+                            )}
 
                             <InputField label="Internship Type" required tooltip="Collaborative = with stipend. Learning = no stipend.">
                                 <Select

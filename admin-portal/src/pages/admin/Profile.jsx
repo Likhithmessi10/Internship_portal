@@ -12,8 +12,10 @@ const Profile = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [name, setName] = useState(user?.name || '');
-    const [phone, setPhone] = useState(user?.phone || '');
+    const [name, setName]               = useState(user?.name || '');
+    const [phone, setPhone]             = useState(user?.phone || '');
+    const [designation, setDesignation] = useState(user?.designation || '');
+    const [mentorLocation, setMentorLocation] = useState(user?.mentorLocation || '');
     const [feedback, setFeedback] = useState(null);
     const fileInputRef = useRef(null);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -49,7 +51,7 @@ const Profile = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await api.put('/auth/update-profile', { name, phone });
+            const res = await api.put('/auth/update-profile', { name, phone, designation, mentorLocation });
             if (res.data.success) {
                 setFeedback({ type: 'success', text: 'Profile updated successfully!' });
                 setIsEditingProfile(false);
@@ -252,6 +254,40 @@ const Profile = () => {
                                     </div>
                                 </div>
                             </div>
+                            {user?.role === 'MENTOR' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="relative">
+                                        <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Designation</label>
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
+                                                <Briefcase size={16} />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={designation}
+                                                onChange={(e) => setDesignation(e.target.value)}
+                                                className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                                placeholder="e.g. Assistant Engineer"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="relative">
+                                        <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Location</label>
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
+                                                <MapPin size={16} />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={mentorLocation}
+                                                onChange={(e) => setMentorLocation(e.target.value)}
+                                                className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                                placeholder="e.g. Vijayawada HQ"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             <button
                                 type="submit"

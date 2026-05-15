@@ -127,7 +127,7 @@ router.post('/applications/:id/verify-documents',     authorize('ADMIN', 'CE_PRT
 // GROUP NON_STIPEND: field management per dept group
 router.post('/internships/:id/groups/:groupId/fields', authorize('ADMIN', 'CE_PRTI', 'HOD'), addGroupField);
 router.delete('/internships/:id/groups/:groupId/fields/:fieldId', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteGroupField);
-router.patch('/internships/:id/groups/:groupId/fields/:fieldId/held-seats', authorize('ADMIN', 'CE_PRTI', 'HOD'), setFieldHeldSeats);
+router.patch('/internships/:id/groups/:groupId/fields/:fieldId/held-seats', authorize('ADMIN', 'CE_PRTI'), setFieldHeldSeats);
 
 // PRTI: department-wise submission progress for a GROUP internship
 router.get('/internships/:id/group-progress', authorize('ADMIN', 'CE_PRTI'), getGroupInternshipProgress);
@@ -203,6 +203,11 @@ router.get('/meetings/my', getMentorMeetings);
 router.post('/work/assign', assignWork);
 router.get('/work/assignments', getWorkAssignments);
 
+// Work Logs (mentor/HOD/PRTI read access)
+router.get('/applications/:id/work-logs',        authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), getApplicationWorkLogs);
+router.get('/applications/:id/work-logs/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportApplicationWorkLogs);
+router.get('/internships/:id/work-logs/export',  authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportInternshipWorkLogs);
+
 // HOD: update required documents for a dept group
 router.put('/internships/:id/groups/:groupId/required-docs', authorize('ADMIN', 'CE_PRTI', 'HOD'), async (req, res) => {
     try {
@@ -217,11 +222,6 @@ router.put('/internships/:id/groups/:groupId/required-docs', authorize('ADMIN', 
         res.status(500).json({ success: false, message: err.message });
     }
 });
-
-// Work Logs
-router.get('/applications/:id/work-logs',        authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), getApplicationWorkLogs);
-router.get('/applications/:id/work-logs/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportApplicationWorkLogs);
-router.get('/internships/:id/work-logs/export',  authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportInternshipWorkLogs);
 
 // Attendance Management
 router.post('/attendance/mark', markAttendance);

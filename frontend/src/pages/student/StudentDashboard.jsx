@@ -12,7 +12,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 
 // Active statuses — covers all non-terminal post-selection states
-const ACTIVE_STATUSES = ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING'];
+const ACTIVE_STATUSES = ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED'];
 const JOINING_DOCS = [
     { id: 'NOC', label: 'No Objection Certificate', hint: 'From your college / institution' },
     { id: 'BOND', label: 'Bond / Service Agreement', hint: 'Signed commitment form' },
@@ -56,6 +56,12 @@ const StudentDashboard = () => {
     const [workLogSaving, setWorkLogSaving] = useState(false);
     const [workLogMsg, setWorkLogMsg]       = useState('');
 
+    // Joining confirmation state (student sets dates after being hired)
+    const [confirmJoiningDate, setConfirmJoiningDate] = useState('');
+    const [confirmEndDate, setConfirmEndDate]         = useState('');
+    const [confirmSaving, setConfirmSaving]           = useState(false);
+    const [confirmMsg, setConfirmMsg]                 = useState('');
+
     // Fetch work logs when active HIRED/ONGOING/COMPLETED app is known
     const activeAppId = profile?.applications?.find(a => ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status))?.id;
     useEffect(() => {
@@ -83,8 +89,8 @@ const StudentDashboard = () => {
 
     const isActive = activeApp && ACTIVE_STATUSES.includes(activeApp.status);
 
-    // Joining documents are unlocked once status is SELECTED, REPORTED or HIRED
-    const joiningDocsUnlocked = ['SELECTED', 'REPORTED', 'HIRED'].includes(activeApp?.status);
+    // Joining docs shown only while pending upload/verification — hide once verified or hired
+    const joiningDocsUnlocked = ['SELECTED', 'REPORTED', 'DOCUMENTS_PENDING'].includes(activeApp?.status);
 
     // Uploaded joining doc types already on file
     const uploadedJoiningTypes = new Set(
@@ -352,6 +358,71 @@ const StudentDashboard = () => {
                     )}
 
                     {/* Daily Work Log */}
+                    {/* "Are you willing to work?" — shown when HIRED but joining date not yet set */}
+                    {activeApp?.status === 'HIRED' && !activeApp?.joiningDate && (
+                        <div className="bg-white dark:bg-slate-900 border-2 border-amber-300 dark:border-amber-600 rounded-3xl p-6 shadow-sm">
+                            <div className="flex items-start gap-4 mb-5">
+                                <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                                    <AlertCircle size={24} className="text-amber-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-widest text-amber-600 mb-0.5">Action Required</p>
+                                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Are you willing to work?</h2>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                        You have been hired for this internship. Please confirm your willingness to join and set your joining and end dates.
+                                    </p>
+                                </div>
+                            </div>
+                            {!confirmMsg ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Joining Date</label>
+                                            <input type="date" value={confirmJoiningDate}
+                                                min={new Date().toISOString().slice(0, 10)}
+                                                onChange={e => setConfirmJoiningDate(e.target.value)}
+                                                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">End Date</label>
+                                            <input type="date" value={confirmEndDate}
+                                                min={confirmJoiningDate || new Date().toISOString().slice(0, 10)}
+                                                onChange={e => setConfirmEndDate(e.target.value)}
+                                                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                                        </div>
+                                    </div>
+                                    <button
+                                        disabled={!confirmJoiningDate || !confirmEndDate || confirmSaving}
+                                        onClick={async () => {
+                                            setConfirmSaving(true);
+                                            try {
+                                                await api.put(`/students/applications/${activeApp.id}/confirm-joining`, {
+                                                    joiningDate: confirmJoiningDate,
+                                                    endDate: confirmEndDate,
+                                                });
+                                                setConfirmMsg('✓ Joining confirmed! Your dates have been saved.');
+                                                // Refresh profile so joiningDate is updated
+                                                const res = await api.get('/students/profile');
+                                                setProfile(res.data.data);
+                                            } catch (err) {
+                                                setConfirmMsg('✗ ' + (err.response?.data?.message || 'Failed to confirm. Please try again.'));
+                                            } finally {
+                                                setConfirmSaving(false);
+                                            }
+                                        }}
+                                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase rounded-xl disabled:opacity-40 transition-colors flex items-center gap-2"
+                                    >
+                                        {confirmSaving ? <><div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Confirming…</> : <>✓ Yes, I'm willing to join</>}
+                                    </button>
+                                </div>
+                            ) : (
+                                <p className={`text-sm font-bold px-4 py-3 rounded-xl ${confirmMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                                    {confirmMsg}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {activeApp && ['HIRED', 'ONGOING', 'COMPLETED'].includes(activeApp.status) && (() => {
                         const todayStr = new Date().toISOString().slice(0, 10);
                         const todayLogged = workLogs.some(l => l.date?.slice(0, 10) === todayStr);

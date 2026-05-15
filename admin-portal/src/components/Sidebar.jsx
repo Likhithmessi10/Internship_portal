@@ -9,7 +9,7 @@ import {
     LayoutDashboard, FolderOpen, Settings2, GraduationCap,
     FileText, CheckSquare, Users, Calendar, BarChart3,
     Search, PlusCircle, ClipboardList, UserCheck,
-    Building2, ChevronDown, Lock
+    Building2, ChevronDown, Lock, BookOpen
 } from 'lucide-react';
 import { MONETARY_ENABLED } from '../config/features';
 
@@ -35,6 +35,7 @@ const NAV = {
             items: [
                 { label: 'Applications',     icon: FileText,      path: '/hod/applications' },
                 { label: 'Learning Interns', icon: GraduationCap, path: '/prti/learning-interns' },
+                { label: 'Work Logs',        icon: BookOpen,      path: '/prti/work-logs' },
                 { label: 'Selection',        icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
             ]
         },
@@ -303,9 +304,10 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
                                         {isDarkMode ? 'Light' : 'Dark'}
                                     </button>
                                     <button onClick={toggleLanguage}
+                                        title={lang === 'en' ? 'Switch to Telugu' : 'Switch to English'}
                                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold transition-colors">
                                         <Globe size={13} />
-                                        {lang === 'en' ? 'EN' : 'TE'}
+                                        {lang === 'en' ? 'తెలుగు' : 'English'}
                                     </button>
                                 </div>
                                 <NavLink to="/profile"

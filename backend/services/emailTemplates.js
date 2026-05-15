@@ -207,6 +207,56 @@ const hodGroupNotificationEmail = ({ hodName, hodDepartment, internshipTitle, ba
     `)
 });
 
+// ── 7. PRTI — new internship created notification ─────────────────────────────
+const internshipCreatedPrtiEmail = ({ internshipTitle, department, createdBy, internshipType, adminPortalUrl = 'https://aptransco.gov.in/admin' }) => ({
+    subject: `New Internship Created — ${internshipTitle} | APTRANSCO PRTI`,
+    html: wrap(`
+        <p style="color:#374151;font-size:15px;">Dear PRTI Team,</p>
+        <p style="color:#374151;font-size:14px;line-height:1.6;">
+            A new internship programme has been created and requires your review. Please log in to the PRTI portal to configure seat allocations and review the setup.
+        </p>
+        <div style="margin:24px 0;padding:20px;background:#eff6ff;border-left:4px solid #1e40af;border-radius:0 8px 8px 0;">
+            <table style="width:100%;border-collapse:collapse;">
+                ${infoRow('Programme', internshipTitle)}
+                ${infoRow('Department', department || 'All Departments')}
+                ${infoRow('Type', internshipType === 'NON_STIPEND' ? 'Learning Internship (No Stipend)' : 'Collaborative (With Stipend)')}
+                ${infoRow('Created By', createdBy)}
+                ${infoRow('Action Required', 'Set held seats & review')}
+            </table>
+        </div>
+        <div style="text-align:center;margin:28px 0;">
+            ${btn('Open PRTI Portal', adminPortalUrl)}
+        </div>
+        <p style="color:#6b7280;font-size:13px;">Best Regards,<br><strong>APTRANSCO Internship Portal</strong></p>
+    `)
+});
+
+// ── 8. PRTI — intern joining in 5 days reminder ───────────────────────────────
+const joiningReminderPrtiEmail = ({ studentName, internshipTitle, joiningDate, fieldName, location }) => ({
+    subject: `Joining Reminder — ${studentName} joining in 5 days | APTRANSCO PRTI`,
+    html: wrap(`
+        <p style="color:#374151;font-size:15px;">Dear PRTI Team,</p>
+        <p style="color:#374151;font-size:14px;line-height:1.6;">
+            This is a reminder that the following intern is scheduled to join in <strong>5 days</strong>.
+            Please prepare the joining letter and ensure all onboarding formalities are ready.
+        </p>
+        <div style="margin:24px 0;padding:20px;background:#fefce8;border-left:4px solid #ca8a04;border-radius:0 8px 8px 0;">
+            <table style="width:100%;border-collapse:collapse;">
+                ${infoRow('Intern Name', studentName)}
+                ${infoRow('Programme', internshipTitle)}
+                ${fieldName ? infoRow('Field', fieldName) : ''}
+                ${location ? infoRow('Location', location) : ''}
+                ${infoRow('Joining Date', new Date(joiningDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }))}
+                ${infoRow('Action Required', 'Prepare joining letter')}
+            </table>
+        </div>
+        <p style="color:#374151;font-size:14px;line-height:1.6;">
+            Please ensure the joining letter and workstation/access are ready before the intern's arrival.
+        </p>
+        <p style="color:#6b7280;font-size:13px;">Best Regards,<br><strong>APTRANSCO Internship Portal (Automated Reminder)</strong></p>
+    `)
+});
+
 module.exports = {
     shortlistingEmail,
     selectionEmail,
@@ -214,4 +264,6 @@ module.exports = {
     rejectionEmail,
     documentRequestEmail,
     hodGroupNotificationEmail,
+    internshipCreatedPrtiEmail,
+    joiningReminderPrtiEmail,
 };

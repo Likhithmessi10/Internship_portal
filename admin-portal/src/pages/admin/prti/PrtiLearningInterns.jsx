@@ -2,10 +2,96 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../../../utils/api';
 import {
     CheckCircle, FileText, Loader2, AlertCircle,
-    ChevronDown, ChevronUp, MessageSquare, Send, Eye, X, Users, Play, UserCheck
+    ChevronDown, ChevronUp, MessageSquare, Send, Eye, X, Users, Play, UserCheck,
+    BookOpen, Download
 } from 'lucide-react';
 
 const locName = l => (typeof l === 'string' ? l : (l?.name || ''));
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// ── Work log table for a single intern ───────────────────────────────────────
+const WorkLogPanel = ({ applicationId, onClose }) => {
+    const [logs, setLogs]       = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.get(`/admin/applications/${applicationId}/work-logs`)
+            .then(r => setLogs(r.data.data || []))
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, [applicationId]);
+
+    const totalHours = logs.reduce((s, l) => s + (l.hoursWorked || 0), 0);
+    const baseURL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1');
+
+    return (
+        <div className="mt-2 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2">
+                    <BookOpen size={12} className="text-indigo-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
+                        Daily Work Log
+                    </span>
+                    {!loading && (
+                        <span className="text-[9px] font-bold text-slate-400">
+                            {logs.length} entries{totalHours > 0 ? ` · ${totalHours}h` : ''}
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    {logs.length > 0 && (
+                        <a href={`${baseURL}/api/v1/admin/applications/${applicationId}/work-logs/export`}
+                            target="_blank" rel="noreferrer"
+                            className="flex items-center gap-1 px-2 py-1 text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
+                            <Download size={9} /> Excel
+                        </a>
+                    )}
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+                        <X size={12} />
+                    </button>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex justify-center py-4">
+                    <Loader2 size={16} className="animate-spin text-indigo-400" />
+                </div>
+            ) : logs.length === 0 ? (
+                <p className="text-center py-4 text-[10px] font-bold text-slate-400 uppercase">No logs submitted yet</p>
+            ) : (
+                <div className="overflow-x-auto max-h-52 overflow-y-auto">
+                    <table className="w-full text-left text-[10px]">
+                        <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
+                            <tr>
+                                {['#', 'Date', 'Day', 'Work Done', 'Hrs'].map(h => (
+                                    <th key={h} className="px-3 py-1.5 font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {logs.map((log, i) => {
+                                const d = new Date(log.date);
+                                return (
+                                    <tr key={log.id} className={i % 2 === 0 ? '' : 'bg-slate-50/60 dark:bg-slate-800/20'}>
+                                        <td className="px-3 py-1.5 text-slate-400 font-bold">{i + 1}</td>
+                                        <td className="px-3 py-1.5 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{d.toLocaleDateString('en-IN')}</td>
+                                        <td className="px-3 py-1.5 text-slate-500">{DAYS[d.getDay()]}</td>
+                                        <td className="px-3 py-1.5 text-slate-700 dark:text-slate-300 max-w-[240px]">
+                                            <p className="line-clamp-2">{log.description}</p>
+                                        </td>
+                                        <td className="px-3 py-1.5 text-right font-bold text-slate-600 whitespace-nowrap">
+                                            {log.hoursWorked != null ? `${log.hoursWorked}h` : '—'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const MEDIA_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1').replace('/api/v1', '');
 
@@ -19,8 +105,56 @@ const STAGE_STYLE = {
 };
 
 const STAGE_LABELS = {
-    SUBMITTED: 'Applied', SELECTED: 'HOD Selected', DOCUMENTS_PENDING: 'Docs Requested',
+    SUBMITTED: 'Applied', SELECTED: 'Selected', DOCUMENTS_PENDING: 'Docs Requested',
     DOCUMENTS_VERIFIED: 'Docs Verified', HIRED: 'Hired', REJECTED: 'Rejected'
+};
+
+// ── Held-seats configuration (PRTI sets reserved seats per field) ─────────────
+const HeldSeatsConfig = ({ fieldData, onSaved }) => {
+    const [editing, setEditing] = useState(false);
+    const [val, setVal]         = useState(fieldData.heldSeats ?? 0);
+    const [saving, setSaving]   = useState(false);
+
+    const save = async () => {
+        setSaving(true);
+        try {
+            await api.patch(
+                `/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/fields/${fieldData.fieldId}/held-seats`,
+                { heldSeats: val }
+            );
+            onSaved(val);
+            setEditing(false);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to save');
+        } finally { setSaving(false); }
+    };
+
+    if (!editing) return (
+        <button onClick={e => { e.stopPropagation(); setEditing(true); }}
+            title="Configure reserved (hold) seats for PRTI discretionary selection"
+            className={`flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border transition-colors ${
+                (fieldData.heldSeats ?? 0) > 0
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-slate-100 text-slate-400 border-slate-200'
+            }`}>
+            🔒 {fieldData.heldSeats ?? 0} held
+        </button>
+    );
+
+    return (
+        <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+            <span className="text-[9px] font-bold text-amber-700 uppercase">Hold seats:</span>
+            <input type="number" min={0}
+                value={val} onChange={e => setVal(parseInt(e.target.value) || 0)}
+                className="w-14 text-xs font-bold border border-amber-300 rounded px-2 py-0.5 bg-white focus:outline-none" />
+            <button onClick={save} disabled={saving}
+                className="text-[9px] font-black uppercase px-2 py-0.5 bg-amber-500 text-white rounded-full disabled:opacity-50">
+                {saving ? '…' : 'Save'}
+            </button>
+            <button onClick={() => setEditing(false)}
+                className="text-[9px] text-slate-400 hover:text-slate-600 font-bold">✕</button>
+        </div>
+    );
 };
 
 // ── PRTI feedback note ────────────────────────────────────────────────────────
@@ -73,7 +207,7 @@ const PrtiNoteEditor = ({ app, onSaved }) => {
 };
 
 // ── Inline select panel for PRTI ─────────────────────────────────────────────
-const PrtiSelectPanel = ({ app, fieldLocations, locationFilledMap = {}, onConfirm, onCancel, saving }) => {
+const PrtiSelectPanel = ({ app, fieldLocations, locationFilledMap = {}, onConfirm, onCancel, saving, isHold = false }) => {
     const [location, setLocation] = useState(app.preferredLocation || locName(fieldLocations[0]) || '');
 
     const selected = fieldLocations.find(l => locName(l) === location);
@@ -83,8 +217,10 @@ const PrtiSelectPanel = ({ app, fieldLocations, locationFilledMap = {}, onConfir
     const isFull    = remaining !== null && remaining <= 0;
 
     return (
-        <div className="mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl space-y-2">
-            <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Assign Location</p>
+        <div className={`mt-2 p-3 rounded-xl space-y-2 border ${isHold ? 'bg-amber-50 border-amber-200' : 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700'}`}>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${isHold ? 'text-amber-700' : 'text-indigo-700'}`}>
+                {isHold ? '🔒 Hold Seat — Assign Location' : 'Assign Location'}
+            </p>
             <div className="space-y-1.5">
                 {fieldLocations.map(l => {
                     const name   = locName(l);
@@ -125,10 +261,10 @@ const PrtiSelectPanel = ({ app, fieldLocations, locationFilledMap = {}, onConfir
                 <button
                     onClick={() => onConfirm(location)}
                     disabled={saving || !location || isFull}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-50 hover:bg-indigo-700 transition-colors"
+                    className={`flex items-center gap-1 px-3 py-1.5 text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-50 transition-colors ${isHold ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                 >
                     {saving ? <Loader2 size={10} className="animate-spin" /> : <UserCheck size={10} />}
-                    Confirm Selection
+                    {isHold ? '🔒 Confirm Hold' : 'Confirm Selection'}
                 </button>
                 <button onClick={onCancel} className="text-[10px] font-bold text-slate-400 hover:text-slate-600">Cancel</button>
             </div>
@@ -137,11 +273,19 @@ const PrtiSelectPanel = ({ app, fieldLocations, locationFilledMap = {}, onConfir
 };
 
 // ── Field group with PRTI controls ────────────────────────────────────────────
-const FieldGroup = ({ fieldName, fieldId, apps, onOverride, onSelect, onBulkProceed, onNoteUpdate }) => {
+const ALLOCATED_STATUSES_PRTI = ['SELECTED', 'DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED', 'HIRED', 'ONGOING', 'COMPLETED'];
+
+const FieldGroup = ({ fieldName, fieldId, apps, internshipId, departmentGroupId, initialHeldSeats, onOverride, onSelect, onHoldSelect, onBulkProceed, onNoteUpdate }) => {
     const [open, setOpen]          = useState(true);
     const [proceeding, setProceed] = useState(false);
     const [selectingAppId, setSelectingAppId] = useState(null);
+    const [holdingAppId, setHoldingAppId]     = useState(null);
     const [selectSaving, setSelectSaving]     = useState(false);
+    const [holdSaving, setHoldSaving]         = useState(false);
+    const [logAppId, setLogAppId]             = useState(null);
+    const [heldSeats, setHeldSeats]           = useState(initialHeldSeats ?? 0);
+
+    const heldUsed = apps.filter(a => a.isHeldSeat && ALLOCATED_STATUSES_PRTI.includes(a.status)).length;
 
     const selectedApps    = apps.filter(a => a.status === 'SELECTED');
     const submittedApps   = apps.filter(a => a.status === 'SUBMITTED');
@@ -179,6 +323,15 @@ const FieldGroup = ({ fieldName, fieldId, apps, onOverride, onSelect, onBulkProc
         finally { setSelectSaving(false); }
     };
 
+    const handlePrtiHold = async (app, location) => {
+        setHoldSaving(true);
+        try {
+            await onHoldSelect(app.id, app.field?.id, location);
+            setHoldingAppId(null);
+        } catch { /* error shown by parent */ }
+        finally { setHoldSaving(false); }
+    };
+
     const handleProceed = async () => {
         if (selectedApps.length === 0) return;
         if (!window.confirm(`Approve ${selectedApps.length} selected candidate(s) for ${fieldName}? HOD will then be able to request joining documents from them.`)) return;
@@ -205,7 +358,11 @@ const FieldGroup = ({ fieldName, fieldId, apps, onOverride, onSelect, onBulkProc
                     <span className="text-sm font-black text-primary dark:text-slate-100">{fieldName}</span>
                     <span className="text-[10px] font-bold text-slate-400 uppercase">{apps.length} total · {hiredApps.length}/{totalVacancies} hired</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+                    <HeldSeatsConfig
+                        fieldData={{ internshipId, departmentGroupId, fieldId, heldSeats, vacancies: totalVacancies }}
+                        onSaved={setHeldSeats}
+                    />
                     {selectedApps.length > 0 && (
                         <button onClick={e => { e.stopPropagation(); handleProceed(); }} disabled={proceeding}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
@@ -285,12 +442,20 @@ const FieldGroup = ({ fieldName, fieldId, apps, onOverride, onSelect, onBulkProc
                                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${STAGE_STYLE[app.status]}`}>
                                                     {STAGE_LABELS[app.status]}
                                                 </span>
-                                                {selectingAppId !== app.id && !allLocationsFull && (
+                                                {selectingAppId !== app.id && holdingAppId !== app.id && !allLocationsFull && (
                                                     <button
                                                         onClick={() => setSelectingAppId(app.id)}
                                                         className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-lg hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-200"
                                                     >
                                                         <UserCheck size={10} /> Select
+                                                    </button>
+                                                )}
+                                                {selectingAppId !== app.id && holdingAppId !== app.id && !allLocationsFull && heldSeats > 0 && heldUsed < heldSeats && (
+                                                    <button
+                                                        onClick={() => setHoldingAppId(app.id)}
+                                                        className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 text-[9px] font-black uppercase rounded-lg hover:bg-amber-500 hover:text-white transition-colors border border-amber-200"
+                                                    >
+                                                        🔒 Hold
                                                     </button>
                                                 )}
                                             </div>
@@ -305,35 +470,66 @@ const FieldGroup = ({ fieldName, fieldId, apps, onOverride, onSelect, onBulkProc
                                                 onCancel={() => setSelectingAppId(null)}
                                             />
                                         )}
+                                        {holdingAppId === app.id && (
+                                            <PrtiSelectPanel
+                                                app={app}
+                                                fieldLocations={fieldLocations}
+                                                locationFilledMap={locationFilledMap}
+                                                saving={holdSaving}
+                                                isHold={true}
+                                                onConfirm={loc => handlePrtiHold(app, loc)}
+                                                onCancel={() => setHoldingAppId(null)}
+                                            />
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Docs / Hired section (view only) */}
+                    {/* Docs / Hired section — with work log expand */}
                     {[...docsApps, ...hiredApps].length > 0 && (
                         <div className="px-5 py-4">
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
                                 In Progress ({docsApps.length + hiredApps.length})
                             </p>
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                                 {[...docsApps, ...hiredApps].map(app => (
-                                    <div key={app.id} className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{app.student?.fullName}</span>
-                                            <span className="text-[9px] text-slate-400 truncate hidden sm:block">{app.student?.collegeName}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            {app.student?.rollNumber && (
-                                                <span className="font-mono text-[9px] font-black text-primary/60 bg-primary/5 border border-primary/10 px-1.5 py-0.5 rounded">
-                                                    {app.student.rollNumber}
+                                    <div key={app.id}>
+                                        <div className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{app.student?.fullName}</span>
+                                                <span className="text-[9px] text-slate-400 truncate hidden sm:block">{app.student?.collegeName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                {app.student?.rollNumber && (
+                                                    <span className="font-mono text-[9px] font-black text-primary/60 bg-primary/5 border border-primary/10 px-1.5 py-0.5 rounded">
+                                                        {app.student.rollNumber}
+                                                    </span>
+                                                )}
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${STAGE_STYLE[app.status]}`}>
+                                                    {STAGE_LABELS[app.status]}
                                                 </span>
-                                            )}
-                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${STAGE_STYLE[app.status]}`}>
-                                                {STAGE_LABELS[app.status]}
-                                            </span>
+                                                {['HIRED', 'ONGOING', 'COMPLETED'].includes(app.status) && (
+                                                    <button
+                                                        onClick={() => setLogAppId(logAppId === app.id ? null : app.id)}
+                                                        className={`flex items-center gap-1 px-2 py-1 text-[9px] font-black uppercase rounded-lg border transition-colors ${
+                                                            logAppId === app.id
+                                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                                                        }`}>
+                                                        <BookOpen size={10} />
+                                                        {logAppId === app.id ? 'Hide' : 'Logs'}
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
+                                        {logAppId === app.id && (
+                                            <WorkLogPanel
+                                                applicationId={app.id}
+                                                onClose={() => setLogAppId(null)}
+                                            />
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -403,6 +599,21 @@ const PrtiLearningInterns = () => {
         }
     };
 
+    const handleHoldSelect = async (appId, fieldId, location) => {
+        try {
+            await api.put(`/admin/applications/${appId}`, {
+                status: 'SELECTED',
+                isHeldSeat: true,
+                ...(fieldId && { fieldId }),
+                ...(location && { preferredLocation: location }),
+            });
+            fetchApps();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Hold selection failed');
+            throw err;
+        }
+    };
+
     // Group by internship → field
     const grouped = {};
     apps.forEach(app => {
@@ -411,14 +622,20 @@ const PrtiLearningInterns = () => {
         if (!grouped[intId]) grouped[intId] = { title: intTitle, dept: app.departmentGroup?.department || app.internship?.department, fields: {} };
         const fKey   = app.field?.id || 'no-field';
         const fLabel = app.field?.fieldName || 'General';
-        if (!grouped[intId].fields[fKey]) grouped[intId].fields[fKey] = { label: fLabel, apps: [] };
+        if (!grouped[intId].fields[fKey]) grouped[intId].fields[fKey] = {
+            label: fLabel,
+            internshipId: app.internship?.id,
+            departmentGroupId: app.departmentGroupId,
+            heldSeats: app.field?.heldSeats ?? 0,
+            apps: []
+        };
         grouped[intId].fields[fKey].apps.push(app);
     });
 
     const FILTER_OPTS = [
         { key: 'ALL', label: 'All', count: apps.length },
         { key: 'SUBMITTED', label: 'Pending', count: apps.filter(a => a.status === 'SUBMITTED').length },
-        { key: 'SELECTED', label: 'HOD Selected', count: apps.filter(a => a.status === 'SELECTED').length },
+        { key: 'SELECTED', label: 'Selected', count: apps.filter(a => a.status === 'SELECTED').length },
         { key: 'DOCUMENTS_PENDING', label: 'Docs Pending', count: apps.filter(a => a.status === 'DOCUMENTS_PENDING').length },
         { key: 'HIRED', label: 'Hired', count: apps.filter(a => ['HIRED','ONGOING','COMPLETED'].includes(a.status)).length },
     ];
@@ -481,8 +698,12 @@ const PrtiLearningInterns = () => {
                                             fieldName={fData.label}
                                             fieldId={fKey}
                                             apps={filtered.length > 0 ? filtered : fData.apps}
+                                            internshipId={fData.internshipId}
+                                            departmentGroupId={fData.departmentGroupId}
+                                            initialHeldSeats={fData.heldSeats}
                                             onOverride={handleOverride}
                                             onSelect={handleSelect}
+                                            onHoldSelect={handleHoldSelect}
                                             onBulkProceed={fetchApps}
                                             onNoteUpdate={handleNoteUpdate}
                                         />

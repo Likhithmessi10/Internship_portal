@@ -28,6 +28,7 @@ import PrtiBatches from './pages/admin/prti/PrtiBatches';
 import PrtiBatchDetail from './pages/admin/prti/PrtiBatchDetail';
 import PrtiDeptFieldConfig from './pages/admin/prti/PrtiDeptFieldConfig';
 import PrtiLearningInterns from './pages/admin/prti/PrtiLearningInterns';
+import PrtiWorkLogs from './pages/admin/prti/PrtiWorkLogs';
 import HodDashboard from './pages/admin/hod/HodDashboard';
 import HodApplications from './pages/admin/hod/HodApplications';
 import HodFieldConfig from './pages/admin/hod/HodFieldConfig';
@@ -134,6 +135,11 @@ function App() {
           <Route path="/prti/learning-interns" element={
             <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
               <AdminLayout><PrtiLearningInterns /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/work-logs" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiWorkLogs /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/prti/committee" element={

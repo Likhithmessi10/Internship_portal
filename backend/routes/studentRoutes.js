@@ -1,5 +1,5 @@
 const express = require('express');
-const { upsertProfile, getProfile, upsertStipend, uploadJoiningDocuments, reapplyLocation } = require('../controllers/studentController');
+const { upsertProfile, getProfile, upsertStipend, uploadJoiningDocuments, reapplyLocation, confirmJoining } = require('../controllers/studentController');
 const { submitWorkLog, getStudentWorkLogs } = require('../controllers/workLogController');
 const {
     submitWork,
@@ -19,6 +19,7 @@ router.post('/applications/:id/stipend', protect, authorize('STUDENT'), upsertSt
 // Joining documents (NOC, BOND, UNDERTAKING) — unlocked only after REPORTED status
 router.post('/applications/:id/joining-documents', protect, authorize('STUDENT'), upload.any(), fileValidator, uploadJoiningDocuments);
 router.put('/applications/:id/reapply-location', protect, authorize('STUDENT'), reapplyLocation);
+router.put('/applications/:id/confirm-joining', protect, authorize('STUDENT'), confirmJoining);
 // Daily work logs
 router.post('/applications/:id/work-log', protect, authorize('STUDENT'), submitWorkLog);
 router.get('/applications/:id/work-logs', protect, authorize('STUDENT'), getStudentWorkLogs);

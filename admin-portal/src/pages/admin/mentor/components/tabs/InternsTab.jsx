@@ -3,14 +3,100 @@ import api from '../../../../../utils/api';
 import { useAuth } from '../../../../../context/AuthContext';
 import {
     Users, BookOpen, Mail, CheckCircle, Send, Eye,
-    ChevronRight, X, ClipboardList, FileText, Star
+    ChevronRight, X, ClipboardList, FileText, Star,
+    BookMarked, Clock, Download, Loader2
 } from 'lucide-react';
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// ── Daily Logs table inside the drawer ───────────────────────────────────────
+const InternLogsPanel = ({ applicationId, internName }) => {
+    const [logs, setLogs]       = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.get(`/admin/applications/${applicationId}/work-logs`)
+            .then(r => setLogs(r.data.data || []))
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, [applicationId]);
+
+    const totalHours = logs.reduce((s, l) => s + (l.hoursWorked || 0), 0);
+
+    const handleExport = () => {
+        window.open(
+            `${api.defaults.baseURL}/admin/applications/${applicationId}/work-logs/export`,
+            '_blank'
+        );
+    };
+
+    if (loading) return (
+        <div className="flex justify-center py-8">
+            <Loader2 size={20} className="animate-spin text-indigo-400" />
+        </div>
+    );
+
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                    {logs.length} entr{logs.length !== 1 ? 'ies' : 'y'}{totalHours > 0 ? ` · ${totalHours}h total` : ''}
+                </p>
+                {logs.length > 0 && (
+                    <button onClick={handleExport}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 rounded-lg text-[10px] font-black uppercase hover:bg-emerald-100 transition-colors">
+                        <Download size={11} /> Export Excel
+                    </button>
+                )}
+            </div>
+
+            {logs.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">No logs submitted yet.</div>
+            ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                    <table className="w-full text-left text-xs">
+                        <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                                <th className="px-3 py-2.5 font-black text-slate-500 uppercase tracking-wider">#</th>
+                                <th className="px-3 py-2.5 font-black text-slate-500 uppercase tracking-wider">Date</th>
+                                <th className="px-3 py-2.5 font-black text-slate-500 uppercase tracking-wider">Day</th>
+                                <th className="px-3 py-2.5 font-black text-slate-500 uppercase tracking-wider">Work Done</th>
+                                <th className="px-3 py-2.5 font-black text-slate-500 uppercase tracking-wider text-right">Hrs</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {logs.map((log, i) => {
+                                const d = new Date(log.date);
+                                return (
+                                    <tr key={log.id} className={i % 2 === 0 ? '' : 'bg-slate-50/60 dark:bg-slate-800/20'}>
+                                        <td className="px-3 py-2.5 font-bold text-slate-400">{i + 1}</td>
+                                        <td className="px-3 py-2.5 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                            {d.toLocaleDateString('en-IN')}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400">{DAYS[d.getDay()]}</td>
+                                        <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300 max-w-[200px]">
+                                            <p className="line-clamp-2">{log.description}</p>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right font-bold text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                            {log.hoursWorked != null ? `${log.hoursWorked}h` : '—'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const InternsTab = ({ internshipId }) => {
     const { user } = useAuth();
     const [interns, setInterns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedIntern, setSelectedIntern] = useState(null);
+    const [drawerTab, setDrawerTab] = useState('tasks');
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
 
     const fetchInterns = async (page = 1) => {
@@ -113,7 +199,7 @@ const InternsTab = ({ internshipId }) => {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <button
-                                        onClick={() => setSelectedIntern(intern)}
+                                        onClick={() => { setSelectedIntern(intern); setDrawerTab('tasks'); }}
                                         className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 rounded-lg text-xs font-semibold transition-all"
                                     >
                                         <Eye size={14} /> View
@@ -210,11 +296,24 @@ const InternsTab = ({ internshipId }) => {
                                 </div>
                             </div>
 
-                            {/* Assigned Tasks */}
-                            <div>
-                                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                                    <ClipboardList size={14} /> Assigned Tasks ({selectedIntern.workAssignments?.length || 0})
-                                </h5>
+                            {/* Tab switcher */}
+                            <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+                                {[
+                                    { key: 'tasks', label: 'Tasks', icon: <ClipboardList size={13} /> },
+                                    { key: 'logs',  label: 'Daily Logs', icon: <BookMarked size={13} /> },
+                                ].map(t => (
+                                    <button key={t.key} onClick={() => setDrawerTab(t.key)}
+                                        className={`flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-wider border-b-2 -mb-px transition-colors ${
+                                            drawerTab === t.key
+                                                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                                        }`}>
+                                        {t.icon} {t.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {drawerTab === 'tasks' && (
                                 <div className="space-y-2 max-h-64 overflow-y-auto">
                                     {selectedIntern.workAssignments?.length === 0 ? (
                                         <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No tasks assigned yet</p>
@@ -237,7 +336,14 @@ const InternsTab = ({ internshipId }) => {
                                         ))
                                     )}
                                 </div>
-                            </div>
+                            )}
+
+                            {drawerTab === 'logs' && (
+                                <InternLogsPanel
+                                    applicationId={selectedIntern.id}
+                                    internName={selectedIntern.student.fullName}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

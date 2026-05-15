@@ -335,21 +335,23 @@ const resetPassword = async (req, res) => {
  */
 const updateProfile = async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, phone, designation, mentorField, mentorLocation } = req.body;
         const updateData = {};
 
-        if (name) updateData.name = name;
-        if (req.body.phone) updateData.phone = req.body.phone;
-        
+        if (name !== undefined) updateData.name = name;
+        if (phone !== undefined) updateData.phone = phone;
+        if (designation !== undefined) updateData.designation = designation;
+        if (mentorField !== undefined) updateData.mentorField = mentorField;
+        if (mentorLocation !== undefined) updateData.mentorLocation = mentorLocation;
+
         if (req.file) {
-            // Store the relative path to the file
             updateData.photoUrl = `uploads/${req.file.filename}`;
         }
 
         const user = await prisma.user.update({
             where: { id: req.user.id },
             data: updateData,
-            select: { id: true, email: true, role: true, department: true, name: true, photoUrl: true, phone: true }
+            select: { id: true, email: true, role: true, department: true, name: true, photoUrl: true, phone: true, designation: true, mentorField: true, mentorLocation: true }
         });
 
         res.status(200).json({

@@ -91,7 +91,6 @@ const LearningTab = () => {
                 label:             fieldLabel,
                 locations:         app.field?.locations || [],
                 vacancies:         app.field?.vacancies || 0,
-                heldSeats:         app.field?.heldSeats ?? 0,
                 fieldId:           app.field?.id || app.fieldId,
                 internshipId:      app.internship?.id,
                 departmentGroupId: app.departmentGroupId,
@@ -287,54 +286,6 @@ const AssignMentorCell = ({ app, department, onAssigned }) => {
     );
 };
 
-// ── Held-seats configuration popover ─────────────────────────────────────────
-const HeldSeatsConfig = ({ fieldData, onSaved }) => {
-    const [editing, setEditing] = useState(false);
-    const [val, setVal]         = useState(fieldData.heldSeats ?? 0);
-    const [saving, setSaving]   = useState(false);
-
-    const save = async () => {
-        setSaving(true);
-        try {
-            await api.patch(
-                `/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/fields/${fieldData.fieldId}/held-seats`,
-                { heldSeats: val }
-            );
-            onSaved(val);
-            setEditing(false);
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed to save');
-        } finally { setSaving(false); }
-    };
-
-    if (!editing) return (
-        <button onClick={e => { e.stopPropagation(); setEditing(true); }}
-            title="Configure reserved (hold) seats"
-            className={`flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border transition-colors ${
-                (fieldData.heldSeats ?? 0) > 0
-                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'
-            }`}>
-            🔒 {fieldData.heldSeats ?? 0} held
-        </button>
-    );
-
-    return (
-        <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-            <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase">Hold seats:</span>
-            <input type="number" min={0} max={fieldData.vacancies}
-                value={val} onChange={e => setVal(parseInt(e.target.value) || 0)}
-                className="w-14 text-xs font-bold border border-amber-300 dark:border-amber-700 rounded px-2 py-0.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none" />
-            <button onClick={save} disabled={saving}
-                className="text-[9px] font-black uppercase px-2 py-0.5 bg-amber-500 text-white rounded-full disabled:opacity-50">
-                {saving ? '…' : 'Save'}
-            </button>
-            <button onClick={() => setEditing(false)}
-                className="text-[9px] text-slate-400 hover:text-slate-600 font-bold">✕</button>
-        </div>
-    );
-};
-
 // ── Bulk hire modal ───────────────────────────────────────────────────────────
 const BulkHireModal = ({ apps, onClose, onHired }) => {
     const [joiningDate, setJoiningDate] = useState('');
@@ -343,7 +294,6 @@ const BulkHireModal = ({ apps, onClose, onHired }) => {
     const [results, setResults]         = useState(null); // { ok: [], fail: [] }
 
     const confirm = async () => {
-        if (!joiningDate || !endDate) { alert('Set both joining and end dates'); return; }
         setSaving(true);
         const ok = [], fail = [];
         // Sequential — each hire commits before the next so roll number counters don't collide
@@ -351,8 +301,8 @@ const BulkHireModal = ({ apps, onClose, onHired }) => {
             try {
                 await api.put(`/admin/applications/${app.id}`, {
                     status: 'HIRED',
-                    joiningDate,
-                    endDate,
+                    ...(joiningDate && { joiningDate }),
+                    ...(endDate && { endDate }),
                     assignedRole: app.field?.fieldName || app.assignedRole
                 });
                 ok.push(app.student?.fullName);
@@ -392,7 +342,7 @@ const BulkHireModal = ({ apps, onClose, onHired }) => {
                 <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-1">Bulk Hire</p>
                     <p className="text-base font-black text-slate-800 dark:text-slate-100">{apps.length} candidate{apps.length !== 1 ? 's' : ''} ready to hire</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Set joining and end dates — they apply to all candidates below.</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Dates are optional — if left blank, the student will set their own joining and end dates.</p>
                 </div>
 
                 {/* Candidate list */}
@@ -415,12 +365,12 @@ const BulkHireModal = ({ apps, onClose, onHired }) => {
                 {/* Universal dates */}
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-400 block mb-1">Joining Date</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-400 block mb-1">Joining Date <span className="normal-case text-slate-400">(optional)</span></label>
                         <input type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)}
                             className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" />
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-400 block mb-1">End Date</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-400 block mb-1">End Date <span className="normal-case text-slate-400">(optional)</span></label>
                         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                             className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" />
                     </div>
@@ -522,7 +472,7 @@ const SelectionPanel = ({ app, allFields, onConfirm, onCancel, isHold }) => {
 };
 
 // ── Candidate row (shared across phase tabs) ─────────────────────────────────
-const CandidateRow = ({ app, phase, heldSeats, heldUsed, onAction, onDocAction, onHireOpen, onView, department, onRefresh, onSelectOpen }) => (  // eslint-disable-line no-unused-vars
+const CandidateRow = ({ app, phase, onAction, onDocAction, onHireOpen, onView, department, onRefresh, onSelectOpen }) => (
     <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
         <td className="px-5 py-3.5">
             <button onClick={() => onView(app)} className="text-left hover:underline">
@@ -545,7 +495,6 @@ const CandidateRow = ({ app, phase, heldSeats, heldUsed, onAction, onDocAction, 
                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border ${STATUS_COLOR[app.status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                     {app.status.replace(/_/g, ' ')}
                 </span>
-                {app.isHeldSeat && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200 w-fit">🔒 Hold</span>}
                 {app.prtiNote && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black bg-violet-50 text-violet-600 border border-violet-200 w-fit cursor-help" title={`PRTI: ${app.prtiNote}`}>💬 PRTI</span>}
             </div>
         </td>
@@ -562,12 +511,6 @@ const CandidateRow = ({ app, phase, heldSeats, heldUsed, onAction, onDocAction, 
                         className="px-2.5 h-7 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-emerald-600 hover:text-white transition-colors border border-emerald-200">
                         <Check size={12} /> Select
                     </button>
-                    {heldSeats > 0 && heldUsed < heldSeats && (
-                        <button onClick={() => onSelectOpen(app, true)}
-                            className="px-2 h-7 rounded-lg bg-amber-50 text-amber-700 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-amber-500 hover:text-white transition-colors border border-amber-200">
-                            🔒 Hold
-                        </button>
-                    )}
                     <button onClick={() => onAction(app.id, 'REJECTED')}
                         className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors" title="Reject">
                         <X size={13} />
@@ -611,7 +554,7 @@ const CandidateRow = ({ app, phase, heldSeats, heldUsed, onAction, onDocAction, 
 );
 
 // ── Phase table wrapper ───────────────────────────────────────────────────────
-const PhaseTable = ({ apps, phase, heldSeats, heldUsed, onAction, onDocAction, onHireOpen, onView, department, onRefresh, onSelectOpen }) => {
+const PhaseTable = ({ apps, phase, onAction, onDocAction, onHireOpen, onView, department, onRefresh, onSelectOpen }) => {
     const headers = phase === 'hired'
         ? ['Candidate', 'College', 'CGPA', 'Location', 'Status', 'Mentor', 'Actions']
         : ['Candidate', 'College', 'CGPA', 'Location', 'Status', 'Actions'];
@@ -636,7 +579,6 @@ const PhaseTable = ({ apps, phase, heldSeats, heldUsed, onAction, onDocAction, o
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {apps.map(app => (
                         <CandidateRow key={app.id} app={app} phase={phase}
-                            heldSeats={heldSeats} heldUsed={heldUsed}
                             onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
                             onView={onView} department={department} onRefresh={onRefresh}
                             onSelectOpen={onSelectOpen} />
@@ -707,7 +649,6 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
 // ── Field section — simplified workflow ───────────────────────────────────────
 const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, onHireOpen, onView, department, onRefresh }) => {
     const [open, setOpen]               = useState(true);
-    const [heldSeats, setHeldSeats]     = useState(fieldData.heldSeats ?? 0);
     const [bulkSending, setBulkSending] = useState(false);
     const [locFilter, setLocFilter]     = useState('ALL');
     const [selectionTarget, setSelectionTarget] = useState(null); // { app, isHold }
@@ -735,7 +676,6 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
     // Count all apps holding a seat (matches backend SEAT_CONSUMING exactly)
     const selectedCount = allApps.filter(a => ALLOCATED_STATUSES.includes(a.status)).length;
     const hiredCount    = allApps.filter(a => ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length;
-    const heldUsed      = allApps.filter(a => a.isHeldSeat && ALLOCATED_STATUSES.includes(a.status)).length;
 
     // Per-location remaining — enforce the per-location cap shown to HOD
     const locationVacancyMap = {};   // { locName: vacancies }
@@ -819,7 +759,6 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
                 </button>
                 <div className="px-2 flex items-center gap-2 shrink-0">
                     <RequiredDocsConfig fieldData={fieldData} />
-                    <HeldSeatsConfig fieldData={{ ...fieldData, heldSeats }} onSaved={setHeldSeats} />
                 </div>
             </div>
 
@@ -982,26 +921,22 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
                     <div className="bg-white dark:bg-slate-900">
                         {activeTab === 'applications' && (
                             <PhaseTable apps={pendingApps} phase="applications"
-                                heldSeats={heldSeats} heldUsed={heldUsed}
                                 onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
                                 onView={onView} department={department} onRefresh={onRefresh}
                                 onSelectOpen={(app, isHold) => setSelectionTarget({ app, isHold })} />
                         )}
                         {activeTab === 'selected' && (
                             <PhaseTable apps={[...selectedApps, ...docsPending, ...docsVerified, ...hiredApps]} phase="docs"
-                                heldSeats={heldSeats} heldUsed={heldUsed}
                                 onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
                                 onView={onView} department={department} onRefresh={onRefresh} />
                         )}
                         {activeTab === 'docs' && (
                             <PhaseTable apps={docsPhaseApps} phase="docs"
-                                heldSeats={heldSeats} heldUsed={heldUsed}
                                 onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
                                 onView={onView} department={department} onRefresh={onRefresh} />
                         )}
                         {activeTab === 'hired' && (
                             <PhaseTable apps={hiredApps} phase="hired"
-                                heldSeats={heldSeats} heldUsed={heldUsed}
                                 onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
                                 onView={onView} department={department} onRefresh={onRefresh} />
                         )}

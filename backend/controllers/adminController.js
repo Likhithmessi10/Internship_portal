@@ -102,6 +102,18 @@ const createInternship = async (req, res) => {
 
         res.status(201).json({ success: true, data: internship });
         await createAuditLog('CREATE_INTERNSHIP', req.user.email, `Created ${title}${batchId ? ` in batch ${batchId}` : ' (standalone)'}`, internship.id);
+
+        // Notify all PRTI users that a new internship was created
+        const mailService = require('../services/mailService');
+        const prtiUsers = await prisma.user.findMany({ where: { role: 'CE_PRTI' }, select: { email: true } });
+        for (const u of prtiUsers) {
+            mailService.notifyPrtiInternshipCreated(u.email, {
+                internshipTitle: title,
+                department: targetDepartment,
+                createdBy: req.user.email,
+                internshipType: req.body.internshipType || 'COLLABORATIVE',
+            }).catch(() => {}); // fire-and-forget
+        }
     } catch (error) {
         console.error('Create internship error:', error.message);
         res.status(500).json({ success: false, message: 'Server Error' });

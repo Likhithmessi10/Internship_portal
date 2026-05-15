@@ -303,7 +303,7 @@ model Application {
   shortlistCategory   String?
   domain              String?
   mentorId            String?
-  isHeldSeat          Boolean  @default(false)  // true = HOD discretionary hold seat
+  isHeldSeat          Boolean  @default(false)  // true = PRTI discretionary hold seat
   prtiApproved        Boolean  @default(false)  // PRTI verified this selection; unlocks doc request + hire
   prtiNote            String?                   // PRTI feedback visible to HOD
   questionAnswers     Json?
@@ -339,7 +339,7 @@ model InternshipField {
   fieldName         String
   description       String?
   vacancies         Int      @default(0)
-  heldSeats         Int      @default(0)   // reserved seats HOD can fill by discretion
+  heldSeats         Int      @default(0)   // reserved seats PRTI can fill by discretion
   locations         Json?    @default("[]")
   specializations   Json?    @default("[]") // e.g. ["Electrical", "Power Systems"]
   createdAt         DateTime @default(now())
