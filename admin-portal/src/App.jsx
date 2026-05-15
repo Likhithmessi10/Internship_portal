@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useState } from 'react';
+import { MONETARY_ENABLED } from './config/features';
 
 // Admin Pages
 import AdminLanding from './pages/admin/AdminLanding';
@@ -57,7 +58,15 @@ const AdminLayout = ({ children }) => {
   );
 };
 
-// Root redirection is handled by AdminLanding directly.
+// Redirects to role dashboard when a monetary-only route is accessed while MONETARY_ENABLED=false
+const MonetaryRoute = ({ children, allowedRoles, fallback }) => {
+  if (!MONETARY_ENABLED) return <Navigate to={fallback || '/login'} replace />;
+  return (
+    <ProtectedRoute allowedRoles={allowedRoles}>
+      <AdminLayout>{children}</AdminLayout>
+    </ProtectedRoute>
+  );
+};
 
 function App() {
   return (
@@ -93,9 +102,9 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/prti/meetings" element={
-            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
-              <AdminLayout><PrtiMeetings /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['CE_PRTI', 'ADMIN']} fallback="/prti/dashboard">
+              <PrtiMeetings />
+            </MonetaryRoute>
           } />
           <Route path="/prti/reports" element={
             <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
@@ -143,14 +152,14 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/prti/committee" element={
-            <ProtectedRoute allowedRoles={['CE_PRTI', 'COMMITTEE_MEMBER', 'ADMIN', 'HOD', 'MENTOR']}>
-              <AdminLayout><PRTICommitteeDashboard /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['CE_PRTI', 'COMMITTEE_MEMBER', 'ADMIN', 'HOD', 'MENTOR']} fallback="/prti/dashboard">
+              <PRTICommitteeDashboard />
+            </MonetaryRoute>
           } />
           <Route path="/prti/committees/manage" element={
-            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
-              <AdminLayout><PRTICommitteeManagement /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['CE_PRTI', 'ADMIN']} fallback="/prti/dashboard">
+              <PRTICommitteeManagement />
+            </MonetaryRoute>
           } />
           <Route path="/hod/dashboard" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
@@ -163,24 +172,24 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/hod/committees" element={
-            <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
-              <AdminLayout><HodCommittees /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']} fallback="/hod/dashboard">
+              <HodCommittees />
+            </MonetaryRoute>
           } />
           <Route path="/committees" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
-              <AdminLayout><HodCommittees /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['ADMIN', 'CE_PRTI']} fallback="/prti/dashboard">
+              <HodCommittees />
+            </MonetaryRoute>
           } />
           <Route path="/hod/selection" element={
-            <ProtectedRoute allowedRoles={['HOD', 'CE_PRTI', 'ADMIN']}>
-              <AdminLayout><HodSelection /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['HOD', 'CE_PRTI', 'ADMIN']} fallback="/hod/dashboard">
+              <HodSelection />
+            </MonetaryRoute>
           } />
           <Route path="/hod/meetings" element={
-            <ProtectedRoute allowedRoles={['HOD', 'CE_PRTI', 'ADMIN']}>
-              <AdminLayout><HodMeetings /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['HOD', 'CE_PRTI', 'ADMIN']} fallback="/hod/dashboard">
+              <HodMeetings />
+            </MonetaryRoute>
           } />
           <Route path="/hod/field-config" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
@@ -188,9 +197,9 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/hod/problem-statements" element={
-            <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
-              <AdminLayout><HodProblemStatements /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']} fallback="/hod/dashboard">
+              <HodProblemStatements />
+            </MonetaryRoute>
           } />
           <Route path="/hod/reports" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
@@ -208,14 +217,14 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/mentor/committees" element={
-            <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
-              <AdminLayout><MentorCommittees /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['MENTOR', 'ADMIN']} fallback="/mentor/dashboard">
+              <MentorCommittees />
+            </MonetaryRoute>
           } />
           <Route path="/mentor/meetings" element={
-            <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
-              <AdminLayout><MentorMeetings /></AdminLayout>
-            </ProtectedRoute>
+            <MonetaryRoute allowedRoles={['MENTOR', 'ADMIN']} fallback="/mentor/dashboard">
+              <MentorMeetings />
+            </MonetaryRoute>
           } />
           <Route path="/mentor/reports" element={
             <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>

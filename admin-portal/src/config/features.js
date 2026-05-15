@@ -1,4 +1,4 @@
-// Feature flags — set to true to re-enable a feature across the whole portal.
-// No code needs to be removed; just flip the flag here.
+// Feature flags — controlled via .env (VITE_MONETARY_ENABLED=true/false).
+// Default is false (non-monetary / learning internship mode).
 
-export const MONETARY_ENABLED = false;  // paid / collaborative internship workflow
+export const MONETARY_ENABLED = import.meta.env.VITE_MONETARY_ENABLED === 'true';

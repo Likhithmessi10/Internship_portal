@@ -123,9 +123,10 @@ const CreateInternshipForm = () => {
         }
         const totalVacancies = fi.locations.reduce((s, l) => s + (l.vacancies || 0), 0);
         // specializations come from master — stored on fi as fi.specializations (read from master on selection)
+        const masterId = fi.fieldMasterId && fi.fieldMasterId !== 'CUSTOM' ? fi.fieldMasterId : null;
         setDeptFields(prev => ({
             ...prev,
-            [dept]: [...(prev[dept] || []), { fieldName: fi.fieldName.trim(), fieldMasterId: fi.fieldMasterId || null, vacancies: totalVacancies, locations: fi.locations, specializations: fi.specializations || [] }]
+            [dept]: [...(prev[dept] || []), { fieldName: fi.fieldName.trim(), fieldMasterId: masterId, vacancies: totalVacancies, locations: fi.locations, specializations: fi.specializations || [] }]
         }));
         setFieldInput(dept, { fieldName: '', fieldMasterId: '', locationInput: '', locationVacanciesInput: '1', locations: [] });
     };
@@ -512,155 +513,235 @@ const CreateInternshipForm = () => {
                 {/* ═══════ STEP 3 — FIELDS PER DEPARTMENT (NON_STIPEND only) ═══════ */}
                 {step === 3 && isLearning && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div>
-                            <h2 className="text-2xl font-bold text-primary tracking-tight mb-1 uppercase tracking-[0.05em]">
-                                Step 3: <span className="text-primary/60 font-medium">Fields & Locations</span>
-                            </h2>
-                            <p className="text-xs text-outline font-medium uppercase tracking-wider opacity-70">
-                                Define the learning fields and posting locations for each participating department.
+                        {/* Header */}
+                        <div className="text-center pb-2">
+                            <p className="text-xs font-bold text-primary/50 uppercase tracking-widest mb-1">Step 3 of {totalSteps}</p>
+                            <h2 className="text-3xl font-black text-primary mb-2">Set Fields & Locations</h2>
+                            <p className="text-base text-slate-500 max-w-lg mx-auto">
+                                For each department, choose <strong>what kind of work</strong> interns will do and <strong>where they will be posted</strong>.
                             </p>
                         </div>
 
                         {validationErrors.includes('deptFields') && (
-                            <div className="p-4 bg-error/5 border border-error/20 rounded-xl text-error text-xs font-bold uppercase tracking-wider">
-                                Every department must have at least one field configured.
+                            <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-red-700 text-sm font-bold flex items-center gap-3">
+                                <span className="material-symbols-outlined text-xl shrink-0">warning</span>
+                                Each department needs at least one field before you can continue.
                             </div>
                         )}
 
-                        <div className="space-y-6">
-                            {formData.participatingDepts.map(dept => {
+                        <div className="space-y-8">
+                            {formData.participatingDepts.map((dept, deptIdx) => {
                                 const fi = getFieldInput(dept);
                                 const fields = deptFields[dept] || [];
+                                const totalAdded = fields.reduce((s, f) => s + f.locations.reduce((a, l) => a + (l.vacancies || 0), 0), 0);
+                                const hasError = fields.length === 0 && validationErrors.includes('deptFields');
+
                                 return (
-                                    <div key={dept} className={`border rounded-2xl overflow-hidden ${fields.length === 0 && validationErrors.includes('deptFields') ? 'border-error/40' : 'border-outline-variant/15'}`}>
-                                        {/* Dept header */}
-                                        <div className="px-5 py-3 bg-surface-container flex items-center gap-3 border-b border-outline-variant/10">
-                                            <span className="material-symbols-outlined text-primary text-base">domain</span>
-                                            <span className="text-sm font-black text-primary">{dept}</span>
-                                            <span className="ml-auto text-[10px] font-black text-outline/60 uppercase">{fields.length} field{fields.length !== 1 ? 's' : ''} added</span>
+                                    <div key={dept} className={`rounded-3xl overflow-hidden shadow-sm border-2 ${hasError ? 'border-red-300' : fields.length > 0 ? 'border-emerald-300' : 'border-slate-200'}`}>
+
+                                        {/* Department Banner */}
+                                        <div className={`px-6 py-4 flex items-center justify-between ${fields.length > 0 ? 'bg-emerald-600' : 'bg-primary'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                                                    <span className="text-white font-black text-lg">{deptIdx + 1}</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-black text-xl">{dept}</p>
+                                                    <p className="text-white/70 text-sm font-medium">
+                                                        {fields.length === 0 ? 'No fields added yet' : `${fields.length} field${fields.length !== 1 ? 's' : ''} · ${totalAdded} total seats`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {fields.length > 0 && (
+                                                <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
+                                                    <span className="material-symbols-outlined text-white text-base">check_circle</span>
+                                                    <span className="text-white font-black text-sm">Done</span>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        <div className="bg-white p-5 space-y-4">
-                                            {/* Added fields */}
-                                            {fields.map((f, i) => {
-                                                const totalVac = f.locations.reduce((s, l) => s + (l.vacancies || 0), 0);
-                                                return (
-                                                    <div key={i} className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                                                        <div>
-                                                            <p className="text-sm font-black text-emerald-800 uppercase">{f.fieldName}</p>
-                                                            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">
-                                                                Total {totalVac} vacancies · {f.locations.map(l => `${l.name} (${l.vacancies})`).join(', ')}
-                                                            </p>
-                                                            {f.specializations?.length > 0 && (
-                                                                <p className="text-[9px] font-bold text-violet-600 mt-0.5">
-                                                                    {f.specializations.join(' · ')}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <button onClick={() => removeFieldFromDept(dept, i)} className="text-red-400 hover:text-red-600 transition-colors p-1">
-                                                            <span className="material-symbols-outlined text-sm">delete</span>
-                                                        </button>
+                                        <div className="bg-white p-6 space-y-6">
+
+                                            {/* ── Already-added fields ── */}
+                                            {fields.length > 0 && (
+                                                <div className="space-y-3">
+                                                    <p className="text-sm font-black text-slate-500 uppercase tracking-widest">Added Fields</p>
+                                                    {fields.map((f, i) => {
+                                                        const totalVac = f.locations.reduce((s, l) => s + (l.vacancies || 0), 0);
+                                                        return (
+                                                            <div key={i} className="flex items-center justify-between p-4 bg-emerald-50 border-2 border-emerald-200 rounded-2xl">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center">
+                                                                        <span className="material-symbols-outlined text-white text-base">work</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-base font-black text-slate-800">{f.fieldName}</p>
+                                                                        <p className="text-sm text-emerald-700 font-bold mt-0.5">
+                                                                            {f.locations.map(l => `${l.name} — ${l.vacancies} seat${l.vacancies !== 1 ? 's' : ''}`).join('  ·  ')}
+                                                                        </p>
+                                                                        <p className="text-xs font-black text-emerald-600 mt-0.5">Total: {totalVac} seat{totalVac !== 1 ? 's' : ''}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button onClick={() => removeFieldFromDept(dept, i)}
+                                                                    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">
+                                                                    <span className="material-symbols-outlined text-sm">delete</span> Remove
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            {/* ── Add new field form ── */}
+                                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-5 space-y-6 bg-slate-50">
+                                                <p className="text-base font-black text-slate-700 flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-primary">add_circle</span>
+                                                    Add a Field for {dept}
+                                                </p>
+
+                                                {/* STEP A — Choose field */}
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-black text-sm shrink-0">A</div>
+                                                        <p className="text-base font-black text-slate-700">What type of work will interns do?</p>
                                                     </div>
-                                                );
-                                            })}
-
-                                            {/* Add field form */}
-                                            <div className="space-y-3 pt-2 border-t border-outline-variant/10">
-                                                <InputField label="Field Name" hint={masterFieldsMap[dept]?.length ? `${masterFieldsMap[dept].length} field(s) configured` : 'No master fields — type manually'}>
                                                     {masterFieldsMap[dept]?.length > 0 ? (
-                                                        <select
-                                                            value={fi.fieldMasterId || fi.fieldName}
-                                                            onChange={e => {
-                                                                const master = masterFieldsMap[dept].find(f => f.id === e.target.value);
-                                                                if (master) {
-                                                                    setFieldInput(dept, {
-                                                                        fieldName: master.fieldName,
-                                                                        fieldMasterId: master.id,
-                                                                        specializations: Array.isArray(master.specializations) ? master.specializations : []
-                                                                    });
-                                                                } else {
-                                                                    setFieldInput(dept, { fieldName: '', fieldMasterId: '', specializations: [] });
-                                                                }
-                                                            }}
-                                                            className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30"
-                                                        >
-                                                            <option value="">-- Select Field --</option>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-11">
                                                             {masterFieldsMap[dept].map(f => (
-                                                                <option key={f.id} value={f.id}>
-                                                                    {f.fieldCode} — {f.fieldName}
-                                                                </option>
+                                                                <button key={f.id} type="button"
+                                                                    onClick={() => setFieldInput(dept, {
+                                                                        fieldName: f.fieldName,
+                                                                        fieldMasterId: f.id,
+                                                                        specializations: Array.isArray(f.specializations) ? f.specializations : []
+                                                                    })}
+                                                                    className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${fi.fieldMasterId === f.id ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-primary/40 hover:bg-primary/2'}`}
+                                                                >
+                                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${fi.fieldMasterId === f.id ? 'border-primary bg-primary' : 'border-slate-300'}`}>
+                                                                        {fi.fieldMasterId === f.id && <span className="material-symbols-outlined text-white text-xs">check</span>}
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className={`text-sm font-black ${fi.fieldMasterId === f.id ? 'text-primary' : 'text-slate-700'}`}>{f.fieldName}</p>
+                                                                        <p className="text-[10px] text-slate-400 font-bold">{f.fieldCode}</p>
+                                                                    </div>
+                                                                </button>
                                                             ))}
-                                                        </select>
+                                                            <button type="button"
+                                                                onClick={() => setFieldInput(dept, { fieldName: '', fieldMasterId: 'CUSTOM', specializations: [] })}
+                                                                className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${fi.fieldMasterId === 'CUSTOM' ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-primary/40'}`}
+                                                            >
+                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${fi.fieldMasterId === 'CUSTOM' ? 'border-primary bg-primary' : 'border-slate-300'}`}>
+                                                                    {fi.fieldMasterId === 'CUSTOM' && <span className="material-symbols-outlined text-white text-xs">check</span>}
+                                                                </div>
+                                                                <p className="text-sm font-black text-slate-500">Other (type manually)</p>
+                                                            </button>
+                                                        </div>
                                                     ) : (
-                                                        <input
-                                                            type="text"
-                                                            value={fi.fieldName}
-                                                            onChange={e => setFieldInput(dept, { fieldName: e.target.value })}
-                                                            placeholder="e.g. SCADA, Grid Ops"
-                                                            className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30"
-                                                        />
+                                                        <div className="pl-11">
+                                                            <input type="text" value={fi.fieldName}
+                                                                onChange={e => setFieldInput(dept, { fieldName: e.target.value })}
+                                                                placeholder="e.g. SCADA Operations, Grid Maintenance"
+                                                                className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-4 py-3 text-base font-bold focus:outline-none bg-white" />
+                                                        </div>
                                                     )}
-                                                </InputField>
-
-                                                {(fi.specializations?.length > 0) && (
-                                                    <div className="px-3 py-2 bg-violet-50 border border-violet-200 rounded-xl">
-                                                        <p className="text-[9px] font-black uppercase tracking-widest text-violet-600 mb-1.5">Target Specializations (from Master)</p>
-                                                        <div className="flex flex-wrap gap-1.5">
+                                                    {fi.fieldMasterId === 'CUSTOM' && (
+                                                        <div className="pl-11">
+                                                            <input type="text" value={fi.fieldName}
+                                                                onChange={e => setFieldInput(dept, { fieldName: e.target.value })}
+                                                                placeholder="Type the field name"
+                                                                className="w-full border-2 border-primary/40 focus:border-primary rounded-xl px-4 py-3 text-base font-bold focus:outline-none bg-white" />
+                                                        </div>
+                                                    )}
+                                                    {fi.specializations?.length > 0 && (
+                                                        <div className="pl-11 flex flex-wrap gap-2">
                                                             {fi.specializations.map((sp, si) => (
-                                                                <span key={si} className="px-2.5 py-1 bg-white text-violet-700 rounded-lg text-[10px] font-bold border border-violet-200">
+                                                                <span key={si} className="px-3 py-1 bg-violet-100 text-violet-700 rounded-lg text-xs font-bold border border-violet-200">
                                                                     {sp}
                                                                 </span>
                                                             ))}
                                                         </div>
+                                                    )}
+                                                </div>
+
+                                                {/* STEP B — Choose locations */}
+                                                {fi.fieldName && (
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-black text-sm shrink-0">B</div>
+                                                            <p className="text-base font-black text-slate-700">Where will interns be posted? Set seats per location.</p>
+                                                        </div>
+                                                        <div className="pl-11 space-y-2">
+                                                            {PRESET_LOCATIONS.map(loc => {
+                                                                const existing = fi.locations.find(l => l.name === loc);
+                                                                const isSelected = !!existing;
+                                                                return (
+                                                                    <div key={loc} className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white'}`}>
+                                                                        <label className="flex items-center gap-3 cursor-pointer flex-1">
+                                                                            <input type="checkbox" checked={isSelected}
+                                                                                onChange={e => {
+                                                                                    if (e.target.checked) {
+                                                                                        setFieldInput(dept, { locations: [...fi.locations.filter(l => l.name !== loc), { name: loc, vacancies: 1 }] });
+                                                                                    } else {
+                                                                                        setFieldInput(dept, { locations: fi.locations.filter(l => l.name !== loc) });
+                                                                                    }
+                                                                                }}
+                                                                                className="w-5 h-5 accent-primary cursor-pointer" />
+                                                                            <span className={`text-base font-bold ${isSelected ? 'text-primary' : 'text-slate-600'}`}>{loc}</span>
+                                                                        </label>
+                                                                        {isSelected && (
+                                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                                <span className="text-sm text-slate-500 font-bold">Seats:</span>
+                                                                                <button type="button" onClick={() => {
+                                                                                    const v = Math.max(1, (existing.vacancies || 1) - 1);
+                                                                                    setFieldInput(dept, { locations: fi.locations.map(l => l.name === loc ? { ...l, vacancies: v } : l) });
+                                                                                }} className="w-8 h-8 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-lg flex items-center justify-center transition-colors">−</button>
+                                                                                <span className="w-10 text-center text-lg font-black text-primary">{existing.vacancies || 1}</span>
+                                                                                <button type="button" onClick={() => {
+                                                                                    const v = (existing.vacancies || 1) + 1;
+                                                                                    setFieldInput(dept, { locations: fi.locations.map(l => l.name === loc ? { ...l, vacancies: v } : l) });
+                                                                                }} className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-black text-lg flex items-center justify-center transition-colors">+</button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+
+                                                            {/* Custom location row */}
+                                                            <div className="flex items-center gap-2 pt-1">
+                                                                <input type="text" value={fi.locationInput}
+                                                                    onChange={e => setFieldInput(dept, { locationInput: e.target.value })}
+                                                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addLocationToDept(dept))}
+                                                                    placeholder="+ Add another location (type and press Enter)"
+                                                                    className="flex-1 border-2 border-dashed border-slate-300 focus:border-primary rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none bg-white" />
+                                                                <input type="number" min="1" value={fi.locationVacanciesInput}
+                                                                    onChange={e => setFieldInput(dept, { locationVacanciesInput: e.target.value })}
+                                                                    className="w-20 border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none bg-white" />
+                                                                <button type="button" onClick={() => addLocationToDept(dept)}
+                                                                    className="px-4 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors">
+                                                                    Add
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Summary */}
+                                                            {fi.locations.length > 0 && (
+                                                                <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                                                                    <span className="material-symbols-outlined text-emerald-600 text-base">summarize</span>
+                                                                    <p className="text-sm font-black text-emerald-700">
+                                                                        {fi.locations.length} location{fi.locations.length !== 1 ? 's' : ''} selected — <strong>{fi.locations.reduce((s, l) => s + (l.vacancies || 0), 0)} total seats</strong>
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
 
-                                                <InputField label="Locations & Vacancies per Location"
-                                                    hint={`Total vacancies = sum across all locations${fi.locations.length > 0 ? ' — currently ' + fi.locations.reduce((s, l) => s + (l.vacancies || 0), 0) : ''}`}>
-                                                    <div className="flex gap-2">
-                                                        <select
-                                                            value={fi.locationInput}
-                                                            onChange={e => setFieldInput(dept, { locationInput: e.target.value })}
-                                                            className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 flex-1"
-                                                        >
-                                                            <option value="">Select location…</option>
-                                                            {PRESET_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
-                                                        </select>
-                                                        <input
-                                                            type="text"
-                                                            value={fi.locationInput}
-                                                            onChange={e => setFieldInput(dept, { locationInput: e.target.value })}
-                                                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addLocationToDept(dept))}
-                                                            placeholder="or type custom"
-                                                            className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 flex-1"
-                                                        />
-                                                        <input
-                                                            type="number" min="1"
-                                                            value={fi.locationVacanciesInput}
-                                                            onChange={e => setFieldInput(dept, { locationVacanciesInput: e.target.value })}
-                                                            placeholder="Vac"
-                                                            title="Vacancies for this location"
-                                                            className="admin-input text-sm font-bold border-outline-variant/20 focus:border-primary/30 w-20 text-center"
-                                                        />
-                                                        <button type="button" onClick={() => addLocationToDept(dept)}
-                                                            className="px-4 bg-primary/10 text-primary rounded-lg font-bold text-[10px] uppercase hover:bg-primary/20 transition-all">
-                                                            Add
-                                                        </button>
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-2 mt-2">
-                                                        {fi.locations.map((loc, li) => (
-                                                            <span key={li} className="px-2.5 py-1 bg-primary/5 text-primary rounded-lg text-[10px] font-bold uppercase border border-primary/10 flex items-center gap-1.5">
-                                                                {loc.name} <span className="text-primary/60">({loc.vacancies})</span>
-                                                                <button type="button" onClick={() => setFieldInput(dept, { locations: fi.locations.filter((_, idx) => idx !== li) })} className="text-error/60 hover:text-error">×</button>
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </InputField>
-
-                                                <button type="button" onClick={() => addFieldToDept(dept)}
-                                                    className="w-full py-3 border-2 border-dashed border-primary/30 text-primary rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-primary/5 flex items-center justify-center gap-2 transition-colors">
-                                                    <span className="material-symbols-outlined text-sm">add</span> Add Field to {dept}
-                                                </button>
+                                                {/* STEP C — Confirm */}
+                                                {fi.fieldName && fi.locations.length > 0 && (
+                                                    <button type="button" onClick={() => addFieldToDept(dept)}
+                                                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-base flex items-center justify-center gap-3 shadow-md transition-colors">
+                                                        <span className="material-symbols-outlined text-xl">add_circle</span>
+                                                        Add "{fi.fieldName}" to {dept}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -669,10 +750,10 @@ const CreateInternshipForm = () => {
                         </div>
 
                         <div className="flex gap-4 pt-6 border-t border-outline-variant/10">
-                            <button onClick={() => setStep(2)} className="px-6 py-4 border border-outline-variant/30 rounded-lg font-bold text-[10px] uppercase tracking-widest text-outline hover:bg-surface-variant transition-all">Previous</button>
+                            <button onClick={() => setStep(2)} className="px-8 py-4 border-2 border-slate-200 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-50 transition-all">← Previous</button>
                             <button onClick={nextStep}
-                                className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-lg shadow-primary/10 transition-all active:scale-[0.99]">
-                                Continue to Review <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-black text-base flex items-center justify-center gap-3 shadow-lg transition-all active:scale-[0.99]">
+                                Continue to Review →
                             </button>
                         </div>
                     </div>

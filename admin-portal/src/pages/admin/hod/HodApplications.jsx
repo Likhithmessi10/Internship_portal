@@ -1353,7 +1353,9 @@ const HodApplications = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <span className="text-[10px] font-bold tracking-widest text-outline uppercase mb-1 block">Recruitment Oversight</span>
+                    <span className="text-[10px] font-bold tracking-widest text-outline uppercase mb-1 block">
+                        {MONETARY_ENABLED ? 'Recruitment Oversight' : 'Learning Internship Applications'}
+                    </span>
                     <h2 className="text-3xl font-bold text-primary tracking-tight">Applications</h2>
                 </div>
                 {/* Tab switcher — hidden when monetary workflow is disabled */}

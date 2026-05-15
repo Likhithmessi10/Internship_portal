@@ -14,8 +14,11 @@ const PORT = process.env.PORT || 5001;
 // ============================================
 // SECURITY MIDDLEWARE
 // ============================================
+const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    : '*';
 app.use(cors({
-    origin: '*', // Adjust as needed for production
+    origin: allowedOrigins,
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

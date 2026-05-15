@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../../../utils/api';
+import api, { API_URL, MEDIA_URL } from '../../../utils/api';
 import {
     CheckCircle, FileText, Loader2, AlertCircle,
     ChevronDown, ChevronUp, MessageSquare, Send, Eye, X, Users, Play, UserCheck,
@@ -22,7 +22,6 @@ const WorkLogPanel = ({ applicationId, onClose }) => {
     }, [applicationId]);
 
     const totalHours = logs.reduce((s, l) => s + (l.hoursWorked || 0), 0);
-    const baseURL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1');
 
     return (
         <div className="mt-2 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
@@ -40,7 +39,7 @@ const WorkLogPanel = ({ applicationId, onClose }) => {
                 </div>
                 <div className="flex items-center gap-2">
                     {logs.length > 0 && (
-                        <a href={`${baseURL}/api/v1/admin/applications/${applicationId}/work-logs/export`}
+                        <a href={`${API_URL}/admin/applications/${applicationId}/work-logs/export`}
                             target="_blank" rel="noreferrer"
                             className="flex items-center gap-1 px-2 py-1 text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
                             <Download size={9} /> Excel
@@ -93,7 +92,7 @@ const WorkLogPanel = ({ applicationId, onClose }) => {
     );
 };
 
-const MEDIA_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1').replace('/api/v1', '');
+// MEDIA_URL imported from utils/api
 
 const STAGE_STYLE = {
     SUBMITTED:           'bg-slate-100  text-slate-600  border-slate-200',

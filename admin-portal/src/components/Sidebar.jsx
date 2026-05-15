@@ -33,8 +33,8 @@ const NAV = {
         {
             section: 'Interns',
             items: [
-                { label: 'Applications',     icon: FileText,      path: '/hod/applications' },
-                { label: 'Learning Interns', icon: GraduationCap, path: '/prti/learning-interns' },
+                { label: 'Intern Pipeline',  icon: GraduationCap, path: '/prti/learning-interns' },
+                { label: 'HOD Applications', icon: FileText,      path: '/hod/applications' },
                 { label: 'Work Logs',        icon: BookOpen,      path: '/prti/work-logs' },
                 { label: 'Selection',        icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
             ]
@@ -44,7 +44,7 @@ const NAV = {
             items: [
                 { label: 'Problem Statements', icon: ClipboardList, path: '/hod/problem-statements', monetary: true },
                 { label: 'Committees',         icon: Users,         path: '/hod/committees',          monetary: true },
-                { label: 'Meetings',           icon: Calendar,      path: '/prti/meetings',      monetary: true },
+                { label: 'Meetings',           icon: Calendar,      path: '/prti/meetings',           monetary: true },
             ]
         },
         {
@@ -63,16 +63,10 @@ const NAV = {
             ]
         },
         {
-            section: 'Programs',
-            items: [
-                { label: 'Master Programs', icon: FolderOpen, path: '/prti/batches' },
-            ]
-        },
-        {
             section: 'My Department',
             items: [
-                { label: 'Applications',       icon: FileText,      path: '/hod/applications' },
-                { label: 'Field Configuration', icon: Settings2,    path: '/hod/field-config' },
+                { label: 'Applications',    icon: FileText,  path: '/hod/applications' },
+                { label: 'Field Settings',  icon: Settings2, path: '/hod/field-config' },
                 { label: 'Problem Statements', icon: ClipboardList, path: '/hod/problem-statements', monetary: true },
                 { label: 'Selection',          icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
             ]
@@ -104,7 +98,7 @@ const NAV = {
             items: [
                 { label: 'My Interns',  icon: UserCheck, path: '/mentor/applications' },
                 { label: 'Committees',  icon: Users,     path: '/mentor/committees', monetary: true },
-                { label: 'Meetings',    icon: Calendar,  path: '/mentor/meetings',  monetary: true },
+                { label: 'Meetings',    icon: Calendar,  path: '/mentor/meetings',   monetary: true },
                 { label: 'Reports',     icon: BarChart3, path: '/mentor/reports' },
             ]
         },
@@ -126,8 +120,9 @@ const NAV = {
         {
             section: 'Interns',
             items: [
-                { label: 'Applications',     icon: FileText,      path: '/hod/applications' },
-                { label: 'Learning Interns', icon: GraduationCap, path: '/prti/learning-interns' },
+                { label: 'Intern Pipeline',  icon: GraduationCap, path: '/prti/learning-interns' },
+                { label: 'HOD Applications', icon: FileText,      path: '/hod/applications' },
+                { label: 'Work Logs',        icon: BookOpen,      path: '/prti/work-logs' },
                 { label: 'Selection',        icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
             ]
         },
@@ -135,7 +130,7 @@ const NAV = {
             section: 'Coordination',
             items: [
                 { label: 'Committees', icon: Users,    path: '/hod/committees', monetary: true },
-                { label: 'Meetings',   icon: Calendar, path: '/prti/meetings' },
+                { label: 'Meetings',   icon: Calendar, path: '/prti/meetings',  monetary: true },
             ]
         },
         {

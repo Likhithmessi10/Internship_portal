@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../../../utils/api';
+import api, { API_URL } from '../../../utils/api';
 import {
     Loader2, Download, Search, ChevronDown, ChevronUp,
     BookOpen, Users, Clock, Calendar, FileSpreadsheet
@@ -25,7 +25,7 @@ const LogTable = ({ applicationId }) => {
             .finally(() => setLoading(false));
     }, [applicationId]);
 
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+    const base = API_URL;
 
     if (loading) return (
         <tr><td colSpan={6} className="py-6 text-center">
@@ -144,7 +144,7 @@ const PrtiWorkLogs = () => {
         return true;
     });
 
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+    const base = API_URL;
 
     const toggle = (id) => setExpandedId(prev => prev === id ? null : id);
 
