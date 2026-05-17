@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldAlert, Users, Star, Building2 } from 'lucide-react';
+import { ShieldAlert, Users, Star, Building2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const RoleCard = ({ title, desc, role, icon: Icon, colorClass, textClass, borderClass }) => {
     const rolePath = role === 'ADMIN' ? 'super-admin' : role === 'CE_PRTI' ? 'prti' : role.toLowerCase();
@@ -9,17 +10,14 @@ const RoleCard = ({ title, desc, role, icon: Icon, colorClass, textClass, border
     return (
         <div className={`p-8 rounded-[2.5rem] border ${borderClass} bg-white dark:bg-slate-900 shadow-xl shadow-gray-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group`}>
             <div className={`absolute top-0 right-0 w-32 h-32 opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform ${colorClass}`}></div>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm ${colorClass} bg-opacity-10 ${textClass}`}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm bg-opacity-10 dark:bg-opacity-20 ${colorClass} ${textClass}`}>
                 <Icon size={28} />
             </div>
             <h3 className="text-2xl font-black font-rajdhani text-gray-900 dark:text-white uppercase tracking-tight mb-2">{title}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 font-medium leading-relaxed">{desc}</p>
             <div className="flex gap-3">
-                <Link to={`/${rolePath}/login`} className={`flex-1 text-center py-3 text-white ${colorClass} hover:opacity-90 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95`}>
+                <Link to={`/${rolePath}/login`} className={`w-full text-center py-3 text-white ${colorClass} hover:opacity-90 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95`}>
                     Login
-                </Link>
-                <Link to={`/${rolePath}/register`} className={`flex-1 text-center py-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95`}>
-                    Register
                 </Link>
             </div>
         </div>
@@ -29,6 +27,7 @@ const RoleCard = ({ title, desc, role, icon: Icon, colorClass, textClass, border
 const AdminLanding = () => {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
+    const { isDarkMode, toggleTheme } = useTheme();
 
     useEffect(() => {
         if (loading) return;
@@ -45,6 +44,15 @@ const AdminLanding = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden transition-colors duration-500">
+            {/* Theme toggle */}
+            <button
+                onClick={toggleTheme}
+                className="absolute top-5 right-5 p-2 px-3 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest shadow-sm z-10"
+            >
+                {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
+                {isDarkMode ? 'Light' : 'Dark'}
+            </button>
+
             {/* Background elements */}
             <div className="absolute top-0 -left-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
             <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.1]"
@@ -58,7 +66,7 @@ const AdminLanding = () => {
                     <h1 className="text-4xl md:text-6xl font-black font-rajdhani text-gray-900 dark:text-white uppercase tracking-tighter mb-4">
                         APTRANSCO <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Admin Hub</span>
                     </h1>
-                    <p className="text-gray-500 font-bold tracking-[0.2em] uppercase text-xs">Select your administrative sector</p>
+                    <p className="text-gray-500 dark:text-slate-400 font-bold tracking-[0.2em] uppercase text-xs">Select your administrative sector</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>

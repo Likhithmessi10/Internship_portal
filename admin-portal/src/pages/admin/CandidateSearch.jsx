@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { 
-    Search, User, Briefcase, GraduationCap, Calendar, 
-    Clock, CheckCircle, XCircle, AlertCircle, Mail, 
+import React, { useState, useEffect } from 'react';
+import {
+    Search, User, Briefcase, GraduationCap, Calendar,
+    Clock, CheckCircle, XCircle, AlertCircle, Mail,
     Phone, MapPin, Award, BookOpen, ClipboardList,
-    TrendingUp, FileText, Landmark, Zap, ExternalLink
+    TrendingUp, FileText, Landmark, Zap, ExternalLink,
+    ScrollText, ListChecks, Loader2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import api from '../../utils/api';
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const CandidateSearch = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -14,12 +17,17 @@ const CandidateSearch = () => {
     const [studentData, setStudentData] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
 
+    // Work log state — keyed by applicationId
+    const [workLogs, setWorkLogs] = useState({});
+    const [loadingLogs, setLoadingLogs] = useState({});
+
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
         if (!searchQuery.trim()) return;
 
         setLoading(true);
         setError(null);
+        setWorkLogs({});
         try {
             const res = await api.get(`/admin/interns/search/${searchQuery.trim()}`);
             setStudentData(res.data.data);
@@ -31,6 +39,23 @@ const CandidateSearch = () => {
             setLoading(false);
         }
     };
+
+    // Fetch work logs when logs tab is opened
+    useEffect(() => {
+        if (activeTab !== 'logs' || !studentData) return;
+        const activeApps = studentData.applications?.filter(a =>
+            ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)
+        ) || [];
+        activeApps.forEach(app => {
+            if (workLogs[app.id] !== undefined) return; // already fetched
+            setLoadingLogs(prev => ({ ...prev, [app.id]: true }));
+            api.get(`/admin/applications/${app.id}/work-logs`)
+                .then(r => setWorkLogs(prev => ({ ...prev, [app.id]: r.data.data || [] })))
+                .catch(() => setWorkLogs(prev => ({ ...prev, [app.id]: [] })))
+                .finally(() => setLoadingLogs(prev => ({ ...prev, [app.id]: false })));
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, studentData]);
 
     const formatDate = (date) => date ? new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A';
 
@@ -149,11 +174,13 @@ const CandidateSearch = () => {
                     {/* Navigation Tabs */}
                     <div className="flex overflow-x-auto pb-1 gap-1.5 custom-scrollbar">
                         {[
-                            { id: 'overview', label: 'Overview', icon: TrendingUp },
-                            { id: 'personal', label: 'Personal', icon: User },
-                            { id: 'academic', label: 'Academic', icon: GraduationCap },
-                            { id: 'experience', label: 'Experience', icon: BookOpen },
-                            { id: 'history', label: 'History', icon: Clock }
+                            { id: 'overview',     label: 'Overview',     icon: TrendingUp  },
+                            { id: 'personal',     label: 'Personal',     icon: User        },
+                            { id: 'academic',     label: 'Academic',     icon: GraduationCap },
+                            { id: 'experience',   label: 'Experience',   icon: BookOpen    },
+                            { id: 'logs',         label: 'Daily Logs',   icon: ScrollText  },
+                            { id: 'assignments',  label: 'Assignments',  icon: ListChecks  },
+                            { id: 'history',      label: 'History',      icon: Clock       }
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -329,6 +356,148 @@ const CandidateSearch = () => {
                                     </div>
                                 </div>
                             )}
+
+                            {/* ── Daily Logs tab ── */}
+                            {activeTab === 'logs' && (() => {
+                                const activeApps = studentData.applications?.filter(a =>
+                                    ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)
+                                ) || [];
+                                if (activeApps.length === 0) return (
+                                    <div className="p-12 text-center bg-surface-container-low rounded-3xl border border-dashed border-outline-variant/20">
+                                        <ScrollText size={32} className="mx-auto text-outline/30 mb-3" />
+                                        <p className="text-xs font-bold text-outline uppercase tracking-widest">No active internship — logs unavailable</p>
+                                    </div>
+                                );
+                                return (
+                                    <div className="space-y-6">
+                                        {activeApps.map(app => {
+                                            const logs = workLogs[app.id] || [];
+                                            const isLoading = loadingLogs[app.id];
+                                            const totalHours = logs.reduce((s, l) => s + (l.hoursWorked || 0), 0);
+                                            return (
+                                                <div key={app.id} className="bg-surface-container-lowest border border-outline-variant/10 rounded-3xl overflow-hidden shadow-sm">
+                                                    <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container-low/50">
+                                                        <div>
+                                                            <p className="text-xs font-black text-primary uppercase tracking-tight">{app.internship?.title}</p>
+                                                            <p className="text-[9px] font-bold text-outline uppercase tracking-widest mt-0.5">{app.internship?.department}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-[9px] font-black px-2 py-1 bg-primary/10 text-primary rounded-lg uppercase">{logs.length} entries</span>
+                                                            {totalHours > 0 && <span className="text-[9px] font-black px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg uppercase">{totalHours}h total</span>}
+                                                        </div>
+                                                    </div>
+                                                    {isLoading ? (
+                                                        <div className="flex justify-center py-10">
+                                                            <Loader2 size={22} className="animate-spin text-primary/40" />
+                                                        </div>
+                                                    ) : logs.length === 0 ? (
+                                                        <p className="text-center py-10 text-[10px] font-bold text-outline uppercase tracking-widest">No daily logs submitted yet</p>
+                                                    ) : (
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full text-left min-w-[520px]">
+                                                                <thead>
+                                                                    <tr className="bg-slate-50 dark:bg-slate-800/60">
+                                                                        {['#', 'Date', 'Day', 'Work Done', 'Hours'].map(h => (
+                                                                            <th key={h} className="px-5 py-2.5 text-[9px] font-black text-outline uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 whitespace-nowrap">{h}</th>
+                                                                        ))}
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                                    {logs.map((log, i) => {
+                                                                        const d = new Date(log.date);
+                                                                        return (
+                                                                            <tr key={log.id} className={i % 2 === 0 ? '' : 'bg-slate-50/60 dark:bg-slate-800/20'}>
+                                                                                <td className="px-5 py-3 text-[10px] font-black text-outline">{i + 1}</td>
+                                                                                <td className="px-5 py-3 text-xs font-bold text-primary whitespace-nowrap">{d.toLocaleDateString('en-IN')}</td>
+                                                                                <td className="px-5 py-3 text-[10px] font-bold text-outline">{DAYS[d.getDay()]}</td>
+                                                                                <td className="px-5 py-3 text-xs text-slate-700 dark:text-slate-300 max-w-xs">
+                                                                                    <p className="line-clamp-2 leading-relaxed">{log.description}</p>
+                                                                                </td>
+                                                                                <td className="px-5 py-3 text-xs font-black text-right text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                                                                    {log.hoursWorked != null ? `${log.hoursWorked}h` : '—'}
+                                                                                </td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* ── Assignments tab ── */}
+                            {activeTab === 'assignments' && (() => {
+                                const activeApps = studentData.applications?.filter(a =>
+                                    ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)
+                                ) || [];
+                                if (activeApps.length === 0) return (
+                                    <div className="p-12 text-center bg-surface-container-low rounded-3xl border border-dashed border-outline-variant/20">
+                                        <ListChecks size={32} className="mx-auto text-outline/30 mb-3" />
+                                        <p className="text-xs font-bold text-outline uppercase tracking-widest">No active internship — assignments unavailable</p>
+                                    </div>
+                                );
+                                return (
+                                    <div className="space-y-6">
+                                        {activeApps.map(app => {
+                                            const assignments = app.workAssignments || [];
+                                            const done  = assignments.filter(a => a.status === 'COMPLETED').length;
+                                            const total = assignments.length;
+                                            return (
+                                                <div key={app.id} className="bg-surface-container-lowest border border-outline-variant/10 rounded-3xl overflow-hidden shadow-sm">
+                                                    <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container-low/50">
+                                                        <div>
+                                                            <p className="text-xs font-black text-primary uppercase tracking-tight">{app.internship?.title}</p>
+                                                            <p className="text-[9px] font-bold text-outline uppercase tracking-widest mt-0.5">{app.internship?.department}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-[9px] font-black px-2 py-1 bg-primary/10 text-primary rounded-lg uppercase">{total} tasks</span>
+                                                            {total > 0 && <span className="text-[9px] font-black px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg uppercase">{done}/{total} done</span>}
+                                                        </div>
+                                                    </div>
+                                                    {total === 0 ? (
+                                                        <p className="text-center py-10 text-[10px] font-bold text-outline uppercase tracking-widest">No assignments yet</p>
+                                                    ) : (
+                                                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                            {assignments.map((task, i) => (
+                                                                <div key={task.id} className={`px-6 py-4 flex items-start justify-between gap-4 ${i % 2 === 1 ? 'bg-slate-50/60 dark:bg-slate-800/20' : ''}`}>
+                                                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                                        <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${task.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                                                                            {task.status === 'COMPLETED' ? <CheckCircle size={13} /> : <Clock size={13} />}
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <p className="text-sm font-bold text-primary truncate">{task.title}</p>
+                                                                            {task.description && <p className="text-[10px] text-outline font-medium mt-0.5 line-clamp-2">{task.description}</p>}
+                                                                            {task.submittedAt && <p className="text-[9px] font-bold text-outline/60 uppercase tracking-widest mt-1">Submitted {formatDate(task.submittedAt)}</p>}
+                                                                            {task.submissionText && (
+                                                                                <div className="mt-2 p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/10 text-[10px] text-primary font-medium leading-relaxed">
+                                                                                    {task.submissionText}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="shrink-0 text-right space-y-1">
+                                                                        <span className={`inline-block px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                                                            task.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                                            : task.status === 'SUBMITTED' ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                                                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                                                                        }`}>{task.status}</span>
+                                                                        {task.dueDate && <p className="text-[9px] font-bold text-outline/60 uppercase">Due {formatDate(task.dueDate)}</p>}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
 
                             {activeTab === 'history' && (
                                 <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-3xl p-6 shadow-sm">

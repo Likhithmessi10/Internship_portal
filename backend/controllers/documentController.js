@@ -45,7 +45,8 @@ const downloadDocument = async (req, res) => {
         }
 
         // 3. SECURE FILE ACCESS & PATH VALIDATION
-        const uploadsDir = path.resolve(__dirname, '../../uploads');
+        // __dirname = .../backend/controllers  →  ../uploads = .../backend/uploads
+        const uploadsDir = path.resolve(__dirname, '../uploads');
         // Ensure document.url is just the filename or relative path from uploads/
         const relativePath = document.url.replace(/^uploads[\\\/]/, '');
         const filePath = path.join(uploadsDir, relativePath);

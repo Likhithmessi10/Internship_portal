@@ -99,6 +99,14 @@ const registerAdmin = async (req, res) => {
     try {
         const { password, role, name, department, phone, designation, mentorField, mentorLocation } = req.body;
         const email = req.body.email?.trim().toLowerCase();
+        const callerRole = req.user?.role;
+
+        // HODs can only create MENTOR accounts in their own department
+        if (callerRole === 'HOD') {
+            if (role !== 'MENTOR') {
+                return res.status(403).json({ success: false, message: 'HODs may only create Mentor accounts' });
+            }
+        }
 
         if (!['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'].includes(role)) {
             return res.status(400).json({ success: false, message: 'Invalid admin role' });
@@ -123,13 +131,16 @@ const registerAdmin = async (req, res) => {
         const salt = await bcrypt.genSalt(SALT_ROUNDS);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // HOD always pins new mentor to their own department
+        const resolvedDepartment = callerRole === 'HOD' ? req.user.department : (department || null);
+
         const user = await prisma.user.create({
             data: {
                 email,
                 password: hashedPassword,
                 role,
                 name:           name           || null,
-                department:     department     || null,
+                department:     resolvedDepartment,
                 phone:          phone          || null,
                 designation:    designation    || null,
                 mentorField:    mentorField    || null,
@@ -137,13 +148,8 @@ const registerAdmin = async (req, res) => {
             }
         });
 
-        const accessToken = generateAccessToken(user.id, user.email, user.role, user.department, user.phone, user.name);
-        const refreshToken = generateRefreshToken(user.id, user.email, user.role, user.department, user.phone, user.name);
-
         res.status(201).json({
             success: true,
-            accessToken,
-            refreshToken,
             user: {
                 id: user.id,
                 email: user.email,

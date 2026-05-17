@@ -12,7 +12,6 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import CreateInternshipForm from './pages/admin/CreateInternship';
 import AdminApplicationReview from './pages/admin/AdminApplicationReview';
 import AdminRejected from './pages/admin/AdminRejected';
-import AdminRegister from './pages/admin/AdminRegister';
 import AdminPastInternships from './pages/admin/AdminPastInternships';
 import CandidateSearch from './pages/admin/CandidateSearch';
 
@@ -77,13 +76,10 @@ function App() {
           <Route path="/" element={<AdminLanding />} />
           <Route path="/login" element={<AdminLogin />} />
           <Route path="/prti/login" element={<AdminLogin forcedRole="CE_PRTI" />} />
-          <Route path="/prti/register" element={<AdminRegister forcedRole="CE_PRTI" />} />
           <Route path="/hod/login" element={<AdminLogin forcedRole="HOD" />} />
-          <Route path="/hod/register" element={<AdminRegister forcedRole="HOD" />} />
           <Route path="/mentor/login" element={<AdminLogin forcedRole="MENTOR" />} />
-          <Route path="/mentor/register" element={<AdminRegister forcedRole="MENTOR" />} />
           <Route path="/super-admin/login" element={<AdminLogin forcedRole="ADMIN" />} />
-          <Route path="/super-admin/register" element={<AdminRegister forcedRole="ADMIN" />} />
+          {/* Registration routes removed — accounts are seeded or created by HOD via the portal */}
 
           {/* Protected Admin Routes */}
           <Route path="/admin/dashboard" element={

@@ -260,6 +260,18 @@ const uploadJoiningDocuments = async (req, res) => {
             });
         }
 
+        // Save joining dates if provided by student
+        const { joiningDate, endDate } = req.body;
+        if (joiningDate || endDate) {
+            await prisma.application.update({
+                where: { id: applicationId },
+                data: {
+                    ...(joiningDate ? { joiningDate: new Date(joiningDate) } : {}),
+                    ...(endDate     ? { endDate:     new Date(endDate)     } : {})
+                }
+            });
+        }
+
         // Upsert each document (replace if already uploaded)
         for (const file of req.files) {
             const existing = await prisma.document.findFirst({

@@ -42,6 +42,8 @@ const StudentDashboard = () => {
     const [joiningUploading, setJoiningUploading] = useState(false);
     const [joiningMsg, setJoiningMsg] = useState('');
     const [joiningError, setJoiningError] = useState('');
+    const [joiningStartDate, setJoiningStartDate] = useState('');
+    const [joiningEndDate, setJoiningEndDate] = useState('');
     const [reapplyAppId, setReapplyAppId] = useState(null);
     const [reapplyLocation, setReapplyLocation] = useState('');
     const [reapplyLoading, setReapplyLoading] = useState(false);
@@ -166,16 +168,28 @@ const StudentDashboard = () => {
             setJoiningError('Please select at least one file to upload.');
             return;
         }
+        if (!joiningStartDate || !joiningEndDate) {
+            setJoiningError('Please provide your joining date and end date.');
+            return;
+        }
+        if (new Date(joiningEndDate) <= new Date(joiningStartDate)) {
+            setJoiningError('End date must be after joining date.');
+            return;
+        }
         setJoiningUploading(true);
         setJoiningError('');
         const formData = new FormData();
         Object.entries(joiningFiles).forEach(([id, file]) => formData.append(id, file));
+        formData.append('joiningDate', joiningStartDate);
+        formData.append('endDate', joiningEndDate);
         try {
             await api.post(`/students/applications/${activeApp.id}/joining-documents`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setJoiningMsg('Documents uploaded successfully.');
             setJoiningFiles({});
+            setJoiningStartDate('');
+            setJoiningEndDate('');
             // Refresh profile to reflect new docs
             const res = await api.get('/students/profile');
             setProfile(res.data.data);
@@ -328,6 +342,22 @@ const StudentDashboard = () => {
                                     );
                                 })}
                             </div>
+
+                            {/* Joining date & end date */}
+                            {!joiningDocsComplete && (
+                                <div className="grid grid-cols-2 gap-3 mt-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Joining Date <span className="text-red-500">*</span></label>
+                                        <input type="date" value={joiningStartDate} onChange={e => setJoiningStartDate(e.target.value)}
+                                            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">End Date <span className="text-red-500">*</span></label>
+                                        <input type="date" value={joiningEndDate} onChange={e => setJoiningEndDate(e.target.value)}
+                                            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+                                    </div>
+                                </div>
+                            )}
 
                             {joiningError && (
                                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm font-bold flex items-center gap-2">

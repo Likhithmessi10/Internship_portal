@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import departmentsData from '../../data/departments.json';
 import Select from '../../components/ui/Select';
 import { MONETARY_ENABLED } from '../../config/features';
+import { useAuth } from '../../context/AuthContext';
 
 const InputField = ({ label, required, hint, children, tooltip, error }) => (
     <div className={`space-y-1.5 ${error ? 'animate-shake' : ''}`}>
@@ -29,6 +30,9 @@ const PRESET_LOCATIONS = ['ANY', 'Vijayawada HQ', 'Visakhapatnam', 'Tirupati', '
 
 const CreateInternshipForm = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const isHod = user?.role === 'HOD';
+    const hodDepartment = user?.department || '';
     const submittingRef = useRef(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -76,7 +80,7 @@ const CreateInternshipForm = () => {
         internshipType: MONETARY_ENABLED ? 'COLLABORATIVE' : 'NON_STIPEND',
         shortlistingRatio: 2,
         preferredColleges: [],
-        participatingDepts: [],
+        participatingDepts: isHod && hodDepartment ? [hodDepartment] : [],
     });
     const [preferredCollegeInput, setPreferredCollegeInput] = useState('');
 
@@ -92,6 +96,39 @@ const CreateInternshipForm = () => {
     const [fieldInputs, setFieldInputs] = useState({}); // { [dept]: { fieldName, vacancies, locationInput, locations } }
     // masterFieldsMap: { [deptName]: [FieldMaster] } — seeded fields from Dept & Field Master
     const [masterFieldsMap, setMasterFieldsMap] = useState({});
+
+    // ── Draft persistence ─────────────────────────────────────────────────────
+    const DRAFT_KEY = `createInternship_draft_${user?.id || 'guest'}`;
+
+    // Restore draft on mount
+    React.useEffect(() => {
+        try {
+            const saved = localStorage.getItem(DRAFT_KEY);
+            if (!saved) return;
+            const draft = JSON.parse(saved);
+            if (draft.formData) setFormData(draft.formData);
+            if (draft.deptFields) setDeptFields(draft.deptFields);
+            if (draft.requiredDocs) setRequiredDocs(draft.requiredDocs);
+            if (draft.step) setStep(draft.step);
+        } catch { /* corrupt draft — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Auto-save draft whenever relevant state changes
+    const [draftSaved, setDraftSaved] = React.useState(false);
+    React.useEffect(() => {
+        try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, formData, deptFields, requiredDocs }));
+            setDraftSaved(true);
+            const t = setTimeout(() => setDraftSaved(false), 1500);
+            return () => clearTimeout(t);
+        } catch { /* storage full — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [step, formData, deptFields, requiredDocs]);
+
+    const clearDraft = () => {
+        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    };
 
     // Fetch master fields when entering step 3 for NON_STIPEND
     React.useEffect(() => {
@@ -237,6 +274,7 @@ const CreateInternshipForm = () => {
             } else {
                 alert(`Master internship launched! ${formData.participatingDepts.length} HOD(s) notified to submit problem statements.`);
             }
+            clearDraft();
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create internship.');
@@ -255,6 +293,22 @@ const CreateInternshipForm = () => {
                     <h2 className="text-3xl font-bold text-primary tracking-tight">Create New Internship</h2>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Draft saved indicator */}
+                    <div className="flex items-center gap-2">
+                        {draftSaved && (
+                            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1 animate-in fade-in duration-200">
+                                <span className="material-symbols-outlined text-sm">cloud_done</span> Draft saved
+                            </span>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => { if (window.confirm('Discard this draft and start a new internship?')) { clearDraft(); window.location.reload(); } }}
+                            className="text-[9px] font-bold text-outline/50 hover:text-error uppercase tracking-widest transition-colors"
+                            title="Discard draft"
+                        >
+                            Discard Draft
+                        </button>
+                    </div>
                     {/* Step indicator */}
                     <div className="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-lg border border-outline-variant/10">
                         {stepLabels.map((label, idx) => {
@@ -435,14 +489,16 @@ const CreateInternshipForm = () => {
                             </p>
                         </div>
 
-                        <div className={`p-8 bg-white border rounded-xl ${validationErrors.includes('participatingDepts') ? 'border-error/50 bg-error/5 animate-shake' : 'border-outline-variant/10 shadow-sm'}`}>
+                        <div className={`p-8 bg-white dark:bg-slate-900 border rounded-xl ${validationErrors.includes('participatingDepts') ? 'border-error/50 bg-error/5 animate-shake' : 'border-outline-variant/10 shadow-sm'}`}>
                             <div className="flex items-center justify-between mb-5">
                                 <p className="text-[10px] font-bold text-outline uppercase tracking-widest">
-                                    {formData.participatingDepts.length === 0
-                                        ? 'Select at least one department'
-                                        : `${formData.participatingDepts.length} department${formData.participatingDepts.length > 1 ? 's' : ''} selected`}
+                                    {isHod
+                                        ? 'Your department is pre-selected and locked'
+                                        : formData.participatingDepts.length === 0
+                                            ? 'Select at least one department'
+                                            : `${formData.participatingDepts.length} department${formData.participatingDepts.length > 1 ? 's' : ''} selected`}
                                 </p>
-                                {formData.participatingDepts.length > 0 && (
+                                {!isHod && formData.participatingDepts.length > 0 && (
                                     <button type="button" onClick={() => setFormData(p => ({ ...p, participatingDepts: [] }))}
                                         className="text-[10px] font-bold text-error/70 hover:text-error uppercase tracking-widest transition-colors">
                                         Clear All
@@ -450,35 +506,45 @@ const CreateInternshipForm = () => {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                {departments.map(dept => {
-                                    const selected = formData.participatingDepts.includes(dept);
-                                    return (
-                                        <button key={dept} type="button"
-                                            onClick={() => {
-                                                const next = selected
-                                                    ? formData.participatingDepts.filter(d => d !== dept)
-                                                    : [...formData.participatingDepts, dept];
-                                                setFormData(p => ({ ...p, participatingDepts: next }));
-                                                setValidationErrors(p => p.filter(e => e !== 'participatingDepts'));
-                                            }}
-                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all text-[11px] font-bold uppercase tracking-wide
-                                                ${selected
-                                                    ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
-                                                    : 'bg-surface-container border-outline-variant/20 text-outline hover:border-primary/20 hover:bg-primary/5'}`}
-                                        >
-                                            <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border transition-all
-                                                ${selected ? 'bg-primary border-primary' : 'border-outline-variant/40'}`}>
-                                                {selected && <span className="material-symbols-outlined text-white" style={{ fontSize: '13px' }}>check</span>}
-                                            </div>
-                                            <span className="leading-tight">{dept}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                            {isHod ? (
+                                <div className="flex items-center gap-3 px-4 py-3 rounded-xl border bg-primary/10 border-primary/30 text-primary w-fit">
+                                    <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 border bg-primary border-primary">
+                                        <span className="material-symbols-outlined text-white" style={{ fontSize: '13px' }}>check</span>
+                                    </div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wide leading-tight">{hodDepartment}</span>
+                                    <span className="material-symbols-outlined text-primary/60 text-sm">lock</span>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                    {departments.map(dept => {
+                                        const selected = formData.participatingDepts.includes(dept);
+                                        return (
+                                            <button key={dept} type="button"
+                                                onClick={() => {
+                                                    const next = selected
+                                                        ? formData.participatingDepts.filter(d => d !== dept)
+                                                        : [...formData.participatingDepts, dept];
+                                                    setFormData(p => ({ ...p, participatingDepts: next }));
+                                                    setValidationErrors(p => p.filter(e => e !== 'participatingDepts'));
+                                                }}
+                                                className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all text-[11px] font-bold uppercase tracking-wide
+                                                    ${selected
+                                                        ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
+                                                        : 'bg-surface-container border-outline-variant/20 text-outline hover:border-primary/20 hover:bg-primary/5'}`}
+                                            >
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border transition-all
+                                                    ${selected ? 'bg-primary border-primary' : 'border-outline-variant/40'}`}>
+                                                    {selected && <span className="material-symbols-outlined text-white" style={{ fontSize: '13px' }}>check</span>}
+                                                </div>
+                                                <span className="leading-tight">{dept}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
-                        {formData.participatingDepts.length > 0 && (
+                        {!isHod && formData.participatingDepts.length > 0 && (
                             <div className="flex flex-wrap gap-2">
                                 {formData.participatingDepts.map(dept => (
                                     <span key={dept} className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm">

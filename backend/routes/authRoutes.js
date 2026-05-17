@@ -10,7 +10,8 @@ const router = express.Router();
 router.use(authLimiter);
 
 router.post('/register', register);
-router.post('/admin/register', registerAdmin);
+// Staff creation: requires an authenticated HOD or ADMIN — no public self-registration
+router.post('/admin/register', protect, authorize('ADMIN', 'HOD'), registerAdmin);
 router.post('/login', login);
 router.post('/refresh', refreshToken);
 router.get('/me', protect, getMe);

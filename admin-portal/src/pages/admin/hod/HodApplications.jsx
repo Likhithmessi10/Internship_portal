@@ -33,7 +33,6 @@ const LearningTab = () => {
     const [loading, setLoading]   = useState(true);
     const [search, setSearch]     = useState('');
     const [selected, setSelected] = useState(null);
-    const [hireTarget, setHireTarget] = useState(null);
 
     const fetchApps = useCallback(async (bg = false) => {
         if (!bg) setLoading(true);
@@ -188,7 +187,6 @@ const LearningTab = () => {
                                 searchQ={q}
                                 onAction={handleAction}
                                 onDocAction={handleDocAction}
-                                onHireOpen={setHireTarget}
                                 onView={setSelected}
                                 department={fieldData.apps[0]?.departmentGroup?.department || fieldData.apps[0]?.internship?.department || ''}
                                 onRefresh={() => fetchApps(true)}
@@ -211,13 +209,6 @@ const LearningTab = () => {
                             setSelected(null);
                         } catch { alert('Failed to update.'); }
                     }}
-                />
-            )}
-            {hireTarget && (
-                <BulkHireModal
-                    apps={hireTarget}
-                    onClose={() => setHireTarget(null)}
-                    onHired={() => fetchApps(true)}
                 />
             )}
         </div>
@@ -282,108 +273,6 @@ const AssignMentorCell = ({ app, department, onAssigned }) => {
             </button>
             <button onClick={() => setOpen(false)}
                 className="text-slate-400 hover:text-slate-600 text-xs font-bold transition-colors px-1">✕</button>
-        </div>
-    );
-};
-
-// ── Bulk hire modal ───────────────────────────────────────────────────────────
-const BulkHireModal = ({ apps, onClose, onHired }) => {
-    const [joiningDate, setJoiningDate] = useState('');
-    const [endDate, setEndDate]         = useState('');
-    const [saving, setSaving]           = useState(false);
-    const [results, setResults]         = useState(null); // { ok: [], fail: [] }
-
-    const confirm = async () => {
-        setSaving(true);
-        const ok = [], fail = [];
-        // Sequential — each hire commits before the next so roll number counters don't collide
-        for (const app of apps) {
-            try {
-                await api.put(`/admin/applications/${app.id}`, {
-                    status: 'HIRED',
-                    ...(joiningDate && { joiningDate }),
-                    ...(endDate && { endDate }),
-                    assignedRole: app.field?.fieldName || app.assignedRole
-                });
-                ok.push(app.student?.fullName);
-            } catch (err) {
-                fail.push({ name: app.student?.fullName, reason: err.response?.data?.message || 'Failed' });
-            }
-        }
-        setSaving(false);
-        setResults({ ok, fail });
-        if (ok.length > 0) onHired();
-    };
-
-    if (results) return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
-                <p className="text-base font-black text-slate-800 dark:text-slate-100">Hiring Complete</p>
-                {results.ok.length > 0 && (
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 rounded-xl">
-                        <p className="text-[10px] font-black uppercase text-emerald-700 mb-1">✓ Hired ({results.ok.length})</p>
-                        {results.ok.map(n => <p key={n} className="text-xs text-emerald-800">{n}</p>)}
-                    </div>
-                )}
-                {results.fail.length > 0 && (
-                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-xl">
-                        <p className="text-[10px] font-black uppercase text-red-600 mb-1">Failed ({results.fail.length})</p>
-                        {results.fail.map(f => <p key={f.name} className="text-xs text-red-700">{f.name} — {f.reason}</p>)}
-                    </div>
-                )}
-                <button onClick={onClose} className="w-full py-2.5 bg-slate-800 dark:bg-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-widest">Close</button>
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
-                <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-1">Bulk Hire</p>
-                    <p className="text-base font-black text-slate-800 dark:text-slate-100">{apps.length} candidate{apps.length !== 1 ? 's' : ''} ready to hire</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Dates are optional — if left blank, the student will set their own joining and end dates.</p>
-                </div>
-
-                {/* Candidate list */}
-                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
-                    {apps.map(app => (
-                        <div key={app.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                            <div>
-                                <p className="text-xs font-black text-slate-800 dark:text-slate-100">{app.student?.fullName}</p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">{app.preferredLocation || app.field?.fieldName || '—'}</p>
-                            </div>
-                            {app.prtiNote && (
-                                <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full truncate max-w-[120px]" title={app.prtiNote}>
-                                    📝 Note
-                                </span>
-                            )}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Universal dates */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-400 block mb-1">Joining Date <span className="normal-case text-slate-400">(optional)</span></label>
-                        <input type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)}
-                            className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-outline dark:text-slate-400 block mb-1">End Date <span className="normal-case text-slate-400">(optional)</span></label>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                            className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    </div>
-                </div>
-
-                <div className="flex gap-3">
-                    <button onClick={confirm} disabled={saving}
-                        className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 disabled:opacity-50 transition-colors">
-                        {saving ? `Hiring ${apps.length}…` : `🎓 Hire All (${apps.length})`}
-                    </button>
-                    <button onClick={onClose} className="px-4 py-2.5 text-slate-500 dark:text-slate-400 font-bold text-xs hover:text-slate-700 transition-colors">Cancel</button>
-                </div>
-            </div>
         </div>
     );
 };
@@ -471,8 +360,8 @@ const SelectionPanel = ({ app, allFields, onConfirm, onCancel, isHold }) => {
     );
 };
 
-// ── Candidate row (shared across phase tabs) ─────────────────────────────────
-const CandidateRow = ({ app, phase, onAction, onDocAction, onHireOpen, onView, department, onRefresh, onSelectOpen }) => (
+// ── Candidate row (status-aware, no phase needed) ────────────────────────────
+const CandidateRow = ({ app, onAction, onDocAction, onView, department, onRefresh, onSelectOpen }) => (
     <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
         <td className="px-5 py-3.5">
             <button onClick={() => onView(app)} className="text-left hover:underline">
@@ -498,51 +387,64 @@ const CandidateRow = ({ app, phase, onAction, onDocAction, onHireOpen, onView, d
                 {app.prtiNote && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black bg-violet-50 text-violet-600 border border-violet-200 w-fit cursor-help" title={`PRTI: ${app.prtiNote}`}>💬 PRTI</span>}
             </div>
         </td>
-        {phase === 'hired' && (
+        {['HIRED', 'ONGOING', 'COMPLETED'].includes(app.status) && (
             <td className="px-5 py-3.5">
                 <AssignMentorCell app={app} department={department} onAssigned={onRefresh} />
             </td>
         )}
         <td className="px-5 py-3.5">
-            <div className="flex items-center gap-1.5">
-                {/* Applications phase — open selection panel with field/location assignment */}
-                {phase === 'applications' && ['SUBMITTED', 'SHORTLISTED'].includes(app.status) && (<>
-                    <button onClick={() => onSelectOpen(app, false)}
+            <div className="flex items-center gap-1.5 flex-wrap">
+                {/* SUBMITTED / SHORTLISTED */}
+                {['SUBMITTED', 'SHORTLISTED'].includes(app.status) && (<>
+                    <button onClick={() => onSelectOpen(app)}
                         className="px-2.5 h-7 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-emerald-600 hover:text-white transition-colors border border-emerald-200">
                         <Check size={12} /> Select
                     </button>
                     <button onClick={() => onAction(app.id, 'REJECTED')}
-                        className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors" title="Reject">
+                        className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors border border-red-200" title="Reject">
                         <X size={13} />
                     </button>
                 </>)}
 
-                {/* Documents phase actions */}
-                {phase === 'docs' && (<>
-                    {app.status === 'SELECTED' && !app.prtiApproved && (
-                        <span className="flex items-center gap-1 px-2.5 py-1 text-[9px] font-black uppercase text-amber-600 bg-amber-50 border border-amber-200 rounded-lg">
-                            ⏳ Awaiting PRTI
-                        </span>
-                    )}
-                    {(app.status === 'SELECTED' || app.status === 'DOCUMENTS_PENDING') && (
-                        <button onClick={() => onAction(app.id, 'REJECTED')}
-                            className="px-2.5 h-7 rounded-lg bg-red-50 text-red-600 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-red-600 hover:text-white transition-colors border border-red-200" title="Remove & free this slot">
-                            <X size={12} /> Remove
-                        </button>
-                    )}
-                    {app.status === 'DOCUMENTS_PENDING' && (
-                        <button onClick={() => onDocAction(app.id, 'verify')}
-                            className="px-2.5 h-7 rounded-lg bg-teal-50 text-teal-700 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-teal-600 hover:text-white transition-colors border border-teal-200">
-                            ✓ Verify Docs
-                        </button>
-                    )}
-                    {app.status === 'DOCUMENTS_VERIFIED' && (
-                        <button onClick={() => onHireOpen([app])}
-                            className="px-2.5 h-7 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-emerald-600 hover:text-white transition-colors border border-emerald-200">
-                            🎓 Hire
-                        </button>
-                    )}
+                {/* SELECTED */}
+                {app.status === 'SELECTED' && (<>
+                    {!app.prtiApproved
+                        ? <span className="flex items-center gap-1 px-2.5 py-1 text-[9px] font-black uppercase text-amber-600 bg-amber-50 border border-amber-200 rounded-lg">⏳ Awaiting PRTI</span>
+                        : <button onClick={() => onDocAction(app.id, 'request')}
+                              className="px-2.5 h-7 rounded-lg bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-200">
+                              📄 Request Docs
+                          </button>
+                    }
+                    <button onClick={() => onAction(app.id, 'REJECTED')}
+                        className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors border border-red-200" title="Remove">
+                        <X size={13} />
+                    </button>
                 </>)}
+
+                {/* DOCUMENTS_PENDING */}
+                {app.status === 'DOCUMENTS_PENDING' && (<>
+                    <button onClick={() => onDocAction(app.id, 'verify')}
+                        className="px-2.5 h-7 rounded-lg bg-teal-50 text-teal-700 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-teal-600 hover:text-white transition-colors border border-teal-200">
+                        ✓ Verify &amp; Hire
+                    </button>
+                    <button onClick={() => onAction(app.id, 'REJECTED')}
+                        className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors border border-red-200" title="Remove">
+                        <X size={13} />
+                    </button>
+                </>)}
+
+                {/* DOCUMENTS_VERIFIED — auto-hiring in progress */}
+                {app.status === 'DOCUMENTS_VERIFIED' && (
+                    <span className="px-2.5 py-1 text-[9px] font-black uppercase text-teal-700 bg-teal-50 border border-teal-200 rounded-lg">⚙ Processing…</span>
+                )}
+
+                {/* REJECTED — un-reject */}
+                {app.status === 'REJECTED' && (
+                    <button onClick={() => onAction(app.id, 'SUBMITTED')}
+                        className="px-2.5 h-7 rounded-lg bg-slate-100 text-slate-600 text-[9px] font-black uppercase flex items-center gap-1 hover:bg-indigo-600 hover:text-white transition-colors border border-slate-200">
+                        ↩ Un-reject
+                    </button>
+                )}
 
                 <button onClick={() => onView(app)}
                     className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-primary hover:text-white transition-colors" title="View profile">
@@ -553,19 +455,13 @@ const CandidateRow = ({ app, phase, onAction, onDocAction, onHireOpen, onView, d
     </tr>
 );
 
-// ── Phase table wrapper ───────────────────────────────────────────────────────
-const PhaseTable = ({ apps, phase, onAction, onDocAction, onHireOpen, onView, department, onRefresh, onSelectOpen }) => {
-    const headers = phase === 'hired'
+// ── Table wrapper ─────────────────────────────────────────────────────────────
+const PhaseTable = ({ apps, onAction, onDocAction, onView, department, onRefresh, onSelectOpen }) => {
+    const hasHired = apps.some(a => ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status));
+    const headers = hasHired
         ? ['Candidate', 'College', 'CGPA', 'Location', 'Status', 'Mentor', 'Actions']
         : ['Candidate', 'College', 'CGPA', 'Location', 'Status', 'Actions'];
-    if (apps.length === 0) return (
-        <div className="py-10 text-center text-sm font-bold text-slate-400 dark:text-slate-500">
-            {phase === 'applications' ? 'No pending applications.' :
-             phase === 'selected'     ? 'No selected candidates yet. Select from Applications tab.' :
-             phase === 'docs'         ? 'No candidates in document stage yet.' :
-                                       'No hired interns yet.'}
-        </div>
-    );
+    if (apps.length === 0) return null;
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[600px]">
@@ -578,8 +474,8 @@ const PhaseTable = ({ apps, phase, onAction, onDocAction, onHireOpen, onView, de
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {apps.map(app => (
-                        <CandidateRow key={app.id} app={app} phase={phase}
-                            onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
+                        <CandidateRow key={app.id} app={app}
+                            onAction={onAction} onDocAction={onDocAction}
                             onView={onView} department={department} onRefresh={onRefresh}
                             onSelectOpen={onSelectOpen} />
                     ))}
@@ -646,17 +542,16 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
     );
 };
 
-// ── Field section — simplified workflow ───────────────────────────────────────
-const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, onHireOpen, onView, department, onRefresh }) => {
+// ── Field section — flat sections, no tabs ────────────────────────────────────
+const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, onView, department, onRefresh }) => {
     const [open, setOpen]               = useState(true);
     const [bulkSending, setBulkSending] = useState(false);
-    const [locFilter, setLocFilter]     = useState('ALL');
-    const [selectionTarget, setSelectionTarget] = useState(null); // { app, isHold }
+    const [selectionTarget, setSelectionTarget] = useState(null);
 
     const allApps = [...fieldData.apps].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-    // Unique location names that have at least one application
     const availableLocations = [...new Set(allApps.map(a => a.preferredLocation).filter(Boolean))];
+    const [locFilter, setLocFilter] = useState('ALL');
 
     const byStatus = (statuses) => allApps.filter(a => statuses.includes(a.status)).filter(app => {
         const textOk = !searchQ || app.student?.fullName?.toLowerCase().includes(searchQ) ||
@@ -665,21 +560,18 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
         return textOk && locOk;
     });
 
-    const pendingApps   = byStatus(['SUBMITTED', 'SHORTLISTED']); // SHORTLISTED = legacy
-    const selectedApps  = byStatus(['SELECTED']);
-    const docsPending   = byStatus(['DOCUMENTS_PENDING']);
-    const docsVerified  = byStatus(['DOCUMENTS_VERIFIED']);
-    const hiredApps     = byStatus(['HIRED', 'ONGOING', 'COMPLETED']);
-    const docsPhaseApps = [...selectedApps, ...docsPending, ...docsVerified];
+    const pendingApps  = byStatus(['SUBMITTED', 'SHORTLISTED']);
+    const selectedApps = byStatus(['SELECTED']);
+    const docsApps     = byStatus(['DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED']);
+    const hiredApps    = byStatus(['HIRED', 'ONGOING', 'COMPLETED']);
+    const rejectedApps = byStatus(['REJECTED']);
 
     const vacancies     = fieldData.vacancies;
-    // Count all apps holding a seat (matches backend SEAT_CONSUMING exactly)
     const selectedCount = allApps.filter(a => ALLOCATED_STATUSES.includes(a.status)).length;
     const hiredCount    = allApps.filter(a => ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length;
 
-    // Per-location remaining — enforce the per-location cap shown to HOD
-    const locationVacancyMap = {};   // { locName: vacancies }
-    const locationFilledMap  = {};   // { locName: filled count }
+    const locationVacancyMap = {};
+    const locationFilledMap  = {};
     fieldData.locations.forEach(l => {
         const name = locName(l);
         if (typeof l === 'object' && l.vacancies > 0) locationVacancyMap[name] = l.vacancies;
@@ -688,26 +580,6 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
         if (ALLOCATED_STATUSES.includes(a.status) && a.preferredLocation)
             locationFilledMap[a.preferredLocation] = (locationFilledMap[a.preferredLocation] || 0) + 1;
     });
-
-    // Selection is full when all location slots are taken (or total vacancies if no per-location config)
-    const locFull = (loc) => locationVacancyMap[loc] != null && (locationFilledMap[loc] || 0) >= locationVacancyMap[loc];
-    const currentLocFull = locFilter !== 'ALL' ? locFull(locFilter) : selectedCount >= vacancies;
-    const selectionFull  = selectedCount >= vacancies || (locFilter !== 'ALL' && currentLocFull);
-
-    const autoTab = () => {
-        if (docsVerified.length > 0 || docsPending.length > 0) return 'docs';
-        if (selectedApps.length > 0) return 'docs';
-        if (hiredApps.length > 0) return 'hired';
-        return 'applications';
-    };
-    const [activeTab, setActiveTab] = useState(autoTab);
-
-    const TABS = [
-        { key: 'applications', label: 'Applications', count: pendingApps.length,   extra: `${allApps.length} total` },
-        { key: 'selected',     label: 'Selected',     count: selectedCount,         extra: `${selectedCount}/${vacancies} seats` },
-        { key: 'docs',         label: 'Documents',    count: docsPhaseApps.length,  extra: docsPending.length ? `${docsPending.length} awaiting` : null },
-        { key: 'hired',        label: 'Hired',        count: hiredCount,            extra: null },
-    ];
 
     const handleBulkRequestDocs = async () => {
         const approvedApps = selectedApps.filter(a => a.prtiApproved);
@@ -719,8 +591,18 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
         }
         setBulkSending(false);
         onRefresh();
-        if (ok > 0) alert(`Document request sent to ${ok} PRTI-approved candidate(s).`);
+        if (ok > 0) alert(`Document request sent to ${ok} candidate(s).`);
     };
+
+    const approvedSelected = selectedApps.filter(a => a.prtiApproved);
+
+    const SectionHeader = ({ label, count, color = 'text-slate-500', bg = 'bg-slate-50/60 dark:bg-slate-800/30', extra }) => (
+        <div className={`flex items-center gap-3 px-5 py-2 ${bg} border-b border-slate-100 dark:border-slate-700`}>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${color}`}>{label}</p>
+            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${color}`}>{count}</span>
+            {extra}
+        </div>
+    );
 
     return (
         <div>
@@ -763,153 +645,42 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
             </div>
 
             {open && (
-                <div className="border-t border-slate-100 dark:border-slate-700">
-                    {/* Tabs */}
-                    <div className="flex gap-1 px-4 pt-3 pb-0 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
-                        {TABS.map(tab => (
-                            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg text-[10px] font-black uppercase tracking-widest transition-colors border-b-2 -mb-px
-                                    ${activeTab === tab.key
-                                        ? 'border-primary text-primary bg-white dark:bg-slate-900'
-                                        : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>
-                                {tab.label}
-                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${activeTab === tab.key ? 'bg-primary/10 text-primary' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
-                                    {tab.count}
-                                </span>
-                                {tab.extra && <span className="hidden lg:block text-[9px] font-medium text-slate-400 normal-case">{tab.extra}</span>}
-                            </button>
-                        ))}
-                    </div>
-
+                <div className="border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
                     {/* Location filter */}
                     {availableLocations.length > 1 && (
                         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 flex-wrap">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0">Location:</span>
                             <button onClick={() => setLocFilter('ALL')}
-                                className={`px-2.5 py-1 rounded-full text-[10px] font-black border transition-colors ${locFilter === 'ALL' ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-primary/40'}`}>
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-black border transition-colors ${locFilter === 'ALL' ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>
                                 All ({allApps.length})
                             </button>
                             {availableLocations.map(loc => {
-                                const totalAppsForLoc = allApps.filter(a => a.preferredLocation === loc).length;
-                                const filled  = locationFilledMap[loc] || 0;
-                                const cap     = locationVacancyMap[loc];
-                                const isFull  = cap != null && filled >= cap;
-                                const label   = cap != null ? `${loc} · ${filled}/${cap}` : `${loc} (${totalAppsForLoc})`;
+                                const filled = locationFilledMap[loc] || 0;
+                                const cap    = locationVacancyMap[loc];
+                                const isFull = cap != null && filled >= cap;
                                 return (
                                     <button key={loc} onClick={() => setLocFilter(loc)}
                                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border transition-colors ${
-                                            locFilter === loc
-                                                ? 'bg-primary text-white border-primary'
-                                                : isFull
-                                                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-700'
-                                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-primary/40'
-                                        }`}>
-                                        <MapPin size={9} /> {label}{isFull ? ' ✓' : ''}
+                                            locFilter === loc ? 'bg-primary text-white border-primary'
+                                            : isFull ? 'bg-red-50 text-red-600 border-red-200'
+                                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>
+                                        <MapPin size={9} /> {cap != null ? `${loc} · ${filled}/${cap}` : loc}{isFull ? ' ✓' : ''}
                                     </button>
                                 );
                             })}
                         </div>
                     )}
 
-                    {/* Phase banner */}
-                    <div className="px-5 py-2 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
-                        {activeTab === 'applications' && (
-                            <div className="flex items-center gap-3">
-                                <div className="flex-1">
-                                    {locFilter !== 'ALL' && locationVacancyMap[locFilter] != null ? (() => {
-                                        const locVac    = locationVacancyMap[locFilter];
-                                        const locFilled = locationFilledMap[locFilter] || 0;
-                                        const pct       = locVac > 0 ? Math.min(100, (locFilled / locVac) * 100) : 0;
-                                        const full      = locFilled >= locVac;
-                                        return (
-                                            <>
-                                                <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
-                                                    <span>{locFilter} — location progress</span>
-                                                    <span className={full ? 'text-red-600 font-black' : ''}>{locFilled} / {locVac} seats {full ? '— FULL' : 'filled'}</span>
-                                                </div>
-                                                <div className="h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                    <div className={`h-full rounded-full transition-all ${full ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                                                        style={{ width: `${pct}%` }} />
-                                                </div>
-                                            </>
-                                        );
-                                    })() : (
-                                        <>
-                                            <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
-                                                <span>Total selection progress</span>
-                                                <span className={selectedCount > vacancies ? 'text-red-600 font-black' : ''}>{selectedCount} / {vacancies} seats filled</span>
-                                            </div>
-                                            <div className="h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                <div className={`h-full rounded-full transition-all ${selectionFull ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                                                    style={{ width: `${vacancies > 0 ? Math.min(100, (selectedCount / vacancies) * 100) : 0}%` }} />
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                                {selectionFull && (
-                                    <button onClick={() => setActiveTab('docs')}
-                                        className="px-3 py-1.5 bg-indigo-600 text-white text-[9px] font-black uppercase rounded-lg hover:bg-indigo-700 whitespace-nowrap">
-                                        Proceed to Documents →
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                        {activeTab === 'docs' && (() => {
-                            const approvedSelected   = selectedApps.filter(a => a.prtiApproved);
-                            const unapprovedSelected = selectedApps.filter(a => !a.prtiApproved);
-                            return (
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <div className="flex-1 space-y-0.5">
-                                        {unapprovedSelected.length > 0 && (
-                                            <p className="text-[10px] font-bold text-amber-600">
-                                                ⏳ {unapprovedSelected.length} selection(s) awaiting PRTI approval before docs can be requested
-                                            </p>
-                                        )}
-                                        <p className="text-[10px] font-bold text-slate-500">
-                                            {approvedSelected.length > 0 ? `${approvedSelected.length} PRTI-approved · ` : ''}
-                                            {docsPending.length} pending upload · {docsVerified.length} verified
-                                        </p>
-                                    </div>
-                                    {approvedSelected.length > 0 && (
-                                        <button onClick={handleBulkRequestDocs} disabled={bulkSending}
-                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm whitespace-nowrap">
-                                            {bulkSending ? '⏳ Sending…' : `📄 Request Docs (${approvedSelected.length} approved)`}
-                                        </button>
-                                    )}
-                                </div>
-                            );
-                        })()}
-                        {activeTab === 'selected' && (
-                            <p className="text-[10px] font-bold text-slate-500">{selectedCount} / {vacancies} seats filled. PRTI will review these selections before documents are requested.</p>
-                        )}
-                        {activeTab === 'hired' && (
-                            <div className="flex items-center justify-between gap-3">
-                                <p className="text-[10px] font-bold text-slate-500">{hiredCount} intern{hiredCount !== 1 ? 's' : ''} hired out of {vacancies} vacancies.</p>
-                                {docsVerified.length > 0 && (
-                                    <button onClick={() => onHireOpen(docsVerified)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 shadow-sm whitespace-nowrap">
-                                        🎓 Hire All Verified ({docsVerified.length})
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Inline selection panel — shown when HOD clicks Select on a candidate */}
+                    {/* Inline selection panel */}
                     {selectionTarget && (
                         <div className="p-4 border-b border-slate-100 dark:border-slate-700">
                             <SelectionPanel
-                                app={selectionTarget.app}
+                                app={selectionTarget}
                                 allFields={allFields}
                                 locationAllocated={locationFilledMap}
-                                isHold={selectionTarget.isHold}
+                                isHold={false}
                                 onConfirm={({ fieldId, preferredLocation }) => {
-                                    onAction(
-                                        selectionTarget.app.id,
-                                        'SELECTED',
-                                        selectionTarget.isHold,
-                                        { fieldId, preferredLocation }
-                                    );
+                                    onAction(selectionTarget.id, 'SELECTED', false, { fieldId, preferredLocation });
                                     setSelectionTarget(null);
                                 }}
                                 onCancel={() => setSelectionTarget(null)}
@@ -917,30 +688,62 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
                         </div>
                     )}
 
-                    {/* Content */}
-                    <div className="bg-white dark:bg-slate-900">
-                        {activeTab === 'applications' && (
-                            <PhaseTable apps={pendingApps} phase="applications"
-                                onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
+                    {/* ── New Applications ── */}
+                    {pendingApps.length > 0 && (
+                        <div>
+                            <SectionHeader label="New Applications" count={pendingApps.length} />
+                            <PhaseTable apps={pendingApps} onAction={onAction} onDocAction={onDocAction}
                                 onView={onView} department={department} onRefresh={onRefresh}
-                                onSelectOpen={(app, isHold) => setSelectionTarget({ app, isHold })} />
-                        )}
-                        {activeTab === 'selected' && (
-                            <PhaseTable apps={[...selectedApps, ...docsPending, ...docsVerified, ...hiredApps]} phase="docs"
-                                onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
-                                onView={onView} department={department} onRefresh={onRefresh} />
-                        )}
-                        {activeTab === 'docs' && (
-                            <PhaseTable apps={docsPhaseApps} phase="docs"
-                                onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
-                                onView={onView} department={department} onRefresh={onRefresh} />
-                        )}
-                        {activeTab === 'hired' && (
-                            <PhaseTable apps={hiredApps} phase="hired"
-                                onAction={onAction} onDocAction={onDocAction} onHireOpen={onHireOpen}
-                                onView={onView} department={department} onRefresh={onRefresh} />
-                        )}
-                    </div>
+                                onSelectOpen={(app) => setSelectionTarget(app)} />
+                        </div>
+                    )}
+
+                    {/* ── Selected & Documents ── */}
+                    {[...selectedApps, ...docsApps].length > 0 && (
+                        <div>
+                            <SectionHeader
+                                label="Selected & Documents"
+                                count={selectedApps.length + docsApps.length}
+                                color="text-indigo-700"
+                                bg="bg-indigo-50/40 dark:bg-indigo-900/10"
+                                extra={approvedSelected.length > 0 && (
+                                    <button onClick={handleBulkRequestDocs} disabled={bulkSending}
+                                        className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-indigo-600 text-white text-[9px] font-black uppercase rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                        {bulkSending ? '⏳' : '📄'} Request Docs ({approvedSelected.length})
+                                    </button>
+                                )}
+                            />
+                            <PhaseTable apps={[...selectedApps, ...docsApps]} onAction={onAction} onDocAction={onDocAction}
+                                onView={onView} department={department} onRefresh={onRefresh}
+                                onSelectOpen={(app) => setSelectionTarget(app)} />
+                        </div>
+                    )}
+
+                    {/* ── Active Interns ── */}
+                    {hiredApps.length > 0 && (
+                        <div>
+                            <SectionHeader label="Active Interns" count={hiredApps.length} color="text-emerald-700" bg="bg-emerald-50/40 dark:bg-emerald-900/10" />
+                            <PhaseTable apps={hiredApps} onAction={onAction} onDocAction={onDocAction}
+                                onView={onView} department={department} onRefresh={onRefresh}
+                                onSelectOpen={() => {}} />
+                        </div>
+                    )}
+
+                    {/* ── Rejected ── */}
+                    {rejectedApps.length > 0 && (
+                        <div>
+                            <SectionHeader label="Rejected" count={rejectedApps.length} color="text-red-500" bg="bg-red-50/30 dark:bg-red-900/10" />
+                            <PhaseTable apps={rejectedApps} onAction={onAction} onDocAction={onDocAction}
+                                onView={onView} department={department} onRefresh={onRefresh}
+                                onSelectOpen={() => {}} />
+                        </div>
+                    )}
+
+                    {allApps.length === 0 && (
+                        <div className="py-10 text-center text-sm font-bold text-slate-400 dark:text-slate-500">
+                            No applications yet for this field.
+                        </div>
+                    )}
                 </div>
             )}
         </div>

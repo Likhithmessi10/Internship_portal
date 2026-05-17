@@ -17,7 +17,12 @@ const Login = () => {
     // Auto-redirect if already logged in
     React.useEffect(() => {
         if (user) {
-            navigate(user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard', { replace: true });
+            const STAFF_ROLES = ['ADMIN', 'HOD', 'CE_PRTI', 'MENTOR', 'COMMITTEE_MEMBER'];
+            if (STAFF_ROLES.includes(user.role)) {
+                window.location.href = '/admin/dashboard';
+            } else {
+                navigate('/student/dashboard', { replace: true });
+            }
         }
     }, [user, navigate]);
 
@@ -27,8 +32,9 @@ const Login = () => {
         setLoading(true);
         try {
             const user = await login(email, password);
-            if (user.role === 'ADMIN') {
-                navigate('/admin/dashboard');
+            const STAFF_ROLES = ['ADMIN', 'HOD', 'CE_PRTI', 'MENTOR', 'COMMITTEE_MEMBER'];
+            if (STAFF_ROLES.includes(user.role)) {
+                window.location.href = '/admin/dashboard';
             } else {
                 navigate('/student/dashboard');
             }

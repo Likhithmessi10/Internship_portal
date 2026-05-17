@@ -43,11 +43,10 @@ const FieldRow = ({ field, deptId, onToggle, onDelete }) => {
         } finally { setDeleting(false); }
     };
 
-    const saveSpecs = async () => {
+    const saveSpecsDirectly = async (newSpecs) => {
         setSavingSpecs(true);
         try {
-            await api.put(`/admin/dept-master/${deptId}/fields/${field.id}`, { specializations: specs });
-            setEditingSpecs(false);
+            await api.put(`/admin/dept-master/${deptId}/fields/${field.id}`, { specializations: newSpecs });
             onToggle();
         } catch { alert('Failed to save specializations.'); }
         finally { setSavingSpecs(false); }
@@ -55,8 +54,17 @@ const FieldRow = ({ field, deptId, onToggle, onDelete }) => {
 
     const addSpec = (val) => {
         const v = val.trim();
-        if (v && !specs.includes(v)) setSpecs(s => [...s, v]);
+        if (!v || specs.includes(v)) { setSpecInput(''); return; }
+        const newSpecs = [...specs, v];
+        setSpecs(newSpecs);
         setSpecInput('');
+        saveSpecsDirectly(newSpecs);
+    };
+
+    const removeSpec = (idx) => {
+        const newSpecs = specs.filter((_, i) => i !== idx);
+        setSpecs(newSpecs);
+        saveSpecsDirectly(newSpecs);
     };
 
     return (
@@ -127,18 +135,15 @@ const FieldRow = ({ field, deptId, onToggle, onDelete }) => {
                         {specs.map((s, i) => (
                             <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-white text-violet-700 text-[10px] font-bold border border-violet-300 rounded-lg">
                                 {s}
-                                <button onClick={() => setSpecs(prev => prev.filter((_, idx) => idx !== i))} className="text-violet-400 hover:text-red-500 font-black">×</button>
+                                <button onClick={() => removeSpec(i)} disabled={savingSpecs} className="text-violet-400 hover:text-red-500 font-black disabled:opacity-40">×</button>
                             </span>
                         ))}
                         {specs.length === 0 && <span className="text-[10px] text-slate-400 font-bold">No specializations yet — all students will see this field</span>}
+                        {savingSpecs && <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400"><Loader2 size={10} className="animate-spin" /> Saving…</span>}
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={saveSpecs} disabled={savingSpecs}
-                            className="px-4 py-1.5 bg-violet-600 text-white text-[10px] font-black uppercase rounded-lg disabled:opacity-50 hover:bg-violet-700 flex items-center gap-1">
-                            {savingSpecs ? <Loader2 size={11} className="animate-spin" /> : null} Save Specializations
-                        </button>
-                        <button onClick={() => { setEditingSpecs(false); setSpecs(Array.isArray(field.specializations) ? field.specializations : []); }}
-                            className="px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600">Cancel</button>
+                        <button onClick={() => setEditingSpecs(false)}
+                            className="px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600">Done</button>
                     </div>
                 </td>
             </tr>

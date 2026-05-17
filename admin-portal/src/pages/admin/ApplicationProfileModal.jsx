@@ -503,7 +503,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                             </section>
                         )}
 
-                        {/* Actions */}
+                        {/* Actions — SUBMITTED status */}
                         {status === 'SUBMITTED' && ['ADMIN', 'CE_PRTI', 'HOD'].includes(user?.role) && (
                             <div className="pt-8 mt-4 border-t border-outline-variant/10 dark:border-slate-800">
                                 <div className="bg-surface-container-high dark:bg-slate-800/50 p-8 rounded-lg border border-outline-variant/10 dark:border-slate-800 shadow-sm">
@@ -512,36 +512,51 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                         <h4 className="text-[10px] font-bold text-primary dark:text-white uppercase tracking-[0.2em]">Application Review</h4>
                                     </div>
 
-                                    {user?.role === 'HOD' && internship?.internshipType !== 'NON_STIPEND' && (
-                                        <div className="mb-6 space-y-2">
-                                            <label className="text-[10px] font-bold text-outline dark:text-slate-500 uppercase tracking-widest ml-1">Assign Mentor (Required for Shortlisting)</label>
-                                            <select
-                                                className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 dark:border-slate-700 rounded px-4 py-3 text-xs font-bold text-primary dark:text-white focus:outline-emerald-500"
-                                                value={mentorIdInput}
-                                                onChange={e => setMentorIdInput(e.target.value)}
-                                            >
-                                                <option value="">Select a Mentor</option>
-                                                {loadingMentors ? (
-                                                    <option value="" disabled>Loading mentors...</option>
-                                                ) : mentors.length > 0 ? (
-                                                    mentors.map(m => (
-                                                        <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
-                                                    ))
-                                                ) : (
-                                                    <option value="" disabled>No mentors found in {internship?.department}</option>
-                                                )}
-                                            </select>
+                                    {/* NON_STIPEND: direct Select (no shortlisting step) */}
+                                    {isNonStipend ? (
+                                        <div className="flex gap-4">
+                                            <button onClick={() => updateStatus('SELECTED')}
+                                                className="flex-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 group">
+                                                Select Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">verified</span>
+                                            </button>
+                                            <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+                                                Reject Candidate
+                                            </button>
                                         </div>
+                                    ) : (
+                                        /* MONETARY: shortlist with optional mentor assignment */
+                                        <>
+                                            {user?.role === 'HOD' && (
+                                                <div className="mb-6 space-y-2">
+                                                    <label className="text-[10px] font-bold text-outline dark:text-slate-500 uppercase tracking-widest ml-1">Assign Mentor (Required for Shortlisting)</label>
+                                                    <select
+                                                        className="w-full bg-white dark:bg-slate-800 border border-outline-variant/20 dark:border-slate-700 rounded px-4 py-3 text-xs font-bold text-primary dark:text-white focus:outline-emerald-500"
+                                                        value={mentorIdInput}
+                                                        onChange={e => setMentorIdInput(e.target.value)}
+                                                    >
+                                                        <option value="">Select a Mentor</option>
+                                                        {loadingMentors ? (
+                                                            <option value="" disabled>Loading mentors...</option>
+                                                        ) : mentors.length > 0 ? (
+                                                            mentors.map(m => (
+                                                                <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
+                                                            ))
+                                                        ) : (
+                                                            <option value="" disabled>No mentors found in {internship?.department}</option>
+                                                        )}
+                                                    </select>
+                                                </div>
+                                            )}
+                                            <div className="flex gap-4">
+                                                <button onClick={handleForwardCommittee} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
+                                                    Shortlist Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
+                                                </button>
+                                                <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+                                                    Reject Candidate
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
-
-                                    <div className="flex gap-4">
-                                        <button onClick={handleForwardCommittee} className="flex-1 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2 group">
-                                            Shortlist Candidate <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">check_circle</span>
-                                        </button>
-                                        <button onClick={handleReject} className="flex-1 border border-error text-error text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded hover:bg-error/5 transition-all flex items-center justify-center gap-2">
-                                            Reject Candidate
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         )}

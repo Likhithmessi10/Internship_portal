@@ -638,11 +638,23 @@ const updateApplicationStatus = async (req, res) => {
 
         // 3. Atomic Transaction for Updates
         const result = await prisma.$transaction(async (tx) => {
+            // Apply field/location reassignment BEFORE the seat check so the transition
+            // enforces limits against the HOD-assigned location, not the student's applied location.
+            if (overrideFieldId || overrideLocation !== undefined) {
+                await tx.application.update({
+                    where: { id: applicationId },
+                    data: {
+                        ...(overrideFieldId      ? { fieldId:           overrideFieldId  } : {}),
+                        ...(overrideLocation !== undefined ? { preferredLocation: overrideLocation } : {})
+                    }
+                });
+            }
+
             // Requirement 4: All status updates must go through workflow service
             const updatedApp = await transitionApplicationStatus(
-                applicationId, 
-                status, 
-                req.user, 
+                applicationId,
+                status,
+                req.user,
                 `Manual update via Admin Controller. Assigned Role: ${assignedRole || 'None'}`,
                 tx
             );
@@ -657,9 +669,7 @@ const updateApplicationStatus = async (req, res) => {
             if (endDate) metadataUpdates.endDate = new Date(endDate);
             if (mentorId) metadataUpdates.mentorId = mentorId;
             if (isHeldSeat !== undefined) metadataUpdates.isHeldSeat = !!isHeldSeat;
-            // HOD field/location reassignment at shortlisting
-            if (overrideFieldId) metadataUpdates.fieldId = overrideFieldId;
-            if (overrideLocation !== undefined) metadataUpdates.preferredLocation = overrideLocation;
+            // fieldId / preferredLocation already written above before the seat check
             // When PRTI directly selects a candidate, auto-approve so HOD can request docs immediately
             if (status === 'SELECTED' && req.user.role === 'CE_PRTI') {
                 metadataUpdates.prtiApproved = true;
@@ -1875,10 +1885,11 @@ const getHodLearningApplications = async (req, res) => {
 
         const appInclude = {
             student: { include: { user: { select: { email: true } } } },
-            internship: { select: { id: true, title: true, internshipType: true, internshipMode: true, duration: true, department: true } },
+            internship: { select: { id: true, title: true, internshipType: true, internshipMode: true, duration: true, department: true, requiredDocuments: true } },
             field: true,
             departmentGroup: { select: { id: true, department: true, title: true } },
-            mentor: { select: { id: true, name: true, email: true } }
+            mentor: { select: { id: true, name: true, email: true } },
+            documents: true
         };
 
         // SINGLE NON_STIPEND — dept matches Internship.department directly

@@ -241,7 +241,7 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
         await tx.auditLog.create({
             data: {
                 action: 'STATUS_TRANSITION',
-                userEmail: user.email,
+                userEmail: user?.email || user?.id || 'system@aptransco.portal',
                 details: `Transitioned ${application.trackingId} from ${application.status} to ${toStatus}. ${auditDetails}`,
                 target: applicationId
             }

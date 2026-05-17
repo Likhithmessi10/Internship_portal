@@ -4,7 +4,11 @@ import api from '../../../utils/api';
 import { UserPlus, X, Send, Mail, User, Phone, Briefcase, MapPin, BookOpen } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
-const DEFAULT_PASSWORD = 'password123';
+// Generate a random 10-char initial password — mentor must change it on first login
+const generateInitialPassword = () => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#!';
+    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
 const locName = l => (typeof l === 'string' ? l : (l?.name || ''));
 
 const Field = ({ label, required, children }) => (
@@ -23,6 +27,7 @@ const CreateMentorModal = ({ onClose }) => {
     const { user } = useAuth();
     const [loading, setLoading]   = useState(false);
     const [error, setError]       = useState('');
+    const [createdPassword, setCreatedPassword] = useState('');
     const [deptFields, setDeptFields] = useState([]); // [{id, fieldName, locations}]
 
     const [form, setForm] = useState({
@@ -65,6 +70,7 @@ const CreateMentorModal = ({ onClose }) => {
         if (!form.name || !form.email) { setError('Name and email are required.'); return; }
         setLoading(true);
         setError('');
+        const initialPassword = generateInitialPassword();
         try {
             await api.post('/auth/admin/register', {
                 name:           form.name.trim(),
@@ -73,11 +79,11 @@ const CreateMentorModal = ({ onClose }) => {
                 designation:    form.designation.trim() || undefined,
                 mentorField:    form.mentorField || undefined,
                 mentorLocation: form.mentorLocation || undefined,
-                password:       DEFAULT_PASSWORD,
+                password:       initialPassword,
                 role:           'MENTOR',
                 department:     user.department,
             });
-            onClose(true);
+            setCreatedPassword(initialPassword);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create mentor.');
         } finally {
@@ -98,6 +104,37 @@ const CreateMentorModal = ({ onClose }) => {
                     <button onClick={() => onClose(false)} className="hover:bg-white/20 p-2 rounded-full transition-colors"><X size={18} /></button>
                 </div>
 
+                {createdPassword ? (
+                    /* ── Success screen — show generated password ── */
+                    <div className="px-7 py-8 space-y-5 text-center">
+                        <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
+                            <Send size={28} className="text-emerald-600" />
+                        </div>
+                        <div>
+                            <p className="text-lg font-black text-slate-800 dark:text-slate-100">Mentor Created</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                Share these credentials with <strong>{form.name}</strong> securely.
+                            </p>
+                        </div>
+                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl text-left space-y-2">
+                            <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">Login Credentials</p>
+                            <div className="space-y-1">
+                                <p className="text-xs text-slate-600 dark:text-slate-300"><span className="font-bold">Email:</span> {form.email.trim().toLowerCase()}</p>
+                                <p className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                                    <span className="font-bold">Password:</span>
+                                    <span className="font-mono font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-700 select-all">{createdPassword}</span>
+                                </p>
+                            </div>
+                            <p className="text-[10px] text-amber-600 dark:text-amber-500 mt-1">
+                                ⚠ Copy this password now — it will not be shown again. The mentor must change it after first login.
+                            </p>
+                        </div>
+                        <button onClick={() => onClose(true)}
+                            className="w-full py-3 bg-slate-800 dark:bg-slate-700 text-white font-black rounded-2xl hover:bg-slate-900 transition-colors">
+                            Done
+                        </button>
+                    </div>
+                ) : (
                 <form onSubmit={handleSubmit} className="px-7 py-6 space-y-5">
                     {error && (
                         <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm font-semibold">
@@ -106,7 +143,6 @@ const CreateMentorModal = ({ onClose }) => {
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
-                        {/* Full Name */}
                         <Field label="Full Name" required>
                             <div className="relative">
                                 <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -115,8 +151,6 @@ const CreateMentorModal = ({ onClose }) => {
                                     className={inputCls} />
                             </div>
                         </Field>
-
-                        {/* Phone */}
                         <Field label="Phone Number">
                             <div className="relative">
                                 <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -127,7 +161,6 @@ const CreateMentorModal = ({ onClose }) => {
                         </Field>
                     </div>
 
-                    {/* Email */}
                     <Field label="Email Address" required>
                         <div className="relative">
                             <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -137,7 +170,6 @@ const CreateMentorModal = ({ onClose }) => {
                         </div>
                     </Field>
 
-                    {/* Designation */}
                     <Field label="Designation">
                         <div className="relative">
                             <Briefcase size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -148,7 +180,6 @@ const CreateMentorModal = ({ onClose }) => {
                     </Field>
 
                     <div className="grid grid-cols-2 gap-4">
-                        {/* Field */}
                         <Field label="Internship Field">
                             <div className="relative">
                                 <BookOpen size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -161,19 +192,14 @@ const CreateMentorModal = ({ onClose }) => {
                                 </select>
                             </div>
                         </Field>
-
-                        {/* Location */}
                         <Field label="Location">
                             <div className="relative">
                                 <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
-                                <input
-                                    type="text"
-                                    list="mentor-locations"
+                                <input type="text" list="mentor-locations"
                                     value={form.mentorLocation}
                                     onChange={e => set('mentorLocation', e.target.value)}
                                     placeholder="e.g. Vijayawada HQ"
-                                    className={inputCls}
-                                />
+                                    className={inputCls} />
                                 {locations.length > 0 && (
                                     <datalist id="mentor-locations">
                                         {locations.map(l => { const n = locName(l); return <option key={n} value={n} />; })}
@@ -183,14 +209,11 @@ const CreateMentorModal = ({ onClose }) => {
                         </Field>
                     </div>
 
-                    {/* Default password info */}
-                    <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
-                        <span className="text-amber-600 text-lg mt-0.5">🔑</span>
-                        <div>
-                            <p className="text-[11px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider">Default Password</p>
-                            <p className="text-xs font-mono font-bold text-amber-800 dark:text-amber-300 mt-0.5">{DEFAULT_PASSWORD}</p>
-                            <p className="text-[10px] text-amber-600 dark:text-amber-500 mt-0.5">The mentor can change this after their first login.</p>
-                        </div>
+                    <div className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                        <span className="text-slate-400 text-lg mt-0.5">🔑</span>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            A secure random password will be generated and shown once after creation. Share it with the mentor privately.
+                        </p>
                     </div>
 
                     <button type="submit" disabled={loading}
@@ -198,6 +221,7 @@ const CreateMentorModal = ({ onClose }) => {
                         {loading ? 'Creating…' : <><Send size={16} /> Create Mentor Account</>}
                     </button>
                 </form>
+                )}
             </div>
         </div>,
         document.body

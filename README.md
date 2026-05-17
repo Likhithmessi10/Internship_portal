@@ -1,347 +1,318 @@
 # APTRANSCO Internship Management Portal
 
-The APTRANSCO Internship Management Portal is a multi-application system for managing internship intake, evaluation, onboarding, and execution.
+Multi-application system for managing internship intake, evaluation, onboarding, and execution at AP Transmission Corporation Limited.
 
-This repository contains:
-- `backend` (Node.js + Express + Prisma + PostgreSQL)
-- `frontend` (Student portal, Vite + React)
-- `admin-portal` (Admin/HOD/PRTI/Mentor portal, Vite + React)
+**Stack:** Node.js + Express + Prisma + PostgreSQL · React (Vite) × 2 portals · Nginx · Docker
 
 ---
 
-## Features
+## What's Inside
 
-### Student
-- Profile creation and academic details
-- Internship browsing and application
-- Document upload and application tracking
-- Internship progress views (attendance/tasks where enabled)
+| Portal | Audience | URL (Docker) |
+|--------|----------|--------------|
+| Student App | Students applying for internships | `http://localhost/` |
+| Admin Portal | PRTI, HOD, Mentor, Admin | `http://localhost/admin` |
+| Backend API | Internal — proxied through Nginx | `http://localhost/api/v1` |
+| PostgreSQL | Database | `localhost:5432` |
 
-### Admin/HOD/PRTI/Mentor
-- Internship creation and role/quota configuration
-- Application review and shortlisting
-- Committee-based per-question evaluation
-- Final selection workflow
-- Mentor intern/task/attendance operations
-- Reports and data export
+Everything runs from a single Docker container fronted by Nginx, plus a Postgres container — exposed on port **80** only.
 
 ---
 
-## Prerequisites
+## Quick Start (Docker — Recommended)
 
-Install these before setup:
+### Prerequisites
 
-- **Node.js**: 18+ recommended (22+ supported)
-- **npm**: 9+ recommended
-- **PostgreSQL**: 14+ recommended
-- **Git**: latest
-- **Windows** (for `setup-all.bat`)
+| Tool | Version |
+|------|---------|
+| Docker Desktop (Windows / Mac) or Docker Engine + Compose plugin (Linux) | 20+ |
+| Git | Latest |
 
-Verify installation:
+That's it. Node, PostgreSQL, Nginx, Chromium etc. all run inside containers — you do **not** need to install them on the host.
 
-```powershell
-node -v
-npm -v
-psql --version
+Verify Docker is running:
+```bash
+docker --version
+docker compose version
+```
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Likhithmessi10/Internship_portal.git
+cd Internship_portal
+git checkout version2
+```
+
+### 2. (Optional) Review environment variables
+
+All non-secret defaults are baked into `docker-compose.yml` and work out of the box. The defaults are intended for **local development / demo only** — see the [Production Hardening](#production-hardening) section below before any internet deployment.
+
+If you want to customise anything (CORS origins, JWT secrets, email service URL, rate limits, etc.), edit the `environment:` block of the `app` service in `docker-compose.yml`.
+
+### 3. Build and start
+
+```bash
+docker compose up --build -d
+```
+
+First build downloads images and installs all dependencies — usually 3–8 minutes. Subsequent rebuilds are cached and complete in under a minute.
+
+### 4. Open the portal
+
+Once you see both containers running (`docker compose ps`), open:
+
+- **Student app:**   http://localhost/
+- **Admin portal:**  http://localhost/admin
+- **API health:**    http://localhost/api/v1/health
+
+The Postgres schema is pushed automatically on first start (`prisma db push`) and seed accounts are created.
+
+### Default Seed Accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | `admin@aptransco.gov.in` | `password123` |
+| PRTI | `prti@aptransco.gov.in` | `password123` |
+| HOD (SLDC) | `hod.sldc@aptransco.gov.in` | `password123` |
+| Mentor | `mentor@aptransco.gov.in` | `password123` |
+
+> Change every default password before exposing the portal beyond localhost. See [Production Hardening](#production-hardening).
+
+---
+
+## Day-to-Day Docker Commands
+
+### View logs
+
+```bash
+docker compose logs -f app          # follow app (backend + nginx) logs
+docker compose logs -f postgres     # follow database logs
+docker compose logs --tail 100 app  # last 100 lines
+```
+
+### Stop / restart
+
+```bash
+docker compose stop                  # stop without removing
+docker compose start                 # start again
+docker compose restart app           # quick restart of just the app
+docker compose down                  # stop and remove containers (volumes kept)
+```
+
+### Rebuild after code changes
+
+```bash
+docker compose down
+docker compose up --build -d
+```
+
+### Exec into a container
+
+```bash
+docker compose exec app sh                                # shell into the app container
+docker compose exec postgres psql -U aptransco aptransco  # open psql in the db
+```
+
+### Wipe and start fresh (deletes all data)
+
+```bash
+docker compose down -v               # -v also removes volumes (database + uploads)
+docker compose up --build -d
+```
+
+### Clear Docker build cache (when builds get weird)
+
+```bash
+docker compose down
+docker builder prune -af
+docker compose up --build -d
 ```
 
 ---
 
 ## Project Structure
 
-```text
-internship portal/
-  backend/               # API server, Prisma schema, controllers, services
-  frontend/              # Student app
-  admin-portal/          # Admin operations app
-  setup-all.bat          # Windows automated setup script
-  package.json           # Root scripts (run all apps)
+```
+internship-portal/
+├── backend/                    # Express + Prisma API
+│   ├── controllers/            # Route handlers
+│   ├── middleware/             # Auth, rate limit, multer, ClamAV
+│   ├── prisma/                 # Schema + migrations
+│   ├── routes/                 # Express routers
+│   ├── services/               # Mail, workflow, roll-number, college lookup
+│   ├── domain/workflow/        # Application state machine
+│   └── scripts/                # Seed scripts
+├── frontend/                   # Student portal (Vite + React)
+├── admin-portal/               # Staff portal (Vite + React)
+├── doc_templates/              # NOC, Undertaking templates
+├── email_service/              # Email template assets
+├── nginx.conf                  # Nginx reverse-proxy config (serves both SPAs + proxies API)
+├── start.sh                    # Container entrypoint (db push → seed → nginx → node)
+├── Dockerfile                  # Multi-stage: frontend build → admin build → runtime
+└── docker-compose.yml          # 2-service stack: postgres + app
 ```
 
 ---
 
-## Quick Setup (Windows - Recommended)
+## How the Container Works
 
-From repository root:
+The `Dockerfile` is multi-stage:
 
-```bat
-setup-all.bat
-```
+1. **Stage 1 — `frontend-builder`** — Builds the student SPA (`/dist`) with Vite.
+2. **Stage 2 — `admin-builder`** — Builds the admin SPA (`/dist`) with Vite and base path `/admin`.
+3. **Stage 3 — runtime** — Installs Node, Nginx, Chromium (for Puppeteer PDF generation), copies the built SPAs into `/var/www/html`, installs backend dependencies, runs `prisma generate`, and starts both Nginx and Node via `start.sh`.
 
-What `setup-all.bat` does:
-- Validates required folders and package manifests.
-- Validates `node` and `npm` availability.
-- Creates `.env` from `.env.example` in:
-  - `backend`
-  - `frontend`
-  - `admin-portal`
-  (if `.env` does not already exist)
-- Installs dependencies in all modules and root package.
-- Stops with clear error if any step fails.
+Nginx serves the SPAs statically and proxies `/api/` to the Node backend on port 5001 inside the container. Only port 80 is exposed to the host.
 
 ---
 
-## Manual Setup (Any OS)
+## Local Development (Without Docker)
 
-### 1) Install dependencies
+If you want hot-reload during development, you can run the services natively. **Docker is still recommended for everything else.**
+
+### Prerequisites
+
+| Tool | Version |
+|------|---------|
+| Node.js | 20+ |
+| npm | 9+ |
+| PostgreSQL | 13+ |
+
+### Setup
 
 ```bash
-npm install
+# Install dependencies
 cd backend && npm install && cd ..
 cd frontend && npm install && cd ..
 cd admin-portal && npm install && cd ..
-```
 
-### 2) Create environment files
+# Create env files
+cp backend/.env.example       backend/.env
+cp frontend/.env.example      frontend/.env
+cp admin-portal/.env.example  admin-portal/.env
 
-Copy examples:
-
-- `backend/.env.example` -> `backend/.env`
-- `frontend/.env.example` -> `frontend/.env`
-- `admin-portal/.env.example` -> `admin-portal/.env`
-
----
-
-## Environment Configuration
-
-## Backend (`backend/.env`)
-
-Minimum required:
-
-```env
-PORT=5001
-NODE_ENV=development
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/aptransco?schema=public"
-JWT_SECRET=replace_with_strong_secret
-JWT_EXPIRY=2h
-JWT_REFRESH_EXPIRY=7d
-CORS_ORIGINS=http://localhost:5173,http://localhost:5174,http://localhost:3000
-```
-
-Optional but recommended:
-- `EMAIL_SERVICE_URL`
-- `EMAIL_SERVICE_ATTACHMENT_URL`
-- Rate-limit/security options from `.env.example`
-
-## Frontend (`frontend/.env`)
-
-```env
-VITE_API_URL=http://localhost:5001/api/v1
-VITE_API_BASE_URL=http://localhost:5001
-```
-
-## Admin Portal (`admin-portal/.env`)
-
-```env
-VITE_API_URL=http://localhost:5001/api/v1
-VITE_API_BASE_URL=http://localhost:5001
-```
-
----
-
-## Database Setup
-
-### Option A: Fresh local database (recommended for development)
-
-1. Create database (example: `aptransco`) in PostgreSQL.
-2. Ensure `backend/.env` has correct `DATABASE_URL`.
-3. Apply schema:
-
-```bash
+# Edit backend/.env — set DATABASE_URL to your local Postgres
+# Apply schema
 cd backend
 npx prisma db push
-```
-
-4. (Optional) Open Prisma Studio:
-
-```bash
-npx prisma studio
-```
-
-5. (Optional) Seed accounts/data:
-
-```bash
 node scripts/seed-accounts.js
-```
+cd ..
 
-### Option B: Import existing SQL dump
-
-```bash
-psql -U postgres -d aptransco -f "path/to/your/dump.sql"
-```
-
-Then run:
-
-```bash
-cd backend
-npx prisma db push
+# Run all three in three terminals
+cd backend && npm run dev          # http://localhost:5001
+cd frontend && npm run dev         # http://localhost:5173
+cd admin-portal && npm run dev     # http://localhost:5174
 ```
 
 ---
 
-## Running the Project
+## Production Hardening
 
-From root (all services):
+Before exposing the portal beyond localhost, work through this list.
+
+### Credentials
+
+- [ ] **JWT secrets** in `docker-compose.yml` — Replace `JWT_SECRET` and `JWT_REFRESH_SECRET` with random 64-character strings.
+  ```bash
+  # Linux / macOS
+  openssl rand -hex 32
+  # PowerShell
+  -join ((1..32) | ForEach { '{0:x2}' -f (Get-Random -Max 256) })
+  ```
+- [ ] **PostgreSQL password** — Change `POSTGRES_PASSWORD` and the matching password in `DATABASE_URL`.
+- [ ] **Default seed passwords** — Log in as each seeded account and change the password, or update `scripts/seed-accounts.js` before first boot.
+- [ ] **Delete `backend/accounts.txt`** if it exists on the production server.
+
+### CORS / Network
+
+- [ ] **`CORS_ORIGINS`** — Replace the demo values with the exact production URLs only. Never use `*`.
+- [ ] **HTTPS** — Terminate TLS at an upstream reverse proxy (Caddy / Nginx on host / Cloudflare) and only forward to port 80 of the container.
+- [ ] **JWT_EXPIRY** — Keep at `2h` or less.
+
+### Database
+
+- [ ] Use a dedicated database user with least-privilege grants — not the superuser baked into the demo compose file.
+- [ ] Enable SSL on the Postgres connection (`?sslmode=require` in `DATABASE_URL`).
+- [ ] Schedule regular database backups of the `postgres_data` volume.
+
+### File Uploads & Security
+
+- [ ] **ClamAV** — Set `CLAMAV_ENABLED=true` and run a ClamAV container alongside.
+- [ ] **Rate limits** — Tighten `RATE_LIMIT_MAX_REQUESTS` (currently `500/min` for testing) for production traffic.
+- [ ] **Upload volume** — Back up the `uploads_data` volume regularly. Files are physically stored at `/app/backend/uploads` inside the container.
+
+### Git Hygiene
+
+- [ ] `.env`, `backend/uploads/`, `backend/accounts.txt`, debug scripts and dump files are already gitignored — do not commit them.
+- [ ] Rotate any secret that appears in commit history with `git filter-repo` or BFG before publishing the repository.
+
+---
+
+## Public Tunnel for Testing (Optional)
+
+To let teammates / reviewers test the portal without deploying, expose the container via Cloudflare Tunnel:
 
 ```bash
-npm run dev
+# Install cloudflared (one-time)
+# Windows:  winget install --id Cloudflare.cloudflared
+# macOS:    brew install cloudflared
+# Linux:    https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+
+# Once the container is up on port 80:
+cloudflared tunnel --url http://localhost:80
 ```
 
-Or run separately:
+Cloudflare prints a random `https://*.trycloudflare.com` URL. Share it. **Remember to add this URL to `CORS_ORIGINS`** in `docker-compose.yml` (then `docker compose up --build -d`) so the API accepts requests from it.
 
+---
+
+## Troubleshooting
+
+### Build fails with `parent snapshot does not exist`
+Docker build cache corruption. Clear it:
 ```bash
-npm run dev:backend
-npm run dev:student
-npm run dev:admin
+docker compose down
+docker builder prune -af
+docker compose up --build -d
+```
+
+### `exec /start.sh: no such file or directory`
+`start.sh` got CRLF line endings on Windows. The Dockerfile already strips them with `sed -i 's/\r$//'`, but if you edited the file in a Windows editor, save it as **LF** (Notepad++ → Edit → EOL Conversion → Unix).
+
+### "Allocation Failed: All N seats for location X are filled"
+The HOD is trying to allocate to a location they didn't explicitly assign in the selection panel. Use the location dropdown in the inline "Select" panel to assign the new location before confirming.
+
+### Documents show "MISSING" in the HOD modal
+Already fixed — the HOD applications endpoint now returns `documents` in the API response. If you still see this, rebuild the container (`docker compose up --build -d`) — the change is server-side.
+
+### CORS errors in the browser
+The origin you're loading the UI from must be in `CORS_ORIGINS` in `docker-compose.yml`. After changing it, rebuild:
+```bash
+docker compose down && docker compose up --build -d
+```
+
+### Login redirects staff users to the landing page
+Already fixed — `Login.jsx` now redirects all staff roles (ADMIN, HOD, CE_PRTI, MENTOR, COMMITTEE_MEMBER) to `/admin/dashboard`. Rebuild to apply.
+
+### Port 80 already in use
+Another service (IIS, Apache, Nginx, Skype) is on port 80. Either stop it, or change the host port:
+```yaml
+# in docker-compose.yml
+ports:
+  - "8080:80"     # then open http://localhost:8080
 ```
 
 ---
 
-## Access URLs
+## Feature Flags
 
-- Student app: `http://localhost:5173`
-- Admin portal: `http://localhost:5174`
-- Backend API: `http://localhost:5001/api/v1`
-
----
-
-## Default Seed Credentials (if seed script used)
-
-Password (default): `password123`
-
-- Admin: `admin@transco.com`
-- PRTI: `prti@transco.com`
-- HOD example: `hod.transmission@transco.com`
-- Mentor example: `mentor.transmission@transco.com`
+| Flag | File | Values | Effect |
+|------|------|--------|--------|
+| `VITE_MONETARY_ENABLED` | `Dockerfile` (admin-builder stage) | `false` / `true` | Enables paid/collaborative internship workflow. Default `false` (learning internships only). Monetary-only routes auto-redirect when `false`. |
 
 ---
 
-## Build and Lint
+## License
 
-### Frontend
-
-```bash
-cd frontend
-npm run lint
-npm run build
-```
-
-### Admin Portal
-
-```bash
-cd admin-portal
-npm run lint
-npm run build
-```
-
-### Backend
-
-```bash
-cd backend
-npm run dev
-```
-
----
-
-## Common Troubleshooting
-
-## 1) `EADDRINUSE: address already in use :::5001`
-
-Port `5001` is occupied by another process.
-
-Windows:
-
-```powershell
-netstat -ano | findstr :5001
-taskkill /PID <PID> /F
-```
-
-Then restart backend:
-
-```bash
-cd backend
-npm run dev
-```
-
-## 2) Frontend/Admin shows blank page after change
-
-- Check browser console for exact stack trace.
-- Check dev server terminal for compile/runtime errors.
-- Run build to detect production issues:
-
-```bash
-cd admin-portal && npm run build
-cd ../frontend && npm run build
-```
-
-## 3) Prisma connection or schema errors
-
-- Verify `DATABASE_URL` credentials and db existence.
-- Run:
-
-```bash
-cd backend
-npx prisma generate
-npx prisma db push
-```
-
-## 4) `.env` values still pointing to placeholder IP
-
-Make sure both web apps use localhost during local development:
-
-```env
-VITE_API_URL=http://localhost:5001/api/v1
-VITE_API_BASE_URL=http://localhost:5001
-```
-
-## 5) CORS errors
-
-- Ensure backend `CORS_ORIGINS` includes:
-  - `http://localhost:5173`
-  - `http://localhost:5174`
-
----
-
-## Recommended Developer Workflow
-
-1. Pull latest changes.
-2. Run `setup-all.bat` (Windows) or manual install.
-3. Configure env files.
-4. Start DB and run `npx prisma db push`.
-5. Run `npm run dev`.
-6. Validate flows in both `frontend` and `admin-portal`.
-
----
-
-## Security Notes
-
-- Never commit `.env` files.
-- Rotate `JWT_SECRET` in non-local environments.
-- Restrict CORS to trusted origins in staging/production.
-- Use separate credentials and DBs per environment.
-
----
-
-## Useful Commands
-
-```bash
-# Root
-npm run dev
-
-# Backend
-cd backend
-npx prisma db push
-npx prisma studio
-npm run dev
-
-# Frontend
-cd frontend
-npm run dev
-npm run build
-
-# Admin
-cd admin-portal
-npm run dev
-npm run build
-```
-
+Internal project of Andhra Pradesh Transmission Corporation Limited. Not licensed for redistribution.

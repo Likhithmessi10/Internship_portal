@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { Home, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 
 const AdminLogin = ({ forcedRole }) => {
     const { login, user } = useAuth();
     const navigate = useNavigate();
+    const { isDarkMode, toggleTheme } = useTheme();
     const [searchParams] = useSearchParams();
     const targetRole = forcedRole || searchParams.get('role');
 
@@ -14,6 +16,7 @@ const AdminLogin = ({ forcedRole }) => {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -52,7 +55,16 @@ const AdminLogin = ({ forcedRole }) => {
     };
 
     return (
-        <div className="min-h-screen bg-surface-container-lowest flex items-center justify-center p-6 sm:p-12 font-inter">
+        <div className="min-h-screen bg-surface-container-lowest flex items-center justify-center p-6 sm:p-12 font-inter relative">
+            {/* Theme toggle */}
+            <button
+                onClick={toggleTheme}
+                className="absolute top-5 right-5 p-2 px-3 rounded-full bg-surface-container-low border border-outline-variant/20 text-outline hover:text-primary transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest shadow-sm"
+            >
+                {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
+                {isDarkMode ? 'Light' : 'Dark'}
+            </button>
+
             <div className="w-full max-w-[480px]">
                 <div className="text-center mb-12">
                     <div className="text-primary font-bold text-xs uppercase tracking-[0.3em] mb-4">Institutional Portal</div>
@@ -83,30 +95,36 @@ const AdminLogin = ({ forcedRole }) => {
                                 placeholder="name@aptransco.gov.in"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
+                                className="w-full bg-surface-container border border-outline-variant/30 text-primary placeholder:text-outline/40 rounded-lg px-4 py-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                             />
                         </div>
                         <div>
                             <label className="block text-[10px] font-bold text-outline uppercase tracking-widest mb-2.5">
                                 Security Key
                             </label>
-                            <input
-                                type="password"
-                                required
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                className="w-full bg-white border border-outline-variant/20 text-primary placeholder:text-outline/30 rounded-lg px-4 py-3 text-xs font-bold focus:outline-primary transition-all shadow-sm"
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    className="w-full bg-surface-container border border-outline-variant/30 text-primary placeholder:text-outline/40 rounded-lg px-4 py-3 pr-10 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                                />
+                                <button type="button" onClick={() => setShowPassword(v => !v)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-outline hover:text-primary transition-colors">
+                                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                                </button>
+                            </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary text-white font-bold py-4 rounded-lg transition-all hover:opacity-95 shadow-md active:scale-[0.98] flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] mt-6"
+                            className="w-full bg-primary text-on-primary font-bold py-4 rounded-lg transition-all hover:opacity-95 shadow-md active:scale-[0.98] flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] mt-6"
                         >
                             {loading ? (
-                                <><span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> Validating</>
+                                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Validating…</>
                             ) : (
                                 'Enter Dashboard'
                             )}
@@ -115,13 +133,9 @@ const AdminLogin = ({ forcedRole }) => {
 
                     <div className="mt-10 pt-8 border-t border-outline-variant/10 text-center font-bold">
                         <p className="text-[10px] text-outline uppercase tracking-widest mb-2">Role assigned by PRTI Admin</p>
-                        <div className="flex items-center justify-center gap-2">
-                            <Link to="/" className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline flex items-center gap-1">
-                                <Home size={12} /> All Roles
-                            </Link>
-                            <span className="text-outline/40">•</span>
-                            <Link to={targetRole === 'ADMIN' ? '/super-admin/register' : targetRole === 'CE_PRTI' ? '/prti/register' : `/${targetRole?.toLowerCase()}/register`} className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline">Staff Enrollment</Link>
-                        </div>
+                        <Link to="/" className="text-[10px] text-primary uppercase tracking-widest underline hover:no-underline flex items-center justify-center gap-1">
+                            <Home size={12} /> All Roles
+                        </Link>
                     </div>
                 </div>
 

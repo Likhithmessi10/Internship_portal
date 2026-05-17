@@ -298,7 +298,24 @@ const verifyDocuments = async (req, res) => {
             });
             await prisma.application.update({ where: { id }, data: { status: 'DOCUMENTS_VERIFIED' } });
             await createAuditLog('VERIFY_DOCUMENTS', req.user.email, 'Documents approved', id);
-            res.json({ success: true, message: 'Documents verified' });
+
+            // Auto-hire immediately after verification
+            const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
+            try {
+                const appForRole = await prisma.application.findUnique({
+                    where: { id },
+                    select: { field: { select: { fieldName: true } }, assignedRole: true }
+                });
+                await transitionApplicationStatus(id, 'HIRED', req.user, 'Auto-hired after document verification.');
+                if (appForRole?.field?.fieldName && !appForRole.assignedRole) {
+                    await prisma.application.update({ where: { id }, data: { assignedRole: appForRole.field.fieldName } });
+                }
+            } catch (hireErr) {
+                console.error('[Auto-hire error]', hireErr.message);
+                // Don't fail the request — student is at least DOCUMENTS_VERIFIED
+            }
+
+            res.json({ success: true, message: 'Documents verified and intern hired.' });
         } else {
             // Reject — send back with reason, keep status for re-upload
             const { sendEmail } = require('../services/mailService');

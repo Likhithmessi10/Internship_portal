@@ -286,7 +286,8 @@ const FieldGroup = ({ fieldName, fieldId, apps, internshipId, departmentGroupId,
 
     const heldUsed = apps.filter(a => a.isHeldSeat && ALLOCATED_STATUSES_PRTI.includes(a.status)).length;
 
-    const selectedApps    = apps.filter(a => a.status === 'SELECTED');
+    const selectedApps       = apps.filter(a => a.status === 'SELECTED' && !a.prtiApproved);
+    const approvedAwaitingDocs = apps.filter(a => a.status === 'SELECTED' && a.prtiApproved);
     const submittedApps   = apps.filter(a => a.status === 'SUBMITTED');
     const docsApps        = apps.filter(a => ['DOCUMENTS_PENDING','DOCUMENTS_VERIFIED'].includes(a.status));
     const hiredApps       = apps.filter(a => ['HIRED','ONGOING','COMPLETED'].includes(a.status));
@@ -487,13 +488,13 @@ const FieldGroup = ({ fieldName, fieldId, apps, internshipId, departmentGroupId,
                     )}
 
                     {/* Docs / Hired section — with work log expand */}
-                    {[...docsApps, ...hiredApps].length > 0 && (
+                    {[...approvedAwaitingDocs, ...docsApps, ...hiredApps].length > 0 && (
                         <div className="px-5 py-4">
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
-                                In Progress ({docsApps.length + hiredApps.length})
+                                In Progress ({approvedAwaitingDocs.length + docsApps.length + hiredApps.length})
                             </p>
                             <div className="space-y-2">
-                                {[...docsApps, ...hiredApps].map(app => (
+                                {[...approvedAwaitingDocs, ...docsApps, ...hiredApps].map(app => (
                                     <div key={app.id}>
                                         <div className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
                                             <div className="flex items-center gap-2 min-w-0">
@@ -509,6 +510,11 @@ const FieldGroup = ({ fieldName, fieldId, apps, internshipId, departmentGroupId,
                                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${STAGE_STYLE[app.status]}`}>
                                                     {STAGE_LABELS[app.status]}
                                                 </span>
+                                                {app.prtiApproved && app.status === 'SELECTED' && (
+                                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase border bg-amber-50 text-amber-700 border-amber-200">
+                                                        Awaiting Doc Request
+                                                    </span>
+                                                )}
                                                 {['HIRED', 'ONGOING', 'COMPLETED'].includes(app.status) && (
                                                     <button
                                                         onClick={() => setLogAppId(logAppId === app.id ? null : app.id)}
@@ -645,7 +651,7 @@ const PrtiLearningInterns = () => {
         return fieldApps.filter(a => a.status === filter);
     };
 
-    const selectedTotal = apps.filter(a => a.status === 'SELECTED').length;
+    const selectedTotal = apps.filter(a => a.status === 'SELECTED' && !a.prtiApproved).length;
 
     return (
         <div className="max-w-5xl mx-auto pb-24 space-y-8">

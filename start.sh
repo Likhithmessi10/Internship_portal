@@ -1,27 +1,17 @@
-#!/bin/bash
-# start.sh - Entrypoint script for the unified Docker container
+#!/bin/sh
+# start.sh — entrypoint for the unified Docker container (Nginx + Node.js)
+set -e
 
-# Start Nginx in the background
-echo "Starting Nginx..."
-nginx -g "daemon off;" &
-NGINX_PID=$!
-
-# Start Node.js backend in the foreground
-echo "Starting Node.js Backend..."
 cd /app/backend
 
-# Apply database schema
-echo "Pushing Prisma schema..."
+echo "==> Applying database schema..."
 npx prisma db push --accept-data-loss
 
-# Seed admin/hod accounts
-echo "Seeding accounts..."
-node /app/backend/seed_accounts.js
+echo "==> Seeding initial accounts (skipped if already seeded)..."
+node scripts/seed-accounts.js || echo "    Seed step skipped or already applied."
 
-npm start &
-NODE_PID=$!
+echo "==> Starting Nginx..."
+nginx
 
-# Wait for both processes
-# If either process crashes, the container should exit
-wait -n $NGINX_PID $NODE_PID
-exit $?
+echo "==> Starting Node.js API server..."
+exec node server.js

@@ -15,6 +15,8 @@ COPY admin-portal/package*.json ./
 RUN npm ci
 COPY admin-portal ./
 ENV VITE_API_URL=/api/v1
+ENV VITE_API_BASE_URL=""
+ENV VITE_MONETARY_ENABLED=false
 RUN npm run build
 
 # ── Stage 3: Runtime Environment ─────────────────────────────────────────────
@@ -75,9 +77,9 @@ COPY --from=admin-builder /app/admin-portal/dist /var/www/html/admin
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/sites-available/default
 
-# Copy start script
+# Copy start script — strip Windows CRLF line endings, then make executable
 COPY start.sh /start.sh
-RUN chmod +x /start.sh
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 
 EXPOSE 80
 

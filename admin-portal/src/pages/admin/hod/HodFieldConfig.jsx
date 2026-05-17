@@ -19,10 +19,10 @@ const FieldCard = ({ field, deptId, onRefresh }) => {
     const [savingSpecs, setSavingSpecs] = useState(false);
     const [toggling, setToggling]     = useState(false);
 
-    const saveSpecs = async () => {
+    const saveSpecsDirectly = async (newSpecs) => {
         setSavingSpecs(true);
         try {
-            await api.put(`/admin/dept-master/${deptId}/fields/${field.id}`, { specializations: specs });
+            await api.put(`/admin/dept-master/${deptId}/fields/${field.id}`, { specializations: newSpecs });
             onRefresh();
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to save.');
@@ -40,8 +40,17 @@ const FieldCard = ({ field, deptId, onRefresh }) => {
 
     const addSpec = (val) => {
         const v = val.trim();
-        if (v && !specs.includes(v)) setSpecs(s => [...s, v]);
+        if (!v || specs.includes(v)) { setSpecInput(''); return; }
+        const newSpecs = [...specs, v];
+        setSpecs(newSpecs);
         setSpecInput('');
+        saveSpecsDirectly(newSpecs);
+    };
+
+    const removeSpec = (idx) => {
+        const newSpecs = specs.filter((_, i) => i !== idx);
+        setSpecs(newSpecs);
+        saveSpecsDirectly(newSpecs);
     };
 
     return (
@@ -101,18 +110,17 @@ const FieldCard = ({ field, deptId, onRefresh }) => {
                         : specs.map((s, i) => (
                             <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-[10px] font-bold border border-violet-200 dark:border-violet-700 rounded-lg">
                                 {s}
-                                <button onClick={() => setSpecs(prev => prev.filter((_, idx) => idx !== i))}
-                                    className="text-violet-400 hover:text-red-500 font-black ml-0.5">×</button>
+                                <button onClick={() => removeSpec(i)} disabled={savingSpecs}
+                                    className="text-violet-400 hover:text-red-500 font-black ml-0.5 disabled:opacity-40">×</button>
                             </span>
                         ))
                     }
+                    {savingSpecs && (
+                        <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                            <Loader2 size={10} className="animate-spin" /> Saving…
+                        </span>
+                    )}
                 </div>
-
-                <button onClick={saveSpecs} disabled={savingSpecs}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all shadow-sm">
-                    {savingSpecs ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
-                    Save Specializations
-                </button>
             </div>
         </div>
     );
