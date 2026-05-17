@@ -19,7 +19,7 @@ const upsertProfile = async (req, res) => {
             collegeName, university, degree, branch,
             yearOfStudy, cgpa, collegeCategory, nirfRanking,
             hasExperience, hasProjects, hasCertifications,
-            experienceDesc, projectsDesc, skills, photoUrl,
+            experienceDesc, projectsDesc, certificationsDesc, skills, photoUrl,
             linkedinUrl, githubUrl
         } = req.body;
 
@@ -89,6 +89,7 @@ const upsertProfile = async (req, res) => {
             hasCertifications: hasCertifications === true || hasCertifications === 'true',
             experienceDesc: experienceDesc || null,
             projectsDesc: projectsDesc || null,
+            certificationsDesc: certificationsDesc || null,
             skills: skills || null,
             photoUrl: finalPhotoUrl || null,
             linkedinUrl: linkedinUrl || null,

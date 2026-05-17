@@ -111,6 +111,7 @@ model StudentProfile {
   hasCertifications Boolean         @default(false)
   experienceDesc    String?
   projectsDesc      String?
+  certificationsDesc String?
   skills            String?
   photoUrl          String?
   linkedinUrl       String?

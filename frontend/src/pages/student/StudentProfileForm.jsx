@@ -34,7 +34,6 @@ const StudentProfileForm = () => {
             try {
                 const res = await api.get('/students/profile');
                 if (res.data.data) {
-                    console.log('>>> FETCHED PROFILE (Dashboard):', res.data.data);
                     const d = res.data.data;
                     setInitialProfile(d); // Store original for comparison
                     // Format date for inputs
@@ -211,7 +210,6 @@ const StudentProfileForm = () => {
         }
 
         try {
-            console.log('>>> Submitting Profile Data (FormData)');
             const res = await api.post('/students/profile', submissionData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
@@ -479,12 +477,16 @@ const StudentProfileForm = () => {
                                                 <input 
                                                     type="text" 
                                                     className="input-field pr-20" 
-                                                    placeholder="Type skill and press Enter or Comma..." 
+                                                    placeholder="Type skill and press Tab or Comma..." 
                                                     onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' || e.key === ',') {
+                                                        if (e.key === 'Enter') {
                                                             e.preventDefault();
+                                                            e.stopPropagation(); // Prevent form from going to next tab
+                                                        }
+                                                        if (e.key === 'Tab' || e.key === ',' || e.key === 'Enter') {
                                                             const val = e.target.value.trim().replace(',', '');
                                                             if (val) {
+                                                                e.preventDefault();
                                                                 const currentSkills = formData.skills ? formData.skills.split(',').map(s => s.trim()) : [];
                                                                 if (!currentSkills.includes(val)) {
                                                                     const newSkills = [...currentSkills, val].join(', ');
@@ -495,7 +497,7 @@ const StudentProfileForm = () => {
                                                         }
                                                     }}
                                                 />
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-slate-400 group-focus-within:text-indigo-500 transition-colors">Press Enter</div>
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-slate-400 group-focus-within:text-indigo-500 transition-colors">Press Tab</div>
                                             </div>
                                             
                                             {formData.skills && (

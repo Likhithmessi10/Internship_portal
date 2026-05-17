@@ -27,11 +27,6 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
     // Only count failed requests
     skipSuccessfulRequests: true,
-    // Create unique key per email to track attempts independently per user
-    keyGenerator: (req, res) => {
-        const email = req.body?.email || 'unknown';
-        return email.toLowerCase().trim();
-    },
 });
 
 // Upload rate limiter

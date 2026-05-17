@@ -62,8 +62,9 @@ const verifyRefreshToken = async (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
         
+
         // Verify user still exists
         const user = await prisma.user.findUnique({ 
             where: { id: decoded.id },
@@ -93,7 +94,7 @@ const authorize = (...roles) => {
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
-                message: `User role ${req.user.role} is not authorized`
+                message: 'You do not have permission to perform this action'
             });
         }
         next();

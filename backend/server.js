@@ -11,6 +11,9 @@ const app = express();
 const prisma = require('./lib/prisma');
 const PORT = process.env.PORT || 5001;
 
+// Trust Nginx proxy for correct IP tracking
+app.set('trust proxy', 1);
+
 // ============================================
 // SECURITY MIDDLEWARE
 // ============================================
@@ -26,6 +29,9 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const { sanitizeInput } = require('./middleware/sanitizer');
 app.use(sanitizeInput);
+
+const { generalLimiter } = require('./middleware/rateLimiter');
+app.use('/api/v1', generalLimiter);
 
 // ============================================
 // API ROUTES

@@ -11,18 +11,18 @@ const securityHeaders = helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net'],
-            imgSrc: ["'self'", 'data:', 'https:'],
+            imgSrc: ["'self'", 'data:', 'https://aptransco.gov.in'],
             scriptSrc: ["'self'"],
             connectSrc: ["'self'"],
             frameSrc: ["'self'"],
-            frameAncestors: ["'self'", 'http://localhost:5173', 'http://localhost:5174'],
+            frameAncestors: process.env.FRAME_ANCESTORS ? process.env.FRAME_ANCESTORS.split(',') : ["'none'"],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: [],
         },
     },
     
-    // Prevent clickjacking attacks (superseded by frame-ancestors but kept for safety)
-    frameguard: false,
+    // Prevent clickjacking attacks
+    frameguard: { action: 'deny' },
     
     // Prevent MIME type sniffing
     noSniff: true,
@@ -36,11 +36,11 @@ const securityHeaders = helmet({
     },
     
     // HSTS - Force HTTPS (enable in production)
-    hsts: {
+    hsts: process.env.NODE_ENV === 'production' ? {
         maxAge: 31536000,
         includeSubDomains: true,
         preload: true
-    },
+    } : false,
     
     // Hide X-Powered-By header
     hidePoweredBy: true,
@@ -56,7 +56,7 @@ const securityHeaders = helmet({
     // Permitted Cross-Origin Policies
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    crossOriginResourcePolicy: { policy: 'same-site' }
 });
 
 module.exports = securityHeaders;

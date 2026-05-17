@@ -74,7 +74,14 @@ export const LanguageProvider = ({ children }) => {
         triggerGoogleTranslate(next);
     }, [lang]);
 
-    const t = useCallback((key) => key, []);
+    const dictionary = {
+        'nav.dashboard': 'Dashboard',
+        'nav.apply': 'Apply Internships',
+        'nav.profile': 'My Profile',
+        'dashboard.browse': 'Browse Internships',
+        'profile.update': 'Update Profile'
+    };
+    const t = useCallback((key) => dictionary[key] || key, []);
 
     return (
         <LanguageContext.Provider value={{ lang, t, toggleLanguage }}>

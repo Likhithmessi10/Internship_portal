@@ -4,7 +4,7 @@ services:
 
   # ── PostgreSQL Database ──────────────────────────────────────────────────────
   postgres:
-    image: postgres:15-alpine
+    image: postgres:13-alpine
     container_name: aptransco_db
     restart: unless-stopped
     environment:
@@ -21,64 +21,37 @@ services:
       timeout: 5s
       retries: 10
 
-  # ── Node.js Backend ──────────────────────────────────────────────────────────
-  backend:
+  # ── Unified Application (Node.js + Nginx) ────────────────────────────────────
+  app:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    container_name: aptransco_backend
+    container_name: aptransco_app
     restart: unless-stopped
     ports:
-      - "5001:5001"
+      - "80:80"
     environment:
       PORT: 5001
       NODE_ENV: production
       DATABASE_URL: postgresql://aptransco:aptransco_docker_2026@postgres:5432/aptransco?schema=public
       JWT_SECRET: docker_test_jwt_secret_aptransco_2026_change_in_production
+      JWT_REFRESH_SECRET: docker_test_jwt_refresh_secret_aptransco_2026_change_in_production
       JWT_EXPIRY: 7d
       JWT_REFRESH_EXPIRY: 30d
-      CORS_ORIGINS: http://localhost:5173,http://localhost:5174
+      CORS_ORIGINS: http://localhost,http://localhost:80
       MAX_FILE_SIZE: 5242880
       ALLOWED_MIME_TYPES: application/pdf,image/jpeg,image/png,image/jpg
       CLAMAV_ENABLED: "false"
       EMAIL_SERVICE_URL: https://aptrservice.aptransco.gov.in/api/noreply
       EMAIL_SERVICE_ATTACHMENT_URL: https://aptrservice.aptransco.gov.in/api/noreplyattachment
-      MORGAN_LOG_FORMAT: dev
+      MORGAN_LOG_FORMAT: combined
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - uploads_data:/app/uploads
-
-  # ── Student Frontend (port 5173) ─────────────────────────────────────────────
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: http://localhost:5001/api/v1
-    container_name: aptransco_frontend
-    restart: unless-stopped
-    ports:
-      - "5173:80"
-    depends_on:
-      - backend
-
-  # ── Admin Portal (port 5174) ─────────────────────────────────────────────────
-  admin-portal:
-    build:
-      context: ./admin-portal
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: http://localhost:5001/api/v1
-    container_name: aptransco_admin
-    restart: unless-stopped
-    ports:
-      - "5174:80"
-    depends_on:
-      - backend
+      - uploads_data:/app/backend/uploads
 
 volumes:
   postgres_data:

@@ -6,7 +6,7 @@ const crypto = require('crypto');
  */
 const generateOTP = () => {
     // Generate a random number between 100000 and 999999
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return (100000 + crypto.randomInt(900000)).toString();
 };
 
 /**
@@ -27,9 +27,7 @@ const sendOTP = async (destination, otp) => {
     // TODO: Implement SMS sending via Twilio/AWS SNS
     
     // For development only - remove in production
-    if (process.env.NODE_ENV === 'development') {
-        console.log(`[DEV MODE] OTP for ${destination}: ${otp}`);
-    }
+
     
     // Simulate async network delay
     return new Promise(resolve => setTimeout(resolve, 500));

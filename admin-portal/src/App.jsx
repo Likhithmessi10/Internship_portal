@@ -71,7 +71,7 @@ const MonetaryRoute = ({ children, allowedRoles, fallback }) => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/admin">
         <Routes>
           {/* Public Admin Routes (Role-Specific) */}
           <Route path="/" element={<AdminLanding />} />

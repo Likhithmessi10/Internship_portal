@@ -11,17 +11,17 @@ const generateAccessToken = (id, email, role, department, phone, name) => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, email, role, department, phone, name }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, role, department }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRY || '2h'
     });
 };
 
 // Generate Refresh Token
 const generateRefreshToken = (id, email, role, department, phone, name) => {
-    if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is not defined in environment variables');
+    if (!process.env.JWT_REFRESH_SECRET) {
+        throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
     }
-    return jwt.sign({ id, email, role, department, phone, name }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, role, department }, process.env.JWT_REFRESH_SECRET, {
         expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d'
     });
 };
@@ -53,7 +53,8 @@ const register = async (req, res) => {
         }
 
         // Hash password
-        const salt = await bcrypt.genSalt(10);
+        const SALT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+        const salt = await bcrypt.genSalt(SALT_ROUNDS);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create user
@@ -80,8 +81,7 @@ const register = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                department: user.department,
-                phone: user.phone
+                department: user.department
             }
         });
     } catch (error) {
@@ -119,7 +119,8 @@ const registerAdmin = async (req, res) => {
             return res.status(400).json({ success: false, message: 'User already exists' });
         }
 
-        const salt = await bcrypt.genSalt(10);
+        const SALT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+        const salt = await bcrypt.genSalt(SALT_ROUNDS);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const user = await prisma.user.create({
@@ -148,8 +149,7 @@ const registerAdmin = async (req, res) => {
                 email: user.email,
                 name: user.name,
                 role: user.role,
-                department: user.department,
-                phone: user.phone
+                department: user.department
             }
         });
     } catch (error) {
@@ -176,6 +176,7 @@ const login = async (req, res) => {
         // Check for user
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
+            await bcrypt.compare(password, '$2b$12$invalidhashpadding000000000000000000000000000000000000');
             await logFailedLogin(email, ipAddress, 'user_not_found');
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
@@ -202,8 +203,7 @@ const login = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                department: user.department,
-                phone: user.phone
+                department: user.department
             }
         });
 
@@ -313,7 +313,8 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        const salt = await bcrypt.genSalt(10);
+        const SALT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+        const salt = await bcrypt.genSalt(SALT_ROUNDS);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
         await prisma.user.update({

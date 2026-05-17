@@ -36,16 +36,36 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
+const enforcePerFieldLimits = (req, res, next) => {
+    // Define field-specific limits (e.g. photo <= 500KB, default 5MB)
+    const fieldLimits = {
+        photo: 500 * 1024,
+        signature: 500 * 1024,
+        document: 5 * 1024 * 1024,
+        resume: 2 * 1024 * 1024
+    };
+
+    const files = req.file ? [req.file] : req.files ? (Array.isArray(req.files) ? req.files : Object.values(req.files).flat()) : [];
+    
+    for (const file of files) {
+        const limit = fieldLimits[file.fieldname] || 5 * 1024 * 1024;
+        if (file.size > limit) {
+            return res.status(400).json({ success: false, message: `File size for ${file.fieldname} exceeds the limit.` });
+        }
+    }
+    next();
+};
+
 /**
  * Upload middleware with malware scanning
  * Use this instead of upload.any() directly
  * Usage: upload.fields([...]), malwareScan
  */
 const uploadWithScan = {
-    any: () => [upload.any(), malwareScanMiddleware],
-    fields: (fields) => [upload.fields(fields), malwareScanMiddleware],
-    single: (name) => [upload.single(name), malwareScanMiddleware],
-    array: (name, maxCount) => [upload.array(name, maxCount), malwareScanMiddleware]
+    any: () => [upload.any(), enforcePerFieldLimits, malwareScanMiddleware],
+    fields: (fields) => [upload.fields(fields), enforcePerFieldLimits, malwareScanMiddleware],
+    single: (name) => [upload.single(name), enforcePerFieldLimits, malwareScanMiddleware],
+    array: (name, maxCount) => [upload.array(name, maxCount), enforcePerFieldLimits, malwareScanMiddleware]
 };
 
 module.exports = uploadWithScan;
