@@ -102,6 +102,12 @@ const NAV = {
                 { label: 'Reports',     icon: BarChart3, path: '/mentor/reports' },
             ]
         },
+        {
+            section: 'System',
+            items: [
+                { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+            ]
+        },
     ],
     ADMIN: [
         {

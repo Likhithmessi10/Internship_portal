@@ -1,13 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 
-// Configuration
+// Configuration — secrets ALWAYS come from env. No hardcoded fallbacks.
 const CONFIG = {
-    apiUrl: process.env.EMAIL_API_URL || 'https://aptrservice.aptransco.gov.in/api/noreply',
-    apiKey: process.env.EMAIL_API_KEY || 'NOVAC_MRZ',
-    headerKey: 'X-API-Key',
+    apiUrl: process.env.EMAIL_API_URL || process.env.EMAIL_SERVICE_URL || 'https://aptrservice.aptransco.gov.in/api/noreply',
+    apiKey: process.env.EMAIL_API_KEY || '',
+    headerKey: process.env.EMAIL_API_KEY_HEADER || 'X-API-Key',
     timeout: 10000
 };
+
+// Warn once at startup if the API key is missing — emails will be skipped, never use a leaked default.
+if (!CONFIG.apiKey) {
+    console.warn('[emailService] EMAIL_API_KEY is not set — outbound emails will be skipped. Set it in your environment or .env file.');
+}
 
 /**
  * Load and process an HTML template
@@ -39,6 +44,12 @@ const getTemplate = (templateName, placeholders = {}) => {
 const sendEmail = async ({ to, subject, body }) => {
     if (!to || !subject || !body) {
         throw new Error('Missing required fields: to, subject, and body are required');
+    }
+
+    // No key configured — skip silently rather than calling an unauthenticated endpoint.
+    if (!CONFIG.apiKey) {
+        console.warn(`[emailService] Skipping email to ${to}: EMAIL_API_KEY not configured.`);
+        return { skipped: true, reason: 'EMAIL_API_KEY not configured' };
     }
 
     const formData = new FormData();

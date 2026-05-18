@@ -23,6 +23,23 @@ const submitWorkLog = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Work logs can only be submitted after hiring.' });
         }
 
+        // Parse date to "YYYY-MM-DD" format timezone-independently
+        const logDateObj = new Date(date);
+        const logDateStr = logDateObj.toISOString().split('T')[0];
+
+        // Get today's date in IST "YYYY-MM-DD"
+        const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const todayISTStr = nowIST.getFullYear() + '-' + 
+            String(nowIST.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(nowIST.getDate()).padStart(2, '0');
+
+        if (logDateStr !== todayISTStr) {
+            return res.status(400).json({
+                success: false,
+                message: `You are only allowed to submit/update work logs for the present day (${todayISTStr}).`
+            });
+        }
+
         const logDate = new Date(date);
         logDate.setUTCHours(0, 0, 0, 0);
 

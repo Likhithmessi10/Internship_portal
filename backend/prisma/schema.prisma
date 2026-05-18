@@ -417,6 +417,8 @@ model Attendance {
   mentorReview  String?
   meetsMinimum  Boolean @default(false)
   minimumDays   Int     @default(20)
+  fileUrl       String?
+  fileName      String?
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }

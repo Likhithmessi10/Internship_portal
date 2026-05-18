@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Users, ClipboardList, FileText, Calendar } from 'lucide-react';
+import { ArrowLeft, Users, ClipboardList, FileText, BookOpen } from 'lucide-react';
 import InternsTab from './tabs/InternsTab';
 import TasksTab from './tabs/TasksTab';
 import SubmissionsTab from './tabs/SubmissionsTab';
-import AttendanceTab from './tabs/AttendanceTab';
+import LogsTab from './tabs/LogsTab';
 
 const tabs = [
     { key: 'interns', label: 'Interns', icon: Users },
     { key: 'tasks', label: 'Tasks', icon: ClipboardList },
     { key: 'submissions', label: 'Submissions', icon: FileText },
-    { key: 'attendance', label: 'Attendance', icon: Calendar },
+    { key: 'logs', label: 'View Logs', icon: BookOpen },
 ];
 
 const InternshipDetailView = ({ internship, onBack }) => {
@@ -60,7 +60,7 @@ const InternshipDetailView = ({ internship, onBack }) => {
                 {activeTab === 'interns' && <InternsTab internshipId={internship.id} />}
                 {activeTab === 'tasks' && <TasksTab internshipId={internship.id} />}
                 {activeTab === 'submissions' && <SubmissionsTab internshipId={internship.id} />}
-                {activeTab === 'attendance' && <AttendanceTab internshipId={internship.id} />}
+                {activeTab === 'logs' && <LogsTab internshipId={internship.id} />}
             </div>
         </div>
     );

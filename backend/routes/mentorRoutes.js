@@ -32,8 +32,10 @@ router.get('/tasks', getTasks);
 router.get('/submissions', getSubmissions);
 router.put('/submissions/:id/review', reviewSubmission);
 
+const upload = require('../middleware/uploadMiddleware');
+
 // Attendance
-router.post('/attendance', markAttendance);
+router.post('/attendance', upload.single('file'), markAttendance);
 router.post('/attendance/bulk', bulkMarkAttendance);
 router.get('/attendance', getAttendance);
 

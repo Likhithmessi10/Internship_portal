@@ -65,12 +65,14 @@ const GroupCollabCard = ({ internship }) => {
                 </p>
 
                 <div className="space-y-3 pt-5 border-t border-gray-100 dark:border-slate-700 mt-auto mb-6">
-                    <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                            <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    {internship.duration && (
+                        <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
+                                <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            {internship.duration}
                         </div>
-                        {internship.duration}
-                    </div>
+                    )}
                     <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
                             <Briefcase size={14} className="text-[#003087] dark:text-blue-400" />
@@ -165,16 +167,17 @@ const SingleRoleCard = ({ internship, item, isMatch }) => {
                 <h2 className="text-xl lg:text-2xl font-black font-rajdhani text-gray-900 dark:text-white mb-2 line-clamp-2 leading-tight group-hover:text-[#003087] dark:group-hover:text-blue-400 transition-colors">
                     {internship.title}
                 </h2>
-                <div className="text-[11px] font-extrabold text-gray-400 dark:text-slate-500 tracking-wide mb-4 line-clamp-1 flex items-center gap-1.5">
-                    <Briefcase size={10} className="shrink-0" />
-                    <span className="text-[#003087] dark:text-blue-400 opacity-80">{item.roleName}</span>
-                </div>
-
                 <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mb-6 line-clamp-3 leading-relaxed flex-grow">
                     {item.description || internship.description}
                 </p>
 
                 <div className="space-y-3 pt-5 border-t border-gray-100 dark:border-slate-700 mt-auto mb-6">
+                    <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
+                            <Briefcase size={14} className="text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        {item.roleName}
+                    </div>
                     <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
                             <MapPin size={14} className="text-[#003087] dark:text-blue-400" />
@@ -185,12 +188,22 @@ const SingleRoleCard = ({ internship, item, isMatch }) => {
                                 : 'Multiple')
                             : (internship.location || 'Multiple Locations')}
                     </div>
-                    <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                            <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    {internship.duration && (
+                        <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
+                                <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            {internship.duration}
                         </div>
-                        {internship.duration}
-                    </div>
+                    )}
+                    {internship.applicationDeadline && (
+                        <div className="flex items-center text-sm font-bold text-red-600 dark:text-red-400 gap-3">
+                            <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/20 flex items-center justify-center shrink-0 border border-red-100 dark:border-red-900/30">
+                                <Clock size={14} className="text-red-500" />
+                            </div>
+                            Deadline: {new Date(internship.applicationDeadline).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                    )}
                     <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
                             <Users size={14} className="text-amber-500" />

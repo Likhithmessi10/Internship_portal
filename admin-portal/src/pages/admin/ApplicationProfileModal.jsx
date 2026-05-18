@@ -94,8 +94,8 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
     const [viewerLabel, setViewerLabel] = useState('');
     const [selectedRole, setSelectedRole] = useState('');
     const [manualRollNumber, setManualRollNumber] = useState('');
-    const [joiningDate, setJoiningDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [joiningDate, setJoiningDate] = useState(application?.joiningDate ? new Date(application.joiningDate).toISOString().slice(0, 10) : '');
+    const [endDate, setEndDate] = useState(application?.endDate ? new Date(application.endDate).toISOString().slice(0, 10) : '');
     const [mentorIdInput, setMentorIdInput] = useState('');
     const [mentors, setMentors] = useState([]);
     const [loadingMentors, setLoadingMentors] = useState(false);

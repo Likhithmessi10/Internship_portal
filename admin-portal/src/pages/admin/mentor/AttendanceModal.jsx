@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import api from '../../../utils/api';
-import { CheckCircle, XCircle, Calendar, Clock, X, Send } from 'lucide-react';
+import api, { MEDIA_URL } from '../../../utils/api';
+import { CheckCircle, XCircle, Calendar, Clock, X, Upload, FileText, AlertTriangle, Award } from 'lucide-react';
 
 const AttendanceModal = ({ application, onClose }) => {
     const [loading, setLoading] = useState(false);
+    const [issuing, setIssuing] = useState(false);
     const [attendanceData, setAttendanceData] = useState(null);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [present, setPresent] = useState(true);
-    const [hours, setHours] = useState(8);
+    
+    // Form fields
+    const [totalDays, setTotalDays] = useState('');
+    const [daysAttended, setDaysAttended] = useState('');
+    const [file, setFile] = useState(null);
+    const [fileError, setFileError] = useState('');
 
     useEffect(() => {
         if (application?.id) {
@@ -19,38 +23,100 @@ const AttendanceModal = ({ application, onClose }) => {
     const fetchAttendance = async () => {
         try {
             const res = await api.get(`/mentor/attendance?applicationId=${application.id}`);
-            setAttendanceData(res.data.data);
+            const data = res.data.data;
+            setAttendanceData(data);
+            if (data) {
+                setTotalDays(data.totalDays || '');
+                setDaysAttended(data.daysAttended || '');
+            }
         } catch (err) {
             console.error('Failed to fetch attendance', err);
         }
     };
 
+    const handleFileChange = (e) => {
+        const selected = e.target.files[0];
+        if (!selected) return;
+
+        // Support Images, PDFs, and Excel formats
+        const isPdf = selected.type === 'application/pdf';
+        const isImg = /^image\/(jpeg|jpg|png)$/i.test(selected.type);
+        const isExcel = [
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ].includes(selected.type) || /\.(xls|xlsx)$/i.test(selected.name);
+
+        if (!isPdf && !isImg && !isExcel) {
+            setFileError('Invalid file type. Please upload a valid PDF, Image, or Excel sheet.');
+            setFile(null);
+            return;
+        }
+
+        if (selected.size > 10 * 1024 * 1024) { // 10MB limit
+            setFileError('File size too large. Maximum size is 10MB.');
+            setFile(null);
+            return;
+        }
+
+        setFileError('');
+        setFile(selected);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!totalDays || !daysAttended) {
+            alert('Please specify both total working days and days attended.');
+            return;
+        }
+
+        if (parseInt(daysAttended) > parseInt(totalDays)) {
+            alert('Days attended cannot exceed total working days.');
+            return;
+        }
+
+        if (!attendanceData?.fileUrl && !file) {
+            alert('Please upload an attendance sheet (PDF, Image, or Excel).');
+            return;
+        }
+
         setLoading(true);
         try {
-            console.log('Marking attendance:', {
-                applicationId: application.id,
-                date: selectedDate,
-                present,
-                hours
+            const formData = new FormData();
+            formData.append('applicationId', application.id);
+            formData.append('totalDays', totalDays);
+            formData.append('daysAttended', daysAttended);
+            if (file) {
+                formData.append('file', file);
+            }
+
+            await api.post('/mentor/attendance', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
-            const res = await api.post('/mentor/attendance/mark', {
-                applicationId: application.id,
-                date: selectedDate,
-                present,
-                hours
-            });
-            console.log('Attendance marked successfully:', res.data);
+
+            alert('Attendance details updated successfully!');
             fetchAttendance();
-            alert('Attendance marked successfully!');
-            onClose(true);
+            onClose(true); // Close and refresh list
         } catch (err) {
-            console.error('Failed to mark attendance:', err);
-            const errorMsg = err.response?.data?.message || 'Failed to mark attendance. Please try again.';
-            alert(errorMsg);
+            console.error('Failed to save attendance:', err);
+            alert(err.response?.data?.message || 'Failed to save attendance. Please try again.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleIssueCertificate = async () => {
+        if (!window.confirm("Are you sure you want to issue the certificate and mark this student's internship as COMPLETED?")) return;
+        setIssuing(true);
+        try {
+            await api.put(`/admin/applications/${application.id}`, { status: 'COMPLETED' });
+            alert("Certificate issued successfully! Internship is now marked as COMPLETED.");
+            onClose(true);
+        } catch (err) {
+            console.error("Failed to issue certificate", err);
+            alert(err.response?.data?.message || "Failed to issue certificate.");
+        } finally {
+            setIssuing(false);
         }
     };
 
@@ -60,12 +126,12 @@ const AttendanceModal = ({ application, onClose }) => {
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-            <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
-                <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-gradient-to-r from-emerald-600 to-emerald-600/80 text-white">
+            <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onClick={() => onClose()} />
+            <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 z-10 border border-white/20">
+                <div className="p-8 border-b border-outline-variant/10 flex justify-between items-center bg-gradient-to-r from-indigo-700 to-indigo-600 text-white">
                     <div>
                         <h3 className="text-xl font-bold flex items-center gap-2">
-                            <Calendar size={24} /> Mark Attendance
+                            <Calendar size={24} /> Simplified Attendance Sheet
                         </h3>
                         <p className="text-[10px] text-white/70 uppercase font-black mt-1 tracking-widest">
                             {application?.student?.fullName}
@@ -76,115 +142,136 @@ const AttendanceModal = ({ application, onClose }) => {
                     </button>
                 </div>
 
-                <div className="flex-1 p-10 overflow-y-auto space-y-10">
-                    {/* Attendance Summary */}
+                <div className="flex-1 p-8 overflow-y-auto space-y-6">
+                    {/* Current Attendance Summary */}
                     {attendanceData && (
-                        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-sm font-black text-emerald-800 uppercase tracking-widest">Attendance Summary</h4>
-                                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${attendanceData.meetsMinimum
-                                        ? 'bg-emerald-200 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
-                                        : 'bg-amber-200 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
-                                    }`}>
-                                    {attendanceData.meetsMinimum ? 'On Track' : 'Needs Attention'}
+                        <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 rounded-3xl p-5 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-black text-slate-800 dark:text-slate-300 uppercase tracking-widest">Current Summary</h4>
+                                <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${attendancePercentage >= 90
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400'
+                                }`}>
+                                    {attendancePercentage >= 90 ? '90%+ On Track' : 'Needs Attention'}
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-4 mb-4">
-                                <div className="text-center">
-                                    <p className="text-3xl font-black text-emerald-600">{attendanceData.daysAttended}</p>
-                                    <p className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest mt-1">Days Present</p>
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p className="text-2xl font-black text-slate-800 dark:text-white">{attendanceData.daysAttended}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Days Attended</p>
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-3xl font-black text-slate-400 dark:text-slate-500">{attendanceData.totalDays}</p>
-                                    <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Total Days</p>
+                                <div>
+                                    <p className="text-2xl font-black text-slate-800 dark:text-white">{attendanceData.totalDays}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Days</p>
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-3xl font-black text-primary dark:text-blue-400">{attendancePercentage}%</p>
-                                    <p className="text-[9px] font-bold text-primary dark:text-blue-400 uppercase tracking-widest mt-1">Attendance</p>
+                                <div>
+                                    <p className={`text-2xl font-black ${attendancePercentage >= 90 ? 'text-emerald-600' : 'text-amber-600'}`}>{attendancePercentage}%</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Percentage</p>
                                 </div>
                             </div>
 
-                            <div className="w-full h-3 bg-white dark:bg-slate-800 rounded-full overflow-hidden border border-emerald-100 dark:border-emerald-500/20 font-bold">
-                                <div
-                                    className={`h-full transition-all duration-1000 ${attendanceData.meetsMinimum ? 'bg-emerald-500' : 'bg-amber-500'
-                                        }`}
-                                    style={{ width: `${attendancePercentage}%` }}
-                                />
-                            </div>
-                            <p className="text-[9px] text-emerald-600/60 font-medium uppercase tracking-widest text-center mt-2">
-                                Minimum {attendanceData.minimumDays} days required
-                            </p>
+                            {attendanceData.fileUrl && (
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                                    <span className="text-slate-400 font-medium">Uploaded Sheet:</span>
+                                    <a
+                                        href={`${MEDIA_URL}/${attendanceData.fileUrl}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider text-[10px]"
+                                    >
+                                        <FileText size={14} /> View File
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline ml-1">Date</label>
-                            <div className="relative">
-                                <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50" />
-                                <input
-                                    type="date"
-                                    required
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="w-full p-4 pl-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline ml-1">Status</label>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setPresent(true)}
-                                    className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2 ${present
-                                            ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-emerald-300'
-                                        }`}
-                                >
-                                    <CheckCircle size={20} /> Present
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setPresent(false)}
-                                    className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2 ${!present
-                                            ? 'bg-red-50 dark:bg-red-500/10 border-red-500 text-red-600 dark:text-red-400'
-                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-red-300'
-                                        }`}
-                                >
-                                    <XCircle size={20} /> Absent
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-outline ml-1">Hours (Optional)</label>
-                            <div className="relative">
-                                <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/50" />
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Working Days</label>
                                 <input
                                     type="number"
+                                    required
                                     min="1"
-                                    max="24"
-                                    value={hours}
-                                    onChange={(e) => setHours(parseInt(e.target.value))}
-                                    className="w-full p-4 pl-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold"
+                                    placeholder="e.g. 30"
+                                    value={totalDays}
+                                    onChange={(e) => setTotalDays(e.target.value)}
+                                    className="w-full p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
                                 />
                             </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Days Attended</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min="0"
+                                    placeholder="e.g. 28"
+                                    value={daysAttended}
+                                    onChange={(e) => setDaysAttended(e.target.value)}
+                                    className="w-full p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                {attendanceData?.fileUrl ? 'Replace Attendance Sheet (Optional)' : 'Attendance Sheet (PDF, Excel, or Image)'}
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    onChange={handleFileChange}
+                                    accept=".pdf,image/*,.xls,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-500 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                />
+                            </div>
+                            {fileError && <p className="text-[10px] text-red-500 font-bold mt-1">{fileError}</p>}
                         </div>
 
                         <button
+                            type="submit"
                             disabled={loading}
-                            className="w-full py-5 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 hover:shadow-2xl hover:shadow-emerald-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4"
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2"
                         >
-                            {loading ? 'SAVING...' : (
-                                <>
-                                    <Send size={20} /> {present ? 'MARK PRESENT' : 'MARK ABSENT'}
-                                </>
-                            )}
+                            {loading ? 'Saving Details...' : <><Upload size={18} /> Update Attendance Details</>}
                         </button>
                     </form>
+
+                    {/* Low Attendance Alert & Force Issue Certificate */}
+                    {attendanceData && (
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                            {attendancePercentage < 90 && (
+                                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 flex items-start gap-3 text-amber-800 dark:text-amber-300">
+                                    <AlertTriangle size={18} className="shrink-0 text-amber-600 mt-0.5 animate-pulse" />
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-wider">Low Attendance Alert ({attendancePercentage}%)</p>
+                                        <p className="text-[11px] font-medium opacity-80 mt-0.5">This candidate does not meet the minimum required 90% attendance. You can still choose to issue the certificate under special approval.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {application.status !== 'COMPLETED' ? (
+                                <button
+                                    onClick={handleIssueCertificate}
+                                    disabled={issuing}
+                                    className={`w-full py-4 text-xs font-black uppercase tracking-widest rounded-2xl transition-all shadow-md active:scale-98 flex items-center justify-center gap-2 ${
+                                        attendancePercentage < 90
+                                            ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
+                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                                    }`}
+                                >
+                                    <Award size={18} /> {attendancePercentage < 90 ? 'Force Issue Certificate anyway' : 'Issue Certificate & Complete'}
+                                </button>
+                            ) : (
+                                <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded-2xl p-4 flex items-center justify-center gap-2 text-emerald-800 dark:text-emerald-400">
+                                    <CheckCircle size={18} className="text-emerald-600" />
+                                    <span className="text-xs font-black uppercase tracking-wider">Internship Completed & Certificate Issued</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>,

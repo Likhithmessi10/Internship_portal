@@ -127,7 +127,8 @@ const StudentProfileForm = () => {
     const validate = () => {
         const requiredFields = {
             1: ['fullName', 'collegeRollNumber', 'aadhaarNumber', 'phone', 'dob', 'address'],
-            2: ['university', 'degree', 'branch', 'cgpa']
+            2: ['university', 'degree', 'branch', 'cgpa'],
+            4: ['linkedinUrl', 'githubUrl']
         };
 
         // Check if college is selected
@@ -147,10 +148,25 @@ const StudentProfileForm = () => {
             return false;
         }
 
+        // Validate URLs on step 4
+        if (activeTab === 4) {
+            const urlPattern = /^https?:\/\/.+\..+/i;
+            if (formData.linkedinUrl && !urlPattern.test(formData.linkedinUrl)) {
+                setError('LinkedIn URL must start with http:// or https://');
+                return false;
+            }
+            if (formData.githubUrl && !urlPattern.test(formData.githubUrl)) {
+                setError('GitHub URL must start with http:// or https://');
+                return false;
+            }
+        }
+
         const fieldsToHero = requiredFields[activeTab] || [];
         for (const f of fieldsToHero) {
             if (!formData[f]) {
-                setError(`Please fill in all required fields on this step`);
+                setError(activeTab === 4
+                    ? 'Please provide both your LinkedIn and GitHub URLs before submitting.'
+                    : 'Please fill in all required fields on this step');
                 return false;
             }
         }
@@ -179,6 +195,19 @@ const StudentProfileForm = () => {
         if (!formData.collegeName) {
             setActiveTab(2);
             setError('Please select your institution');
+            return;
+        }
+
+        // LinkedIn and GitHub URLs are mandatory on first submission
+        if (!formData.linkedinUrl || !formData.githubUrl) {
+            setActiveTab(4);
+            setError('Please provide both your LinkedIn and GitHub URLs.');
+            return;
+        }
+        const urlPattern = /^https?:\/\/.+\..+/i;
+        if (!urlPattern.test(formData.linkedinUrl) || !urlPattern.test(formData.githubUrl)) {
+            setActiveTab(4);
+            setError('LinkedIn and GitHub URLs must start with http:// or https://');
             return;
         }
 
@@ -236,12 +265,9 @@ const StudentProfileForm = () => {
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            // Always block default form submission on Enter — submission only via Deploy button.
             e.preventDefault();
-            if (activeTab < 4) {
-                if (validate()) nextTab();
-            } else {
-                handleSubmit();
-            }
+            if (activeTab < 4 && validate()) nextTab();
         }
     };
 

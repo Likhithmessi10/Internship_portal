@@ -91,20 +91,48 @@ const StudentDashboard = () => {
 
     const isActive = activeApp && ACTIVE_STATUSES.includes(activeApp.status);
 
-    // Joining docs shown only while pending upload/verification — hide once verified or hired
-    const joiningDocsUnlocked = ['SELECTED', 'REPORTED', 'DOCUMENTS_PENDING'].includes(activeApp?.status);
+    // Joining docs are unlocked only AFTER the HOD has clicked "Request Docs".
+    // - SELECTED: student is selected but HOD hasn't requested docs yet → keep section hidden
+    // - DOCUMENTS_PENDING: HOD has requested docs → student can upload
+    // - REPORTED: legacy monetary flow, still allow upload
+    const joiningDocsUnlocked = ['DOCUMENTS_PENDING', 'REPORTED'].includes(activeApp?.status);
+
+    // Resolve which joining docs to show: HOD-configured if set, otherwise sensible defaults.
+    // Configured docs: [{ id, label, format ('PDF' | 'IMAGE' | 'ANY'), mandatory }]
+    const configuredDocs = Array.isArray(activeApp?.departmentGroup?.requiredDocuments)
+        ? activeApp.departmentGroup.requiredDocuments
+        : [];
+    const normalizeId = s => String(s).toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+    const joiningDocsActive = (configuredDocs.length > 0
+        ? configuredDocs.map((d, i) => typeof d === 'string'
+            ? { id: normalizeId(d), label: d, format: 'PDF', mandatory: true, hint: '' }
+            : {
+                id: d.id || normalizeId(d.label || `DOC_${i+1}`),
+                label: d.label || d.id || 'Document',
+                format: ['PDF', 'IMAGE', 'ANY'].includes(d.format) ? d.format : 'PDF',
+                mandatory: d.mandatory !== false,
+                hint: ''
+            })
+        : JOINING_DOCS.map(d => ({ ...d, format: 'PDF', mandatory: true }))
+    );
 
     // Uploaded joining doc types already on file
+    const joiningTypeSet = new Set(joiningDocsActive.map(d => d.id));
     const uploadedJoiningTypes = new Set(
-        (activeApp?.documents || []).filter(d => ['NOC', 'BOND', 'UNDERTAKING'].includes(d.type)).map(d => d.type)
+        (activeApp?.documents || []).filter(d => joiningTypeSet.has(d.type)).map(d => d.type)
     );
-    const joiningDocsComplete = JOINING_DOCS.every(d => uploadedJoiningTypes.has(d.id));
+    const joiningDocsComplete = joiningDocsActive.filter(d => d.mandatory).every(d => uploadedJoiningTypes.has(d.id));
 
-    const handleJoiningFileChange = (e, docId) => {
+    const acceptForFormat = (fmt) => fmt === 'IMAGE' ? 'image/jpeg,image/png,image/jpg' : fmt === 'ANY' ? 'application/pdf,image/jpeg,image/png,image/jpg' : 'application/pdf';
+    const handleJoiningFileChange = (e, doc) => {
         const file = e.target.files[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') {
-            setJoiningError('Only PDF files are accepted.');
+        const fmt = doc.format || 'PDF';
+        const isPdf = file.type === 'application/pdf';
+        const isImg = /^image\/(jpeg|jpg|png)$/i.test(file.type);
+        const ok = (fmt === 'PDF' && isPdf) || (fmt === 'IMAGE' && isImg) || (fmt === 'ANY' && (isPdf || isImg));
+        if (!ok) {
+            setJoiningError(`${doc.label} must be ${fmt === 'PDF' ? 'a PDF file' : fmt === 'IMAGE' ? 'a JPG or PNG image' : 'a PDF or image'}.`);
             return;
         }
         if (file.size > 5 * 1024 * 1024) {
@@ -112,7 +140,7 @@ const StudentDashboard = () => {
             return;
         }
         setJoiningError('');
-        setJoiningFiles(prev => ({ ...prev, [docId]: file }));
+        setJoiningFiles(prev => ({ ...prev, [doc.id]: file }));
     };
 
     const handleReapply = async (appId) => {
@@ -143,12 +171,13 @@ const StudentDashboard = () => {
     };
 
     const handleWorkLogSubmit = async (appId) => {
-        if (!workLogDate || !workLogDesc.trim()) return;
+        if (!workLogDesc.trim()) return;
+        const todayStr = new Date().toISOString().slice(0, 10);
         setWorkLogSaving(true);
         setWorkLogMsg('');
         try {
             await api.post(`/students/applications/${appId}/work-log`, {
-                date: workLogDate,
+                date: todayStr,
                 description: workLogDesc.trim(),
                 hoursWorked: workLogHours || undefined
             });
@@ -200,6 +229,21 @@ const StudentDashboard = () => {
         }
     };
 
+    const handleDownloadLetter = async (appId, type) => {
+        try {
+            const res = await api.get(`/students/applications/${appId}/${type}`, { responseType: 'blob' });
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = `${type === 'offer-letter' ? 'Offer' : 'Joining'}_Letter_${appId}.pdf`;
+            link.click();
+            window.URL.revokeObjectURL(link.href);
+        } catch (err) {
+            console.error('Download error:', err);
+            alert('Failed to download letter. Please try again.');
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -223,10 +267,15 @@ const StudentDashboard = () => {
                             <div>
                                 <div className="inline-flex items-center gap-2 px-2 py-1 bg-white/10 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest mb-1">
                                     <Zap size={10} className="text-yellow-400" />
-                                    {activeApp.status === 'SELECTED' 
-                                        ? (joiningDocsComplete ? 'Selected — Verification Pending' : 'Selected — Upload Joining Docs') :
-                                     activeApp.status === 'REPORTED' ? 'Reported — Verification Pending' :
-                                     'Active Internship'}
+                                    {activeApp.status === 'SELECTED'
+                                        ? 'Selected — Awaiting Document Request'
+                                        : activeApp.status === 'DOCUMENTS_PENDING'
+                                            ? (joiningDocsComplete ? 'Documents Submitted — PRTI Verification Pending' : 'Action Required — Upload Joining Documents')
+                                            : activeApp.status === 'DOCUMENTS_VERIFIED'
+                                                ? 'Documents Verified — Onboarding'
+                                                : activeApp.status === 'REPORTED'
+                                                    ? 'Reported — Verification Pending'
+                                                    : 'Active Internship'}
                                 </div>
                                 <h1 className="text-3xl font-black font-rajdhani tracking-tight leading-none mb-1">
                                     {activeApp.status === 'SELECTED'
@@ -235,12 +284,16 @@ const StudentDashboard = () => {
                                 </h1>
                                 <p className="text-indigo-100/60 font-medium text-base">
                                     {activeApp.status === 'SELECTED'
-                                        ? (joiningDocsComplete 
-                                            ? 'All documents uploaded! Please report to the PRTI office for physical verification to complete your onboarding.'
-                                            : 'You have been selected! Please upload your joining documents below and report to the PRTI office for physical verification.')
-                                        : activeApp.status === 'REPORTED'
-                                        ? 'Your reporting is confirmed. Please wait for PRTI to verify your documents and mark you as HIRED.'
-                                        : <>You are an official intern at <span className="text-white font-bold">APTRANSCO</span>.</>}
+                                        ? 'You have been selected. Your HOD will request the required joining documents shortly — you will be notified by email. No action is needed from you yet.'
+                                        : activeApp.status === 'DOCUMENTS_PENDING'
+                                            ? (joiningDocsComplete
+                                                ? 'All documents uploaded! PRTI will verify them and complete your onboarding shortly.'
+                                                : 'Your HOD has requested the joining documents below. Please upload them along with your joining and end dates to proceed.')
+                                            : activeApp.status === 'DOCUMENTS_VERIFIED'
+                                                ? 'Your documents have been verified. You will be marked as hired shortly and receive your official joining letter by email.'
+                                                : activeApp.status === 'REPORTED'
+                                                    ? 'Your reporting is confirmed. Please wait for PRTI to verify your documents and mark you as HIRED.'
+                                                    : <>You are an official intern at <span className="text-white font-bold">APTRANSCO</span>.</>}
                                 </p>
                             </div>
                         </div>
@@ -312,9 +365,12 @@ const StudentDashboard = () => {
                             </div>
 
                             <div className="space-y-3 mb-6">
-                                {JOINING_DOCS.map(doc => {
+                                {joiningDocsActive.map(doc => {
                                     const uploaded = uploadedJoiningTypes.has(doc.id);
                                     const staged = joiningFiles[doc.id];
+                                    const fmtHint = doc.format === 'IMAGE' ? 'JPG / PNG · max 5MB'
+                                                  : doc.format === 'ANY'   ? 'PDF or Image · max 5MB'
+                                                  :                          'PDF · max 5MB';
                                     return (
                                         <div key={doc.id} className={`rounded-2xl border p-4 flex items-center gap-4 transition-all ${uploaded ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-900/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50'}`}>
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${uploaded ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'}`}>
@@ -323,15 +379,22 @@ const StudentDashboard = () => {
                                                     : <FileText size={18} className="text-slate-400" />}
                                             </div>
                                             <div className="flex-grow min-w-0">
-                                                <p className={`text-sm font-black ${uploaded ? 'text-emerald-800 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'}`}>{doc.label}</p>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className={`text-sm font-black ${uploaded ? 'text-emerald-800 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'}`}>{doc.label}</p>
+                                                    {!doc.mandatory && <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">Optional</span>}
+                                                </div>
                                                 <p className="text-xs text-slate-400 font-medium truncate">
-                                                    {staged ? <span className="text-indigo-600 font-bold">{staged.name} (staged)</span> : uploaded ? 'Submitted' : doc.hint}
+                                                    {staged
+                                                        ? <span className="text-indigo-600 font-bold">{staged.name} (staged)</span>
+                                                        : uploaded
+                                                            ? 'Submitted'
+                                                            : fmtHint}
                                                 </p>
                                             </div>
                                             {!uploaded && (
                                                 <>
-                                                    <input type="file" id={`joining-${doc.id}`} accept="application/pdf" className="hidden"
-                                                        onChange={e => handleJoiningFileChange(e, doc.id)} />
+                                                    <input type="file" id={`joining-${doc.id}`} accept={acceptForFormat(doc.format)} className="hidden"
+                                                        onChange={e => handleJoiningFileChange(e, doc)} />
                                                     <label htmlFor={`joining-${doc.id}`}
                                                         className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all shrink-0 ${staged ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
                                                         {staged ? 'Change' : 'Upload'}
@@ -473,10 +536,9 @@ const StudentDashboard = () => {
                                     <div className="space-y-3 mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800">
                                         <div className="flex gap-3">
                                             <div className="flex-1">
-                                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Date</label>
-                                                <input type="date" value={workLogDate} max={todayStr}
-                                                    onChange={e => setWorkLogDate(e.target.value)}
-                                                    className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+                                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Date (Locked to Present Day)</label>
+                                                <input type="date" value={todayStr} disabled
+                                                    className="w-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-xl px-3 py-2 text-sm font-bold cursor-not-allowed" />
                                             </div>
                                             <div className="w-24">
                                                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Hours</label>
@@ -605,6 +667,26 @@ const StudentDashboard = () => {
                                                     {cfg.label}
                                                 </div>
                                             </div>
+
+                                            {/* Offer / Joining Letter Downloads */}
+                                            {['SELECTED', 'DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED', 'HIRED', 'ONGOING', 'COMPLETED'].includes(app.status) && (
+                                                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2">
+                                                    <button
+                                                        onClick={() => handleDownloadLetter(app.id, 'offer-letter')}
+                                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900 transition-colors"
+                                                    >
+                                                        <FileText size={14} /> Download Offer Letter
+                                                    </button>
+                                                    {['HIRED', 'ONGOING', 'COMPLETED'].includes(app.status) && (
+                                                        <button
+                                                            onClick={() => handleDownloadLetter(app.id, 'joining-letter')}
+                                                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900 transition-colors"
+                                                        >
+                                                            <FileCheck size={14} /> Download Joining Letter
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
 
                                             {/* Alternate location option for rejected learning internships */}
                                             {isRejectedLearning && altLocations.length > 0 && (

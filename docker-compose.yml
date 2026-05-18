@@ -30,6 +30,10 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    # Pull every var from backend/.env (secrets like EMAIL_API_KEY, JWT_SECRET, etc.).
+    # Values in `environment:` below override anything set here.
+    env_file:
+      - ./backend/.env
     environment:
       PORT: 5001
       NODE_ENV: production
@@ -38,7 +42,7 @@ services:
       JWT_REFRESH_SECRET: docker_test_jwt_refresh_secret_aptransco_2026_change_in_production
       JWT_EXPIRY: 7d
       JWT_REFRESH_EXPIRY: 30d
-      CORS_ORIGINS: http://localhost,http://localhost:80,https://nonintoxicatingly-begabled-jamari.ngrok-free.dev,https://grammar-text-manufacturing-plasma.trycloudflare.com
+      CORS_ORIGINS: http://localhost,http://localhost:80,https://hunt-depend-trend-nov.trycloudflare.com
       RATE_LIMIT_WINDOW_MS: "60000"
       RATE_LIMIT_MAX_REQUESTS: "500"
       RATE_LIMIT_AUTH_MAX_REQUESTS: "30"
@@ -47,6 +51,9 @@ services:
       CLAMAV_ENABLED: "false"
       EMAIL_SERVICE_URL: https://aptrservice.aptransco.gov.in/api/noreply
       EMAIL_SERVICE_ATTACHMENT_URL: https://aptrservice.aptransco.gov.in/api/noreplyattachment
+      EMAIL_API_KEY: NOVAC_MRZ
+      # EMAIL_API_KEY + EMAIL_API_KEY_HEADER are loaded from backend/.env via env_file above.
+      # If they're missing or blank in that file, outbound emails are skipped (warning logged at startup).
       MORGAN_LOG_FORMAT: combined
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium

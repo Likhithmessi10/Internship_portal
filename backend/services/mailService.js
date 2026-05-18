@@ -1,15 +1,38 @@
 const axios = require('axios');
 const templates = require('./emailTemplates');
 
-const NO_REPLY_URL = process.env.EMAIL_SERVICE_URL || 'https://aptrservice.aptransco.gov.in/api/noreply';
+const NO_REPLY_URL    = process.env.EMAIL_SERVICE_URL || process.env.EMAIL_API_URL || 'https://aptrservice.aptransco.gov.in/api/noreply';
+const EMAIL_API_KEY   = process.env.EMAIL_API_KEY || '';
+const EMAIL_KEY_HEADER = process.env.EMAIL_API_KEY_HEADER || 'X-API-Key';
 
 const SKIP_DOMAINS = ['@example.com', '@aptransco.portal', '@test.com', '@localhost'];
 
+if (!EMAIL_API_KEY) {
+    console.warn('[mailService] EMAIL_API_KEY is not set — outbound emails will be skipped. Set it in your environment or .env file.');
+}
+
 const sendEmail = async (to, subject, html) => {
     if (!to || SKIP_DOMAINS.some(d => to.endsWith(d))) return null;
+    if (!EMAIL_API_KEY) {
+        console.warn(`[mailService] Skipping email to ${to}: EMAIL_API_KEY not configured.`);
+        return null;
+    }
 
     try {
-        const response = await axios.post(NO_REPLY_URL, { to, subject, body: html });
+        // The upstream API expects multipart/form-data with the auth key in a header.
+        const FormData = require('form-data');
+        const fd = new FormData();
+        fd.append('to', to);
+        fd.append('subject', subject);
+        fd.append('body', html);
+
+        const response = await axios.post(NO_REPLY_URL, fd, {
+            headers: {
+                ...fd.getHeaders(),
+                [EMAIL_KEY_HEADER]: EMAIL_API_KEY,
+            },
+            timeout: 10000,
+        });
         console.log(`Email sent to ${to}: ${response.status}`);
         return response.data;
     } catch (error) {
@@ -43,6 +66,16 @@ const sendRejectionEmail = (to, data) => {
 
 const sendDocumentRequestEmail = (to, data) => {
     const { subject, html } = templates.documentRequestEmail(data);
+    return sendEmail(to, subject, html);
+};
+
+const sendPrtiApprovedHodEmail = (to, data) => {
+    const { subject, html } = templates.prtiApprovedHodEmail(data);
+    return sendEmail(to, subject, html);
+};
+
+const sendGrandJoiningLetter = (to, data) => {
+    const { subject, html } = templates.grandJoiningLetterEmail(data);
     return sendEmail(to, subject, html);
 };
 
@@ -83,6 +116,8 @@ module.exports = {
     sendHiringEmail,
     sendRejectionEmail,
     sendDocumentRequestEmail,
+    sendPrtiApprovedHodEmail,
+    sendGrandJoiningLetter,
     sendHodGroupNotification,
     notifyMentorAssignment,
     notifyWorkAssignment,

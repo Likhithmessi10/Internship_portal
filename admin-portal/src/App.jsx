@@ -248,7 +248,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/search" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI', 'HOD']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI', 'HOD', 'MENTOR']}>
               <AdminLayout><CandidateSearch /></AdminLayout>
             </ProtectedRoute>
           } />

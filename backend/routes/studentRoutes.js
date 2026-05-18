@@ -27,6 +27,11 @@ router.get('/applications/:id/work-logs', protect, authorize('STUDENT'), getStud
 router.get('/work', protect, authorize('STUDENT'), getStudentWork);
 router.post('/work/submit/:assignmentId', protect, authorize('STUDENT'), upload.single('file'), submitWork);
 
+// Letter downloads
+const { getOfferLetter, getJoiningLetter } = require('../controllers/studentController');
+router.get('/applications/:id/offer-letter', protect, authorize('STUDENT'), getOfferLetter);
+router.get('/applications/:id/joining-letter', protect, authorize('STUDENT'), getJoiningLetter);
+
 // Mentor Submission Review (for mentors)
 router.put('/work/review/:submissionId', protect, authorize('MENTOR', 'ADMIN'), reviewSubmission);
 router.get('/work/submissions', protect, authorize('MENTOR', 'ADMIN'), getMentorSubmissions);

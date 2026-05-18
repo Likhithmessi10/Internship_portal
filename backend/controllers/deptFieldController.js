@@ -226,9 +226,10 @@ const requestDocuments = async (req, res) => {
             where: { id },
             include: {
                 internship: { select: { internshipType: true, title: true } },
+                departmentGroup: { select: { requiredDocuments: true, department: true } },
+                field: { select: { fieldName: true } },
                 student: { include: { user: { select: { email: true } } } }
             },
-            // prtiApproved is a direct field, auto-included
         });
 
         if (!app) return res.status(404).json({ success: false, message: 'Application not found' });
@@ -244,17 +245,19 @@ const requestDocuments = async (req, res) => {
 
         await prisma.application.update({ where: { id }, data: { status: 'DOCUMENTS_PENDING' } });
 
-        // Notify student
-        const { sendEmail } = require('../services/mailService');
+        // Notify student with the proper template — include HOD-configured docs
+        const { sendDocumentRequestEmail } = require('../services/mailService');
         const studentEmail = app.student?.user?.email;
         if (studentEmail) {
-            sendEmail(studentEmail, 'Action Required: Upload Joining Documents',
-                `<h3>Dear ${app.student.fullName},</h3>
-                <p>Congratulations! You have been selected for the <strong>${app.internship.title}</strong> Learning Internship.</p>
-                <p>Please log in to the portal and upload the following joining documents:</p>
-                <ul><li>NOC (No Objection Certificate)</li><li>Bond</li><li>Undertaking</li><li>Insurance</li></ul>
-                <p>Best Regards,<br>APTRANSCO Internship Cell</p>`
-            ).catch(() => {});
+            const configured = Array.isArray(app.departmentGroup?.requiredDocuments) ? app.departmentGroup.requiredDocuments : [];
+            sendDocumentRequestEmail(studentEmail, {
+                studentName: app.student.fullName,
+                internshipTitle: app.internship.title,
+                fieldName: app.field?.fieldName,
+                location: app.preferredLocation,
+                requiredDocs: configured,
+                deadlineDays: 7,
+            }).catch(() => {});
         }
 
         await createAuditLog('REQUEST_DOCUMENTS', req.user.email, 'Triggered document collection', id);
@@ -301,6 +304,7 @@ const verifyDocuments = async (req, res) => {
 
             // Auto-hire immediately after verification
             const { transitionApplicationStatus } = require('../services/applicationWorkflowService');
+            let hiredOk = false;
             try {
                 const appForRole = await prisma.application.findUnique({
                     where: { id },
@@ -310,12 +314,49 @@ const verifyDocuments = async (req, res) => {
                 if (appForRole?.field?.fieldName && !appForRole.assignedRole) {
                     await prisma.application.update({ where: { id }, data: { assignedRole: appForRole.field.fieldName } });
                 }
+                hiredOk = true;
             } catch (hireErr) {
                 console.error('[Auto-hire error]', hireErr.message);
                 // Don't fail the request — student is at least DOCUMENTS_VERIFIED
             }
 
-            res.json({ success: true, message: 'Documents verified and intern hired.' });
+            // Send the grand joining letter to the student once hired
+            if (hiredOk) {
+                try {
+                    const hired = await prisma.application.findUnique({
+                        where: { id },
+                        include: {
+                            internship: { select: { title: true } },
+                            field:      { select: { fieldName: true } },
+                            departmentGroup: { select: { department: true } },
+                            mentor:     { select: { name: true, email: true, phone: true } },
+                            student:    { include: { user: { select: { email: true } } } }
+                        }
+                    });
+                    const studentEmail = hired?.student?.user?.email;
+                    if (studentEmail) {
+                        const { sendGrandJoiningLetter } = require('../services/mailService');
+                        sendGrandJoiningLetter(studentEmail, {
+                            studentName:     hired.student.fullName,
+                            rollNumber:      hired.student.rollNumber,
+                            internshipTitle: hired.internship?.title,
+                            fieldName:       hired.field?.fieldName,
+                            department:      hired.departmentGroup?.department || hired.internship?.department,
+                            location:        hired.preferredLocation,
+                            joiningDate:     hired.joiningDate,
+                            endDate:         hired.endDate,
+                            mentorName:      hired.mentor?.name,
+                            mentorEmail:     hired.mentor?.email,
+                            mentorPhone:     hired.mentor?.phone,
+                            hodName:         req.user?.name || `${hired.departmentGroup?.department || ''} HOD`.trim(),
+                        }).catch(() => {});
+                    }
+                } catch (mailErr) {
+                    console.error('[Joining letter error]', mailErr.message);
+                }
+            }
+
+            res.json({ success: true, message: 'Documents verified and intern hired. Joining letter dispatched.' });
         } else {
             // Reject — send back with reason, keep status for re-upload
             const { sendEmail } = require('../services/mailService');

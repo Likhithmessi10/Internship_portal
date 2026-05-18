@@ -13,6 +13,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const InternLogsPanel = ({ applicationId, internName }) => {
     const [logs, setLogs]       = useState([]);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
         api.get(`/admin/applications/${applicationId}/work-logs`)
@@ -23,11 +24,25 @@ const InternLogsPanel = ({ applicationId, internName }) => {
 
     const totalHours = logs.reduce((s, l) => s + (l.hoursWorked || 0), 0);
 
-    const handleExport = () => {
-        window.open(
-            `${api.defaults.baseURL}/admin/applications/${applicationId}/work-logs/export`,
-            '_blank'
-        );
+    const handleExport = async () => {
+        try {
+            setExporting(true);
+            const response = await api.get(`/admin/applications/${applicationId}/work-logs/export`, { responseType: 'blob' });
+            const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.setAttribute('download', `worklog_intern_${internName.replace(/[^a-z0-9]/gi, '_')}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+        } catch (err) {
+            console.error('Failed to export work logs:', err);
+            alert('Failed to export work logs. Please try again.');
+        } finally {
+            setExporting(false);
+        }
     };
 
     if (loading) return (
@@ -43,9 +58,10 @@ const InternLogsPanel = ({ applicationId, internName }) => {
                     {logs.length} entr{logs.length !== 1 ? 'ies' : 'y'}{totalHours > 0 ? ` · ${totalHours}h total` : ''}
                 </p>
                 {logs.length > 0 && (
-                    <button onClick={handleExport}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 rounded-lg text-[10px] font-black uppercase hover:bg-emerald-100 transition-colors">
-                        <Download size={11} /> Export Excel
+                    <button onClick={handleExport} disabled={exporting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 disabled:opacity-50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 rounded-lg text-[10px] font-black uppercase hover:bg-emerald-100 transition-colors">
+                        {exporting ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+                        {exporting ? 'Exporting...' : 'Export Excel'}
                     </button>
                 )}
             </div>

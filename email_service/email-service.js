@@ -5,12 +5,12 @@
 
 const EmailService = (function() {
   
-  // Configuration - Update these values as needed
+  // Configuration. NEVER hardcode the API key here — call `EmailService.configure({ headerValue })` at startup.
   const CONFIG = {
-    apiUrl: 'https://aptrservice.aptransco.gov.in/api/noreply', // Replace with your email API endpoint
-    headerKey: 'X-API-Key', // Header key for authentication
-    headerValue: 'NOVAC_MRZ', // Your API key here
-    timeout: 10000 // Request timeout in ms
+    apiUrl: 'https://aptrservice.aptransco.gov.in/api/noreply', // Email API endpoint
+    headerKey: 'X-API-Key',                                     // Header key for authentication
+    headerValue: '',                                            // ← MUST be supplied via configure() — never commit a real key
+    timeout: 10000                                              // Request timeout in ms
   };
 
   /**

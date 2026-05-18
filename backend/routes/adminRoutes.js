@@ -82,7 +82,7 @@ router.delete('/batches/:id', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteBatch)
 
 router.get('/internships', getAllInternships);
 router.get('/interns/all', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), getAllInterns);
-router.get('/interns/search/:rollNumber', authorize('ADMIN', 'CE_PRTI', 'HOD'), searchInternByRollNumber);
+router.get('/interns/search/:rollNumber', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), searchInternByRollNumber);
 router.get('/meetings', authorize('ADMIN', 'CE_PRTI', 'HOD'), getMeetings);
 router.post('/internships', createInternship);
 router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteInternship);
@@ -161,10 +161,54 @@ router.post('/applications/prti-approve-batch', authorize('ADMIN', 'CE_PRTI'), a
         const { applicationIds } = req.body;
         if (!Array.isArray(applicationIds) || applicationIds.length === 0)
             return res.status(400).json({ success: false, message: 'applicationIds array required' });
-        await require('../lib/prisma').application.updateMany({
+
+        const prisma = require('../lib/prisma');
+        await prisma.application.updateMany({
             where: { id: { in: applicationIds }, status: 'SELECTED' },
             data: { prtiApproved: true }
         });
+
+        // Notify the relevant HOD(s) — group by department
+        try {
+            const apps = await prisma.application.findMany({
+                where: { id: { in: applicationIds } },
+                include: {
+                    student: { select: { fullName: true } },
+                    internship: { select: { title: true, department: true } },
+                    field: { select: { fieldName: true } },
+                    departmentGroup: { select: { department: true } }
+                }
+            });
+            // Group by (department + internshipTitle + fieldName)
+            const groups = {};
+            for (const a of apps) {
+                const dept = a.departmentGroup?.department || a.internship?.department || 'GENERAL';
+                const key = `${dept}|${a.internship?.title}|${a.field?.fieldName || ''}`;
+                if (!groups[key]) groups[key] = { dept, internshipTitle: a.internship?.title, fieldName: a.field?.fieldName, candidates: [] };
+                groups[key].candidates.push({ name: a.student?.fullName, location: a.preferredLocation });
+            }
+
+            const { sendPrtiApprovedHodEmail } = require('../services/mailService');
+            for (const { dept, internshipTitle, fieldName, candidates } of Object.values(groups)) {
+                const hods = await prisma.user.findMany({
+                    where: { role: 'HOD', department: dept },
+                    select: { email: true, name: true }
+                });
+                for (const hod of hods) {
+                    sendPrtiApprovedHodEmail(hod.email, {
+                        hodName: hod.name,
+                        hodDepartment: dept,
+                        internshipTitle,
+                        fieldName,
+                        count: candidates.length,
+                        candidates,
+                    }).catch(() => {});
+                }
+            }
+        } catch (mailErr) {
+            console.error('[PRTI-approve HOD email error]', mailErr.message);
+        }
+
         res.json({ success: true, message: `${applicationIds.length} application(s) approved by PRTI` });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -224,7 +268,8 @@ router.put('/internships/:id/groups/:groupId/required-docs', authorize('ADMIN', 
 });
 
 // Attendance Management
-router.post('/attendance/mark', markAttendance);
+const upload = require('../middleware/uploadMiddleware');
+router.post('/attendance/mark', upload.single('file'), markAttendance);
 router.get('/attendance', getAttendance);
 router.post('/attendance/bulk', bulkMarkAttendance);
 
