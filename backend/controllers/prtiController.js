@@ -325,7 +325,8 @@ const giveFinalApproval = async (req, res) => {
 
 /**
  * PRTI marks a candidate as physically reported.
- * Generates roll number and transitions SELECTED → REPORTED.
+ * Transitions SELECTED → REPORTED. Roll number is NOT generated here —
+ * it is allocated only at HIRED, after joining documents are evaluated.
  * POST /api/v1/prti/committees/mark-reported
  */
 const markReported = async (req, res) => {
@@ -354,7 +355,7 @@ const markReported = async (req, res) => {
             });
         }
 
-        // transitionApplicationStatus handles roll number generation at REPORTED
+        // Roll number is NOT generated on REPORTED — it is allocated at HIRED only
         const updated = await transitionApplicationStatus(
             applicationId,
             'REPORTED',

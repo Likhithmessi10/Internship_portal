@@ -176,12 +176,76 @@ const PsCard = ({ ps, internship, alreadyApplied }) => {
     );
 };
 
+// ── Role / Field Card (for non-COLLABORATIVE internships) ─────────────────────
+const RoleCard = ({ option, internship, alreadyApplied }) => {
+    const applyUrl = `/student/internships/${internship.id}/apply`
+        + `?role=${encodeURIComponent(option.roleName)}`
+        + (option.groupId ? `&groupId=${option.groupId}` : '')
+        + (option.fieldId ? `&fieldId=${option.fieldId}` : '');
+
+    return (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
+            <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 to-emerald-700" />
+
+            <div className="p-6">
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 border border-gray-100 dark:border-slate-600 text-[10px] font-black uppercase tracking-widest">
+                        <Briefcase size={11} /> {option.department}
+                    </span>
+                </div>
+
+                <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight mb-2 break-words">
+                    {option.roleName}
+                </h3>
+
+                {option.description && (
+                    <p className="text-sm text-gray-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed mb-5 break-words">
+                        {option.description}
+                    </p>
+                )}
+
+                <div className="space-y-2.5 mb-6">
+                    <div className="flex items-center gap-3 text-sm font-bold text-gray-700 dark:text-slate-300">
+                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center border border-gray-100 dark:border-slate-600">
+                            <Users size={14} className="text-amber-500" />
+                        </div>
+                        {option.vacancies || 'N/A'} {Number(option.vacancies) === 1 ? 'vacancy' : 'vacancies'}
+                    </div>
+                    {Array.isArray(option.locations) && option.locations.length > 0 && (
+                        <div className="flex items-center gap-3 text-sm font-bold text-gray-700 dark:text-slate-300">
+                            <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center border border-gray-100 dark:border-slate-600">
+                                <MapPin size={14} className="text-[#003087] dark:text-blue-400" />
+                            </div>
+                            {option.locations.map(l => typeof l === 'string' ? l : (l?.name || '')).join(', ')}
+                        </div>
+                    )}
+                </div>
+
+                {alreadyApplied ? (
+                    <div className="w-full py-2.5 bg-emerald-50 text-emerald-700 font-bold text-xs uppercase tracking-widest rounded-xl border border-emerald-200 flex items-center justify-center gap-2">
+                        <Check size={13} /> Applied
+                    </div>
+                ) : (
+                    <Link
+                        to={applyUrl}
+                        className="w-full py-2.5 bg-[#D4A017] hover:bg-[#b88c14] text-[#00266b] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                        Apply Now <ChevronRight size={13} />
+                    </Link>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 const InternshipDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [internship, setInternship] = useState(null);
     const [appliedPsIds, setAppliedPsIds] = useState(new Set());
+    const [appliedFieldIds, setAppliedFieldIds] = useState(new Set());
+    const [appliedInternshipIds, setAppliedInternshipIds] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -201,8 +265,9 @@ const InternshipDetailPage = () => {
 
                 if (profileRes.status === 'fulfilled') {
                     const apps = profileRes.value.data.data?.applications || [];
-                    const psIds = new Set(apps.map(a => a.problemStatementId).filter(Boolean));
-                    setAppliedPsIds(psIds);
+                    setAppliedPsIds(new Set(apps.map(a => a.problemStatementId).filter(Boolean)));
+                    setAppliedFieldIds(new Set(apps.map(a => a.fieldId).filter(Boolean)));
+                    setAppliedInternshipIds(new Set(apps.map(a => a.internshipId).filter(Boolean)));
                 }
             } catch {
                 setError('Failed to load internship details.');
@@ -239,7 +304,75 @@ const InternshipDetailPage = () => {
         }))
     ).sort((a, b) => (a.problemStatementNumber ?? 0) - (b.problemStatementNumber ?? 0));
 
-    const totalVacancies = allProblemStatements.reduce((s, ps) => s + (ps.vacancies || 0), 0);
+    // Build role/field options for non-COLLABORATIVE internships
+    const roleOptions = [];
+    const isGroup = internship.internshipMode === 'GROUP';
+    const isCollab = internship.internshipType === 'COLLABORATIVE';
+
+    if (!isCollab) {
+        if (isGroup) {
+            // GROUP NON_STIPEND — list each (group, field) pair
+            (internship.departmentGroups || []).forEach(group => {
+                (group.fields || []).forEach(f => {
+                    roleOptions.push({
+                        key: `${group.id}-${f.id}`,
+                        department: group.department,
+                        roleName: f.fieldName,
+                        description: f.description,
+                        vacancies: f.vacancies,
+                        locations: f.locations || [],
+                        groupId: group.id,
+                        fieldId: f.id,
+                    });
+                });
+                if ((group.fields || []).length === 0) {
+                    roleOptions.push({
+                        key: group.id,
+                        department: group.department,
+                        roleName: group.title || group.department,
+                        vacancies: group.openings,
+                        groupId: group.id,
+                    });
+                }
+            });
+        } else if (internship.internshipType === 'NON_STIPEND') {
+            const fields = internship.fields && internship.fields.length > 0
+                ? internship.fields
+                : [{ id: '', fieldName: internship.title, vacancies: internship.openingsCount, locations: internship.location ? [internship.location] : [] }];
+            fields.forEach((f, idx) => {
+                roleOptions.push({
+                    key: f.id || `field-${idx}`,
+                    department: internship.department,
+                    roleName: f.fieldName,
+                    description: f.description,
+                    vacancies: f.vacancies,
+                    locations: f.locations || [],
+                    fieldId: f.id,
+                });
+            });
+        } else {
+            // SINGLE non-collab fallback: roles list
+            const roles = internship.rolesData || (internship.roles
+                ? internship.roles.split(',').map((r, i) => ({ name: r.trim(), openings: 'N/A', _idx: i }))
+                : [{ name: internship.title, openings: internship.openingsCount }]);
+            roles.forEach((r, idx) => {
+                roleOptions.push({
+                    key: `role-${idx}`,
+                    department: internship.department,
+                    roleName: r.name,
+                    vacancies: r.openings,
+                });
+            });
+        }
+    }
+
+    const hasPS = allProblemStatements.length > 0;
+    const hasRoles = roleOptions.length > 0;
+    const totalVacancies = hasPS
+        ? allProblemStatements.reduce((s, ps) => s + (ps.vacancies || 0), 0)
+        : roleOptions.reduce((s, o) => s + (Number(o.vacancies) || 0), 0);
+    const totalOptions = hasPS ? allProblemStatements.length : roleOptions.length;
+    const optionWord = hasPS ? 'Problem Statement' : 'Role';
 
     return (
         <div className="max-w-5xl mx-auto py-4">
@@ -265,23 +398,19 @@ const InternshipDetailPage = () => {
                         {internship.description}
                     </p>
                     <div className="flex flex-wrap gap-5 text-sm font-bold text-indigo-200">
-                        <span className="flex items-center gap-2"><Clock size={15} /> {internship.duration}</span>
-                        <span className="flex items-center gap-2"><ClipboardList size={15} /> {allProblemStatements.length} Problem Statement{allProblemStatements.length !== 1 ? 's' : ''}</span>
-                        <span className="flex items-center gap-2"><Users size={15} /> {totalVacancies} Total Vacancies</span>
+                        {internship.duration && <span className="flex items-center gap-2"><Clock size={15} /> {internship.duration}</span>}
+                        {totalOptions > 0 && (
+                            <span className="flex items-center gap-2"><ClipboardList size={15} /> {totalOptions} {optionWord}{totalOptions !== 1 ? 's' : ''}</span>
+                        )}
+                        {totalVacancies > 0 && (
+                            <span className="flex items-center gap-2"><Users size={15} /> {totalVacancies} Total Vacancies</span>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Problem Statements */}
-            {allProblemStatements.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50 dark:bg-slate-800/50 border border-dashed border-gray-300 dark:border-slate-700 rounded-3xl">
-                    <ClipboardList size={40} className="text-gray-300 dark:text-slate-600 mx-auto mb-3" />
-                    <h3 className="text-lg font-bold text-gray-700 dark:text-white mb-1">Problem Statements Pending</h3>
-                    <p className="text-gray-400 dark:text-slate-400 text-sm font-medium">
-                        Departments are still preparing their problem statements. Check back soon.
-                    </p>
-                </div>
-            ) : (
+            {/* Options: Problem Statements (collaborative) OR Roles/Fields (non-collaborative) */}
+            {hasPS ? (
                 <>
                     <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
                         <ClipboardList size={18} className="text-indigo-500" />
@@ -298,6 +427,41 @@ const InternshipDetailPage = () => {
                         ))}
                     </div>
                 </>
+            ) : hasRoles ? (
+                <>
+                    <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
+                        <Briefcase size={18} className="text-emerald-500" />
+                        Available Roles
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {roleOptions.map(opt => (
+                            <RoleCard
+                                key={opt.key}
+                                option={opt}
+                                internship={internship}
+                                alreadyApplied={opt.fieldId
+                                    ? appliedFieldIds.has(opt.fieldId)
+                                    : appliedInternshipIds.has(internship.id)}
+                            />
+                        ))}
+                    </div>
+                </>
+            ) : isCollab ? (
+                <div className="text-center py-20 bg-gray-50 dark:bg-slate-800/50 border border-dashed border-gray-300 dark:border-slate-700 rounded-3xl">
+                    <ClipboardList size={40} className="text-gray-300 dark:text-slate-600 mx-auto mb-3" />
+                    <h3 className="text-lg font-bold text-gray-700 dark:text-white mb-1">Problem Statements Pending</h3>
+                    <p className="text-gray-400 dark:text-slate-400 text-sm font-medium">
+                        Departments are still preparing their problem statements. Check back soon.
+                    </p>
+                </div>
+            ) : (
+                <div className="text-center py-20 bg-gray-50 dark:bg-slate-800/50 border border-dashed border-gray-300 dark:border-slate-700 rounded-3xl">
+                    <Briefcase size={40} className="text-gray-300 dark:text-slate-600 mx-auto mb-3" />
+                    <h3 className="text-lg font-bold text-gray-700 dark:text-white mb-1">No Roles Configured Yet</h3>
+                    <p className="text-gray-400 dark:text-slate-400 text-sm font-medium">
+                        This internship doesn't have any roles defined. Please check back later.
+                    </p>
+                </div>
             )}
         </div>
     );

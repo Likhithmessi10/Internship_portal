@@ -9,7 +9,8 @@
  *
  * DOCUMENTS_PENDING  : Unlocks doc upload (NOC/Bond/Undertaking/Insurance) after PRTI triggers
  * DOCUMENTS_VERIFIED : PRTI verified all docs — ready to hire
- * HIRED              : NON_STIPEND: roll number generated here; MONETARY: joining formalities done
+ * HIRED              : Roll number is generated here for BOTH flows (after joining
+ *                      docs are evaluated). MONETARY also marks joining formalities done.
  */
 
 const STATUS = {

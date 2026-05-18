@@ -863,7 +863,7 @@ const CreateInternshipForm = () => {
                                     )}
                                 </div>
                                 <div className="pt-2 border-t border-outline-variant/10">
-                                    <p className="text-[10px] text-outline/70 font-medium leading-relaxed">{formData.description}</p>
+                                    <p className="text-[10px] text-outline/70 font-medium leading-relaxed break-words whitespace-pre-wrap">{formData.description}</p>
                                 </div>
                             </div>
 

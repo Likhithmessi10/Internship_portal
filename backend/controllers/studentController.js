@@ -270,13 +270,12 @@ const uploadJoiningDocuments = async (req, res) => {
                 };
             });
         } else {
-            // Defaults
+            // Defaults — required from every student after selection
             const DEFAULTS = [
-                { id: 'NOC',         label: 'No Objection Certificate', format: 'PDF' },
-                { id: 'BOND',        label: 'Bond / Service Agreement', format: 'PDF' },
-                { id: 'UNDERTAKING', label: 'Undertaking Form',         format: 'PDF' },
+                { id: 'BOND',        label: '₹100 Bond',        format: 'PDF' },
+                { id: 'INSURANCE',   label: 'Insurance Policy', format: 'PDF' },
+                { id: 'UNDERTAKING', label: 'Undertaking Form', format: 'PDF' },
             ];
-            if (isLearning) DEFAULTS.push({ id: 'INSURANCE', label: 'Insurance', format: 'PDF' });
             DEFAULTS.forEach(d => { docMetaById[d.id] = d; });
         }
 

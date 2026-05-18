@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../../utils/api';
 import {
     ArrowLeft, ChevronDown, ChevronUp, CheckCircle, Clock,
-    Search, Users, Briefcase, MapPin, AlertCircle, ChevronsDownUp, Rocket, Loader2,
+    Search, Users, Briefcase, MapPin, AlertCircle, ChevronsUpDown, Rocket, Loader2,
     Plus, X, BookOpen
 } from 'lucide-react';
 
@@ -243,7 +243,7 @@ const DeptCard = ({ group }) => {
 
 // ─── Internship section ───────────────────────────────────────────────────────
 
-const InternshipSection = ({ internship, defaultOpen, onLaunch, launching }) => {
+const InternshipSection = ({ internship, defaultOpen, onLaunch, launching, onRefresh }) => {
     const [open, setOpen] = useState(defaultOpen);
     const isGroup = internship.internshipMode === 'GROUP';
     const isCollaborative = internship.internshipType === 'COLLABORATIVE';
@@ -356,7 +356,7 @@ const InternshipSection = ({ internship, defaultOpen, onLaunch, launching }) => 
                                         <span className="ml-auto text-[10px] font-bold text-slate-400">{(g.fields || []).length} field{(g.fields || []).length !== 1 ? 's' : ''}</span>
                                     </div>
                                     <div className="p-4">
-                                        <FieldManager internshipId={internship.id} group={g} onRefresh={fetchData} />
+                                        <FieldManager internshipId={internship.id} group={g} onRefresh={onRefresh} />
                                     </div>
                                 </div>
                             ))}
@@ -564,7 +564,7 @@ const PrtiBatchDetail = () => {
                     onClick={() => setAllExpanded(v => v === true ? false : true)}
                     className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:bg-slate-50 transition-colors"
                 >
-                    <ChevronsDownUp size={14} />
+                    <ChevronsUpDown size={14} />
                     {allExpanded === false ? 'Expand All' : 'Collapse All'}
                 </button>
             </div>
@@ -586,6 +586,7 @@ const PrtiBatchDetail = () => {
                             defaultOpen={allExpanded !== null ? allExpanded : idx === 0}
                             onLaunch={handleLaunch}
                             launching={launchingId === internship.id}
+                            onRefresh={fetchData}
                         />
                     ))}
                 </div>

@@ -251,10 +251,10 @@ const LearningTab = () => {
 const SummaryCard = ({ label, value, icon, tone, highlight }) => {
     const tones = {
         primary: 'border-primary/30 bg-primary/5 text-primary',
-        amber: 'border-amber-300 bg-amber-50 text-amber-700',
-        indigo: 'border-indigo-300 bg-indigo-50 text-indigo-700',
-        emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700',
-        red: 'border-red-300 bg-red-50 text-red-700',
+        amber:   'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700/60 dark:bg-amber-900/25 dark:text-amber-200',
+        indigo:  'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700/60 dark:bg-indigo-900/25 dark:text-indigo-200',
+        emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700/60 dark:bg-emerald-900/25 dark:text-emerald-200',
+        red:     'border-red-300 bg-red-50 text-red-700 dark:border-red-700/60 dark:bg-red-900/25 dark:text-red-200',
     };
     return (
         <div className={`rounded-2xl border-2 p-5 ${tones[tone]} ${highlight ? 'ring-2 ring-offset-2 ring-current/20' : ''}`}>
@@ -264,7 +264,7 @@ const SummaryCard = ({ label, value, icon, tone, highlight }) => {
                     <span className="w-2.5 h-2.5 rounded-full bg-current animate-pulse" />
                 )}
             </div>
-            <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1">{value}</p>
+            <p className="text-4xl font-bold mb-1">{value}</p>
             <p className="text-sm font-semibold opacity-90">{label}</p>
         </div>
     );
@@ -734,8 +734,8 @@ const PhaseTable = ({ apps, onAction, onDocAction, onView, department, onRefresh
 // REQUIRED DOCS CONFIG — Bigger modal with clearer copy
 // ============================================================================
 const DEFAULT_DOCS = [
-    { id: 'NOC', label: 'No Objection Certificate', format: 'PDF', mandatory: true },
-    { id: 'BOND', label: 'Bond / Service Agreement', format: 'PDF', mandatory: true },
+    { id: 'BOND',        label: '₹100 Bond',        format: 'PDF', mandatory: true },
+    { id: 'INSURANCE',   label: 'Insurance Policy', format: 'PDF', mandatory: true },
     { id: 'UNDERTAKING', label: 'Undertaking Form', format: 'PDF', mandatory: true },
 ];
 const FORMATS = [

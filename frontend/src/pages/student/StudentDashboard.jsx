@@ -14,8 +14,8 @@ import { useLanguage } from '../../context/LanguageContext';
 // Active statuses — covers all non-terminal post-selection states
 const ACTIVE_STATUSES = ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED'];
 const JOINING_DOCS = [
-    { id: 'NOC', label: 'No Objection Certificate', hint: 'From your college / institution' },
-    { id: 'BOND', label: 'Bond / Service Agreement', hint: 'Signed commitment form' },
+    { id: 'BOND',        label: '₹100 Bond',        hint: 'On a ₹100 stamp paper' },
+    { id: 'INSURANCE',   label: 'Insurance Policy', hint: 'Personal insurance covering the internship period' },
     { id: 'UNDERTAKING', label: 'Undertaking Form', hint: 'Personal declaration' },
 ];
 
@@ -299,7 +299,7 @@ const StudentDashboard = () => {
                         </div>
 
                         <div className="flex flex-wrap lg:flex-nowrap gap-3 shrink-0">
-                            {profile?.rollNumber && (
+                            {profile?.rollNumber && ['HIRED', 'ONGOING', 'COMPLETED'].includes(activeApp?.status) && (
                                 <div className="bg-indigo-500/20 px-5 py-4 rounded-2xl border border-indigo-400/30 text-center min-w-[160px]">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-0.5">Roll Number</p>
                                     <p className="text-base font-black text-white uppercase">{profile.rollNumber}</p>

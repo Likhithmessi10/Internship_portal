@@ -218,3 +218,137 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-outline);
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Dark theme overrides for hard-coded light Tailwind utilities.
+   Many components in this portal use bg-white / bg-slate-* / bg-gray-*
+   directly instead of the semantic tokens (bg-surface, on-surface, …).
+   The rules below remap those neutrals to the dark palette when .dark
+   is active on <html>, so dark mode looks right without touching every
+   component. Color-tinted utilities (bg-red-*, bg-green-*, etc.) are
+   intentionally left alone — they convey state.
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Backgrounds — solid */
+.dark .bg-white { background-color: var(--color-surface-container-lowest) !important; }
+.dark .bg-gray-50,
+.dark .bg-slate-50,
+.dark .bg-neutral-50,
+.dark .bg-zinc-50 { background-color: var(--color-surface-container-low) !important; }
+.dark .bg-gray-100,
+.dark .bg-slate-100,
+.dark .bg-neutral-100,
+.dark .bg-zinc-100 { background-color: var(--color-surface-container) !important; }
+.dark .bg-gray-200,
+.dark .bg-slate-200,
+.dark .bg-neutral-200,
+.dark .bg-zinc-200 { background-color: var(--color-surface-container-high) !important; }
+.dark .bg-gray-300,
+.dark .bg-slate-300,
+.dark .bg-neutral-300,
+.dark .bg-zinc-300 { background-color: var(--color-surface-container-highest) !important; }
+
+/* Backgrounds — hover */
+.dark .hover\:bg-white:hover { background-color: var(--color-surface-container-lowest) !important; }
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-neutral-50:hover,
+.dark .hover\:bg-zinc-50:hover { background-color: var(--color-surface-container-low) !important; }
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-neutral-100:hover,
+.dark .hover\:bg-zinc-100:hover { background-color: var(--color-surface-container) !important; }
+.dark .hover\:bg-gray-200:hover,
+.dark .hover\:bg-slate-200:hover,
+.dark .hover\:bg-neutral-200:hover,
+.dark .hover\:bg-zinc-200:hover { background-color: var(--color-surface-container-high) !important; }
+.dark .hover\:bg-gray-300:hover,
+.dark .hover\:bg-slate-300:hover,
+.dark .hover\:bg-neutral-300:hover,
+.dark .hover\:bg-zinc-300:hover { background-color: var(--color-surface-container-highest) !important; }
+
+/* Text — primary content */
+.dark .text-black,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-neutral-900,
+.dark .text-neutral-800,
+.dark .text-zinc-900,
+.dark .text-zinc-800 { color: var(--color-on-surface) !important; }
+
+/* Text — secondary content */
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-neutral-700,
+.dark .text-neutral-600,
+.dark .text-zinc-700,
+.dark .text-zinc-600 { color: var(--color-on-surface-variant) !important; }
+
+/* Text — tertiary / muted */
+.dark .text-gray-500,
+.dark .text-slate-500,
+.dark .text-neutral-500,
+.dark .text-zinc-500 { color: var(--color-outline) !important; }
+
+/* Text — disabled / faint */
+.dark .text-gray-400,
+.dark .text-gray-300,
+.dark .text-slate-400,
+.dark .text-slate-300,
+.dark .text-neutral-400,
+.dark .text-neutral-300,
+.dark .text-zinc-400,
+.dark .text-zinc-300 { color: var(--color-outline-variant) !important; }
+
+/* Placeholders */
+.dark .placeholder-gray-400::placeholder,
+.dark .placeholder-slate-400::placeholder,
+.dark .placeholder\:text-slate-400::placeholder,
+.dark .placeholder\:text-gray-400::placeholder { color: var(--color-outline) !important; }
+
+/* Borders */
+.dark .border-white,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-neutral-100,
+.dark .border-neutral-200,
+.dark .border-neutral-300,
+.dark .border-zinc-100,
+.dark .border-zinc-200,
+.dark .border-zinc-300 { border-color: var(--color-outline-variant) !important; }
+
+.dark .border-gray-400,
+.dark .border-gray-500,
+.dark .border-slate-400,
+.dark .border-slate-500,
+.dark .border-slate-700 { border-color: var(--color-outline) !important; }
+
+/* Divides */
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: var(--color-outline-variant) !important; }
+
+/* Ring (focus outlines) on neutral colors */
+.dark .ring-gray-200,
+.dark .ring-gray-300,
+.dark .ring-slate-200,
+.dark .ring-slate-300 { --tw-ring-color: var(--color-outline-variant) !important; }
+
+/* Inputs that explicitly set bg-white on focus should not flash white in dark */
+.dark .focus\:bg-white:focus { background-color: var(--color-surface-container-lowest) !important; }
+
+/* Shadow tweak: light shadows look invisible on dark; soften them */
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.4) !important; }
+.dark .shadow,
+.dark .shadow-md { box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.5) !important; }
+.dark .shadow-lg { box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.55) !important; }
+.dark .shadow-xl { box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.6) !important; }

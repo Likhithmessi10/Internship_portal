@@ -213,27 +213,19 @@ const transitionApplicationStatus = async (applicationId, toStatus, user, auditD
         });
 
         // ── Roll Number Generation ────────────────────────────────────────────
-        const isLearning = application.internship?.internshipType === 'NON_STIPEND';
-
-        // MONETARY: roll number at REPORTED (physical check-in)
-        if (toStatus === STATUS.REPORTED && !isLearning) {
+        // Policy: roll numbers are allocated only at HIRED — i.e., after joining
+        // documents have been evaluated and the student is officially hired.
+        // This applies uniformly to MONETARY and NON_STIPEND flows.
+        if (toStatus === STATUS.HIRED) {
+            const isLearning = application.internship?.internshipType === 'NON_STIPEND';
             const student = await tx.studentProfile.findUnique({ where: { id: application.studentId } });
             if (student && !student.rollNumber) {
-                const { generatePortalRollNumber } = require('./rollNumberService');
-                const rn = await generatePortalRollNumber(applicationId, tx);
+                const { generatePortalRollNumber, generateLearningRollNumber } = require('./rollNumberService');
+                const rn = isLearning
+                    ? await generateLearningRollNumber(applicationId, tx)
+                    : await generatePortalRollNumber(applicationId, tx);
                 await tx.studentProfile.update({ where: { id: application.studentId }, data: { rollNumber: rn } });
-                auditDetails += ` Roll Number Generated: ${rn}.`;
-            }
-        }
-
-        // NON_STIPEND: roll number at HIRED (all docs verified)
-        if (toStatus === STATUS.HIRED && isLearning) {
-            const student = await tx.studentProfile.findUnique({ where: { id: application.studentId } });
-            if (student && !student.rollNumber) {
-                const { generateLearningRollNumber } = require('./rollNumberService');
-                const rn = await generateLearningRollNumber(applicationId, tx);
-                await tx.studentProfile.update({ where: { id: application.studentId }, data: { rollNumber: rn } });
-                auditDetails += ` Learning Roll Number Generated: ${rn}.`;
+                auditDetails += ` ${isLearning ? 'Learning ' : ''}Roll Number Generated: ${rn}.`;
             }
         }
 

@@ -145,7 +145,7 @@ internship-portal/
 │   └── scripts/                # Seed scripts
 ├── frontend/                   # Student portal (Vite + React)
 ├── admin-portal/               # Staff portal (Vite + React)
-├── doc_templates/              # NOC, Undertaking templates
+├── doc_templates/              # Apply-time templates (NOC, Undertaking)
 ├── email_service/              # Email template assets
 ├── nginx.conf                  # Nginx reverse-proxy config (serves both SPAs + proxies API)
 ├── start.sh                    # Container entrypoint (db push → seed → nginx → node)
@@ -164,6 +164,53 @@ The `Dockerfile` is multi-stage:
 3. **Stage 3 — runtime** — Installs Node, Nginx, Chromium (for Puppeteer PDF generation), copies the built SPAs into `/var/www/html`, installs backend dependencies, runs `prisma generate`, and starts both Nginx and Node via `start.sh`.
 
 Nginx serves the SPAs statically and proxies `/api/` to the Node backend on port 5001 inside the container. Only port 80 is exposed to the host.
+
+---
+
+## Application Lifecycle
+
+Every application moves through a state machine. The exact path depends on the internship type.
+
+### Status flow
+
+```
+MONETARY (Collaborative):
+  SUBMITTED → SHORTLISTED → UNDER_COMMITTEE_REVIEW → SELECTED → REPORTED → HIRED → ONGOING → COMPLETED
+
+NON_STIPEND (Learning):
+  SUBMITTED → SHORTLISTED → SELECTED → DOCUMENTS_PENDING → DOCUMENTS_VERIFIED → HIRED → ONGOING → COMPLETED
+```
+
+The full machine, including role permissions, lives in [`backend/domain/workflow/applicationStateMachine.js`](backend/domain/workflow/applicationStateMachine.js).
+
+### Roll number allocation
+
+Roll numbers are generated **only at `HIRED`** — i.e., after joining documents have been evaluated and the student is officially hired. This applies to **both** internship flows. They are **not** allocated at shortlisting, selection, or REPORTED.
+
+Formats (see [`backend/services/rollNumberService.js`](backend/services/rollNumberService.js)):
+- **MONETARY:** `YYDDGGNNN` — year · department code · batch index · sequence
+- **NON_STIPEND:** `YYDDFFNNN` — year · department code · field code · sequence
+
+### Joining documents (post-selection)
+
+After selection (NON_STIPEND: `DOCUMENTS_PENDING`; MONETARY: `REPORTED`), the student is required to upload:
+
+| ID | Document | Notes |
+|----|----------|-------|
+| `BOND` | ₹100 Bond | On a ₹100 stamp paper |
+| `INSURANCE` | Insurance Policy | Personal insurance covering the internship period |
+| `UNDERTAKING` | Undertaking Form | Personal declaration |
+
+HODs can override this default set per department via the HOD Applications screen. Defaults live in:
+- Backend validation: [`backend/controllers/studentController.js`](backend/controllers/studentController.js) (`uploadJoiningDocuments`)
+- Student dashboard: [`frontend/src/pages/student/StudentDashboard.jsx`](frontend/src/pages/student/StudentDashboard.jsx) (`JOINING_DOCS`)
+- HOD config defaults: [`admin-portal/src/pages/admin/hod/HodApplications.jsx`](admin-portal/src/pages/admin/hod/HodApplications.jsx) (`DEFAULT_DOCS`)
+
+Note: legacy `NOC` uploads on older applications are still surfaced in the PRTI/HOD application profile modal, labeled "NOC (legacy)" for historical review only.
+
+### Apply-time documents
+
+Separately from joining docs, the apply-time document set (Resume, NOC Letter, Undertaking, Mark Sheet, Passport Photo) is stored in the `DocumentConfiguration` singleton table and editable globally by PRTI at `/admin/prti/config/documents`.
 
 ---
 
@@ -283,17 +330,14 @@ docker compose up --build -d
 ### "Allocation Failed: All N seats for location X are filled"
 The HOD is trying to allocate to a location they didn't explicitly assign in the selection panel. Use the location dropdown in the inline "Select" panel to assign the new location before confirming.
 
-### Documents show "MISSING" in the HOD modal
-Already fixed — the HOD applications endpoint now returns `documents` in the API response. If you still see this, rebuild the container (`docker compose up --build -d`) — the change is server-side.
-
 ### CORS errors in the browser
 The origin you're loading the UI from must be in `CORS_ORIGINS` in `docker-compose.yml`. After changing it, rebuild:
 ```bash
 docker compose down && docker compose up --build -d
 ```
 
-### Login redirects staff users to the landing page
-Already fixed — `Login.jsx` now redirects all staff roles (ADMIN, HOD, CE_PRTI, MENTOR, COMMITTEE_MEMBER) to `/admin/dashboard`. Rebuild to apply.
+### Admin login "All Roles" link does nothing
+If the link bounces you back to `/admin/login` instead of the role picker, you're running a stale container. Rebuild: `docker compose up --build -d`.
 
 ### Port 80 already in use
 Another service (IIS, Apache, Nginx, Skype) is on port 80. Either stop it, or change the host port:

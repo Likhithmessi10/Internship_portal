@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import api from '../../../utils/api';
+import api, { MEDIA_URL } from '../../../utils/api';
 import {
     Users, CheckCircle, XCircle, Calendar,
-    ClipboardList, AlertTriangle, Search, Check, X, Award, FileText
+    ClipboardList, AlertTriangle, Search, Check, X, Award, FileText, Loader2
 } from 'lucide-react';
 import AttendanceModal from './AttendanceModal';
 
@@ -68,6 +68,12 @@ const MentorApplications = () => {
     const avgAttendance = validAtts.length > 0
         ? Math.round(validAtts.reduce((sum, a) => sum + pct(a.daysAttended, a.totalDays), 0) / validAtts.length)
         : 0;
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-64">
+            <Loader2 size={36} className="animate-spin text-primary" />
+        </div>
+    );
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 px-2 py-8">

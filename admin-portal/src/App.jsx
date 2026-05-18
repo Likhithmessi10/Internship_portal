@@ -258,8 +258,8 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Catch-all: render the role-picker landing page for unknown URLs */}
+          <Route path="*" element={<AdminLanding />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

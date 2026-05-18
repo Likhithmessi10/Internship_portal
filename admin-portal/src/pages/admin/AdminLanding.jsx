@@ -31,13 +31,12 @@ const AdminLanding = () => {
 
     useEffect(() => {
         if (loading) return;
-        if (user) {
-            if (user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
-            else if (user.role === 'CE_PRTI') navigate('/prti/dashboard', { replace: true });
-            else if (user.role === 'HOD') navigate('/hod/dashboard', { replace: true });
-            else if (user.role === 'MENTOR') navigate('/mentor/dashboard', { replace: true });
-            else navigate('/dashboard', { replace: true });
-        }
+        if (!user) return;
+        if (user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
+        else if (user.role === 'CE_PRTI') navigate('/prti/dashboard', { replace: true });
+        else if (user.role === 'HOD') navigate('/hod/dashboard', { replace: true });
+        else if (user.role === 'MENTOR') navigate('/mentor/dashboard', { replace: true });
+        // Unknown role: stay on the landing page rather than navigating to a non-existent route
     }, [user, loading, navigate]);
 
     if (loading) return null;

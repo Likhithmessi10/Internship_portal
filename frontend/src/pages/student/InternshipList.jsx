@@ -27,26 +27,109 @@ const formatStipendRange = (stipendAmounts) => {
     return min === max ? `${fmt(min)} / month` : `${fmt(min)} – ${fmt(max)} / month`;
 };
 
-// ── Card for GROUP COLLABORATIVE internship ───────────────────────────────────
-const GroupCollabCard = ({ internship }) => {
-    const allPs = (internship.departmentGroups || []).flatMap(g => g.problemStatements || []);
-    const totalVacancies = allPs.reduce((s, ps) => s + (ps.vacancies || 0), 0);
-    const deptCount = internship.departmentGroups?.length || 0;
-    const stipendRange = formatStipendRange(internship.stipendAmounts);
+// ── Summarize an internship into stats used by the master card ────────────────
+const summarize = (internship) => {
+    const isGroup = internship.internshipMode === 'GROUP';
+    const isCollab = internship.internshipType === 'COLLABORATIVE';
+    const isNonStipend = internship.internshipType === 'NON_STIPEND';
+
+    let totalVacancies = 0;
+    let optionCount = 0;          // number of selectable roles / fields / problem statements
+    let optionLabel = 'Option';
+    const departments = new Set();
+    const specializations = new Set();
+
+    if (isGroup && isCollab) {
+        const allPs = (internship.departmentGroups || []).flatMap(g => g.problemStatements || []);
+        totalVacancies = allPs.reduce((s, ps) => s + (ps.vacancies || 0), 0);
+        optionCount = allPs.length;
+        optionLabel = 'Problem Statement';
+        (internship.departmentGroups || []).forEach(g => departments.add(g.department));
+    } else if (isGroup && isNonStipend) {
+        (internship.departmentGroups || []).forEach(group => {
+            departments.add(group.department);
+            (group.fields || []).forEach(f => {
+                totalVacancies += Number(f.vacancies) || 0;
+                optionCount += 1;
+                (f.specializations || []).forEach(s => specializations.add(s));
+            });
+        });
+        optionLabel = 'Role';
+    } else if (isNonStipend) {
+        const fields = internship.fields && internship.fields.length > 0
+            ? internship.fields
+            : [{ fieldName: internship.title, vacancies: internship.openingsCount }];
+        fields.forEach(f => {
+            totalVacancies += Number(f.vacancies) || 0;
+            optionCount += 1;
+            (f.specializations || []).forEach(s => specializations.add(s));
+        });
+        if (internship.department) departments.add(internship.department);
+        optionLabel = 'Role';
+    } else {
+        // SINGLE COLLABORATIVE — uses rolesData / roles string
+        const roles = internship.rolesData || (internship.roles
+            ? internship.roles.split(',').map(r => ({ name: r.trim(), openings: 0 }))
+            : [{ name: internship.title, openings: internship.openingsCount || 0 }]);
+        roles.forEach(r => { totalVacancies += Number(r.openings) || 0; optionCount += 1; });
+        if (internship.department) departments.add(internship.department);
+        optionLabel = 'Role';
+    }
+
+    return {
+        isGroup,
+        isCollab,
+        isNonStipend,
+        totalVacancies: totalVacancies || internship.openingsCount || 0,
+        optionCount: optionCount || 1,
+        optionLabel,
+        departments: [...departments],
+        specializations: [...specializations],
+        stipendRange: formatStipendRange(internship.stipendAmounts),
+    };
+};
+
+// ── Unified master internship card ────────────────────────────────────────────
+const MasterInternshipCard = ({ internship, isMatch }) => {
+    const s = summarize(internship);
+    const detailUrl = `/student/internships/${internship.id}`;
+
+    const typeBadge = s.isNonStipend
+        ? { label: 'Learning Internship', cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20' }
+        : s.isCollab
+            ? { label: 'Collaborative', cls: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' }
+            : { label: 'Internship', cls: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' };
+
+    const stripGradient = s.isGroup
+        ? 'bg-gradient-to-r from-indigo-500 to-indigo-700'
+        : s.isNonStipend
+            ? 'bg-gradient-to-r from-emerald-500 to-emerald-700'
+            : 'bg-gradient-to-r from-[#003087] to-[#0050b0]';
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[#003087]/20 dark:hover:border-blue-500/30 transition-all duration-300 flex flex-col h-full group overflow-hidden relative">
-            {/* Top strip */}
-            <div className="h-2.5 w-full bg-gradient-to-r from-indigo-500 to-indigo-700" />
+        <div className={`bg-white dark:bg-slate-800 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group overflow-hidden relative ${isMatch ? 'border-violet-300 dark:border-violet-600 ring-2 ring-violet-300/40' : 'border-gray-100 dark:border-slate-700 hover:border-[#003087]/20 dark:hover:border-blue-500/30'}`}>
+            {isMatch && (
+                <div className="absolute top-4 right-4 z-10 flex items-center gap-1 px-2.5 py-1 bg-violet-600 text-white text-[9px] font-black uppercase rounded-full shadow-md">
+                    <Zap size={9} /> Matches Your Profile
+                </div>
+            )}
+            <div className={`h-2.5 w-full ${stripGradient}`} />
 
             <div className="p-6 lg:p-7 flex-grow flex flex-col">
                 {/* Badges */}
                 <div className="flex flex-wrap items-center gap-2 mb-5">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">
-                        <ClipboardList size={11} /> Multi-Department
-                    </div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">
-                        Collaborative
+                    {s.isGroup && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                            <ClipboardList size={11} /> Multi-Department
+                        </div>
+                    )}
+                    {!s.isGroup && s.departments[0] && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 border border-gray-100 dark:border-slate-600 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                            <Briefcase size={11} /> {s.departments[0]}
+                        </div>
+                    )}
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest shadow-sm ${typeBadge.cls}`}>
+                        {typeBadge.label}
                     </div>
                 </div>
 
@@ -60,7 +143,7 @@ const GroupCollabCard = ({ internship }) => {
                     </p>
                 )}
 
-                <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mb-6 line-clamp-3 leading-relaxed flex-grow">
+                <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mb-6 line-clamp-3 leading-relaxed break-words flex-grow">
                     {internship.description}
                 </p>
 
@@ -73,129 +156,25 @@ const GroupCollabCard = ({ internship }) => {
                             {internship.duration}
                         </div>
                     )}
-                    <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                            <Briefcase size={14} className="text-[#003087] dark:text-blue-400" />
-                        </div>
-                        {deptCount} Department{deptCount !== 1 ? 's' : ''} Participating
-                    </div>
-                    {allPs.length > 0 ? (
+                    {(internship.location || s.departments.length > 1) && (
                         <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
                             <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                                <Users size={14} className="text-amber-500" />
+                                {s.departments.length > 1
+                                    ? <Briefcase size={14} className="text-[#003087] dark:text-blue-400" />
+                                    : <MapPin size={14} className="text-[#003087] dark:text-blue-400" />}
                             </div>
-                            {totalVacancies} Total Vacancies · {allPs.length} Problem Statement{allPs.length !== 1 ? 's' : ''}
-                        </div>
-                    ) : (
-                        <div className="flex items-center text-sm font-bold text-amber-600 gap-3">
-                            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100">
-                                <Clock size={14} />
-                            </div>
-                            Problem statements being prepared…
+                            {s.departments.length > 1
+                                ? `${s.departments.length} Departments Participating`
+                                : (internship.location || 'Multiple Locations')}
                         </div>
                     )}
-                    {stipendRange && (
-                        <div className="flex items-center text-sm font-bold text-emerald-700 dark:text-emerald-400 gap-3">
-                            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-500/20">
-                                <IndianRupee size={14} />
-                            </div>
-                            {stipendRange}
-                        </div>
-                    )}
-                </div>
-
-                <Link
-                    to={`/student/internships/${internship.id}`}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98] uppercase tracking-widest text-[10px]"
-                >
-                    View Problem Statements <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-            </div>
-        </div>
-    );
-};
-
-// ── Card for SINGLE internship (role-based) ───────────────────────────────────
-const SingleRoleCard = ({ internship, item, isMatch }) => {
-    const stipendRange = formatStipendRange(internship.stipendAmounts);
-    const applyUrl = `/student/internships/${internship.id}/apply`
-        + `?role=${encodeURIComponent(item.roleName)}`
-        + (item.groupId ? `&groupId=${item.groupId}` : '')
-        + (item.fieldId ? `&fieldId=${item.fieldId}` : '')
-        + (item.problemStatementId ? `&problemStatementId=${item.problemStatementId}` : '');
-
-    const deptColor = item.department === 'IT' ? 'bg-blue-500' :
-        item.department === 'Operations' ? 'bg-emerald-500' :
-        item.department === 'HR' ? 'bg-[#D4A017]' : 'bg-[#003087]';
-
-    return (
-        <div className={`bg-white dark:bg-slate-800 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group overflow-hidden relative ${isMatch ? 'border-violet-300 dark:border-violet-600 ring-2 ring-violet-300/40' : 'border-gray-100 dark:border-slate-700 hover:border-[#003087]/20 dark:hover:border-blue-500/30'}`}>
-            {isMatch && (
-                <div className="absolute top-4 right-4 z-10 flex items-center gap-1 px-2.5 py-1 bg-violet-600 text-white text-[9px] font-black uppercase rounded-full shadow-md">
-                    <Zap size={9} /> Matches Your Profile
-                </div>
-            )}
-            <div className={`h-2.5 w-full ${isMatch ? 'bg-violet-500' : deptColor}`} />
-
-            <div className="p-6 lg:p-7 flex-grow flex flex-col">
-                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                    <div className="flex items-center gap-2">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-300 border border-gray-100 dark:border-slate-600 text-[10px] font-black uppercase tracking-widest shadow-sm">
-                            <Briefcase size={11} /> {item.department}
-                        </div>
-                        {item.isNonStipend ? (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">
-                                Learning Internship
-                            </div>
-                        ) : internship.stipendType === 'COLLABORATIVE' ? (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">
-                                Collaborative
-                            </div>
-                        ) : (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">
-                                Non-Collaborative
-                            </div>
-                        )}
-                    </div>
-                    {item.psNumber != null && (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 text-[9px] font-black uppercase tracking-widest">
-                            <ClipboardList size={11} /> PS-{item.psNumber}
-                        </div>
-                    )}
-                </div>
-
-                <h2 className="text-xl lg:text-2xl font-black font-rajdhani text-gray-900 dark:text-white mb-2 line-clamp-2 leading-tight group-hover:text-[#003087] dark:group-hover:text-blue-400 transition-colors">
-                    {internship.title}
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mb-6 line-clamp-3 leading-relaxed flex-grow">
-                    {item.description || internship.description}
-                </p>
-
-                <div className="space-y-3 pt-5 border-t border-gray-100 dark:border-slate-700 mt-auto mb-6">
                     <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                            <Briefcase size={14} className="text-indigo-600 dark:text-indigo-400" />
+                            <Users size={14} className="text-amber-500" />
                         </div>
-                        {item.roleName}
+                        {s.totalVacancies > 0 ? `${s.totalVacancies} Total Vacancies` : 'Vacancies TBD'}
+                        {s.optionCount > 0 && ` · ${s.optionCount} ${s.optionLabel}${s.optionCount !== 1 ? 's' : ''}`}
                     </div>
-                    <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                            <MapPin size={14} className="text-[#003087] dark:text-blue-400" />
-                        </div>
-                        {item.isNonStipend
-                            ? (Array.isArray(item.locations) && item.locations.length > 0
-                                ? item.locations.map(l => typeof l === 'string' ? l : (l?.name || '')).join(', ')
-                                : 'Multiple')
-                            : (internship.location || 'Multiple Locations')}
-                    </div>
-                    {internship.duration && (
-                        <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                                <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            {internship.duration}
-                        </div>
-                    )}
                     {internship.applicationDeadline && (
                         <div className="flex items-center text-sm font-bold text-red-600 dark:text-red-400 gap-3">
                             <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/20 flex items-center justify-center shrink-0 border border-red-100 dark:border-red-900/30">
@@ -204,24 +183,18 @@ const SingleRoleCard = ({ internship, item, isMatch }) => {
                             Deadline: {new Date(internship.applicationDeadline).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </div>
                     )}
-                    <div className="flex items-center text-sm font-bold text-gray-700 dark:text-slate-300 gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600">
-                            <Users size={14} className="text-amber-500" />
-                        </div>
-                        {item.openings} {item.isNonStipend ? 'Vacancies' : 'Openings'}
-                    </div>
-                    {stipendRange && !item.isNonStipend && (
+                    {s.stipendRange && (
                         <div className="flex items-center text-sm font-bold text-emerald-700 dark:text-emerald-400 gap-3">
                             <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-500/20">
                                 <IndianRupee size={14} />
                             </div>
-                            {stipendRange}
+                            {s.stipendRange}
                         </div>
                     )}
                 </div>
 
                 <Link
-                    to={applyUrl}
+                    to={detailUrl}
                     className="w-full bg-[#D4A017] dark:bg-yellow-500 hover:bg-[#b88c14] dark:hover:bg-yellow-600 text-[#00266b] dark:text-slate-900 font-black py-2.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 group-hover:bg-[#003087] dark:group-hover:bg-blue-600 group-hover:text-white dark:group-hover:text-white active:scale-[0.98] uppercase tracking-widest text-[10px]"
                 >
                     View Details & Apply <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -238,7 +211,6 @@ const InternshipList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [specFilter, setSpecFilter] = useState('');
     const [studentBranch, setStudentBranch] = useState('');
-    const [appliedFieldIds, setAppliedFieldIds] = useState(new Set());
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -257,9 +229,6 @@ const InternshipList = () => {
                 if (profileRes.status === 'fulfilled') {
                     const profile = profileRes.value.data.data;
                     setStudentBranch(profile?.branch || '');
-                    // Build set of already-applied fieldIds
-                    const fieldIds = new Set((profile?.applications || []).map(a => a.fieldId).filter(Boolean));
-                    setAppliedFieldIds(fieldIds);
                 }
             } catch { /* silent */ }
             finally { setLoading(false); }
@@ -273,126 +242,47 @@ const InternshipList = () => {
         </div>
     );
 
-    // Build card list:
-    // - GROUP COLLABORATIVE → one card per internship (GroupCollabCard)
-    // - Everything else → expand to role/field cards (SingleRoleCard)
-    const cards = [];
-    internships.forEach(internship => {
-        const isGroupCollab = internship.internshipMode === 'GROUP'
-            && internship.internshipType === 'COLLABORATIVE';
-
-        if (isGroupCollab) {
-            // Search match on title, description, or any PS title
-            const q = searchTerm.toLowerCase();
-            const matches = !q
-                || internship.title.toLowerCase().includes(q)
-                || internship.description?.toLowerCase().includes(q)
-                || internship.batch?.title?.toLowerCase().includes(q)
-                || (internship.departmentGroups || []).some(g =>
-                    g.department.toLowerCase().includes(q) ||
-                    (g.problemStatements || []).some(ps => ps.title.toLowerCase().includes(q))
-                );
-            if (matches) {
-                cards.push({ key: internship.id, isMatch: false, alreadyApplied: false, element: <GroupCollabCard key={internship.id} internship={internship} /> });
-            }
-            return;
-        }
-
-        // SINGLE and GROUP NON_STIPEND: expand to individual role/field cards
-        const items = [];
-        if (internship.internshipMode === 'GROUP') {
-            // NON_STIPEND GROUP — expand by group
-            (internship.departmentGroups || []).forEach(group => {
-                const fields = group.fields || [];
-                fields.forEach(field => {
-                    items.push({
-                        department: group.department,
-                        roleName: field.fieldName,
-                        openings: field.vacancies || 'N/A',
-                        groupId: group.id,
-                        fieldId: field.id,
-                        locations: field.locations || [],
-                        specializations: field.specializations || [],
-                        isNonStipend: true
-                    });
-                });
-                if (fields.length === 0) {
-                    items.push({
-                        department: group.department,
-                        roleName: group.title || group.department,
-                        openings: group.openings || 'N/A',
-                        groupId: group.id
-                    });
-                }
-            });
-        } else if (internship.internshipType === 'NON_STIPEND') {
-            const displayFields = (internship.fields && internship.fields.length > 0)
-                ? internship.fields
-                : [{ 
-                    id: '', 
-                    fieldName: internship.title, 
-                    vacancies: internship.openingsCount,
-                    locations: internship.location ? [internship.location] : [] 
-                  }];
-
-            displayFields.forEach(field => {
-                items.push({
-                    department: internship.department,
-                    roleName: field.fieldName,
-                    description: field.description,
-                    openings: field.vacancies || 'N/A',
-                    fieldId: field.id,
-                    locations: field.locations || [],
-                    specializations: field.specializations || [],
-                    isNonStipend: true
-                });
-            });
-        } else {
-            const roles = internship.rolesData || (internship.roles
-                ? internship.roles.split(',').map(r => ({ name: r.trim(), openings: 'N/A' }))
-                : [{ name: internship.title, openings: internship.openingsCount }]);
-            roles.forEach(role => {
-                items.push({
-                    department: internship.department,
-                    roleName: role.name,
-                    openings: role.openings || internship.openingsCount || 'N/A'
-                });
-            });
-        }
-
-        items.forEach((item, idx) => {
-            const q = searchTerm.toLowerCase();
-            const textMatch = !q
-                || item.roleName?.toLowerCase().includes(q)
-                || item.department?.toLowerCase().includes(q)
-                || internship.title?.toLowerCase().includes(q)
-                || (item.specializations || []).some(s => s.toLowerCase().includes(q));
-
-            const specMatch = fuzzyMatch(studentBranch, item.specializations || []);
-
-            // Specialization filter
-            const specFilterMatch = !specFilter || (item.specializations || []).some(s =>
-                s.toLowerCase().includes(specFilter.toLowerCase())
-            );
-
-            if (textMatch && specFilterMatch) {
-                cards.push({
-                    key: `${internship.id}-${idx}`,
-                    isMatch: specMatch,
-                    alreadyApplied: appliedFieldIds.has(item.fieldId),
-                    element: (
-                        <SingleRoleCard
-                            key={`${internship.id}-${idx}`}
-                            internship={internship}
-                            item={item}
-                            isMatch={specMatch}
-                        />
-                    )
-                });
-            }
+    // Aggregate all specializations across the internship for fuzzy match against student branch
+    const collectSpecs = (internship) => {
+        const out = [];
+        (internship.departmentGroups || []).forEach(g => {
+            (g.fields || []).forEach(f => (f.specializations || []).forEach(s => out.push(s)));
+            (g.problemStatements || []).forEach(ps => (ps.specializations || []).forEach(s => out.push(s)));
         });
-    });
-    // Sort: matched internships first
+        (internship.fields || []).forEach(f => (f.specializations || []).forEach(s => out.push(s)));
+        return out;
+    };
+
+    // Build one master card per internship
+    const q = searchTerm.toLowerCase();
+    const cards = internships.map(internship => {
+        const specs = collectSpecs(internship);
+
+        // Search match
+        const matchesSearch = !q
+            || internship.title?.toLowerCase().includes(q)
+            || internship.description?.toLowerCase().includes(q)
+            || internship.department?.toLowerCase().includes(q)
+            || internship.batch?.title?.toLowerCase().includes(q)
+            || (internship.departmentGroups || []).some(g =>
+                g.department?.toLowerCase().includes(q)
+                || (g.problemStatements || []).some(ps => ps.title?.toLowerCase().includes(q))
+                || (g.fields || []).some(f => f.fieldName?.toLowerCase().includes(q))
+            )
+            || (internship.fields || []).some(f => f.fieldName?.toLowerCase().includes(q));
+
+        const matchesSpec = !specFilter || specs.some(s => s.toLowerCase().includes(specFilter.toLowerCase()));
+        if (!matchesSearch || !matchesSpec) return null;
+
+        const isMatch = fuzzyMatch(studentBranch, specs);
+        return {
+            key: internship.id,
+            isMatch,
+            element: <MasterInternshipCard key={internship.id} internship={internship} isMatch={isMatch} />,
+        };
+    }).filter(Boolean);
+
+    // Matched internships first
     cards.sort((a, b) => (b.isMatch ? 1 : 0) - (a.isMatch ? 1 : 0));
 
     return (
@@ -411,11 +301,7 @@ const InternshipList = () => {
                     <select value={specFilter} onChange={e => setSpecFilter(e.target.value)}
                         className="pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
                         <option value="">All Specializations</option>
-                        {[...new Set(internships.flatMap(i =>
-                            (i.departmentGroups || []).flatMap(g =>
-                                (g.fields || []).flatMap(f => Array.isArray(f.specializations) ? f.specializations : [])
-                            )
-                        ))].map(s => <option key={s} value={s}>{s}</option>)}
+                        {[...new Set(internships.flatMap(i => collectSpecs(i)))].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                 </div>
                 {studentBranch && cards.some(c => c.isMatch) && (

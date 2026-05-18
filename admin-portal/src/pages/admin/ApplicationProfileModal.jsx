@@ -468,16 +468,20 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                         </section>
                         
                         {/* Joining Documents (Visible once uploaded) */}
-                        {(getDoc('NOC', 'No Objection Certificate') || getDoc('BOND', 'Bond / Service Agreement') || getDoc('UNDERTAKING', 'Undertaking Form')) && (
+                        {(getDoc('BOND', '₹100 Bond') || getDoc('INSURANCE', 'Insurance Policy') || getDoc('UNDERTAKING', 'Undertaking Form') || getDoc('NOC', 'No Objection Certificate')) && (
                             <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                                 <div className="flex items-center gap-2 mb-4">
                                     <span className="material-symbols-outlined text-teal-600 dark:text-teal-400 text-xl">fact_check</span>
                                     <h3 className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest pt-1">Joining Documents</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <DocRow doc={getDoc('NOC', 'No Objection Certificate')} label="NOC Certificate" onView={openViewer} />
-                                    <DocRow doc={getDoc('BOND', 'Bond / Service Agreement')} label="Service Bond" onView={openViewer} />
+                                    <DocRow doc={getDoc('BOND', '₹100 Bond')} label="₹100 Bond" onView={openViewer} />
+                                    <DocRow doc={getDoc('INSURANCE', 'Insurance Policy')} label="Insurance Policy" onView={openViewer} />
                                     <DocRow doc={getDoc('UNDERTAKING', 'Undertaking Form')} label="Undertaking" onView={openViewer} />
+                                    {/* Legacy: show NOC only if a historical upload exists */}
+                                    {getDoc('NOC', 'No Objection Certificate') && (
+                                        <DocRow doc={getDoc('NOC', 'No Objection Certificate')} label="NOC (legacy)" onView={openViewer} />
+                                    )}
                                 </div>
                             </section>
                         )}
@@ -779,7 +783,7 @@ const ApplicationProfileModal = ({ application, internship, allApplications = []
                                     </div>
 
                                     <div className="flex flex-col gap-4">
-                                        {isNonStipend && status === 'SELECTED' && (!getDoc('NOC', 'No Objection Certificate') || !getDoc('BOND', 'Bond / Service Agreement') || !getDoc('UNDERTAKING', 'Undertaking Form')) && (
+                                        {isNonStipend && status === 'SELECTED' && (!getDoc('BOND', '₹100 Bond') || !getDoc('INSURANCE', 'Insurance Policy') || !getDoc('UNDERTAKING', 'Undertaking Form')) && (
                                             <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg flex items-center gap-2">
                                                 <span className="material-symbols-outlined text-amber-600 text-sm">warning</span>
                                                 <p className="text-[9px] font-bold text-amber-700 dark:text-amber-500 uppercase tracking-widest">Joining documents are incomplete. Verify manually before hiring.</p>
