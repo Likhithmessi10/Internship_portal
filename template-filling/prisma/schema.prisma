@@ -1,0 +1,48 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // Co-locates with the main APTRANSCO portal in the same database but in its
+  // own Postgres schema so the two Prisma projects don't trample each other.
+  // See INTEGRATION.md.
+  schemas  = ["template_filling"]
+}
+
+model Template {
+  id        String   @id @default(uuid())
+  name      String
+  filePath  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fields    Field[]
+
+  @@schema("template_filling")
+}
+
+model Field {
+  id         String   @id @default(uuid())
+  label      String
+  type       String   @default("text") // text, date, etc.
+  x          Float
+  y          Float
+  xPt        Float?
+  yPt        Float?
+  width      Float
+  height     Float
+  widthPt    Float?
+  heightPt   Float?
+  fontSize   Int      @default(12)
+  fontFamily String   @default("Helvetica")
+  color      String   @default("#000000")
+  bold       Boolean  @default(false)
+  italic     Boolean  @default(false)
+  underline  Boolean  @default(false)
+  pageIndex  Int      @default(0)
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@schema("template_filling")
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import api from '../../../utils/api';
+import api, { MEDIA_URL } from '../../../utils/api';
 import { MONETARY_ENABLED } from '../../../config/features';
 import ApplicationProfileModal from '../ApplicationProfileModal';
 import {
@@ -762,6 +762,8 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [docCount, setDocCount] = useState(null);
+    const [joiningTemplate, setJoiningTemplate] = useState({ url: null, name: null });
+    const [uploadingTemplate, setUploadingTemplate] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -785,8 +787,49 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
                 ? raw.map((d, i) => normalizeDoc(d, i))
                 : [...DEFAULT_DOCS];
             setDocs(normalized);
-        } catch { setDocs([...DEFAULT_DOCS]); }
+            setJoiningTemplate({
+                url: res.data.data?.joiningLetterTemplateUrl || null,
+                name: res.data.data?.joiningLetterTemplateName || null
+            });
+        } catch { setDocs([...DEFAULT_DOCS]); setJoiningTemplate({ url: null, name: null }); }
         finally { setLoading(false); setOpen(true); }
+    };
+
+    const handleTemplateUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('template', file);
+        setUploadingTemplate(true);
+        try {
+            const res = await api.post(
+                `/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/joining-letter-template`,
+                fd,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+            setJoiningTemplate({
+                url: res.data.data?.joiningLetterTemplateUrl,
+                name: res.data.data?.joiningLetterTemplateName
+            });
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to upload template');
+        } finally {
+            setUploadingTemplate(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleTemplateRemove = async () => {
+        if (!window.confirm('Remove the current joining letter template?')) return;
+        setUploadingTemplate(true);
+        try {
+            await api.delete(`/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/joining-letter-template`);
+            setJoiningTemplate({ url: null, name: null });
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to remove template');
+        } finally {
+            setUploadingTemplate(false);
+        }
     };
 
     const save = async () => {
@@ -890,6 +933,44 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
                                 className="w-full py-4 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-400 text-base font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                                 <Plus size={20} /> Add Document
                             </button>
+
+                            {/* Joining Letter Template — HOD uploads a blank template, students download/fill/upload */}
+                            <div className="mt-5 p-4 bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-200 dark:border-amber-700/40 rounded-xl">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <FileText size={16} className="text-amber-700 dark:text-amber-400" />
+                                    <h4 className="text-base font-bold text-amber-900 dark:text-amber-200">Joining Letter Template</h4>
+                                </div>
+                                <p className="text-xs text-amber-800 dark:text-amber-300/80 mb-3">
+                                    Upload a blank joining letter template (PDF). Selected students will see a "Download Template" link, fill it out, and upload the signed copy back as a required document.
+                                </p>
+
+                                {joiningTemplate.url ? (
+                                    <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 border-2 border-amber-300 rounded-lg">
+                                        <FileCheck size={20} className="text-emerald-600 shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <a href={`${MEDIA_URL}/${joiningTemplate.url}`} target="_blank" rel="noopener noreferrer"
+                                                className="text-sm font-bold text-indigo-700 hover:underline truncate block">
+                                                {joiningTemplate.name || 'Joining Letter Template'}
+                                            </a>
+                                            <p className="text-[11px] font-semibold text-slate-500">Currently uploaded</p>
+                                        </div>
+                                        <label className="px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg cursor-pointer hover:bg-amber-200 transition-colors">
+                                            Replace
+                                            <input type="file" accept=".pdf,.doc,.docx" onChange={handleTemplateUpload} disabled={uploadingTemplate} className="hidden" />
+                                        </label>
+                                        <button onClick={handleTemplateRemove} disabled={uploadingTemplate}
+                                            className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg disabled:opacity-50">
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className={`flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-dashed border-amber-400 rounded-lg text-amber-700 dark:text-amber-300 text-sm font-bold cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors ${uploadingTemplate ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        {uploadingTemplate ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                                        {uploadingTemplate ? 'Uploading…' : 'Upload Joining Letter Template (PDF / DOCX)'}
+                                        <input type="file" accept=".pdf,.doc,.docx" onChange={handleTemplateUpload} disabled={uploadingTemplate} className="hidden" />
+                                    </label>
+                                )}
+                            </div>
                         </div>
 
                         <div className="px-6 py-4 border-t-2 border-slate-100 dark:border-slate-700 flex items-center justify-between gap-3 flex-wrap">

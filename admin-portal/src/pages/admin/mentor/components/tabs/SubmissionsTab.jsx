@@ -10,7 +10,7 @@ const SubmissionsTab = ({ internshipId }) => {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('');
     const [reviewModal, setReviewModal] = useState(null);
-    const [reviewData, setReviewData] = useState({ mentorFeedback: '', mentorRating: 0, status: 'APPROVED' });
+    const [reviewData, setReviewData] = useState({ mentorFeedback: '', mentorRating: 0, satisfactionPercent: '', status: 'APPROVED' });
     const [submitting, setSubmitting] = useState(false);
 
     const fetchSubmissions = async () => {
@@ -36,7 +36,7 @@ const SubmissionsTab = ({ internshipId }) => {
         try {
             await api.put(`/mentor/submissions/${reviewModal.id}/review`, reviewData);
             setReviewModal(null);
-            setReviewData({ mentorFeedback: '', mentorRating: 0, status: 'APPROVED' });
+            setReviewData({ mentorFeedback: '', mentorRating: 0, satisfactionPercent: '', status: 'APPROVED' });
             fetchSubmissions();
         } catch (err) {
             console.error('Failed to review submission:', err);
@@ -146,21 +146,21 @@ const SubmissionsTab = ({ internshipId }) => {
                                         {sub.status === 'SUBMITTED' && (
                                             <div className="flex gap-1.5">
                                                 <button
-                                                    onClick={() => { setReviewModal(sub); setReviewData({ mentorFeedback: '', mentorRating: 0, status: 'APPROVED' }); }}
+                                                    onClick={() => { setReviewModal(sub); setReviewData({ mentorFeedback: '', mentorRating: 0, satisfactionPercent: '', status: 'APPROVED' }); }}
                                                     className="p-2 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg transition-all"
                                                     title="Approve"
                                                 >
                                                     <CheckCircle size={16} />
                                                 </button>
                                                 <button
-                                                    onClick={() => { setReviewModal(sub); setReviewData({ mentorFeedback: '', mentorRating: 0, status: 'REJECTED' }); }}
+                                                    onClick={() => { setReviewModal(sub); setReviewData({ mentorFeedback: '', mentorRating: 0, satisfactionPercent: '', status: 'REJECTED' }); }}
                                                     className="p-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg transition-all"
                                                     title="Reject"
                                                 >
                                                     <XCircle size={16} />
                                                 </button>
                                                 <button
-                                                    onClick={() => { setReviewModal(sub); setReviewData({ mentorFeedback: '', mentorRating: 0, status: 'REVISION_REQUESTED' }); }}
+                                                    onClick={() => { setReviewModal(sub); setReviewData({ mentorFeedback: '', mentorRating: 0, satisfactionPercent: '', status: 'REVISION_REQUESTED' }); }}
                                                     className="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg transition-all"
                                                     title="Request Revision"
                                                 >
@@ -215,6 +215,34 @@ const SubmissionsTab = ({ internshipId }) => {
                                             <Star size={18} className={r <= reviewData.mentorRating ? 'fill-amber-400' : ''} />
                                         </button>
                                     ))}
+                                </div>
+                            </div>
+
+                            {/* Satisfaction percent — how satisfactory the assignment is */}
+                            <div>
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 block">
+                                    Satisfaction (%) — how satisfactory is this submission?
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        step="5"
+                                        value={reviewData.satisfactionPercent || 0}
+                                        onChange={e => setReviewData({ ...reviewData, satisfactionPercent: e.target.value })}
+                                        className="flex-1 accent-indigo-600"
+                                    />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        placeholder="0-100"
+                                        value={reviewData.satisfactionPercent}
+                                        onChange={e => setReviewData({ ...reviewData, satisfactionPercent: e.target.value })}
+                                        className="w-20 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                    />
+                                    <span className="text-sm font-bold text-slate-600">%</span>
                                 </div>
                             </div>
 

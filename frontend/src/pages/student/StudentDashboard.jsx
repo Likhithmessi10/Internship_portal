@@ -7,7 +7,7 @@ import {
     CheckCircle, Clock, ShieldCheck, Zap, Award, BookOpen,
     User, X, Landmark, CreditCard, Shield, Star, ClipboardList,
     Upload, Calendar, ChevronRight, Mail, Phone, ExternalLink,
-    IndianRupee, FileCheck, AlertTriangle
+    IndianRupee, FileCheck, AlertTriangle, Download
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -102,8 +102,11 @@ const StudentDashboard = () => {
     const configuredDocs = Array.isArray(activeApp?.departmentGroup?.requiredDocuments)
         ? activeApp.departmentGroup.requiredDocuments
         : [];
+    // Joining letter template uploaded by HOD (optional)
+    const joiningLetterTemplateUrl = activeApp?.departmentGroup?.joiningLetterTemplateUrl || null;
+    const joiningLetterTemplateName = activeApp?.departmentGroup?.joiningLetterTemplateName || 'Joining Letter Template';
     const normalizeId = s => String(s).toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
-    const joiningDocsActive = (configuredDocs.length > 0
+    const joiningDocsActiveBase = (configuredDocs.length > 0
         ? configuredDocs.map((d, i) => typeof d === 'string'
             ? { id: normalizeId(d), label: d, format: 'PDF', mandatory: true, hint: '' }
             : {
@@ -115,6 +118,12 @@ const StudentDashboard = () => {
             })
         : JOINING_DOCS.map(d => ({ ...d, format: 'PDF', mandatory: true }))
     );
+
+    // If HOD uploaded a joining letter template and JOINING_LETTER isn't already in the list,
+    // inject it as a required doc the student must download, fill, and upload back.
+    const joiningDocsActive = joiningLetterTemplateUrl && !joiningDocsActiveBase.some(d => d.id === 'JOINING_LETTER')
+        ? [{ id: 'JOINING_LETTER', label: 'Joining Letter (filled & signed)', format: 'PDF', mandatory: true, hint: 'Download the template, fill it out, sign, and upload back' }, ...joiningDocsActiveBase]
+        : joiningDocsActiveBase;
 
     // Uploaded joining doc types already on file
     const joiningTypeSet = new Set(joiningDocsActive.map(d => d.id));
@@ -363,6 +372,23 @@ const StudentDashboard = () => {
                                 </div>
                                 {joiningDocsComplete && <CheckCircle size={24} className="text-emerald-500 shrink-0" />}
                             </div>
+
+                            {joiningLetterTemplateUrl && (
+                                <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/40 rounded-2xl flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                                        <FileText size={20} className="text-amber-700" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-black uppercase tracking-widest text-amber-700 mb-0.5">Step 1 · Download Template</p>
+                                        <p className="text-sm font-bold text-amber-900 truncate">{joiningLetterTemplateName}</p>
+                                        <p className="text-[11px] text-amber-700/80 font-medium">Fill it out, sign, and upload back as your Joining Letter below.</p>
+                                    </div>
+                                    <a href={`${MEDIA_URL}/${joiningLetterTemplateUrl}`} target="_blank" rel="noopener noreferrer" download
+                                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shrink-0 transition-colors flex items-center gap-1.5">
+                                        <Download size={14} /> Download
+                                    </a>
+                                </div>
+                            )}
 
                             <div className="space-y-3 mb-6">
                                 {joiningDocsActive.map(doc => {

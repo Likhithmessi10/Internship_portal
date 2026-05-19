@@ -309,7 +309,16 @@ const reviewSubmission = async (req, res) => {
     try {
         const mentorId = req.user.id;
         const { id: submissionId } = req.params;
-        const { mentorFeedback, mentorRating, status } = req.body;
+        const { mentorFeedback, mentorRating, satisfactionPercent, status } = req.body;
+
+        // Validate satisfactionPercent (0-100)
+        let sat = null;
+        if (satisfactionPercent !== undefined && satisfactionPercent !== null && satisfactionPercent !== '') {
+            sat = parseInt(satisfactionPercent);
+            if (Number.isNaN(sat) || sat < 0 || sat > 100) {
+                return res.status(400).json({ success: false, message: 'satisfactionPercent must be between 0 and 100' });
+            }
+        }
 
         const submission = await prisma.taskSubmission.findUnique({
             where: { id: submissionId },
@@ -333,6 +342,7 @@ const reviewSubmission = async (req, res) => {
             data: {
                 mentorFeedback,
                 mentorRating: mentorRating ? parseInt(mentorRating) : null,
+                satisfactionPercent: sat,
                 status: status || 'REVIEWED',
                 reviewedAt: new Date(),
                 reviewedBy: mentorId

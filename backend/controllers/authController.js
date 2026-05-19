@@ -57,9 +57,8 @@ const register = async (req, res) => {
         const salt = await bcrypt.genSalt(SALT_ROUNDS);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create user
-        const allowedRoles = ['STUDENT', 'ADMIN', 'CE_PRTI', 'HOD', 'MENTOR', 'COMMITTEE_MEMBER'];
-        const finalRole = allowedRoles.includes(role) ? role : 'STUDENT';
+        // Public registration always creates STUDENT — privileged roles must go through /admin/register
+        const finalRole = 'STUDENT';
 
         const user = await prisma.user.create({
             data: {
@@ -232,7 +231,7 @@ const refreshToken = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Refresh token required' });
         }
 
-        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
         
         // Verify user still exists
         const user = await prisma.user.findUnique({ 

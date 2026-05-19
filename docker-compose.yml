@@ -1,4 +1,4 @@
-version: '3.8'
+# Secrets are loaded from .env (gitignored). Copy .env.example → .env and fill in values.
 
 services:
 
@@ -8,18 +8,41 @@ services:
     container_name: aptransco_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: aptransco
-      POSTGRES_USER: aptransco
-      POSTGRES_PASSWORD: aptransco_docker_2026
+      POSTGRES_DB: ${POSTGRES_DB:-aptransco}
+      POSTGRES_USER: ${POSTGRES_USER:-aptransco}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # No host port binding — only reachable inside the Docker network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aptransco -d aptransco"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # ── Template Filling Sidecar (Next.js) ───────────────────────────────────────
+  # Owns the offer-letter template designer + /api/fill endpoint.
+  # Backend calls it server-to-server via http://template-filling:3100.
+  # Browser opens its UI at http://localhost:3100 (host-bound port below).
+  template-filling:
+    build:
+      context: ./template-filling
+      dockerfile: Dockerfile
+    container_name: aptransco_template_filling
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      NODE_ENV: production
+      PORT: 3100
+      # Uses a dedicated Postgres schema so it doesn't collide with the main portal tables.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aptransco}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aptransco}?schema=template_filling
+      SIDECAR_TOKEN: ${SIDECAR_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - template_uploads:/app/uploads
 
   # ── Unified Application (Node.js + Nginx) ────────────────────────────────────
   app:
@@ -37,11 +60,11 @@ services:
     environment:
       PORT: 5001
       NODE_ENV: production
-      DATABASE_URL: postgresql://aptransco:aptransco_docker_2026@postgres:5432/aptransco?schema=public
-      JWT_SECRET: docker_test_jwt_secret_aptransco_2026_change_in_production
-      JWT_REFRESH_SECRET: docker_test_jwt_refresh_secret_aptransco_2026_change_in_production
-      JWT_EXPIRY: 7d
-      JWT_REFRESH_EXPIRY: 30d
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aptransco}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aptransco}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRY: 1h
+      JWT_REFRESH_EXPIRY: 7d
       CORS_ORIGINS: http://localhost,http://localhost:80,https://hunt-depend-trend-nov.trycloudflare.com
       RATE_LIMIT_WINDOW_MS: "60000"
       RATE_LIMIT_MAX_REQUESTS: "500"
@@ -51,18 +74,25 @@ services:
       CLAMAV_ENABLED: "false"
       EMAIL_SERVICE_URL: https://aptrservice.aptransco.gov.in/api/noreply
       EMAIL_SERVICE_ATTACHMENT_URL: https://aptrservice.aptransco.gov.in/api/noreplyattachment
-      EMAIL_API_KEY: NOVAC_MRZ
+      EMAIL_API_KEY: ${EMAIL_API_KEY}
       # EMAIL_API_KEY + EMAIL_API_KEY_HEADER are loaded from backend/.env via env_file above.
       # If they're missing or blank in that file, outbound emails are skipped (warning logged at startup).
       MORGAN_LOG_FORMAT: combined
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+      # Server-to-server URL (inside the docker network)
+      TEMPLATE_FILLING_URL: http://template-filling:3100
+      TEMPLATE_FILLING_PUBLIC_URL: http://localhost:3100
+      SIDECAR_TOKEN: ${SIDECAR_TOKEN}
     depends_on:
       postgres:
         condition: service_healthy
+      template-filling:
+        condition: service_started
     volumes:
       - uploads_data:/app/backend/uploads
 
 volumes:
   postgres_data:
   uploads_data:
+  template_uploads:

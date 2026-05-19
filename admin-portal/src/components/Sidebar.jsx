@@ -9,7 +9,7 @@ import {
     LayoutDashboard, FolderOpen, Settings2, GraduationCap,
     FileText, CheckSquare, Users, Calendar, BarChart3,
     Search, PlusCircle, ClipboardList, UserCheck,
-    Building2, ChevronDown, Lock, BookOpen
+    Building2, ChevronDown, Lock, BookOpen, Award
 } from 'lucide-react';
 import { MONETARY_ENABLED } from '../config/features';
 
@@ -36,6 +36,7 @@ const NAV = {
                 { label: 'Intern Pipeline',  icon: GraduationCap, path: '/prti/learning-interns' },
                 { label: 'HOD Applications', icon: FileText,      path: '/hod/applications' },
                 { label: 'Work Logs',        icon: BookOpen,      path: '/prti/work-logs' },
+                { label: 'Completed Internships', icon: Award,    path: '/prti/completed-internships' },
                 { label: 'Selection',        icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
             ]
         },
@@ -50,8 +51,9 @@ const NAV = {
         {
             section: 'System',
             items: [
-                { label: 'Reports',          icon: BarChart3, path: '/prti/reports' },
-                { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+                { label: 'Reports',              icon: BarChart3, path: '/prti/reports' },
+                { label: 'Offer Letter Setup',   icon: FileText,  path: '/prti/offer-letter-setup' },
+                { label: 'Candidate Search',     icon: Search,    path: '/admin/search' },
             ]
         },
     ],
@@ -68,6 +70,7 @@ const NAV = {
                 { label: 'Applications',    icon: FileText,  path: '/hod/applications' },
                 { label: 'Field Settings',  icon: Settings2, path: '/hod/field-config' },
                 { label: 'Problem Statements', icon: ClipboardList, path: '/hod/problem-statements', monetary: true },
+                { label: 'Completed Internships', icon: Award, path: '/hod/completed-internships' },
                 { label: 'Selection',          icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
             ]
         },
@@ -129,6 +132,7 @@ const NAV = {
                 { label: 'Intern Pipeline',  icon: GraduationCap, path: '/prti/learning-interns' },
                 { label: 'HOD Applications', icon: FileText,      path: '/hod/applications' },
                 { label: 'Work Logs',        icon: BookOpen,      path: '/prti/work-logs' },
+                { label: 'Completed Internships', icon: Award,    path: '/prti/completed-internships' },
                 { label: 'Selection',        icon: CheckSquare,   path: '/hod/selection', highlight: true, monetary: true },
             ]
         },

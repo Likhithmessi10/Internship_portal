@@ -211,6 +211,10 @@ model Internship {
   internshipType       String?   @default("STIPEND") // STIPEND, COLLABORATIVE, NON_STIPEND
   internshipMode       String?   @default("SINGLE")  // SINGLE or GROUP
   shortlistLimit       Int?      @default(50)
+  // Completion state — set when mentor finalizes the internship
+  completionStatus     String?   @default("ONGOING")  // ONGOING | COMPLETED
+  completedAt          DateTime?
+  completedById        String?   // mentor user id who finalized
 
   batch              InternshipBatch?                        @relation(fields: [batchId], references: [id], onDelete: SetNull)
   applications       Application[]
@@ -235,6 +239,9 @@ model InternshipDepartmentGroup {
   quotaPercentages  Json?
   customQuestions   Json?     @default("[]")
   requiredDocuments Json?     @default("[]") // HOD-configurable docs required after selection
+  // Joining letter template (HOD-uploaded; student downloads, fills, uploads back as JOINING_LETTER doc)
+  joiningLetterTemplateUrl  String?
+  joiningLetterTemplateName String?
   // HOD submission tracking
   hodSubmitted      Boolean   @default(false)
   hodSubmittedAt    DateTime?
@@ -309,6 +316,11 @@ model Application {
   prtiNote            String?                   // PRTI feedback visible to HOD
   questionAnswers     Json?
   scoreBreakdown      Json?
+  // Completion flow (set by mentor during "Complete Internship" wizard)
+  mentorRemarks            String?
+  mentorSatisfactionPercent Int?     // 0-100, mentor's overall satisfaction for this intern
+  completionStatus         String?   // PENDING | COMPLETED | INCOMPLETE — set during completion wizard
+  completionProcessedAt    DateTime?
 
   student          StudentProfile                         @relation(fields: [studentId], references: [id], onDelete: Cascade)
   internship       Internship                             @relation(fields: [internshipId], references: [id], onDelete: Cascade)
@@ -427,6 +439,10 @@ model PortalConfiguration {
   id              String   @id @default("singleton")
   authorizedTotal Int      @default(0)
   departments     Json?    @default("[]")
+  // Active offer-letter template ID — Template.id in the template-filling sidecar (see template-filling/).
+  // When set, the student's "Download Offer Letter" endpoint POSTs to ${TEMPLATE_FILLING_URL}/api/fill
+  // with this templateId and a flat label→value dictionary built from the application.
+  offerLetterTemplateId String?
   updatedAt       DateTime @updatedAt
 }
 
@@ -518,7 +534,8 @@ model TaskSubmission {
   attachmentType   String?
   status           String   @default("SUBMITTED")
   mentorFeedback   String?
-  mentorRating     Int?
+  mentorRating     Int?     // legacy 1-5 star rating, kept for backward compat
+  satisfactionPercent Int?  // 0-100 — how satisfactory the assignment is
   reviewedAt       DateTime?
   reviewedBy       String?
   createdAt        DateTime @default(now())
@@ -544,4 +561,17 @@ model WorkLog {
   @@unique([applicationId, date])
   @@index([applicationId])
   @@index([studentId])
+}
+
+model Certificate {
+  id                   String   @id @default(uuid())
+  applicationId        String   @unique
+  issuedById           String   // mentor user id
+  fileUrl              String   // generated PDF path (under uploads/)
+  attendancePercent    Int      @default(0)
+  satisfactionPercent  Int?     // mentor's overall satisfaction at time of issuance
+  remarks              String?
+  issuedAt             DateTime @default(now())
+
+  @@index([issuedById])
 }

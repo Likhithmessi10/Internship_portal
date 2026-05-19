@@ -2,6 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 const { malwareScanMiddleware } = require('./clamav');
+const fileValidator = require('./fileValidator');
 
 // Configure Local Storage to `uploads/` folder
 const storage = multer.diskStorage({
@@ -69,10 +70,10 @@ const enforcePerFieldLimits = (req, res, next) => {
  * Usage: upload.fields([...]), malwareScan
  */
 const uploadWithScan = {
-    any: () => [upload.any(), enforcePerFieldLimits, malwareScanMiddleware],
-    fields: (fields) => [upload.fields(fields), enforcePerFieldLimits, malwareScanMiddleware],
-    single: (name) => [upload.single(name), enforcePerFieldLimits, malwareScanMiddleware],
-    array: (name, maxCount) => [upload.array(name, maxCount), enforcePerFieldLimits, malwareScanMiddleware]
+    any: () => [upload.any(), enforcePerFieldLimits, fileValidator, malwareScanMiddleware],
+    fields: (fields) => [upload.fields(fields), enforcePerFieldLimits, fileValidator, malwareScanMiddleware],
+    single: (name) => [upload.single(name), enforcePerFieldLimits, fileValidator, malwareScanMiddleware],
+    array: (name, maxCount) => [upload.array(name, maxCount), enforcePerFieldLimits, fileValidator, malwareScanMiddleware]
 };
 
 module.exports = uploadWithScan;

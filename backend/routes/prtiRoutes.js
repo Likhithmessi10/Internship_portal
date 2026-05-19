@@ -36,14 +36,25 @@ router.get('/committees/:internshipId/status', authorize('CE_PRTI', 'ADMIN', 'HO
 router.post('/internships/:id/publish', authorize('CE_PRTI', 'ADMIN'), publishInternship);
 
 // Committee Member Management (PRTI Representative)
-router.get('/committees/:internshipId', getCommittee);
-router.put('/committees/:internshipId/member', updatePRTIMember);
-router.get('/committees/members/available', getAvailablePRTIMembers);
+router.get('/committees/:internshipId', authorize('CE_PRTI', 'ADMIN', 'HOD'), getCommittee);
+router.put('/committees/:internshipId/member', authorize('CE_PRTI', 'ADMIN'), updatePRTIMember);
+router.get('/committees/members/available', authorize('CE_PRTI', 'ADMIN'), getAvailablePRTIMembers);
 
 // Document Configuration
-router.get('/config/documents', getDocumentConfig);
-router.put('/config/documents', updateDocumentConfig);
-router.get('/config/documents/:internshipId', getInternshipDocuments);
-router.put('/config/documents/:internshipId', setInternshipDocuments);
+router.get('/config/documents', authorize('CE_PRTI', 'ADMIN', 'HOD'), getDocumentConfig);
+router.put('/config/documents', authorize('CE_PRTI', 'ADMIN'), updateDocumentConfig);
+router.get('/config/documents/:internshipId', authorize('CE_PRTI', 'ADMIN', 'HOD', 'MENTOR'), getInternshipDocuments);
+router.put('/config/documents/:internshipId', authorize('CE_PRTI', 'ADMIN'), setInternshipDocuments);
+
+// Offer Letter Template selection — proxies to the template-filling sidecar
+// for listing templates, and stores the chosen ID on PortalConfiguration.
+const {
+    getOfferLetterConfig,
+    setOfferLetterConfig,
+    listOfferLetterTemplates
+} = require('../controllers/offerLetterTemplateController');
+router.get('/config/offer-letter',           authorize('CE_PRTI', 'ADMIN'), getOfferLetterConfig);
+router.put('/config/offer-letter',           authorize('CE_PRTI', 'ADMIN'), setOfferLetterConfig);
+router.get('/config/offer-letter/templates', authorize('CE_PRTI', 'ADMIN'), listOfferLetterTemplates);
 
 module.exports = router;

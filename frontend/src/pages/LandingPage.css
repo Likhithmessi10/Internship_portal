@@ -122,20 +122,30 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--lv2-navy);
+  border: 1px solid var(--lv2-border);
   color: #ffffff;
-  padding: 4px 12px;
+  padding: 5px 13px;
   border-radius: 999px;
   font-size: 10px;
   cursor: pointer;
   font-weight: 700;
+  letter-spacing: 0.3px;
   transition: all 0.2s ease;
   margin-left: 4px;
 }
 .lv2-theme-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--lv2-navy-3);
   border-color: var(--lv2-gold);
+  color: var(--lv2-gold);
+}
+.dark .lv2-theme-btn {
+  background: var(--lv2-gold);
+  border-color: var(--lv2-gold);
+  color: #000;
+}
+.dark .lv2-theme-btn:hover {
+  background: var(--lv2-gold-soft);
 }
 
 /* ─── Header ─── */
@@ -145,30 +155,30 @@
   position: relative;
 }
 .lv2-header-inner {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 18px 24px;
+  width: 100%;
+  padding: 10px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
 }
-.lv2-header-left { display: flex; align-items: center; gap: 16px; }
+.lv2-header-left { display: flex; align-items: center; gap: 12px; }
 .lv2-logo-wrap {
-  width: 56px;
-  height: 56px;
+  width: 46px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 10px;
   background: linear-gradient(135deg, rgba(0, 48, 135, 0.05), rgba(212, 160, 23, 0.05));
   border: 1px solid var(--lv2-border);
-  padding: 6px;
+  padding: 5px;
+  flex-shrink: 0;
 }
 .lv2-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
 .lv2-header-dept {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--lv2-navy-2);
   margin: 0;
@@ -179,8 +189,8 @@
 .lv2-header-sub {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 4px 0 0;
+  gap: 6px;
+  margin: 3px 0 0;
   font-size: 11px;
   color: var(--lv2-text-soft);
   font-weight: 500;
@@ -193,7 +203,7 @@
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 1px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 4px;
   text-transform: uppercase;
 }
@@ -204,9 +214,12 @@
   border-radius: 50%;
   background: var(--lv2-text-mute);
 }
-.lv2-header-right { display: flex; align-items: center; gap: 16px; }
+.lv2-header-right { display: flex; align-items: center; gap: 20px; }
 .lv2-helpdesk {
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
   font-size: 11px;
   color: var(--lv2-text-mute);
   line-height: 1.4;
@@ -215,11 +228,63 @@
   color: var(--lv2-navy-2);
   font-weight: 800;
   text-transform: uppercase;
-  font-size: 10px;
-  margin: 0 0 2px;
-  letter-spacing: 0.8px;
+  font-size: 9px;
+  margin: 0;
+  letter-spacing: 1px;
 }
 .dark .lv2-helpdesk-label { color: var(--lv2-gold); }
+.lv2-helpdesk-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.lv2-helpdesk-hours { margin: 0; font-size: 10px; }
+.lv2-helpdesk a {
+  color: var(--lv2-text-soft);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  font-size: 11px;
+  transition: color 0.15s ease;
+}
+.lv2-helpdesk a:hover { color: var(--lv2-gold); }
+
+/* Icon-only theme toggle button */
+.lv2-theme-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lv2-bg-soft);
+  border: 1px solid var(--lv2-border);
+  color: var(--lv2-navy-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.lv2-theme-icon-btn:hover {
+  background: var(--lv2-navy-2);
+  border-color: var(--lv2-navy-2);
+  color: #fff;
+  transform: rotate(15deg);
+}
+.dark .lv2-theme-icon-btn {
+  background: var(--lv2-bg-soft);
+  border-color: var(--lv2-border);
+  color: var(--lv2-gold);
+}
+.dark .lv2-theme-icon-btn:hover {
+  background: var(--lv2-gold);
+  border-color: var(--lv2-gold);
+  color: #000;
+}
+
 .lv2-flag-bar {
   height: 3px;
   background: linear-gradient(to right, #FF9933, #FFFFFF, #138808);
@@ -326,7 +391,7 @@
   position: relative;
   background: linear-gradient(135deg, #000a24 0%, var(--lv2-navy-2) 50%, var(--lv2-navy-3) 100%);
   color: #ffffff;
-  padding: 100px 24px 140px;
+  padding: 44px 24px 52px;
   overflow: hidden;
   isolation: isolate;
 }
@@ -432,7 +497,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
   backdrop-filter: blur(8px);
 }
 .lv2-hero-badge-dot {
@@ -449,10 +514,10 @@
 }
 .lv2-hero-title {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: clamp(38px, 7vw, 76px);
+  font-size: clamp(32px, 5.5vw, 60px);
   font-weight: 700;
   line-height: 1.05;
-  margin: 0 0 24px;
+  margin: 0 0 14px;
   letter-spacing: -2px;
   color: #ffffff;
 }
@@ -470,11 +535,11 @@
   to { background-position: 200% center; }
 }
 .lv2-hero-sub {
-  font-size: 16px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.78);
-  line-height: 1.65;
+  line-height: 1.6;
   max-width: 680px;
-  margin: 0 auto 36px;
+  margin: 0 auto 20px;
   font-weight: 400;
 }
 .lv2-hero-sub strong { color: var(--lv2-gold-soft); font-weight: 700; }
@@ -484,8 +549,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  margin-bottom: 60px;
+  gap: 12px;
+  margin-bottom: 28px;
 }
 .lv2-btn-primary {
   display: inline-flex;
@@ -873,10 +938,16 @@
   font-size: 13px;
   color: var(--lv2-text-soft);
   line-height: 1.5;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
   flex: 1;
   position: relative;
   z-index: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .lv2-card-meta {
   display: flex;
@@ -1274,7 +1345,7 @@
   .lv2-header-right { display: none; }
   .lv2-header-left { flex-direction: column; text-align: center; }
   .lv2-marquee-label { font-size: 9px; padding: 8px 12px; }
-  .lv2-hero { padding: 80px 20px 100px; }
+  .lv2-hero { padding: 36px 20px 48px; }
   .lv2-hero-title { font-size: 38px; letter-spacing: -1px; }
   .lv2-hero-stats { padding: 16px; gap: 0; }
   .lv2-hero-stat { padding: 8px 16px; min-width: 80px; }

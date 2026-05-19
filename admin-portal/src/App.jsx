@@ -43,6 +43,8 @@ import MentorCommittees from './pages/admin/mentor/MentorCommittees';
 import MentorMeetings from './pages/admin/mentor/MentorMeetings';
 import MentorReports from './pages/admin/mentor/MentorReports';
 import Profile from './pages/admin/Profile';
+import CompletedInternships from './pages/admin/CompletedInternships';
+import PrtiOfferLetterSetup from './pages/admin/prti/PrtiOfferLetterSetup';
 
 const AdminLayout = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -147,6 +149,16 @@ function App() {
               <AdminLayout><PrtiWorkLogs /></AdminLayout>
             </ProtectedRoute>
           } />
+          <Route path="/prti/completed-internships" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><CompletedInternships /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/prti/offer-letter-setup" element={
+            <ProtectedRoute allowedRoles={['CE_PRTI', 'ADMIN']}>
+              <AdminLayout><PrtiOfferLetterSetup /></AdminLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/prti/committee" element={
             <MonetaryRoute allowedRoles={['CE_PRTI', 'COMMITTEE_MEMBER', 'ADMIN', 'HOD', 'MENTOR']} fallback="/prti/dashboard">
               <PRTICommitteeDashboard />
@@ -200,6 +212,11 @@ function App() {
           <Route path="/hod/reports" element={
             <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'CE_PRTI']}>
               <AdminLayout><HodReports /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/hod/completed-internships" element={
+            <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+              <AdminLayout><CompletedInternships /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/mentor/dashboard" element={

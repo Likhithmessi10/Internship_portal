@@ -17,9 +17,12 @@ app.set('trust proxy', 1);
 // ============================================
 // SECURITY MIDDLEWARE
 // ============================================
+const securityHeaders = require('./middleware/securityHeaders');
+app.use(securityHeaders);
+
 const allowedOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
-    : '*';
+    : false;
 app.use(cors({
     origin: allowedOrigins,
     credentials: true
@@ -63,8 +66,7 @@ app.get('/health', (req, res) => {
     res.status(200).json({
         success: true,
         status: 'healthy',
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        timestamp: new Date().toISOString()
     });
 });
 

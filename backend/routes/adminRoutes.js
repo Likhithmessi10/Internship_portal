@@ -95,7 +95,8 @@ router.put('/internships/:id/publish', authorize('ADMIN', 'CE_PRTI', 'HOD'), asy
         });
         res.json({ success: true, message: 'Internship published' });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('Publish internship error:', err.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 router.put('/internships/:id/deadline', extendDeadline);
@@ -211,7 +212,8 @@ router.post('/applications/prti-approve-batch', authorize('ADMIN', 'CE_PRTI'), a
 
         res.json({ success: true, message: `${applicationIds.length} application(s) approved by PRTI` });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('PRTI approve batch error:', err.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 
@@ -224,7 +226,8 @@ router.put('/applications/:id/prti-note', authorize('ADMIN', 'CE_PRTI'), async (
         });
         res.json({ success: true, data: { prtiNote: updated.prtiNote } });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('PRTI note update error:', err.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 router.post('/applications/:id/evaluate', authorize('ADMIN', 'CE_PRTI', 'HOD', 'COMMITTEE_MEMBER', 'MENTOR'), submitEvaluation);
@@ -252,6 +255,30 @@ router.get('/applications/:id/work-logs',        authorize('ADMIN', 'CE_PRTI', '
 router.get('/applications/:id/work-logs/export', authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportApplicationWorkLogs);
 router.get('/internships/:id/work-logs/export',  authorize('ADMIN', 'CE_PRTI', 'HOD', 'MENTOR'), exportInternshipWorkLogs);
 
+// Department group details — required docs + joining letter template (read-only)
+router.get('/internships/:id/groups/:groupId/details', authorize('ADMIN', 'CE_PRTI', 'HOD'), async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const group = await require('../lib/prisma').internshipDepartmentGroup.findUnique({
+            where: { id: groupId },
+            select: {
+                id: true, internshipId: true, department: true, title: true,
+                requiredDocuments: true,
+                joiningLetterTemplateUrl: true,
+                joiningLetterTemplateName: true
+            }
+        });
+        if (!group) return res.status(404).json({ success: false, message: 'Department group not found' });
+        if (req.user.role === 'HOD' && group.department !== req.user.department) {
+            return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+        res.json({ success: true, data: group });
+    } catch (err) {
+        console.error('Get group details error:', err.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+});
+
 // HOD: update required documents for a dept group
 router.put('/internships/:id/groups/:groupId/required-docs', authorize('ADMIN', 'CE_PRTI', 'HOD'), async (req, res) => {
     try {
@@ -263,14 +290,80 @@ router.put('/internships/:id/groups/:groupId/required-docs', authorize('ADMIN', 
         });
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('Update required docs error:', err.message);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
+
+// HOD: upload joining letter template for a dept group (students download, fill, upload back)
+router.post(
+    '/internships/:id/groups/:groupId/joining-letter-template',
+    authorize('ADMIN', 'CE_PRTI', 'HOD'),
+    require('../middleware/uploadMiddleware').single('template'),
+    async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            if (!req.file) return res.status(400).json({ success: false, message: 'No template file uploaded' });
+
+            const group = await require('../lib/prisma').internshipDepartmentGroup.findUnique({ where: { id: groupId } });
+            if (!group) return res.status(404).json({ success: false, message: 'Department group not found' });
+            if (req.user.role === 'HOD' && group.department !== req.user.department) {
+                return res.status(403).json({ success: false, message: 'You can only manage templates for your department' });
+            }
+
+            const updated = await require('../lib/prisma').internshipDepartmentGroup.update({
+                where: { id: groupId },
+                data: {
+                    joiningLetterTemplateUrl: req.file.path.replace(/\\/g, '/'),
+                    joiningLetterTemplateName: req.file.originalname
+                },
+                select: { id: true, joiningLetterTemplateUrl: true, joiningLetterTemplateName: true }
+            });
+            res.json({ success: true, data: updated });
+        } catch (err) {
+            console.error('Upload joining letter template error:', err.message);
+            res.status(500).json({ success: false, message: 'Server Error' });
+        }
+    }
+);
+
+// HOD: remove joining letter template
+router.delete(
+    '/internships/:id/groups/:groupId/joining-letter-template',
+    authorize('ADMIN', 'CE_PRTI', 'HOD'),
+    async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const group = await require('../lib/prisma').internshipDepartmentGroup.findUnique({ where: { id: groupId } });
+            if (!group) return res.status(404).json({ success: false, message: 'Department group not found' });
+            if (req.user.role === 'HOD' && group.department !== req.user.department) {
+                return res.status(403).json({ success: false, message: 'You can only manage templates for your department' });
+            }
+
+            await require('../lib/prisma').internshipDepartmentGroup.update({
+                where: { id: groupId },
+                data: { joiningLetterTemplateUrl: null, joiningLetterTemplateName: null }
+            });
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Delete joining letter template error:', err.message);
+            res.status(500).json({ success: false, message: 'Server Error' });
+        }
+    }
+);
 
 // Attendance Management
 const upload = require('../middleware/uploadMiddleware');
 router.post('/attendance/mark', upload.single('file'), markAttendance);
 router.get('/attendance', getAttendance);
 router.post('/attendance/bulk', bulkMarkAttendance);
+
+// Completed Internships (PRTI/HOD/ADMIN view; HOD scoped to own dept)
+const {
+    listCompletedInternships,
+    getCompletedInternshipDetail
+} = require('../controllers/completedInternshipsController');
+router.get('/completed-internships',     authorize('ADMIN', 'CE_PRTI', 'HOD'), listCompletedInternships);
+router.get('/completed-internships/:id', authorize('ADMIN', 'CE_PRTI', 'HOD'), getCompletedInternshipDetail);
 
 module.exports = router;

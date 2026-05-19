@@ -15,7 +15,7 @@ const generalLimiter = rateLimit({
 
 // Strict rate limiter for authentication endpoints
 // 7 failed attempts per 15 minutes (brute force protection)
-// Only counts FAILED attempts, and tracks by email (not IP to avoid IPv6 bypass issues)
+// Tracks by email address so proxy rotation cannot bypass the limit
 const authLimiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
     max: parseInt(process.env.RATE_LIMIT_AUTH_MAX_REQUESTS) || 7,
@@ -25,8 +25,11 @@ const authLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Only count failed requests
     skipSuccessfulRequests: true,
+    keyGenerator: (req) => {
+        const email = (req.body?.email || '').toString().toLowerCase().trim();
+        return email ? `auth:${email}` : `auth:ip:${req.ip}`;
+    },
 });
 
 // Upload rate limiter

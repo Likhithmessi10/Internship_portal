@@ -3,6 +3,7 @@ node_modules/
 backend/node_modules/
 frontend/node_modules/
 admin-portal/node_modules/
+template-filling/node_modules/
 package-lock.json.bak
 
 # ── Environment files ──────────────────────────────────────────────────────
@@ -22,13 +23,17 @@ out/
 .next/
 .nuxt/
 *.tsbuildinfo
+next-env.d.ts
 frontend/dist/
 admin-portal/dist/
 backend/dist/
+template-filling/.next/
+template-filling/out/
 
 # ── Uploaded files (user data) ─────────────────────────────────────────────
 uploads/
 backend/uploads/
+template-filling/uploads/
 *.uploaded
 
 # ── Logs ───────────────────────────────────────────────────────────────────
@@ -119,6 +124,7 @@ uploads_data/
 # ── Project specific — debug & dev artefacts ───────────────────────────────
 stitch/
 stitch-*
+scratch/
 backend/scratch/
 backend/check_mukkamala.js
 backend/debug_search.js
@@ -127,6 +133,12 @@ backend/update_nulu_roll.js
 backend/migrate_batches.js
 backend/accounts.txt
 update_nulu_roll.js
+cloudflare.log
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
 
 # ── Generated assets ───────────────────────────────────────────────────────
 *.local

@@ -8,6 +8,12 @@ const {
     reviewSubmission
 } = require('../controllers/mentorController');
 const {
+    getCompletionSummary,
+    saveInternRemarks,
+    issueCertificate,
+    finalizeInternship
+} = require('../controllers/internshipCompletionController');
+const {
     markAttendance,
     getAttendance,
     bulkMarkAttendance
@@ -31,6 +37,12 @@ router.get('/tasks', getTasks);
 // Submissions
 router.get('/submissions', getSubmissions);
 router.put('/submissions/:id/review', reviewSubmission);
+
+// Complete Internship wizard
+router.get('/internships/:id/completion-summary', getCompletionSummary);
+router.post('/internships/:internshipId/interns/:applicationId/remarks', saveInternRemarks);
+router.post('/internships/:internshipId/interns/:applicationId/certificate', issueCertificate);
+router.post('/internships/:id/finalize', finalizeInternship);
 
 const upload = require('../middleware/uploadMiddleware');
 

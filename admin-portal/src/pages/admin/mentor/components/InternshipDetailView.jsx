@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Users, ClipboardList, FileText, BookOpen } from 'lucide-react';
+import { ArrowLeft, Users, ClipboardList, FileText, BookOpen, Award } from 'lucide-react';
 import InternsTab from './tabs/InternsTab';
 import TasksTab from './tabs/TasksTab';
 import SubmissionsTab from './tabs/SubmissionsTab';
 import LogsTab from './tabs/LogsTab';
+import CompleteInternshipWizard from '../CompleteInternshipWizard';
 
 const tabs = [
     { key: 'interns', label: 'Interns', icon: Users },
@@ -14,6 +15,7 @@ const tabs = [
 
 const InternshipDetailView = ({ internship, onBack }) => {
     const [activeTab, setActiveTab] = useState('interns');
+    const [showCompletionWizard, setShowCompletionWizard] = useState(false);
 
     return (
         <div className="space-y-6">
@@ -25,12 +27,18 @@ const InternshipDetailView = ({ internship, onBack }) => {
                 >
                     <ArrowLeft size={18} className="text-slate-600 dark:text-slate-400" />
                 </button>
-                <div>
+                <div className="flex-1 min-w-0">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{internship.title}</h2>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                         {internship.department} • {internship.internCount} intern{internship.internCount !== 1 ? 's' : ''} • {internship.status}
                     </p>
                 </div>
+                <button
+                    onClick={() => setShowCompletionWizard(true)}
+                    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-purple-500/20 flex items-center gap-2 shrink-0"
+                >
+                    <Award size={16} /> Complete this internship
+                </button>
             </div>
 
             {/* Tab Navigation */}
@@ -62,6 +70,14 @@ const InternshipDetailView = ({ internship, onBack }) => {
                 {activeTab === 'submissions' && <SubmissionsTab internshipId={internship.id} />}
                 {activeTab === 'logs' && <LogsTab internshipId={internship.id} />}
             </div>
+
+            {showCompletionWizard && (
+                <CompleteInternshipWizard
+                    internshipId={internship.id}
+                    onClose={() => setShowCompletionWizard(false)}
+                    onCompleted={() => { setShowCompletionWizard(false); onBack?.(); }}
+                />
+            )}
         </div>
     );
 };
