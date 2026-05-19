@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import api from '../../utils/api';
+import api, { MEDIA_URL } from '../../utils/api';
 import {
     ArrowLeft, MapPin, Clock, Users, Briefcase, ClipboardList,
-    FileText, X, Check, AlertCircle, ChevronRight, BookOpen, Award
+    FileText, X, Check, AlertCircle, ChevronRight, BookOpen, Award, Download
 } from 'lucide-react';
+
+// ── JD Download button (reusable) ─────────────────────────────────────────────
+const JdDownloadButton = ({ internship, className = '' }) => {
+    if (!internship?.jdUrl) return null;
+    return (
+        <a
+            href={`${MEDIA_URL}/${internship.jdUrl}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={internship.jdFileName || 'Job_Description.pdf'}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all ${className}`}
+            onClick={e => e.stopPropagation()}
+        >
+            <Download size={13} /> Download JD
+        </a>
+    );
+};
 
 // ── JD Modal ──────────────────────────────────────────────────────────────────
 const JdModal = ({ ps, internship, onClose }) => (
@@ -74,7 +91,19 @@ const JdModal = ({ ps, internship, onClose }) => (
                     )}
                 </div>
 
-                <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+                <div className="p-6 border-t border-gray-100 bg-gray-50 flex items-center gap-3 shrink-0 flex-wrap">
+                    {internship.jdUrl && (
+                        <a
+                            href={`${MEDIA_URL}/${internship.jdUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={internship.jdFileName || 'Job_Description.pdf'}
+                            className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
+                        >
+                            <Download size={13} /> Download JD
+                        </a>
+                    )}
+                    <div className="flex-1" />
                     <button onClick={onClose} className="px-5 py-2.5 text-slate-600 font-bold hover:text-slate-900 transition-colors">
                         Close
                     </button>
@@ -221,18 +250,28 @@ const RoleCard = ({ option, internship, alreadyApplied }) => {
                     )}
                 </div>
 
-                {alreadyApplied ? (
-                    <div className="w-full py-2.5 bg-emerald-50 text-emerald-700 font-bold text-xs uppercase tracking-widest rounded-xl border border-emerald-200 flex items-center justify-center gap-2">
-                        <Check size={13} /> Applied
-                    </div>
-                ) : (
-                    <Link
-                        to={applyUrl}
-                        className="w-full py-2.5 bg-[#D4A017] hover:bg-[#b88c14] text-[#00266b] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98]"
-                    >
-                        Apply Now <ChevronRight size={13} />
-                    </Link>
-                )}
+                <div className="flex gap-2">
+                    {internship.jdUrl && (
+                        <a href={`${MEDIA_URL}/${internship.jdUrl}`}
+                            target="_blank" rel="noopener noreferrer"
+                            download={internship.jdFileName || 'Job_Description.pdf'}
+                            className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 text-gray-700 dark:text-slate-300 font-bold text-xs uppercase tracking-widest rounded-xl border border-gray-200 dark:border-slate-600 transition-all shrink-0">
+                            <Download size={13} /> JD
+                        </a>
+                    )}
+                    {alreadyApplied ? (
+                        <div className="flex-1 py-2.5 bg-emerald-50 text-emerald-700 font-bold text-xs uppercase tracking-widest rounded-xl border border-emerald-200 flex items-center justify-center gap-2">
+                            <Check size={13} /> Applied
+                        </div>
+                    ) : (
+                        <Link
+                            to={applyUrl}
+                            className="flex-1 py-2.5 bg-[#D4A017] hover:bg-[#b88c14] text-[#00266b] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98]"
+                        >
+                            Apply Now <ChevronRight size={13} />
+                        </Link>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -406,6 +445,14 @@ const InternshipDetailPage = () => {
                             <span className="flex items-center gap-2"><Users size={15} /> {totalVacancies} Total Vacancies</span>
                         )}
                     </div>
+                    {internship.jdUrl && (
+                        <div className="mt-5 pt-5 border-t border-white/10">
+                            <JdDownloadButton internship={internship} />
+                            {internship.jdFileName && (
+                                <span className="ml-3 text-[11px] text-indigo-300 font-medium">{internship.jdFileName}</span>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

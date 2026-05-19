@@ -9,7 +9,7 @@ import {
     LayoutDashboard, FolderOpen, Settings2, GraduationCap,
     FileText, CheckSquare, Users, Calendar, BarChart3,
     Search, PlusCircle, ClipboardList, UserCheck,
-    Building2, ChevronDown, Lock, BookOpen, Award
+    Building2, ChevronDown, Lock, BookOpen, Award, Terminal, Shield, User
 } from 'lucide-react';
 import { MONETARY_ENABLED } from '../config/features';
 
@@ -54,6 +54,9 @@ const NAV = {
                 { label: 'Reports',              icon: BarChart3, path: '/prti/reports' },
                 { label: 'Offer Letter Setup',   icon: FileText,  path: '/prti/offer-letter-setup' },
                 { label: 'Candidate Search',     icon: Search,    path: '/admin/search' },
+                { label: 'My Profile',           icon: User,      path: '/profile' },
+                { label: 'System Console',       icon: Terminal,  path: '/admin/system' },
+                { label: 'Audit Logs',           icon: Shield,    path: '/admin/system/audit' },
             ]
         },
     ],
@@ -86,6 +89,7 @@ const NAV = {
             items: [
                 { label: 'Reports',          icon: BarChart3, path: '/hod/reports' },
                 { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+                { label: 'My Profile',       icon: User,      path: '/profile' },
             ]
         },
     ],
@@ -109,6 +113,7 @@ const NAV = {
             section: 'System',
             items: [
                 { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+                { label: 'My Profile',       icon: User,      path: '/profile' },
             ]
         },
     ],
@@ -148,6 +153,9 @@ const NAV = {
             items: [
                 { label: 'Reports',          icon: BarChart3, path: '/prti/reports' },
                 { label: 'Candidate Search', icon: Search,    path: '/admin/search' },
+                { label: 'My Profile',       icon: User,      path: '/profile' },
+                { label: 'System Console',   icon: Terminal,  path: '/admin/system' },
+                { label: 'Audit Logs',       icon: Shield,    path: '/admin/system/audit' },
             ]
         },
     ],

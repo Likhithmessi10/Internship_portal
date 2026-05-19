@@ -1,24 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
+const { seedDeptFields, DEPARTMENTS } = require('./seed-dept-fields');
 
-const defaultDepartments = [
-    'TRANSMISSION',
-    'PLANNING AND POWER SYSTEMS',
-    'SLDC',
-    'PROJECTS',
-    'APPCC AND LEGAL',
-    'COMMERCIAL AND COORDINATION LMC',
-    'HRD',
-    'ZONE VIJAYAWADA',
-    'ZONE VISHAKAPATNAM',
-    'APPCC',
-    'ZONE KADAPA',
-    'CIVIL',
-    'TELECOM AND IT',
-    'ADDITIONAL SECRETARY',
-    'CGM AND FINANCE'
-];
+// Derived from DEPARTMENTS — single source of truth
+const defaultDepartments = DEPARTMENTS.map(d => d.name);
 
 async function seedAccounts() {
     console.log('==========================================');
@@ -104,7 +90,12 @@ async function seedAccounts() {
         console.log(`ADMIN  | ALL                            | ${adminEmail.padEnd(35)} | password123`);
 
         console.log('\n------------------------------------------');
-        console.log('✅ Seeding complete!');
+        console.log('✅ Account seeding complete!');
+
+        // 4. Seed department fields (idempotent — safe to run every time)
+        console.log('\n');
+        await seedDeptFields();
+
     } catch (error) {
         console.error('❌ Seeding failed:', error);
     } finally {

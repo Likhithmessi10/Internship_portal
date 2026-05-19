@@ -141,7 +141,7 @@ const getProfile = async (req, res) => {
                         mentor: { select: { name: true, email: true, phone: true } },
                         attendance: true,
                         documents: true,
-                        departmentGroup: { select: { id: true, department: true, title: true, requiredDocuments: true, joiningLetterTemplateUrl: true, joiningLetterTemplateName: true } },
+                        departmentGroup: { select: { id: true, department: true, title: true, requiredDocuments: true, joiningLetterTemplateUrl: true, joiningLetterTemplateName: true, documentTemplates: true } },
                         field: { select: { id: true, fieldName: true } }
                     }
                 }
@@ -229,11 +229,12 @@ const uploadJoiningDocuments = async (req, res) => {
             where: { id: applicationId },
             include: {
                 internship: { select: { internshipType: true } },
-                departmentGroup: { select: { requiredDocuments: true, joiningLetterTemplateUrl: true } }
+                departmentGroup: { select: { requiredDocuments: true, joiningLetterTemplateUrl: true, documentTemplates: true } }
             }
         });
         const isLearning = appFull?.internship?.internshipType === 'NON_STIPEND';
-        const hasJoiningLetterTemplate = !!appFull?.departmentGroup?.joiningLetterTemplateUrl;
+        const hasJoiningLetterTemplate = !!appFull?.departmentGroup?.joiningLetterTemplateUrl ||
+            !!(appFull?.departmentGroup?.documentTemplates?.['JOINING_LETTER']?.url);
 
         // MONETARY: unlock at REPORTED/HIRED; NON_STIPEND: unlock at DOCUMENTS_PENDING
         const unlockStatuses = isLearning
@@ -273,16 +274,17 @@ const uploadJoiningDocuments = async (req, res) => {
         } else {
             // Defaults — required from every student after selection
             const DEFAULTS = [
-                { id: 'BOND',        label: '₹100 Bond',        format: 'PDF' },
-                { id: 'INSURANCE',   label: 'Insurance Policy', format: 'PDF' },
-                { id: 'UNDERTAKING', label: 'Undertaking Form', format: 'PDF' },
+                { id: 'JOINING_LETTER', label: 'Joining Letter (filled & signed)', format: 'PDF' },
+                { id: 'POLICY',         label: 'Internship Policy / NOC',          format: 'PDF' },
+                { id: 'BOND',           label: 'Bond Agreement',                   format: 'PDF' },
+                { id: 'UNDERTAKING',    label: 'Undertaking Form',                 format: 'PDF' },
             ];
             DEFAULTS.forEach(d => { docMetaById[d.id] = d; });
         }
 
-        // If HOD has uploaded a joining-letter template for this dept group, accept the filled copy
-        if (hasJoiningLetterTemplate && !docMetaById.JOINING_LETTER) {
-            docMetaById.JOINING_LETTER = { id: 'JOINING_LETTER', label: 'Joining Letter (filled)', format: 'PDF' };
+        // Always accept the filled joining letter (student must upload it)
+        if (!docMetaById.JOINING_LETTER) {
+            docMetaById.JOINING_LETTER = { id: 'JOINING_LETTER', label: 'Joining Letter (filled & signed)', format: 'PDF' };
         }
 
         // Validate doc types

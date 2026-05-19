@@ -9,6 +9,7 @@ import { MONETARY_ENABLED } from './config/features';
 import AdminLanding from './pages/admin/AdminLanding';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminSystemPage from './pages/admin/AdminSystemPage';
 import CreateInternshipForm from './pages/admin/CreateInternship';
 import AdminApplicationReview from './pages/admin/AdminApplicationReview';
 import AdminRejected from './pages/admin/AdminRejected';
@@ -87,6 +88,16 @@ function App() {
           <Route path="/admin/dashboard" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminLayout><AdminDashboard /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/system" element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
+              <AdminLayout><AdminSystemPage /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/system/audit" element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'CE_PRTI']}>
+              <AdminLayout><AdminSystemPage /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/prti/dashboard" element={

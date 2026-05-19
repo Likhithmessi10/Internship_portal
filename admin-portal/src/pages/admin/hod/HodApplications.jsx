@@ -442,158 +442,128 @@ const SelectionPanel = ({ app, allFields, onConfirm, onCancel, isHold }) => {
 };
 
 // ============================================================================
-// CANDIDATE ROW — Larger, more readable rows with clear action buttons
+// CANDIDATE CARD — Clean card layout replacing the dense table row
 // ============================================================================
-const CandidateRow = ({ app, onAction, onDocAction, onView, department, onRefresh, onSelectOpen, checked, onToggleSelect, showMentor }) => {
+const CandidateCard = ({ app, onAction, onDocAction, onView, department, onRefresh, onSelectOpen }) => {
     let status = STATUS_CONFIG[app.status] || { label: app.status, cls: 'bg-slate-100 text-slate-700 border-slate-300' };
 
-    // If documents are pending but the student has uploaded some, change the label to reflect submission
-    const hasJoiningDocs = app.documents && app.documents.some(d => 
+    const hasJoiningDocs = app.documents && app.documents.some(d =>
         !['RESUME', 'PASSPORT_PHOTO', 'NOC_LETTER', 'PRINCIPAL_LETTER', 'HOD_LETTER', 'MARKSHEET'].includes(d.type)
     );
-
     if (app.status === 'DOCUMENTS_PENDING' && hasJoiningDocs) {
         status = { label: 'Docs Submitted', cls: 'bg-amber-200 text-amber-900 border-amber-400' };
     }
 
+    const initials = (app.student?.fullName || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
     return (
-        <tr className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${checked ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-            {onToggleSelect && (
-                <td className="px-4 py-4 w-12">
-                    <input
-                        type="checkbox"
-                        checked={!!checked}
-                        onChange={onToggleSelect}
-                        className="w-5 h-5 cursor-pointer accent-primary"
-                    />
-                </td>
-            )}
-            <td className="px-4 py-4">
-                <button onClick={() => onView(app)} className="text-left hover:underline group">
-                    <p className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+            {/* Avatar */}
+            <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center font-bold text-primary text-sm shrink-0">
+                {initials}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-2 flex-wrap">
+                    <button onClick={() => onView(app)} className="font-bold text-slate-900 dark:text-white hover:text-primary text-base transition-colors">
                         {app.student?.fullName}
-                    </p>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                        {app.student?.branch}
-                    </p>
-                </button>
-            </td>
-            <td className="px-4 py-4">
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 max-w-[220px] truncate" title={app.student?.collegeName}>
-                    {app.student?.collegeName}
-                </p>
-                {app.student?.collegeCategory && (
-                    <p className="text-xs font-medium text-slate-500 mt-0.5">{app.student.collegeCategory}</p>
-                )}
-            </td>
-            <td className="px-4 py-4">
-                <span className="text-base font-bold text-slate-800 dark:text-slate-200">
-                    {app.student?.cgpa?.toFixed(2) ?? '—'}
-                </span>
-            </td>
-            <td className="px-4 py-4">
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-400">
-                    <MapPin size={14} />
-                    {app.preferredLocation || '—'}
-                </span>
-            </td>
-            <td className="px-4 py-4">
-                <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold border-2 ${status.cls}`}>
-                    {status.label}
-                </span>
-                {app.prtiNote && (
-                    <p className="text-xs text-slate-500 mt-1 max-w-[200px] truncate" title={app.prtiNote}>
-                        💬 {app.prtiNote}
-                    </p>
-                )}
-            </td>
-            {showMentor && (
-                <td className="px-4 py-4">
-                    {['HIRED', 'ONGOING', 'COMPLETED'].includes(app.status)
-                        ? <AssignMentorCell app={app} department={department} onAssigned={onRefresh} />
-                        : <span className="text-sm text-slate-400">—</span>}
-                </td>
-            )}
-            <td className="px-4 py-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                    {/* View profile — always visible, primary action */}
-                    <button onClick={() => onView(app)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors border-2 border-slate-200 dark:border-slate-600">
-                        <Eye size={15} /> View
                     </button>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold border ${status.cls}`}>
+                        {status.label}
+                    </span>
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    {[app.student?.branch, app.student?.collegeName].filter(Boolean).join(' · ')}
+                    {app.student?.collegeCategory && <span className="ml-1.5 text-xs font-semibold text-slate-400">({app.student.collegeCategory})</span>}
+                </p>
+                <div className="flex items-center gap-4 mt-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 flex-wrap">
+                    {app.preferredLocation && (
+                        <span className="flex items-center gap-1"><MapPin size={11} /> {app.preferredLocation}</span>
+                    )}
+                    {app.student?.cgpa != null && <span>CGPA {app.student.cgpa.toFixed(2)}</span>}
+                    {app.prtiNote && <span className="text-amber-600">💬 {app.prtiNote}</span>}
+                </div>
+            </div>
 
-                    {['SUBMITTED', 'SHORTLISTED'].includes(app.status) && (<>
-                        <button onClick={() => onSelectOpen(app)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors shadow-sm">
-                            <Check size={15} /> Select
-                        </button>
-                        <button onClick={() => {
-                            if (window.confirm(`Reject ${app.student?.fullName}?`)) onAction(app.id, 'REJECTED');
-                        }}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors border-2 border-red-300">
-                            <X size={15} /> Reject
-                        </button>
-                    </>)}
+            {/* Actions */}
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+                <button onClick={() => onView(app)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700">
+                    <Eye size={14} /> View
+                </button>
 
-                    {app.status === 'SELECTED' && (<>
-                        {!app.prtiApproved ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-amber-800 bg-amber-100 border-2 border-amber-300 rounded-lg">
-                                <Clock size={15} /> Awaiting PRTI Approval
-                            </span>
-                        ) : (
-                            <button onClick={() => onDocAction(app.id, 'request')}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm">
-                                <FileText size={15} /> Request Documents
-                            </button>
-                        )}
-                        <button onClick={() => {
-                            if (window.confirm(`Remove ${app.student?.fullName} from selected?`)) onAction(app.id, 'REJECTED');
-                        }}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors border-2 border-red-300">
-                            <X size={15} /> Remove
-                        </button>
-                    </>)}
+                {['SUBMITTED', 'SHORTLISTED'].includes(app.status) && (<>
+                    <button onClick={() => onSelectOpen(app)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors shadow-sm">
+                        <Check size={14} /> Select
+                    </button>
+                    <button onClick={() => { if (window.confirm(`Reject ${app.student?.fullName}?`)) onAction(app.id, 'REJECTED'); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-red-600 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border border-red-200 dark:border-red-800">
+                        <X size={14} /> Reject
+                    </button>
+                </>)}
 
-                    {app.status === 'DOCUMENTS_PENDING' && (<>
-                        {hasJoiningDocs ? (
-                            <button onClick={() => onDocAction(app.id, 'verify')}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-colors shadow-sm">
-                                <Eye size={15} /> Verify Docs
-                            </button>
-                        ) : (
-                            <button disabled
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-sm font-semibold border-2 border-slate-200 dark:border-slate-700 cursor-not-allowed">
-                                <Clock size={15} /> Awaiting Docs
-                            </button>
-                        )}
-                        <button onClick={() => {
-                            if (window.confirm(`Reject ${app.student?.fullName}?`)) onAction(app.id, 'REJECTED');
-                        }}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors border-2 border-red-300">
-                            <X size={15} /> Remove
+                {app.status === 'SELECTED' && (<>
+                    {!app.prtiApproved ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg">
+                            <Clock size={13} /> Awaiting PRTI
+                        </span>
+                    ) : (
+                        <button onClick={() => onDocAction(app.id, 'request')}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm">
+                            <FileText size={14} /> Request Docs
                         </button>
-                    </>)}
+                    )}
+                    <button onClick={() => { if (window.confirm(`Remove ${app.student?.fullName}?`)) onAction(app.id, 'REJECTED'); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors border border-red-200">
+                        <X size={14} />
+                    </button>
+                </>)}
 
-                    {app.status === 'DOCUMENTS_VERIFIED' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-100 text-emerald-700 text-sm font-bold">
-                            <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div> Processing
+                {app.status === 'DOCUMENTS_PENDING' && (<>
+                    {hasJoiningDocs ? (
+                        <button onClick={() => onDocAction(app.id, 'verify')}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-colors shadow-sm">
+                            <FileCheck size={14} /> Verify Docs
+                        </button>
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-200 rounded-lg cursor-default">
+                            <Clock size={13} /> Awaiting Upload
                         </span>
                     )}
+                    <button onClick={() => { if (window.confirm(`Reject ${app.student?.fullName}?`)) onAction(app.id, 'REJECTED'); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-red-600 text-sm hover:bg-red-50 transition-colors border border-red-200">
+                        <X size={14} />
+                    </button>
+                </>)}
 
-                    {app.status === 'REJECTED' && (
-                        <button onClick={() => onAction(app.id, 'SUBMITTED')}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors border-2 border-slate-300">
-                            <RotateCcw size={15} /> Un-reject
-                        </button>
-                    )}
-                </div>
-            </td>
-        </tr>
+                {app.status === 'DOCUMENTS_VERIFIED' && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <CheckCircle size={13} /> Verified
+                    </span>
+                )}
+
+                {['HIRED', 'ONGOING', 'COMPLETED'].includes(app.status) && (
+                    <AssignMentorCell app={app} department={department} onAssigned={onRefresh} />
+                )}
+
+                {app.status === 'REJECTED' && (
+                    <button onClick={() => onAction(app.id, 'SUBMITTED')}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors border border-slate-200">
+                        <RotateCcw size={14} /> Restore
+                    </button>
+                )}
+            </div>
+        </div>
     );
 };
 
+// PhaseTable removed — learning tab uses CandidateCard in FieldSection
+// Collaborative tab (TierAccordion) has its own inline table
+
 // ============================================================================
-// PHASE TABLE — Cleaner table with prominent bulk actions
+// PHASE TABLE — kept as dead-code sentinel; safe to remove if unused
 // ============================================================================
 const PAGE_SIZE = 5;
 const PhaseTable = ({ apps, onAction, onDocAction, onView, department, onRefresh, onSelectOpen }) => {
@@ -683,35 +653,13 @@ const PhaseTable = ({ apps, onAction, onDocAction, onView, department, onRefresh
                 </div>
             )}
 
-            <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[800px]">
-                    <thead>
-                        <tr className="bg-slate-100 dark:bg-slate-800/60">
-                            {bulkable && (
-                                <th className="px-4 py-3 w-12 border-b-2 border-slate-200 dark:border-slate-700">
-                                    <input type="checkbox" checked={allVisibleSelected} onChange={toggleAll}
-                                        className="w-5 h-5 cursor-pointer accent-primary" title="Select all visible" />
-                                </th>
-                            )}
-                            {['Candidate', 'College', 'CGPA', 'Location', 'Status', ...(showMentor ? ['Mentor'] : []), 'Actions'].map(h => (
-                                <th key={h} className="px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 border-b-2 border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                                    {h}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y-2 divide-slate-100 dark:divide-slate-800/60">
-                        {visibleApps.map(app => (
-                            <CandidateRow key={app.id} app={app}
-                                onAction={onAction} onDocAction={onDocAction}
-                                onView={onView} department={department} onRefresh={onRefresh}
-                                onSelectOpen={onSelectOpen}
-                                checked={selected.has(app.id)}
-                                onToggleSelect={bulkable ? () => toggleSelect(app.id) : null}
-                                showMentor={showMentor} />
-                        ))}
-                    </tbody>
-                </table>
+            <div className="p-3 space-y-2">
+                {visibleApps.map(app => (
+                    <CandidateCard key={app.id} app={app}
+                        onAction={onAction} onDocAction={onDocAction}
+                        onView={onView} department={department} onRefresh={onRefresh}
+                        onSelectOpen={onSelectOpen} />
+                ))}
             </div>
 
             {hiddenCount > 0 && (
@@ -734,9 +682,10 @@ const PhaseTable = ({ apps, onAction, onDocAction, onView, department, onRefresh
 // REQUIRED DOCS CONFIG — Bigger modal with clearer copy
 // ============================================================================
 const DEFAULT_DOCS = [
-    { id: 'BOND',        label: '₹100 Bond',        format: 'PDF', mandatory: true },
-    { id: 'INSURANCE',   label: 'Insurance Policy', format: 'PDF', mandatory: true },
-    { id: 'UNDERTAKING', label: 'Undertaking Form', format: 'PDF', mandatory: true },
+    { id: 'JOINING_LETTER', label: 'Joining Letter (filled & signed)', format: 'PDF', mandatory: true },
+    { id: 'POLICY',         label: 'Internship Policy / NOC',          format: 'PDF', mandatory: true },
+    { id: 'BOND',           label: 'Bond Agreement',                   format: 'PDF', mandatory: true },
+    { id: 'UNDERTAKING',    label: 'Undertaking Form',                 format: 'PDF', mandatory: true },
 ];
 const FORMATS = [
     { value: 'PDF', label: 'PDF only', hint: '.pdf' },
@@ -762,8 +711,9 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [docCount, setDocCount] = useState(null);
-    const [joiningTemplate, setJoiningTemplate] = useState({ url: null, name: null });
-    const [uploadingTemplate, setUploadingTemplate] = useState(false);
+    // Per-doc templates: { JOINING_LETTER: { url, name }, BOND: { url, name }, ... }
+    const [docTemplates, setDocTemplates] = useState({});
+    const [uploadingDoc, setUploadingDoc] = useState(null); // docId currently uploading
 
     useEffect(() => {
         let mounted = true;
@@ -787,48 +737,52 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
                 ? raw.map((d, i) => normalizeDoc(d, i))
                 : [...DEFAULT_DOCS];
             setDocs(normalized);
-            setJoiningTemplate({
-                url: res.data.data?.joiningLetterTemplateUrl || null,
-                name: res.data.data?.joiningLetterTemplateName || null
-            });
-        } catch { setDocs([...DEFAULT_DOCS]); setJoiningTemplate({ url: null, name: null }); }
+            // Merge new documentTemplates with legacy joiningLetterTemplateUrl for backward compat
+            const templates = typeof res.data.data?.documentTemplates === 'object' && res.data.data.documentTemplates !== null
+                ? { ...res.data.data.documentTemplates }
+                : {};
+            if (!templates.JOINING_LETTER && res.data.data?.joiningLetterTemplateUrl) {
+                templates.JOINING_LETTER = {
+                    url: res.data.data.joiningLetterTemplateUrl,
+                    name: res.data.data.joiningLetterTemplateName || 'Joining Letter Template'
+                };
+            }
+            setDocTemplates(templates);
+        } catch { setDocs([...DEFAULT_DOCS]); setDocTemplates({}); }
         finally { setLoading(false); setOpen(true); }
     };
 
-    const handleTemplateUpload = async (e) => {
+    const handleDocTemplateUpload = async (docId, e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         const fd = new FormData();
         fd.append('template', file);
-        setUploadingTemplate(true);
+        setUploadingDoc(docId);
         try {
-            const res = await api.post(
-                `/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/joining-letter-template`,
+            await api.post(
+                `/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/document-templates/${docId}`,
                 fd,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
-            setJoiningTemplate({
-                url: res.data.data?.joiningLetterTemplateUrl,
-                name: res.data.data?.joiningLetterTemplateName
-            });
+            setDocTemplates(prev => ({ ...prev, [docId]: { url: `uploaded/${docId}`, name: file.name } }));
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to upload template');
         } finally {
-            setUploadingTemplate(false);
+            setUploadingDoc(null);
             e.target.value = '';
         }
     };
 
-    const handleTemplateRemove = async () => {
-        if (!window.confirm('Remove the current joining letter template?')) return;
-        setUploadingTemplate(true);
+    const handleDocTemplateRemove = async (docId) => {
+        if (!window.confirm('Remove this template?')) return;
+        setUploadingDoc(docId);
         try {
-            await api.delete(`/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/joining-letter-template`);
-            setJoiningTemplate({ url: null, name: null });
+            await api.delete(`/admin/internships/${fieldData.internshipId}/groups/${fieldData.departmentGroupId}/document-templates/${docId}`);
+            setDocTemplates(prev => { const n = { ...prev }; delete n[docId]; return n; });
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to remove template');
         } finally {
-            setUploadingTemplate(false);
+            setUploadingDoc(null);
         }
     };
 
@@ -934,42 +888,56 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
                                 <Plus size={20} /> Add Document
                             </button>
 
-                            {/* Joining Letter Template — HOD uploads a blank template, students download/fill/upload */}
-                            <div className="mt-5 p-4 bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-200 dark:border-amber-700/40 rounded-xl">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <FileText size={16} className="text-amber-700 dark:text-amber-400" />
-                                    <h4 className="text-base font-bold text-amber-900 dark:text-amber-200">Joining Letter Template</h4>
+                            {/* Document Templates — HOD uploads blank templates per doc type; students download, fill, upload back */}
+                            <div className="mt-5 p-4 bg-indigo-50 dark:bg-indigo-900/10 border-2 border-indigo-200 dark:border-indigo-700/40 rounded-xl">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <FileText size={16} className="text-indigo-700 dark:text-indigo-400" />
+                                    <h4 className="text-base font-bold text-indigo-900 dark:text-indigo-200">Document Templates</h4>
                                 </div>
-                                <p className="text-xs text-amber-800 dark:text-amber-300/80 mb-3">
-                                    Upload a blank joining letter template (PDF). Selected students will see a "Download Template" link, fill it out, and upload the signed copy back as a required document.
+                                <p className="text-xs text-indigo-700 dark:text-indigo-300/80 mb-4">
+                                    Upload blank template files for each required document below. Students will see a "Download Template" button, fill and sign them, then upload the completed copies.
                                 </p>
-
-                                {joiningTemplate.url ? (
-                                    <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 border-2 border-amber-300 rounded-lg">
-                                        <FileCheck size={20} className="text-emerald-600 shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <a href={`${MEDIA_URL}/${joiningTemplate.url}`} target="_blank" rel="noopener noreferrer"
-                                                className="text-sm font-bold text-indigo-700 hover:underline truncate block">
-                                                {joiningTemplate.name || 'Joining Letter Template'}
-                                            </a>
-                                            <p className="text-[11px] font-semibold text-slate-500">Currently uploaded</p>
-                                        </div>
-                                        <label className="px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg cursor-pointer hover:bg-amber-200 transition-colors">
-                                            Replace
-                                            <input type="file" accept=".pdf,.doc,.docx" onChange={handleTemplateUpload} disabled={uploadingTemplate} className="hidden" />
-                                        </label>
-                                        <button onClick={handleTemplateRemove} disabled={uploadingTemplate}
-                                            className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg disabled:opacity-50">
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <label className={`flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-dashed border-amber-400 rounded-lg text-amber-700 dark:text-amber-300 text-sm font-bold cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors ${uploadingTemplate ? 'opacity-50 pointer-events-none' : ''}`}>
-                                        {uploadingTemplate ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                                        {uploadingTemplate ? 'Uploading…' : 'Upload Joining Letter Template (PDF / DOCX)'}
-                                        <input type="file" accept=".pdf,.doc,.docx" onChange={handleTemplateUpload} disabled={uploadingTemplate} className="hidden" />
-                                    </label>
-                                )}
+                                <div className="space-y-2">
+                                    {docs.map((doc) => {
+                                        const tmpl = docTemplates[doc.id];
+                                        const isUploading = uploadingDoc === doc.id;
+                                        return (
+                                            <div key={doc.id} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 border-2 border-indigo-100 dark:border-indigo-800/40 rounded-xl">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{doc.label}</p>
+                                                    {tmpl ? (
+                                                        <p className="text-[11px] text-emerald-600 font-semibold truncate flex items-center gap-1 mt-0.5">
+                                                            <FileCheck size={11} /> {tmpl.name || 'Template uploaded'}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">No template uploaded</p>
+                                                    )}
+                                                </div>
+                                                {tmpl ? (
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <label className={`px-2.5 py-1.5 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 text-xs font-bold rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                            {isUploading ? <Loader2 size={12} className="animate-spin inline" /> : 'Replace'}
+                                                            <input type="file" accept=".pdf,.doc,.docx" onChange={e => handleDocTemplateUpload(doc.id, e)} disabled={isUploading} className="hidden" />
+                                                        </label>
+                                                        <button onClick={() => handleDocTemplateRemove(doc.id)} disabled={isUploading}
+                                                            className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg disabled:opacity-50 transition-colors">
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <label className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                        {isUploading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                                                        {isUploading ? 'Uploading…' : 'Upload Template'}
+                                                        <input type="file" accept=".pdf,.doc,.docx" onChange={e => handleDocTemplateUpload(doc.id, e)} disabled={isUploading} className="hidden" />
+                                                    </label>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                    {docs.length === 0 && (
+                                        <p className="text-sm text-slate-400 text-center py-4">Add documents above to configure their templates.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -999,52 +967,58 @@ const RequiredDocsConfig = ({ fieldData, onSaved }) => {
 };
 
 // ============================================================================
-// FIELD SECTION — Clearer section headers and grouping
+// FIELD SECTION — Status tabs + candidate cards (flat, no nested accordions)
 // ============================================================================
 const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, onView, department, onRefresh }) => {
-    const [open, setOpen] = useState(true);
-    const [bulkSending, setBulkSending] = useState(false);
+    const [activeTab, setActiveTab] = useState('new');
     const [selectionTarget, setSelectionTarget] = useState(null);
+    const [bulkSending, setBulkSending] = useState(false);
 
     const allApps = [...fieldData.apps].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-    const availableLocations = [...new Set(allApps.map(a => a.preferredLocation).filter(Boolean))];
-    const [locFilter, setLocFilter] = useState('ALL');
+    const filterApps = (statuses) => allApps.filter(a =>
+        statuses.includes(a.status) &&
+        (!searchQ ||
+            a.student?.fullName?.toLowerCase().includes(searchQ) ||
+            a.student?.collegeName?.toLowerCase().includes(searchQ))
+    );
 
-    const byStatus = (statuses) => allApps.filter(a => statuses.includes(a.status)).filter(app => {
-        const textOk = !searchQ || app.student?.fullName?.toLowerCase().includes(searchQ) ||
-            app.student?.collegeName?.toLowerCase().includes(searchQ);
-        const locOk = locFilter === 'ALL' || app.preferredLocation === locFilter;
-        return textOk && locOk;
-    });
+    const newApps      = filterApps(['SUBMITTED', 'SHORTLISTED']);
+    const selectedApps = filterApps(['SELECTED']);
+    const docsApps     = filterApps(['DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED']);
+    const activeApps   = filterApps(['HIRED', 'ONGOING', 'COMPLETED']);
+    const rejectedApps = filterApps(['REJECTED']);
 
-    const pendingApps = byStatus(['SUBMITTED', 'SHORTLISTED']);
-    const selectedApps = byStatus(['SELECTED']);
-    const docsApps = byStatus(['DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED']);
-    const hiredApps = byStatus(['HIRED', 'ONGOING', 'COMPLETED']);
-    const rejectedApps = byStatus(['REJECTED']);
-
-    const vacancies = fieldData.vacancies;
+    const vacancies  = fieldData.vacancies;
     const hiredCount = allApps.filter(a => ['HIRED', 'ONGOING', 'COMPLETED'].includes(a.status)).length;
+    const filled     = allApps.filter(a => ALLOCATED_STATUSES.includes(a.status)).length;
 
-    const locationVacancyMap = {};
+    // Location vacancy tracking
     const locationFilledMap = {};
-    fieldData.locations.forEach(l => {
-        const name = locName(l);
-        if (typeof l === 'object' && l.vacancies > 0) locationVacancyMap[name] = l.vacancies;
-    });
     allApps.forEach(a => {
         if (ALLOCATED_STATUSES.includes(a.status) && a.preferredLocation)
             locationFilledMap[a.preferredLocation] = (locationFilledMap[a.preferredLocation] || 0) + 1;
     });
 
+    const TABS = [
+        { id: 'new',      label: 'New',       apps: newApps,      color: 'text-slate-700',   activeCls: 'border-slate-600 text-slate-900 dark:text-white' },
+        { id: 'selected', label: 'Selected',   apps: selectedApps, color: 'text-indigo-600',  activeCls: 'border-indigo-600 text-indigo-700 dark:text-indigo-300' },
+        { id: 'docs',     label: 'Documents',  apps: docsApps,     color: 'text-amber-600',   activeCls: 'border-amber-500 text-amber-700 dark:text-amber-300' },
+        { id: 'active',   label: 'Active',     apps: activeApps,   color: 'text-emerald-600', activeCls: 'border-emerald-600 text-emerald-700 dark:text-emerald-300' },
+        { id: 'rejected', label: 'Rejected',   apps: rejectedApps, color: 'text-red-500',     activeCls: 'border-red-500 text-red-600 dark:text-red-400' },
+    ].filter(t => t.apps.length > 0 || t.id === 'new');
+
+    // Auto-switch to first tab with data when search changes
+    const currentTabApps = TABS.find(t => t.id === activeTab)?.apps ?? newApps;
+
+    const approvedSelected = selectedApps.filter(a => a.prtiApproved);
+
     const handleBulkRequestDocs = async () => {
-        const approvedApps = selectedApps.filter(a => a.prtiApproved);
-        if (approvedApps.length === 0) return;
-        if (!window.confirm(`Send document request to ${approvedApps.length} candidate(s)?`)) return;
+        if (approvedSelected.length === 0) return;
+        if (!window.confirm(`Send document request to ${approvedSelected.length} candidate(s)?`)) return;
         setBulkSending(true);
         let ok = 0;
-        for (const app of approvedApps) {
+        for (const app of approvedSelected) {
             try { await onDocAction(app.id, 'request'); ok++; } catch { /* silent */ }
         }
         setBulkSending(false);
@@ -1052,226 +1026,109 @@ const FieldSection = ({ fieldData, allFields, searchQ, onAction, onDocAction, on
         if (ok > 0) alert(`Document request sent to ${ok} candidate(s).`);
     };
 
-    const approvedSelected = selectedApps.filter(a => a.prtiApproved);
-
     return (
-        <div>
-            {/* Field header — bigger and more informative */}
-            <div className="flex items-stretch w-full">
-                <button type="button" onClick={() => setOpen(v => !v)}
-                    className="flex-1 flex items-center gap-4 px-6 py-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors min-w-0">
-                    <div className={`w-3 h-3 rounded-full shrink-0 ${hiredCount >= vacancies && vacancies > 0 ? 'bg-emerald-500' : 'bg-blue-400'}`} />
-                    <div className="flex-1 min-w-0">
-                        <h4 className="text-base font-bold text-slate-900 dark:text-white">{fieldData.label}</h4>
-                        <div className="flex items-center gap-3 mt-1 flex-wrap">
-                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-                                {hiredCount} of {vacancies} hired · {allApps.length} total applications
-                            </span>
-                        </div>
-                    </div>
-                    {fieldData.locations?.length > 0 && (() => {
-                        const allocated = {};
-                        allApps.forEach(app => {
-                            if (ALLOCATED_STATUSES.includes(app.status) && app.preferredLocation)
-                                allocated[app.preferredLocation] = (allocated[app.preferredLocation] || 0) + 1;
-                        });
-                        return (
-                            <div className="hidden md:flex items-center gap-1.5 flex-wrap shrink-0">
-                                {fieldData.locations.map(l => {
-                                    const name = locName(l);
-                                    const total = typeof l === 'object' && l.vacancies != null ? l.vacancies : null;
-                                    const used = allocated[name] || 0;
-                                    const rem = total != null ? Math.max(0, total - used) : null;
-                                    const cls = rem === 0
-                                        ? 'bg-red-50 text-red-700 border-red-300'
-                                        : rem != null && rem <= 3
-                                            ? 'bg-amber-50 text-amber-700 border-amber-300'
-                                            : 'bg-slate-50 text-slate-700 border-slate-300';
-                                    return (
-                                        <span key={name} className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md border ${cls}`}>
-                                            <MapPin size={11} /> {name}{rem != null ? ` ${rem}/${total}` : ''}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        );
-                    })()}
-                    {open ? <ChevronUp size={20} className="text-slate-400 shrink-0" /> : <ChevronDown size={20} className="text-slate-400 shrink-0" />}
-                </button>
-                <div className="px-4 flex items-center gap-2 shrink-0">
-                    <RequiredDocsConfig fieldData={fieldData} />
+        <div className="border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+
+            {/* ── Field header ── */}
+            <div className="flex items-center gap-3 px-5 py-4 flex-wrap">
+                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hiredCount >= vacancies && vacancies > 0 ? 'bg-emerald-500' : 'bg-blue-400'}`} />
+                <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{fieldData.label}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        {hiredCount}/{vacancies} hired · {allApps.length} application{allApps.length !== 1 ? 's' : ''}
+                    </p>
                 </div>
-            </div>
-
-            {open && (
-                <div className="border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
-                    {/* Location filter — bigger pill buttons */}
-                    {availableLocations.length > 1 && (
-                        <div className="flex items-center gap-2 px-6 py-3 border-b-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 flex-wrap">
-                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 shrink-0">Filter by location:</span>
-                            <button onClick={() => setLocFilter('ALL')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-colors ${locFilter === 'ALL'
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 hover:border-primary'
-                                    }`}>
-                                All ({allApps.length})
-                            </button>
-                            {availableLocations.map(loc => {
-                                const filled = locationFilledMap[loc] || 0;
-                                const cap = locationVacancyMap[loc];
-                                const isFull = cap != null && filled >= cap;
-                                return (
-                                    <button key={loc} onClick={() => setLocFilter(loc)}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-colors ${locFilter === loc ? 'bg-primary text-white border-primary'
-                                                : isFull ? 'bg-red-50 text-red-700 border-red-300'
-                                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 hover:border-primary'
-                                            }`}>
-                                        <MapPin size={13} /> {cap != null ? `${loc} (${filled}/${cap})` : loc}{isFull ? ' · Full' : ''}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {/* Inline selection panel */}
-                    {selectionTarget && (
-                        <div className="p-5 border-b-2 border-slate-100 dark:border-slate-700">
-                            <SelectionPanel
-                                app={selectionTarget}
-                                allFields={allFields}
-                                locationAllocated={locationFilledMap}
-                                isHold={false}
-                                onConfirm={({ fieldId, preferredLocation }) => {
-                                    onAction(selectionTarget.id, 'SELECTED', false, { fieldId, preferredLocation });
-                                    setSelectionTarget(null);
-                                }}
-                                onCancel={() => setSelectionTarget(null)}
-                            />
-                        </div>
-                    )}
-
-                    {/* Section: New Applications — Step 1 */}
-                    {pendingApps.length > 0 && (
-                        <SectionGroup
-                            step="1"
-                            label="New Applications — Review & Select"
-                            count={pendingApps.length}
-                            tone="slate"
-                            description="Review these candidates and select the ones you want to hire."
-                        >
-                            <PhaseTable apps={pendingApps} onAction={onAction} onDocAction={onDocAction}
-                                onView={onView} department={department} onRefresh={onRefresh}
-                                onSelectOpen={(app) => setSelectionTarget(app)} />
-                        </SectionGroup>
-                    )}
-
-                    {/* Section: Selected & Documents — Step 2 */}
-                    {[...selectedApps, ...docsApps].length > 0 && (
-                        <SectionGroup
-                            step="2"
-                            label="Selected — Request & Verify Documents"
-                            count={selectedApps.length + docsApps.length}
-                            tone="indigo"
-                            description="Request documents from selected candidates, then verify them."
-                            action={approvedSelected.length > 0 && (
-                                <button onClick={handleBulkRequestDocs} disabled={bulkSending}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm">
-                                    {bulkSending ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
-                                    Request Documents from {approvedSelected.length}
-                                </button>
-                            )}
-                        >
-                            <PhaseTable apps={[...selectedApps, ...docsApps]} onAction={onAction} onDocAction={onDocAction}
-                                onView={onView} department={department} onRefresh={onRefresh}
-                                onSelectOpen={(app) => setSelectionTarget(app)} />
-                        </SectionGroup>
-                    )}
-
-                    {/* Section: Active Interns — Step 3 */}
-                    {hiredApps.length > 0 && (
-                        <SectionGroup
-                            step="3"
-                            label="Active Interns"
-                            count={hiredApps.length}
-                            tone="emerald"
-                            description="Currently hired interns. Assign mentors here."
-                        >
-                            <PhaseTable apps={hiredApps} onAction={onAction} onDocAction={onDocAction}
-                                onView={onView} department={department} onRefresh={onRefresh}
-                                onSelectOpen={() => { }} />
-                        </SectionGroup>
-                    )}
-
-                    {/* Section: Rejected */}
-                    {rejectedApps.length > 0 && (
-                        <SectionGroup
-                            label="Rejected Applications"
-                            count={rejectedApps.length}
-                            tone="red"
-                            description="Rejected candidates. You can un-reject if needed."
-                            collapsed
-                        >
-                            <PhaseTable apps={rejectedApps} onAction={onAction} onDocAction={onDocAction}
-                                onView={onView} department={department} onRefresh={onRefresh}
-                                onSelectOpen={() => { }} />
-                        </SectionGroup>
-                    )}
-
-                    {allApps.length === 0 && (
-                        <div className="py-16 text-center">
-                            <Users size={36} className="text-slate-300 mx-auto mb-3" />
-                            <p className="text-base font-semibold text-slate-500">No applications yet for this field</p>
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-};
-
-// ============================================================================
-// SECTION GROUP — Workflow step container
-// ============================================================================
-const SectionGroup = ({ step, label, count, tone, description, action, children, collapsed = false }) => {
-    const [open, setOpen] = useState(!collapsed);
-    const tones = {
-        slate: { header: 'bg-slate-100 border-slate-300', text: 'text-slate-800', badge: 'bg-slate-600 text-white' },
-        indigo: { header: 'bg-indigo-100 border-indigo-300', text: 'text-indigo-900', badge: 'bg-indigo-600 text-white' },
-        emerald: { header: 'bg-emerald-100 border-emerald-300', text: 'text-emerald-900', badge: 'bg-emerald-600 text-white' },
-        red: { header: 'bg-red-50 border-red-200', text: 'text-red-900', badge: 'bg-red-600 text-white' },
-    };
-    const t = tones[tone] || tones.slate;
-
-    return (
-        <div className="border-t-2 border-slate-100 dark:border-slate-700 first:border-t-0">
-            <button
-                type="button"
-                onClick={() => setOpen(v => !v)}
-                className={`w-full flex items-center gap-4 px-6 py-4 ${t.header} border-b-2 hover:brightness-95 transition-all text-left`}
-            >
-                {step && (
-                    <div className={`w-9 h-9 rounded-full ${t.badge} flex items-center justify-center font-bold text-base shrink-0`}>
-                        {step}
+                {/* Location vacancy pills */}
+                {fieldData.locations?.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        {fieldData.locations.map(l => {
+                            const name = locName(l);
+                            const total = typeof l === 'object' && l.vacancies != null ? l.vacancies : null;
+                            const used = locationFilledMap[name] || 0;
+                            const rem = total != null ? Math.max(0, total - used) : null;
+                            const cls = rem === 0 ? 'bg-red-50 text-red-700 border-red-200' : rem != null && rem <= 2 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200';
+                            return (
+                                <span key={name} className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg border ${cls}`}>
+                                    <MapPin size={10} /> {name}{rem != null ? ` ${used}/${total}` : ''}
+                                </span>
+                            );
+                        })}
                     </div>
                 )}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <h5 className={`text-base font-bold ${t.text}`}>{label}</h5>
-                        <span className={`px-2.5 py-0.5 rounded-full text-sm font-bold ${t.badge}`}>
-                            {count}
-                        </span>
-                    </div>
-                    {description && (
-                        <p className={`text-sm font-medium ${t.text} opacity-80 mt-0.5`}>{description}</p>
-                    )}
+                <RequiredDocsConfig fieldData={fieldData} />
+            </div>
+
+            {/* ── Inline selection panel ── */}
+            {selectionTarget && (
+                <div className="mx-5 mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                    <SelectionPanel
+                        app={selectionTarget}
+                        allFields={allFields}
+                        locationAllocated={locationFilledMap}
+                        isHold={false}
+                        onConfirm={({ fieldId, preferredLocation }) => {
+                            onAction(selectionTarget.id, 'SELECTED', false, { fieldId, preferredLocation });
+                            setSelectionTarget(null);
+                        }}
+                        onCancel={() => setSelectionTarget(null)}
+                    />
                 </div>
-                {action && <div onClick={e => e.stopPropagation()}>{action}</div>}
-                {open ? <ChevronUp size={20} className={t.text} /> : <ChevronDown size={20} className={t.text} />}
-            </button>
-            {open && children}
+            )}
+
+            {/* ── Status tabs ── */}
+            <div className="flex items-center gap-0 px-5 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+                {TABS.map(tab => (
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
+                            ? tab.activeCls + ' bg-transparent'
+                            : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+                        {tab.label}
+                        {tab.apps.length > 0 && (
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === tab.id ? 'bg-current/15' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                {tab.apps.length}
+                            </span>
+                        )}
+                    </button>
+                ))}
+                {/* Bulk action for selected tab */}
+                {activeTab === 'selected' && approvedSelected.length > 0 && (
+                    <div className="ml-auto pl-3 shrink-0">
+                        <button onClick={handleBulkRequestDocs} disabled={bulkSending}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
+                            {bulkSending ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
+                            Request from all ({approvedSelected.length})
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Candidate cards ── */}
+            <div className="p-4 space-y-2.5">
+                {currentTabApps.length === 0 ? (
+                    <div className="py-10 text-center">
+                        <Users size={28} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                        <p className="text-sm font-semibold text-slate-400 dark:text-slate-500">
+                            {searchQ ? 'No matches for your search' : `No ${TABS.find(t => t.id === activeTab)?.label.toLowerCase() ?? ''} applications`}
+                        </p>
+                    </div>
+                ) : currentTabApps.map(app => (
+                    <CandidateCard
+                        key={app.id}
+                        app={app}
+                        onAction={onAction}
+                        onDocAction={onDocAction}
+                        onView={onView}
+                        department={department}
+                        onRefresh={onRefresh}
+                        onSelectOpen={(a) => setSelectionTarget(a)}
+                    />
+                ))}
+            </div>
         </div>
     );
 };
+
+// SectionGroup removed — replaced by status tabs in FieldSection
 
 // ============================================================================
 // COLLEGE TIER CLASSIFICATION (unchanged logic)

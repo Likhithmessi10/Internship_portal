@@ -1,398 +1,336 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { MEDIA_URL } from '../../utils/api';
-import { User, Mail, Shield, Building, Lock, Eye, EyeOff, Save, KeyRound, Camera, MapPin, Briefcase, BookOpen } from 'lucide-react';
-import WarningCard from '../../components/ui/WarningCard';
+import {
+    User, Mail, Building2, Phone, Briefcase, MapPin,
+    Lock, Eye, EyeOff, Camera, CheckCircle, AlertCircle,
+    BookOpen, Save, KeyRound, Shield
+} from 'lucide-react';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const getPhotoUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('data:') || url.startsWith('http')) return url;
+    return `${MEDIA_URL}/${url.replace(/\\/g, '/')}`;
+};
+
+const ROLE_LABELS = {
+    ADMIN:            'Super Administrator',
+    CE_PRTI:          'Chief Engineer · PRTI',
+    HOD:              'Head of Department',
+    MENTOR:           'Mentor',
+    COMMITTEE_MEMBER: 'Committee Member',
+};
+
+// ── Small feedback banner ─────────────────────────────────────────────────────
+const Feedback = ({ ok, msg, onClose }) => {
+    useEffect(() => {
+        const t = setTimeout(onClose, 4000);
+        return () => clearTimeout(t);
+    }, [onClose]);
+
+    if (!msg) return null;
+    return (
+        <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border ${ok
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300'
+            : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300'}`}>
+            {ok ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+            {msg}
+        </div>
+    );
+};
+
+// ── Field ─────────────────────────────────────────────────────────────────────
+const Field = ({ label, icon: Icon, children }) => (
+    <div>
+        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+            {label}
+        </label>
+        <div className="relative flex items-center">
+            {Icon && (
+                <div className="absolute left-3 text-slate-400">
+                    <Icon size={15} />
+                </div>
+            )}
+            {children}
+        </div>
+    </div>
+);
+
+const inputCls = (hasIcon = true) =>
+    `w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-100
+     py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors
+     ${hasIcon ? 'pl-9 pr-4' : 'px-4'}`;
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 const Profile = () => {
-    const { user, login: refreshUser } = useAuth();
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const [name, setName]               = useState(user?.name || '');
-    const [phone, setPhone]             = useState(user?.phone || '');
-    const [designation, setDesignation] = useState(user?.designation || '');
-    const [mentorLocation, setMentorLocation] = useState(user?.mentorLocation || '');
-    const [feedback, setFeedback] = useState(null);
-    const fileInputRef = useRef(null);
-    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const { user, refreshUser } = useAuth();
 
-    const getMediaUrl = (url) => {
-        if (!url) return null;
-        if (url.startsWith('data:')) return url;
-        if (url.startsWith('http')) return url;
-        return `${MEDIA_URL}/${url.replace(/\\/g, '/')}`;
+    // Profile form
+    const [name,          setName]          = useState(user?.name          || '');
+    const [phone,         setPhone]         = useState(user?.phone         || '');
+    const [designation,   setDesignation]   = useState(user?.designation   || '');
+    const [mentorField,   setMentorField]   = useState(user?.mentorField   || '');
+    const [mentorLocation,setMentorLocation]= useState(user?.mentorLocation|| '');
+    const [profileFb,     setProfileFb]     = useState(null);
+    const [profileSaving, setProfileSaving] = useState(false);
+
+    // Password form
+    const [curPw,   setCurPw]   = useState('');
+    const [newPw,   setNewPw]   = useState('');
+    const [confPw,  setConfPw]  = useState('');
+    const [showPw,  setShowPw]  = useState(false);
+    const [pwFb,    setPwFb]    = useState(null);
+    const [pwSaving,setPwSaving]= useState(false);
+
+    // Photo
+    const fileRef = useRef(null);
+    const [photoUploading, setPhotoUploading] = useState(false);
+
+    const isMentor = user?.role === 'MENTOR';
+
+    const handleProfileSave = async (e) => {
+        e.preventDefault();
+        setProfileSaving(true);
+        setProfileFb(null);
+        try {
+            const payload = { name, phone, designation };
+            if (isMentor) { payload.mentorField = mentorField; payload.mentorLocation = mentorLocation; }
+            await api.put('/auth/update-profile', payload);
+            await refreshUser();
+            setProfileFb({ ok: true, msg: 'Profile updated successfully.' });
+        } catch (err) {
+            setProfileFb({ ok: false, msg: err.response?.data?.message || 'Failed to update profile.' });
+        } finally {
+            setProfileSaving(false);
+        }
     };
 
-    const handleResetPassword = async (e) => {
+    const handlePasswordChange = async (e) => {
         e.preventDefault();
-        if (newPassword !== confirmPassword) {
-            return setFeedback({ type: 'warning', text: 'New passwords do not match' });
-        }
-        
-        setLoading(true);
+        if (newPw !== confPw) return setPwFb({ ok: false, msg: 'New passwords do not match.' });
+        if (newPw.length < 8)  return setPwFb({ ok: false, msg: 'Password must be at least 8 characters.' });
+        setPwSaving(true);
+        setPwFb(null);
         try {
-            await api.put('/auth/reset-password', { currentPassword, newPassword });
-            setFeedback({ type: 'success', text: 'Password updated successfully!' });
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
+            await api.put('/auth/reset-password', { currentPassword: curPw, newPassword: newPw });
+            setPwFb({ ok: true, msg: 'Password changed successfully.' });
+            setCurPw(''); setNewPw(''); setConfPw('');
         } catch (err) {
-            setFeedback({ type: 'error', text: err.response?.data?.message || 'Failed to update password' });
+            const errs = err.response?.data?.errors;
+            const msg  = errs?.length ? errs.join(' ') : (err.response?.data?.message || 'Failed to change password.');
+            setPwFb({ ok: false, msg });
         } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleUpdateProfile = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const res = await api.put('/auth/update-profile', { name, phone, designation, mentorLocation });
-            if (res.data.success) {
-                setFeedback({ type: 'success', text: 'Profile updated successfully!' });
-                setIsEditingProfile(false);
-                setTimeout(() => window.location.reload(), 1000);
-            }
-        } catch (err) {
-            setFeedback({ type: 'error', text: 'Failed to update profile' });
-        } finally {
-            setLoading(false);
+            setPwSaving(false);
         }
     };
 
     const handlePhotoUpload = async (e) => {
-        const file = e.target.files[0];
+        const file = e.target.files?.[0];
         if (!file) return;
-
-        if (!file.type.startsWith('image/')) {
-            return setFeedback({ type: 'error', text: 'Please upload an image file' });
-        }
-
-        const formData = new FormData();
-        formData.append('photo', file);
-
-        setUploading(true);
+        const fd = new FormData();
+        fd.append('photo', file);
+        setPhotoUploading(true);
         try {
-            const res = await api.put('/auth/update-profile', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            
-            // Update auth context with new user data
-            if (res.data.success) {
-                // We need to update the local user object in context
-                // If AuthContext doesn't expose a way to update the user without re-logging,
-                // we might need to add it. For now, we'll assume it handles it or we'll refresh tokens.
-                setFeedback({ type: 'success', text: 'Profile photo updated!' });
-                window.location.reload(); // Quick fix to refresh user data from token/session
-            }
-        } catch (err) {
-            setFeedback({ type: 'error', text: 'Failed to upload photo' });
+            await api.put('/auth/update-profile', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            await refreshUser();
+        } catch {
+            setProfileFb({ ok: false, msg: 'Failed to upload photo.' });
         } finally {
-            setUploading(false);
+            setPhotoUploading(false);
+            e.target.value = '';
         }
     };
 
-    return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {feedback && <WarningCard 
-                message={feedback.text} 
-                onClose={() => setFeedback(null)} 
-                duration={5000}
-            />}
+    const initials = (user?.name || user?.email || '?').charAt(0).toUpperCase();
+    const photoUrl  = getPhotoUrl(user?.photoUrl);
 
-            <div className="flex justify-between items-end">
-                <div>
-                    <span className="text-[10px] font-black tracking-[0.2em] text-outline uppercase mb-1 block opacity-60">Identity & Security</span>
-                    <h2 className="text-3xl font-black text-primary tracking-tight">Personal Workspace</h2>
-                </div>
+    return (
+        <div className="max-w-4xl mx-auto space-y-8 pb-12">
+            {/* Header */}
+            <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Account Settings</p>
+                <h1 className="text-3xl font-extrabold text-primary tracking-tight">My Profile</h1>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* User Info Card */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 text-center relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-primary/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
-                        
-                        <div className="relative w-32 h-32 mx-auto mb-6 group/avatar">
-                            <div className="w-full h-full rounded-full bg-primary/10 border-4 border-primary/20 flex items-center justify-center overflow-hidden transition-transform duration-500 group-hover:scale-105">
-                                {user?.photoUrl ? (
-                                    <img src={getMediaUrl(user.photoUrl)} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-4xl font-black text-primary uppercase">{user?.name?.charAt(0) || user?.email?.charAt(0)}</span>
-                                )}
-                            </div>
-                            <button 
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={uploading}
-                                className="absolute bottom-0 right-0 w-10 h-10 bg-primary text-white rounded-xl shadow-lg border-2 border-white dark:border-slate-900 flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
-                            >
-                                {uploading ? (
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (
-                                    <Camera size={18} />
-                                )}
-                            </button>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
-                                accept="image/*"
-                                onChange={handlePhotoUpload}
-                            />
-                        </div>
-                        
-                        <h3 className="text-xl font-black text-primary mb-1 tracking-tight">{user?.name || 'Authorized User'}</h3>
-                        <p className="text-[10px] font-bold text-outline uppercase tracking-widest mb-6">{user?.role?.replace('_', ' ')}</p>
-                        
-                        <div className="space-y-3 pt-6 border-t border-outline-variant/10">
-                            <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
-                                <Mail size={16} className="text-primary/60" />
-                                <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-outline uppercase tracking-tight">Email Address</p>
-                                    <p className="text-xs font-bold text-primary truncate">{user?.email}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
-                                <Shield size={16} className="text-primary/60" />
-                                <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-outline uppercase tracking-tight">Contact Number</p>
-                                    <p className="text-xs font-bold text-primary truncate">{user?.phone || 'Not Set'}</p>
-                                </div>
-                            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                            {user?.department && (
-                                <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
-                                    <Building size={16} className="text-primary/60" />
-                                    <div className="min-w-0">
-                                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Department</p>
-                                        <p className="text-xs font-bold text-primary truncate">{user?.department}</p>
-                                    </div>
+                {/* ── Left: identity card ───────────────────────────────── */}
+                <div className="lg:col-span-1">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex flex-col items-center gap-5">
+
+                        {/* Avatar */}
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden">
+                                {photoUrl
+                                    ? <img src={photoUrl} alt={user?.name} className="w-full h-full object-cover" />
+                                    : <span className="text-3xl font-black text-primary">{initials}</span>}
+                            </div>
+                            <button
+                                onClick={() => fileRef.current?.click()}
+                                disabled={photoUploading}
+                                title="Change photo"
+                                className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-lg shadow-md border-2 border-white dark:border-slate-900 flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-60">
+                                {photoUploading
+                                    ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    : <Camera size={13} />}
+                            </button>
+                            <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                        </div>
+
+                        {/* Name + role */}
+                        <div className="text-center">
+                            <p className="text-base font-black text-slate-900 dark:text-white">{user?.name || 'No name set'}</p>
+                            <p className="text-xs font-bold text-primary mt-0.5">{ROLE_LABELS[user?.role] || user?.role}</p>
+                        </div>
+
+                        {/* Details */}
+                        <div className="w-full space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
+                            {[
+                                { icon: Mail,      label: user?.email },
+                                { icon: Phone,     label: user?.phone      || '—' },
+                                user?.department && { icon: Building2, label: user.department },
+                                user?.designation && { icon: Briefcase, label: user.designation },
+                                user?.mentorLocation && { icon: MapPin, label: user.mentorLocation },
+                                user?.mentorField && { icon: BookOpen, label: user.mentorField },
+                            ].filter(Boolean).map(({ icon: Icon, label }, i) => (
+                                <div key={i} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+                                    <Icon size={14} className="text-slate-400 shrink-0" />
+                                    <span className="truncate font-medium" title={label}>{label}</span>
                                 </div>
-                            )}
-                            {user?.designation && (
-                                <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
-                                    <Briefcase size={16} className="text-primary/60" />
-                                    <div className="min-w-0">
-                                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Designation</p>
-                                        <p className="text-xs font-bold text-primary truncate">{user.designation}</p>
-                                    </div>
-                                </div>
-                            )}
-                            {user?.mentorField && (
-                                <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
-                                    <BookOpen size={16} className="text-primary/60" />
-                                    <div className="min-w-0">
-                                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Field</p>
-                                        <p className="text-xs font-bold text-primary truncate">{user.mentorField}</p>
-                                    </div>
-                                </div>
-                            )}
-                            {user?.mentorLocation && (
-                                <div className="flex items-center gap-3 text-left p-3 rounded-xl hover:bg-primary/5 transition-colors">
-                                    <MapPin size={16} className="text-primary/60" />
-                                    <div className="min-w-0">
-                                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Location</p>
-                                        <p className="text-xs font-bold text-primary truncate">{user.mentorLocation}</p>
-                                    </div>
-                                </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Security/Password Form */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Basic Profile Form */}
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-outline-variant/10 shadow-xl shadow-primary/5 relative overflow-hidden">
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                    <User size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-black text-primary tracking-tight">Basic Information</h3>
-                                    <p className="text-[10px] font-bold text-outline uppercase tracking-widest">Public identity & contact</p>
-                                </div>
+                {/* ── Right: forms ─────────────────────────────────────── */}
+                <div className="lg:col-span-2 space-y-6">
+
+                    {/* Profile form */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                                <User size={17} className="text-primary" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-black text-slate-900 dark:text-white">Edit Profile</h2>
+                                <p className="text-[11px] text-slate-400 font-medium">Update your name, contact, and details</p>
                             </div>
                         </div>
 
-                        <form onSubmit={handleUpdateProfile} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="relative">
-                                    <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Full Legal Name</label>
-                                    <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
-                                            <User size={16} />
-                                        </div>
-                                        <input
-                                            type="text"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                            placeholder="Your full name"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="relative">
-                                    <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Mobile Number</label>
-                                    <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
-                                            <Shield size={16} />
-                                        </div>
-                                        <input
-                                            type="tel"
-                                            value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                            placeholder="Direct contact line"
-                                        />
-                                    </div>
-                                </div>
+                        {profileFb && <div className="mb-4"><Feedback ok={profileFb.ok} msg={profileFb.msg} onClose={() => setProfileFb(null)} /></div>}
+
+                        <form onSubmit={handleProfileSave} className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Field label="Full Name" icon={User}>
+                                    <input value={name} onChange={e => setName(e.target.value)}
+                                        placeholder="Your full name" className={inputCls()} />
+                                </Field>
+                                <Field label="Phone Number" icon={Phone}>
+                                    <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                                        placeholder="10-digit mobile number" className={inputCls()} />
+                                </Field>
                             </div>
-                            {user?.role === 'MENTOR' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="relative">
-                                        <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Designation</label>
-                                        <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
-                                                <Briefcase size={16} />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                value={designation}
-                                                onChange={(e) => setDesignation(e.target.value)}
-                                                className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                                placeholder="e.g. Assistant Engineer"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="relative">
-                                        <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Location</label>
-                                        <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
-                                                <MapPin size={16} />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                value={mentorLocation}
-                                                onChange={(e) => setMentorLocation(e.target.value)}
-                                                className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                                placeholder="e.g. Vijayawada HQ"
-                                            />
-                                        </div>
-                                    </div>
+
+                            <Field label="Designation" icon={Briefcase}>
+                                <input value={designation} onChange={e => setDesignation(e.target.value)}
+                                    placeholder="e.g. Assistant Engineer, HOD" className={inputCls()} />
+                            </Field>
+
+                            {isMentor && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Field label="Mentor Field" icon={BookOpen}>
+                                        <input value={mentorField} onChange={e => setMentorField(e.target.value)}
+                                            placeholder="e.g. Grid, Transmission" className={inputCls()} />
+                                    </Field>
+                                    <Field label="Mentor Location" icon={MapPin}>
+                                        <input value={mentorLocation} onChange={e => setMentorLocation(e.target.value)}
+                                            placeholder="e.g. Vijayawada HQ" className={inputCls()} />
+                                    </Field>
                                 </div>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-slate-900 dark:bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                            >
-                                {loading ? (
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (
-                                    <>
-                                        <Save size={18} />
-                                        Update Basic Identity
-                                    </>
-                                )}
-                            </button>
+                            <div className="pt-1">
+                                <button type="submit" disabled={profileSaving}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-sm">
+                                    {profileSaving
+                                        ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        : <Save size={15} />}
+                                    Save Profile
+                                </button>
+                            </div>
                         </form>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-outline-variant/10 shadow-xl shadow-primary/5 relative overflow-hidden">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
-                                <Shield size={20} />
+                    {/* Change password form */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                                <Shield size={17} className="text-amber-600" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-primary tracking-tight">Authentication Security</h3>
-                                <p className="text-[10px] font-bold text-outline uppercase tracking-widest">Update your system credentials</p>
+                                <h2 className="text-sm font-black text-slate-900 dark:text-white">Change Password</h2>
+                                <p className="text-[11px] text-slate-400 font-medium">Minimum 8 characters required</p>
                             </div>
                         </div>
 
-                        <form onSubmit={handleResetPassword} className="space-y-6">
-                            <div className="space-y-4">
-                                <div className="relative">
-                                    <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Current Password</label>
-                                    <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
-                                            <Lock size={16} />
-                                        </div>
-                                        <input
-                                            type={showPassword ? "text" : "password"}
-                                            value={currentPassword}
-                                            onChange={(e) => setCurrentPassword(e.target.value)}
-                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-12 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                            placeholder="Enter existing password"
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                        {pwFb && <div className="mb-4"><Feedback ok={pwFb.ok} msg={pwFb.msg} onClose={() => setPwFb(null)} /></div>}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                                    <div className="relative">
-                                        <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">New Password</label>
-                                        <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
-                                                <KeyRound size={16} />
-                                            </div>
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                value={newPassword}
-                                                onChange={(e) => setNewPassword(e.target.value)}
-                                                className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                                placeholder="8+ characters"
-                                                required
-                                            />
-                                        </div>
+                        <form onSubmit={handlePasswordChange} className="space-y-4">
+                            <Field label="Current Password" icon={Lock}>
+                                <input type={showPw ? 'text' : 'password'} value={curPw}
+                                    onChange={e => setCurPw(e.target.value)}
+                                    placeholder="Enter current password" required className={inputCls()} />
+                            </Field>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Field label="New Password" icon={KeyRound}>
+                                    <input type={showPw ? 'text' : 'password'} value={newPw}
+                                        onChange={e => setNewPw(e.target.value)}
+                                        placeholder="8+ characters" required className={inputCls()} />
+                                </Field>
+                                <Field label="Confirm Password" icon={KeyRound}>
+                                    <div className="relative w-full">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><KeyRound size={15} /></div>
+                                        <input type={showPw ? 'text' : 'password'} value={confPw}
+                                            onChange={e => setConfPw(e.target.value)}
+                                            placeholder="Re-enter new password" required className={inputCls() + ' pr-10'} />
+                                        <button type="button" onClick={() => setShowPw(v => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                                            {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                                        </button>
                                     </div>
-                                    <div className="relative">
-                                        <label className="text-[10px] font-black text-outline uppercase tracking-[0.15em] ml-1 mb-2 block">Confirm Password</label>
-                                        <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-outline/40 group-focus-within:text-primary transition-colors">
-                                                <KeyRound size={16} />
-                                            </div>
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                value={confirmPassword}
-                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                                className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-2xl pl-12 pr-12 py-4 text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                                placeholder="Re-type new password"
-                                                required
-                                            />
-                                            <button 
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/40 hover:text-primary transition-colors"
-                                            >
-                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                </Field>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-8 disabled:opacity-50"
-                            >
-                                {loading ? (
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (
-                                    <>
-                                        <Save size={18} />
-                                        Commit Password Change
-                                    </>
-                                )}
-                            </button>
+                            {/* Strength hint when typing */}
+                            {newPw && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {[
+                                        { label: '8+ chars',   ok: newPw.length >= 8 },
+                                        { label: 'Uppercase',  ok: /[A-Z]/.test(newPw) },
+                                        { label: 'Number',     ok: /\d/.test(newPw) },
+                                        { label: 'Matches',    ok: newPw === confPw && confPw.length > 0 },
+                                    ].map(({ label, ok }) => (
+                                        <span key={label} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ok
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300'
+                                            : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}>
+                                            {ok ? '✓' : '·'} {label}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="pt-1">
+                                <button type="submit" disabled={pwSaving}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white text-sm font-bold rounded-xl hover:bg-amber-700 transition-colors disabled:opacity-50 shadow-sm">
+                                    {pwSaving
+                                        ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        : <Lock size={15} />}
+                                    Update Password
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

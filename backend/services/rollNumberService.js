@@ -1,22 +1,23 @@
 const prisma = require('../lib/prisma');
 
-// Legacy dept map kept for backward-compatibility with existing MONETARY roll numbers
+// Dept code map for MONETARY roll number generation (format: YYDDGGNNN).
+// Codes are immutable — existing roll numbers depend on them.
 const DEPT_MAP = {
-    'SLDC': '01',
-    'TRANSMISSION': '02',
-    'PLANNING AND POWER SYSTEMS': '03',
-    'PROJECTS': '04',
-    'APPCC AND LEGAL': '05',
-    'COMMERCIAL AND COORDINATION LMC': '06',
-    'HRD': '07',
-    'ZONE VIJAYAWADA': '08',
-    'ZONE VISHAKAPATNAM': '09',
-    'APPCC': '10',
-    'ZONE KADAPA': '11',
-    'CIVIL': '12',
-    'TELECOM AND IT': '13',
-    'ADDITIONAL SECRETARY': '14',
-    'CGM AND FINANCE': '15',
+    'SLDC':                         '01',
+    'Transmission':                 '02',
+    'Planning & Power Systems':     '03',
+    'Projects':                     '04',
+    'APPCC & Legal':                '05',
+    'Commercial & Coordination':    '06',
+    'HRD':                          '07',
+    'Vijayawada Zone':              '08',
+    'Visakhapatnam Zone':           '09',
+    'Kadapa Zone':                  '10',
+    'Civil':                        '11',
+    'Additional Secretary':         '13',
+    'CGM (Coordination)':           '14',
+    'CGM (Revenue & Expenditure)':  '15',
+    'PRTI':                         '16',
 };
 
 /**

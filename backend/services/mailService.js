@@ -54,6 +54,16 @@ const sendSelectionEmail = (to, data) => {
     return sendEmail(to, subject, html);
 };
 
+const sendMonetarySelectionEmail = (to, data) => {
+    const { subject, html } = templates.monetarySelectionEmail(data);
+    return sendEmail(to, subject, html);
+};
+
+const sendNonMonetarySelectionEmail = (to, data) => {
+    const { subject, html } = templates.nonMonetarySelectionEmail(data);
+    return sendEmail(to, subject, html);
+};
+
 const sendHiringEmail = (to, data) => {
     const { subject, html } = templates.hiringEmail(data);
     return sendEmail(to, subject, html);
@@ -113,6 +123,8 @@ module.exports = {
     sendEmail,
     sendShortlistingEmail,
     sendSelectionEmail,
+    sendMonetarySelectionEmail,
+    sendNonMonetarySelectionEmail,
     sendHiringEmail,
     sendRejectionEmail,
     sendDocumentRequestEmail,

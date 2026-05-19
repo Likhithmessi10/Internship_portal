@@ -14,9 +14,10 @@ import { useLanguage } from '../../context/LanguageContext';
 // Active statuses — covers all non-terminal post-selection states
 const ACTIVE_STATUSES = ['SELECTED', 'REPORTED', 'HIRED', 'APPROVED', 'ONGOING', 'DOCUMENTS_PENDING', 'DOCUMENTS_VERIFIED'];
 const JOINING_DOCS = [
-    { id: 'BOND',        label: '₹100 Bond',        hint: 'On a ₹100 stamp paper' },
-    { id: 'INSURANCE',   label: 'Insurance Policy', hint: 'Personal insurance covering the internship period' },
-    { id: 'UNDERTAKING', label: 'Undertaking Form', hint: 'Personal declaration' },
+    { id: 'JOINING_LETTER', label: 'Joining Letter (filled & signed)', hint: 'Download the template, fill it out, sign, and upload' },
+    { id: 'POLICY',         label: 'Internship Policy / NOC',          hint: 'No Objection Certificate from your institution' },
+    { id: 'BOND',           label: 'Bond Agreement',                   hint: 'Bond agreement as per policy' },
+    { id: 'UNDERTAKING',    label: 'Undertaking Form',                 hint: 'Personal declaration undertaking' },
 ];
 
 const STATUS_CONFIG = {
@@ -102,9 +103,17 @@ const StudentDashboard = () => {
     const configuredDocs = Array.isArray(activeApp?.departmentGroup?.requiredDocuments)
         ? activeApp.departmentGroup.requiredDocuments
         : [];
-    // Joining letter template uploaded by HOD (optional)
-    const joiningLetterTemplateUrl = activeApp?.departmentGroup?.joiningLetterTemplateUrl || null;
-    const joiningLetterTemplateName = activeApp?.departmentGroup?.joiningLetterTemplateName || 'Joining Letter Template';
+    // Per-document templates: { JOINING_LETTER: { url, name }, BOND: { url, name }, ... }
+    // Merge new documentTemplates with legacy joiningLetterTemplateUrl for backward compat
+    const rawDocTemplates = (typeof activeApp?.departmentGroup?.documentTemplates === 'object' && activeApp.departmentGroup.documentTemplates !== null)
+        ? { ...activeApp.departmentGroup.documentTemplates }
+        : {};
+    if (!rawDocTemplates.JOINING_LETTER && activeApp?.departmentGroup?.joiningLetterTemplateUrl) {
+        rawDocTemplates.JOINING_LETTER = {
+            url: activeApp.departmentGroup.joiningLetterTemplateUrl,
+            name: activeApp.departmentGroup.joiningLetterTemplateName || 'Joining Letter Template'
+        };
+    }
     const normalizeId = s => String(s).toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
     const joiningDocsActiveBase = (configuredDocs.length > 0
         ? configuredDocs.map((d, i) => typeof d === 'string'
@@ -119,11 +128,10 @@ const StudentDashboard = () => {
         : JOINING_DOCS.map(d => ({ ...d, format: 'PDF', mandatory: true }))
     );
 
-    // If HOD uploaded a joining letter template and JOINING_LETTER isn't already in the list,
-    // inject it as a required doc the student must download, fill, and upload back.
-    const joiningDocsActive = joiningLetterTemplateUrl && !joiningDocsActiveBase.some(d => d.id === 'JOINING_LETTER')
-        ? [{ id: 'JOINING_LETTER', label: 'Joining Letter (filled & signed)', format: 'PDF', mandatory: true, hint: 'Download the template, fill it out, sign, and upload back' }, ...joiningDocsActiveBase]
-        : joiningDocsActiveBase;
+    // Ensure JOINING_LETTER is always in the list
+    const joiningDocsActive = joiningDocsActiveBase.some(d => d.id === 'JOINING_LETTER')
+        ? joiningDocsActiveBase
+        : [{ id: 'JOINING_LETTER', label: 'Joining Letter (filled & signed)', format: 'PDF', mandatory: true, hint: 'Download the template, fill it out, sign, and upload back' }, ...joiningDocsActiveBase];
 
     // Uploaded joining doc types already on file
     const joiningTypeSet = new Set(joiningDocsActive.map(d => d.id));
@@ -373,20 +381,27 @@ const StudentDashboard = () => {
                                 {joiningDocsComplete && <CheckCircle size={24} className="text-emerald-500 shrink-0" />}
                             </div>
 
-                            {joiningLetterTemplateUrl && (
-                                <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/40 rounded-2xl flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                                        <FileText size={20} className="text-amber-700" />
+                            {/* Document Templates — show download button per doc that has a HOD-uploaded template */}
+                            {Object.keys(rawDocTemplates).length > 0 && (
+                                <div className="mb-5 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/40 rounded-2xl">
+                                    <p className="text-xs font-black uppercase tracking-widest text-amber-700 mb-3 flex items-center gap-1.5">
+                                        <Download size={13} /> Download Blank Templates · Fill & Sign · Then Upload Below
+                                    </p>
+                                    <div className="space-y-2">
+                                        {joiningDocsActive.filter(d => rawDocTemplates[d.id]).map(doc => {
+                                            const tmpl = rawDocTemplates[doc.id];
+                                            return (
+                                                <div key={doc.id} className="flex items-center gap-3 p-2.5 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-700/30 rounded-xl">
+                                                    <FileText size={15} className="text-amber-600 shrink-0" />
+                                                    <span className="flex-1 text-sm font-bold text-amber-900 dark:text-amber-200 truncate min-w-0">{doc.label}</span>
+                                                    <a href={`${MEDIA_URL}/${tmpl.url}`} target="_blank" rel="noopener noreferrer" download
+                                                        className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1">
+                                                        <Download size={12} /> Download
+                                                    </a>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-black uppercase tracking-widest text-amber-700 mb-0.5">Step 1 · Download Template</p>
-                                        <p className="text-sm font-bold text-amber-900 truncate">{joiningLetterTemplateName}</p>
-                                        <p className="text-[11px] text-amber-700/80 font-medium">Fill it out, sign, and upload back as your Joining Letter below.</p>
-                                    </div>
-                                    <a href={`${MEDIA_URL}/${joiningLetterTemplateUrl}`} target="_blank" rel="noopener noreferrer" download
-                                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shrink-0 transition-colors flex items-center gap-1.5">
-                                        <Download size={14} /> Download
-                                    </a>
                                 </div>
                             )}
 

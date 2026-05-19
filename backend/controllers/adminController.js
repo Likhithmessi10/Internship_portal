@@ -698,7 +698,8 @@ const updateApplicationStatus = async (req, res) => {
         const studentEmail = student.user?.email;
         if (studentEmail && !studentEmail.endsWith('@aptransco.portal')) {
             const {
-                sendShortlistingEmail, sendSelectionEmail,
+                sendShortlistingEmail,
+                sendMonetarySelectionEmail, sendNonMonetarySelectionEmail,
                 sendHiringEmail, sendRejectionEmail
             } = require('../services/mailService');
 
@@ -713,12 +714,16 @@ const updateApplicationStatus = async (req, res) => {
                     department:      application.departmentGroup?.department || internship.department,
                 }).catch(() => {});
             } else if (status === 'SELECTED') {
-                sendSelectionEmail(studentEmail, {
-                    studentName:     student.fullName,
-                    internshipTitle: internship.title,
+                const isMonetary = internship.internshipType !== 'NON_STIPEND';
+                const selEmailData = {
+                    studentName:       student.fullName,
+                    internshipTitle:   internship.title,
                     fieldName,
                     location,
-                }).catch(() => {});
+                    department:        application.departmentGroup?.department || internship.department,
+                    duration:          internship.duration,
+                };
+                (isMonetary ? sendMonetarySelectionEmail : sendNonMonetarySelectionEmail)(studentEmail, selEmailData).catch(() => {});
             } else if (status === 'HIRED') {
                 const mentorRecord = mentorId
                     ? await prisma.user.findUnique({ where: { id: mentorId }, select: { name: true } })
@@ -879,24 +884,7 @@ const getPortalConfig = async (req, res) => {
 
         // If no config exists, create default config with departments
         if (!config) {
-            const defaultDepartments = [
-                'PRTI',
-                'TRANSMISSION',
-                'PLANNING AND POWER SYSTEMS',
-                'SLDC',
-                'PROJECTS',
-                'APPCC AND LEGAL',
-                'COMMERCIAL AND COORDINATION LMC',
-                'HRD',
-                'ZONE VIJAYAWADA',
-                'ZONE VISHAKAPATNAM',
-                'APPCC',
-                'ZONE KADAPA',
-                'CIVIL',
-                'TELECOM AND IT',
-                'ADDITIONAL SECRETARY',
-                'CGM AND FINANCE'
-            ];
+            const defaultDepartments = require('../scripts/seed-dept-fields').DEPARTMENTS.map(d => d.name);
             config = await prisma.portalConfiguration.create({
                 data: {
                     id: 'singleton',

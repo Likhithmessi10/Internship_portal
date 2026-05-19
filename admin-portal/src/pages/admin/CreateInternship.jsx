@@ -38,6 +38,8 @@ const CreateInternshipForm = () => {
     const [error, setError] = useState('');
     const [validationErrors, setValidationErrors] = useState([]);
     const [step, setStep] = useState(1);
+    const [jdFile, setJdFile] = useState(null); // Job Description PDF/DOCX
+    const jdInputRef = useRef(null);
 
     const [departments, setDepartments] = useState(departmentsData.departments);
     const [batches, setBatches] = useState([]);
@@ -246,6 +248,19 @@ const CreateInternshipForm = () => {
 
             const res = await api.post('/admin/internships', payload);
             const internshipId = res.data.data.id;
+
+            // Upload JD if one was selected
+            if (jdFile) {
+                try {
+                    const fd = new FormData();
+                    fd.append('jd', jdFile);
+                    await api.post(`/admin/internships/${internshipId}/upload-jd`, fd, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                } catch {
+                    console.warn('JD upload failed — internship still created');
+                }
+            }
 
             for (const dept of formData.participatingDepts) {
                 const groupRes = await api.post(`/admin/internships/${internshipId}/groups`, {
@@ -944,6 +959,44 @@ const CreateInternshipForm = () => {
                         </div>
 
                         {/* What happens next */}
+                        {/* JD Upload */}
+                        <div className="p-6 bg-indigo-50 border-2 border-indigo-200 rounded-xl space-y-3">
+                            <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">description</span>
+                                Job Description (JD) — Optional
+                            </p>
+                            <p className="text-[11px] text-indigo-600 font-medium leading-relaxed">
+                                Upload a PDF or DOCX file. Students will be able to view and download it from the internship listing before applying.
+                            </p>
+                            {jdFile ? (
+                                <div className="flex items-center gap-3 p-3 bg-white border-2 border-indigo-300 rounded-xl">
+                                    <span className="material-symbols-outlined text-indigo-600">picture_as_pdf</span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-indigo-900 truncate">{jdFile.name}</p>
+                                        <p className="text-[10px] text-indigo-500 font-medium">{(jdFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    </div>
+                                    <label className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg cursor-pointer hover:bg-indigo-200 transition-colors">
+                                        Replace
+                                        <input type="file" accept=".pdf,.doc,.docx" ref={jdInputRef}
+                                            onChange={e => { const f = e.target.files?.[0]; if (f) setJdFile(f); e.target.value = ''; }}
+                                            className="hidden" />
+                                    </label>
+                                    <button onClick={() => setJdFile(null)}
+                                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm">
+                                        <span className="material-symbols-outlined text-sm">close</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="flex items-center justify-center gap-2 px-4 py-4 bg-white border-2 border-dashed border-indigo-300 rounded-xl text-indigo-600 text-sm font-bold cursor-pointer hover:bg-indigo-50 transition-colors">
+                                    <span className="material-symbols-outlined">upload_file</span>
+                                    Upload JD (PDF / DOCX · max 5 MB)
+                                    <input type="file" accept=".pdf,.doc,.docx"
+                                        onChange={e => { const f = e.target.files?.[0]; if (f) setJdFile(f); e.target.value = ''; }}
+                                        className="hidden" />
+                                </label>
+                            )}
+                        </div>
+
                         <div className="p-6 bg-surface-container border border-outline-variant/10 rounded-xl space-y-4">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                                 <span className="material-symbols-outlined text-sm">timeline</span>

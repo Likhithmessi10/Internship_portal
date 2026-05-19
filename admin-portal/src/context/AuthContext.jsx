@@ -48,15 +48,22 @@ export const AuthProvider = ({ children }) => {
         return res.data.user;
     };
 
+    const refreshUser = async () => {
+        try {
+            const res = await api.get('/auth/me');
+            setUser(res.data.data);
+            return res.data.data;
+        } catch { /* silent — caller handles errors */ }
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
         setUser(null);
-        // Admin portal usually starts at /login or /
         window.location.href = '/';
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, registerAdmin, logout, loading }}>
+        <AuthContext.Provider value={{ user, setUser, login, register, registerAdmin, logout, loading, refreshUser }}>
             {!loading && children}
         </AuthContext.Provider>
     );

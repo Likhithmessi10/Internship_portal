@@ -196,6 +196,9 @@ model Internship {
   priorityCollege      String?
   priorityCollegeQuota Int?      @default(0)
   requiredDocuments    Json?     // Apply-time docs defined by PRTI (dynamic)
+  // Job Description document (uploaded by PRTI/HOD at creation time)
+  jdUrl                String?
+  jdFileName           String?
   stipendType          String?   @default("NON_COLLABORATIVE")
   // Per-category stipend amounts for MONETARY internships.
   // Keys map to CollegeCategory enum values: IIT, NIT, IIIT, CENTRAL, STATE, PRIVATE, OTHER
@@ -242,6 +245,8 @@ model InternshipDepartmentGroup {
   // Joining letter template (HOD-uploaded; student downloads, fills, uploads back as JOINING_LETTER doc)
   joiningLetterTemplateUrl  String?
   joiningLetterTemplateName String?
+  // Per-document templates: { "BOND": { url, name }, "POLICY": { url, name }, "UNDERTAKING": { url, name }, "JOINING_LETTER": { url, name } }
+  documentTemplates Json?    @default("{}")
   // HOD submission tracking
   hodSubmitted      Boolean   @default(false)
   hodSubmittedAt    DateTime?

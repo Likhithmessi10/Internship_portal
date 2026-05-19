@@ -439,9 +439,227 @@ const joiningReminderPrtiEmail = ({ studentName, internshipTitle, joiningDate, f
     `)
 });
 
+// ── 9. Monetary (Paid) Internship — Selection Offer Letter ────────────────────
+const monetarySelectionEmail = ({
+    studentName,
+    internshipTitle,
+    fieldName,
+    location,
+    department,
+    duration,
+    referenceNo,
+    reportingLocation = 'Chief Engineer/Planning, Power Systems, AP Transco, Vidyuthsoudha, Vijayawada',
+    portalUrl = 'https://aptransco.gov.in/intern'
+}) => {
+    const refNo = referenceNo || `APT/INT/OFFER/${new Date().getFullYear()}`;
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+    return {
+        subject: `Selection for APTRANSCO Internship — Monetary (Paid) Category Offer | ${internshipTitle}`,
+        html: wrap(`
+            <!-- Official tri-colour letterhead band -->
+            <div style="background:linear-gradient(90deg,#FF9933 0%,#FFFFFF 50%,#138808 100%);height:4px;margin:-32px -32px 24px;"></div>
+
+            <div style="text-align:center;margin-bottom:16px;">
+                <p style="color:#1e40af;font-size:11px;font-weight:800;letter-spacing:2px;margin:0 0 4px;text-transform:uppercase;">Government of Andhra Pradesh — Energy Department</p>
+                <p style="color:#111827;font-size:17px;font-weight:800;margin:0;">Andhra Pradesh Transmission Corporation Limited</p>
+                <p style="color:#6b7280;font-size:12px;margin:4px 0 0;font-weight:600;">Office of the Chief Engineer — Planning, Power Systems</p>
+            </div>
+
+            <hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0;"/>
+
+            <div style="text-align:right;margin-bottom:12px;">
+                <p style="color:#6b7280;font-size:11px;margin:0;font-weight:600;">Ref: ${refNo}</p>
+                <p style="color:#6b7280;font-size:11px;margin:2px 0 0;">Date: ${today}</p>
+            </div>
+
+            <h2 style="text-align:center;color:#111827;font-size:16px;font-weight:800;letter-spacing:0.3px;margin:20px 0;text-transform:uppercase;background:#fef9ec;padding:10px;border:1px solid #fde68a;border-radius:6px;">
+                Selection for APTRANSCO Internship 2026 — Monetary (Paid) Category-Offer
+            </h2>
+
+            <p style="color:#111827;font-size:14px;line-height:1.8;">Dear <strong style="color:#1e40af;">${studentName}</strong>,</p>
+
+            <p style="color:#374151;font-size:14px;line-height:1.8;text-align:justify;">
+                We are pleased to inform you that you have been selected for the <strong>APTRANSCO Internship Programme</strong> under the
+                <strong>Monetary (Paid) Category</strong>, as per the APTRANSCO Internship Policy and
+                (T.O.O.(CE-PRTI) Ms. No. 4071, Dated: 30-03-2026).
+            </p>
+            <p style="color:#374151;font-size:14px;line-height:1.8;text-align:justify;">
+                Your application was reviewed by the Constituted Committee and has been approved by the Competent Authority.
+                Based on your academic performance, relevance of specialisation, online interview and institutional ranking,
+                you have been found eligible for the Monetary (Paid) Internship.
+            </p>
+
+            <!-- Important Details box -->
+            <div style="margin:20px 0;padding:0;border:2px solid #1e40af;border-radius:10px;overflow:hidden;">
+                <div style="background:#1e40af;color:#ffffff;padding:10px 16px;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">
+                    Important Details
+                </div>
+                <table style="width:100%;border-collapse:collapse;">
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;width:200px;border-bottom:1px solid #f3f4f6;">Category</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">Monetary (Paid) Internship</td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Programme</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${internshipTitle}${fieldName ? ` — ${fieldName}` : ''}</td></tr>
+                    ${department ? `<tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Department</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${department}</td></tr>` : ''}
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Monthly Honorarium / Stipend</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">As applicable as per policy<br><span style="color:#6b7280;font-size:11px;font-weight:500;">Your applicable honorarium will be communicated separately by the sanctioning authority.</span></td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Duration</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${duration || '2 to 3 months from date of joining'}</td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Reporting Location</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${location || reportingLocation}</td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Reporting Date</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;">One day before commencement of internship</td></tr>
+                </table>
+            </div>
+
+            <!-- Pre-Commencement Requirements -->
+            <div style="margin:20px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                <p style="color:#1e40af;font-size:12px;font-weight:800;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">Pre-Commencement Requirements</p>
+                <ol style="color:#374151;font-size:13px;line-height:2;padding-left:20px;margin:0;">
+                    <li>You are required to <strong>sign the Internship Agreement and Confidentiality Undertaking</strong> prior to commencement of the internship.</li>
+                    <li>Please carry valid <strong>institutional identity proof</strong> and a <strong>recommendation letter / NOC</strong> from your university/institution.</li>
+                    <li>The honorarium / stipend shall be processed upon successful completion of the internship and submission of the <strong>Final Internship Report</strong> through the official channel.</li>
+                    <li>The designated Competent Authority shall be the final approving authority for your Internship Report and stipend processing.</li>
+                </ol>
+            </div>
+
+            <p style="color:#374151;font-size:13px;line-height:1.7;text-align:justify;">
+                Please note that as an intern at APTRANSCO, you shall work under the supervision of designated APTRANSCO officers
+                and shall <strong>not represent APTRANSCO</strong> in any official capacity.
+            </p>
+
+            <div style="margin:16px 0;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">
+                <p style="color:#b91c1c;font-size:12px;font-weight:700;margin:0;">⚠ Action Required</p>
+                <p style="color:#991b1b;font-size:12px;margin:4px 0 0;line-height:1.5;">
+                    Please confirm your acceptance of this offer by logging in to the portal within <strong>5 working days</strong>.
+                    Failure to respond may result in forfeiture of the internship offer.
+                </p>
+            </div>
+
+            <div style="text-align:center;margin:24px 0;">
+                ${btn('Accept Offer & View Details', portalUrl, '#16a34a')}
+            </div>
+
+            <p style="color:#374151;font-size:14px;line-height:1.7;">
+                We look forward to welcoming you to the APTRANSCO family and wish you a productive and enriching internship experience.
+            </p>
+
+            <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0 16px;"/>
+            <p style="color:#374151;font-size:13px;margin:0;line-height:1.6;">
+                Warm regards,<br>
+                <strong style="color:#111827;">Chief Engineer</strong><br>
+                <span style="color:#6b7280;font-size:12px;">Planning, Power Systems, Vijayawada</span>
+            </p>
+        `)
+    };
+};
+
+// ── 10. Non-Monetary (Certificate Only) Internship — Selection Offer Letter ───
+const nonMonetarySelectionEmail = ({
+    studentName,
+    internshipTitle,
+    fieldName,
+    location,
+    department,
+    duration,
+    referenceNo,
+    reportingLocation = 'Chief Engineer/Planning, Power Systems, AP Transco, Vidyuthsoudha, Vijayawada',
+    portalUrl = 'https://aptransco.gov.in/intern'
+}) => {
+    const refNo = referenceNo || `APT/INT/OFFER/${new Date().getFullYear()}`;
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+    return {
+        subject: `Selection for APTRANSCO Internship — Non-Monetary (Certificate Only) Category Offer | ${internshipTitle}`,
+        html: wrap(`
+            <!-- Official tri-colour letterhead band -->
+            <div style="background:linear-gradient(90deg,#FF9933 0%,#FFFFFF 50%,#138808 100%);height:4px;margin:-32px -32px 24px;"></div>
+
+            <div style="text-align:center;margin-bottom:16px;">
+                <p style="color:#1e40af;font-size:11px;font-weight:800;letter-spacing:2px;margin:0 0 4px;text-transform:uppercase;">Government of Andhra Pradesh — Energy Department</p>
+                <p style="color:#111827;font-size:17px;font-weight:800;margin:0;">Andhra Pradesh Transmission Corporation Limited</p>
+                <p style="color:#6b7280;font-size:12px;margin:4px 0 0;font-weight:600;">Office of the Chief Engineer — Planning, Power Systems</p>
+            </div>
+
+            <hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0;"/>
+
+            <div style="text-align:right;margin-bottom:12px;">
+                <p style="color:#6b7280;font-size:11px;margin:0;font-weight:600;">Ref: ${refNo}</p>
+                <p style="color:#6b7280;font-size:11px;margin:2px 0 0;">Date: ${today}</p>
+            </div>
+
+            <h2 style="text-align:center;color:#111827;font-size:16px;font-weight:800;letter-spacing:0.3px;margin:20px 0;text-transform:uppercase;background:#f0fdf4;padding:10px;border:1px solid #bbf7d0;border-radius:6px;">
+                Selection for APTRANSCO Internship 2026 — Non-Monetary (Certificate Only) Category-Offer
+            </h2>
+
+            <p style="color:#111827;font-size:14px;line-height:1.8;">Dear <strong style="color:#1e40af;">${studentName}</strong>,</p>
+
+            <p style="color:#374151;font-size:14px;line-height:1.8;text-align:justify;">
+                We are pleased to inform you that you have been selected for the <strong>APTRANSCO Internship Programme</strong> under the
+                <strong>Non-Monetary (Certificate Only) Category</strong>, as per the APTRANSCO Internship Policy and
+                (T.O.O.(CE-PRTI) Ms. No. 4071, Dated: 30-03-2026).
+            </p>
+            <p style="color:#374151;font-size:14px;line-height:1.8;text-align:justify;">
+                Your application was reviewed by the Constituted Committee and has been approved by the Competent Authority.
+                Based on your academic performance, relevance of specialisation and institutional ranking,
+                you have been found eligible for the Non-Monetary (Certificate Only) Internship.
+            </p>
+
+            <!-- Important Details box -->
+            <div style="margin:20px 0;padding:0;border:2px solid #16a34a;border-radius:10px;overflow:hidden;">
+                <div style="background:#16a34a;color:#ffffff;padding:10px 16px;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">
+                    Important Details
+                </div>
+                <table style="width:100%;border-collapse:collapse;">
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;width:200px;border-bottom:1px solid #f3f4f6;">Category</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">Non-Monetary (Certificate Only) Internship</td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Programme</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${internshipTitle}${fieldName ? ` — ${fieldName}` : ''}</td></tr>
+                    ${department ? `<tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Department</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${department}</td></tr>` : ''}
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Honorarium / Stipend</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">Nil (Certificate Only)<br><span style="color:#6b7280;font-size:11px;font-weight:500;">An internship completion certificate will be awarded upon successful completion.</span></td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Duration</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${duration || '2 to 3 months from date of joining'}</td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f3f4f6;">Reporting Location</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;border-bottom:1px solid #f3f4f6;">${location || reportingLocation}</td></tr>
+                    <tr><td style="padding:10px 16px;color:#6b7280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Reporting Date</td><td style="padding:10px 16px;color:#111827;font-size:13px;font-weight:700;">One day before commencement of internship</td></tr>
+                </table>
+            </div>
+
+            <!-- Pre-Commencement Requirements -->
+            <div style="margin:20px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                <p style="color:#16a34a;font-size:12px;font-weight:800;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">Pre-Commencement Requirements</p>
+                <ol style="color:#374151;font-size:13px;line-height:2;padding-left:20px;margin:0;">
+                    <li>You are required to <strong>sign the Internship Agreement and Undertaking</strong> prior to commencement of the internship.</li>
+                    <li>Please carry valid <strong>institutional identity proof</strong> and a <strong>recommendation letter / NOC</strong> from your university/institution.</li>
+                    <li>The internship completion certificate shall be issued upon successful completion and submission of the <strong>Final Internship Report</strong> through the official channel.</li>
+                    <li>The designated Competent Authority shall be the final approving authority for your Internship Report and certificate issuance.</li>
+                </ol>
+            </div>
+
+            <p style="color:#374151;font-size:13px;line-height:1.7;text-align:justify;">
+                Please note that as an intern at APTRANSCO, you shall work under the supervision of designated APTRANSCO officers
+                and shall <strong>not represent APTRANSCO</strong> in any official capacity.
+            </p>
+
+            <div style="margin:16px 0;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">
+                <p style="color:#b91c1c;font-size:12px;font-weight:700;margin:0;">⚠ Action Required</p>
+                <p style="color:#991b1b;font-size:12px;margin:4px 0 0;line-height:1.5;">
+                    Please confirm your acceptance of this offer by logging in to the portal within <strong>5 working days</strong>.
+                    Failure to respond may result in forfeiture of the internship offer.
+                </p>
+            </div>
+
+            <div style="text-align:center;margin:24px 0;">
+                ${btn('Accept Offer & View Details', portalUrl, '#16a34a')}
+            </div>
+
+            <p style="color:#374151;font-size:14px;line-height:1.7;">
+                We look forward to welcoming you to the APTRANSCO family and wish you a productive and enriching internship experience.
+            </p>
+
+            <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0 16px;"/>
+            <p style="color:#374151;font-size:13px;margin:0;line-height:1.6;">
+                Warm regards,<br>
+                <strong style="color:#111827;">Chief Engineer</strong><br>
+                <span style="color:#6b7280;font-size:12px;">Planning, Power Systems, Vijayawada</span>
+            </p>
+        `)
+    };
+};
+
 module.exports = {
     shortlistingEmail,
     selectionEmail,
+    monetarySelectionEmail,
+    nonMonetarySelectionEmail,
     hiringEmail,
     rejectionEmail,
     documentRequestEmail,

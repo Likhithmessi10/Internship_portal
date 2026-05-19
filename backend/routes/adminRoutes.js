@@ -87,6 +87,56 @@ router.get('/meetings', authorize('ADMIN', 'CE_PRTI', 'HOD'), getMeetings);
 router.post('/internships', createInternship);
 router.delete('/internships/:id', authorize('ADMIN', 'CE_PRTI', 'HOD'), deleteInternship);
 router.put('/internships/:id/toggle', toggleInternship);
+
+// Upload Job Description (JD) for an internship
+router.post(
+    '/internships/:id/upload-jd',
+    authorize('ADMIN', 'CE_PRTI', 'HOD'),
+    require('../middleware/uploadMiddleware').single('jd'),
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            if (!req.file) return res.status(400).json({ success: false, message: 'No JD file uploaded' });
+
+            const prisma = require('../lib/prisma');
+            const internship = await prisma.internship.findUnique({ where: { id } });
+            if (!internship) return res.status(404).json({ success: false, message: 'Internship not found' });
+
+            const updated = await prisma.internship.update({
+                where: { id },
+                data: {
+                    jdUrl:      req.file.path.replace(/\\/g, '/'),
+                    jdFileName: req.file.originalname,
+                },
+                select: { id: true, jdUrl: true, jdFileName: true }
+            });
+            res.json({ success: true, data: updated });
+        } catch (err) {
+            console.error('Upload JD error:', err.message);
+            res.status(500).json({ success: false, message: 'Server Error' });
+        }
+    }
+);
+
+// Remove Job Description for an internship
+router.delete(
+    '/internships/:id/upload-jd',
+    authorize('ADMIN', 'CE_PRTI', 'HOD'),
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const prisma = require('../lib/prisma');
+            await prisma.internship.update({
+                where: { id },
+                data: { jdUrl: null, jdFileName: null }
+            });
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Delete JD error:', err.message);
+            res.status(500).json({ success: false, message: 'Server Error' });
+        }
+    }
+);
 router.put('/internships/:id/publish', authorize('ADMIN', 'CE_PRTI', 'HOD'), async (req, res) => {
     try {
         await require('../lib/prisma').internship.update({
@@ -265,7 +315,8 @@ router.get('/internships/:id/groups/:groupId/details', authorize('ADMIN', 'CE_PR
                 id: true, internshipId: true, department: true, title: true,
                 requiredDocuments: true,
                 joiningLetterTemplateUrl: true,
-                joiningLetterTemplateName: true
+                joiningLetterTemplateName: true,
+                documentTemplates: true,
             }
         });
         if (!group) return res.status(404).json({ success: false, message: 'Department group not found' });
@@ -294,6 +345,77 @@ router.put('/internships/:id/groups/:groupId/required-docs', authorize('ADMIN', 
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
+
+// HOD: upload a template for a specific document type (JOINING_LETTER, BOND, POLICY, UNDERTAKING, etc.)
+router.post(
+    '/internships/:id/groups/:groupId/document-templates/:docId',
+    authorize('ADMIN', 'CE_PRTI', 'HOD'),
+    require('../middleware/uploadMiddleware').single('template'),
+    async (req, res) => {
+        try {
+            const { groupId, docId } = req.params;
+            const normalizedId = String(docId).toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 32);
+            if (!normalizedId) return res.status(400).json({ success: false, message: 'Invalid document ID' });
+            if (!req.file) return res.status(400).json({ success: false, message: 'No template file uploaded' });
+
+            const prisma = require('../lib/prisma');
+            const group = await prisma.internshipDepartmentGroup.findUnique({ where: { id: groupId } });
+            if (!group) return res.status(404).json({ success: false, message: 'Department group not found' });
+            if (req.user.role === 'HOD' && group.department !== req.user.department) {
+                return res.status(403).json({ success: false, message: 'You can only manage templates for your department' });
+            }
+
+            const existing = (typeof group.documentTemplates === 'object' && group.documentTemplates !== null)
+                ? group.documentTemplates
+                : {};
+            const updated = {
+                ...existing,
+                [normalizedId]: { url: req.file.path.replace(/\\/g, '/'), name: req.file.originalname }
+            };
+
+            await prisma.internshipDepartmentGroup.update({
+                where: { id: groupId },
+                data: { documentTemplates: updated }
+            });
+            res.json({ success: true, data: { docId: normalizedId, ...updated[normalizedId] } });
+        } catch (err) {
+            console.error('Upload doc template error:', err.message);
+            res.status(500).json({ success: false, message: 'Server Error' });
+        }
+    }
+);
+
+// HOD: remove a specific document template
+router.delete(
+    '/internships/:id/groups/:groupId/document-templates/:docId',
+    authorize('ADMIN', 'CE_PRTI', 'HOD'),
+    async (req, res) => {
+        try {
+            const { groupId, docId } = req.params;
+            const normalizedId = String(docId).toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 32);
+            const prisma = require('../lib/prisma');
+            const group = await prisma.internshipDepartmentGroup.findUnique({ where: { id: groupId } });
+            if (!group) return res.status(404).json({ success: false, message: 'Department group not found' });
+            if (req.user.role === 'HOD' && group.department !== req.user.department) {
+                return res.status(403).json({ success: false, message: 'You can only manage templates for your department' });
+            }
+
+            const existing = (typeof group.documentTemplates === 'object' && group.documentTemplates !== null)
+                ? { ...group.documentTemplates }
+                : {};
+            delete existing[normalizedId];
+
+            await prisma.internshipDepartmentGroup.update({
+                where: { id: groupId },
+                data: { documentTemplates: existing }
+            });
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Delete doc template error:', err.message);
+            res.status(500).json({ success: false, message: 'Server Error' });
+        }
+    }
+);
 
 // HOD: upload joining letter template for a dept group (students download, fill, upload back)
 router.post(
